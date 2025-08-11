@@ -26,6 +26,7 @@ comfy-table = { workspace = true }
 nu-ansi-term = { workspace = true }
 tempfile = { workspace = true }
 sha2 = { workspace = true }
+aho-corasick = "1.1"
 
 [dev-dependencies]
 proptest = { workspace = true }

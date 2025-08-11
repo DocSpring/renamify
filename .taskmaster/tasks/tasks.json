@@ -138,7 +138,7 @@
         "dependencies": [
           2
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -146,7 +146,7 @@
             "description": "Implement the `build_pattern` function to compile a single regex that matches all provided variants, ensuring safe token boundary handling without using lookbehind assertions.",
             "dependencies": [],
             "details": "Create a function that escapes each variant, joins them with alternation, and compiles them into a single regex. Ensure the regex operates on bytes for performance and avoids lookbehind assertions.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Unit tests to verify that the compiled regex matches all provided variants and handles boundaries correctly."
           },
           {
@@ -157,7 +157,7 @@
               "3.1"
             ],
             "details": "Develop a function that checks if the bytes before and after a match are non-alphanumeric or at the start/end of the string, ensuring accurate boundary detection.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests to confirm that the function correctly identifies valid and invalid boundaries across various token styles."
           },
           {
@@ -168,7 +168,7 @@
               "3.1"
             ],
             "details": "After a regex match, use Aho-Corasick to map the match to the specific variant, enabling precise identification without relying on capturing groups.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests to ensure that the correct variant is identified for each match."
           },
           {
@@ -179,7 +179,7 @@
               "3.1"
             ],
             "details": "Configure the regex engine to use a hybrid DFA/NFA approach, reducing the likelihood of catastrophic backtracking and improving search efficiency.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Benchmark tests to compare performance with and without the hybrid approach, ensuring no backtracking issues occur."
           },
           {
@@ -193,7 +193,7 @@
               "3.4"
             ],
             "details": "Use tools like `cargo-fuzz` to generate random inputs and test the regex compilation and matching functions, aiming to uncover edge cases and vulnerabilities.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Continuous integration with fuzz tests running on a schedule, monitoring for crashes or performance degradation."
           }
         ]
@@ -997,7 +997,7 @@
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T04:16:31.091Z",
+      "updated": "2025-08-11T04:21:04.142Z",
       "description": "Tasks for master context"
     }
   }
