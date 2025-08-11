@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use refaktor_core::{
     apply_plan, ApplyOptions, Plan, PlanOptions, PreviewFormat, scan_repository, write_plan, 
-    write_preview, Style,
+    write_preview, Style, History, format_history, get_status, undo_refactoring, redo_refactoring,
 };
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
@@ -273,25 +273,21 @@ fn main() {
             force_with_conflicts,
         ),
 
-        Commands::Undo { .. } => {
-            eprintln!("Undo command not yet implemented");
-            Ok(())
+        Commands::Undo { id } => {
+            let refaktor_dir = PathBuf::from(".refaktor");
+            undo_refactoring(&id, &refaktor_dir)
+                .context("Failed to undo refactoring")
         }
 
-        Commands::Redo { .. } => {
-            eprintln!("Redo command not yet implemented");
-            Ok(())
+        Commands::Redo { id } => {
+            let refaktor_dir = PathBuf::from(".refaktor");
+            redo_refactoring(&id, &refaktor_dir)
+                .context("Failed to redo refactoring")
         }
 
-        Commands::Status => {
-            eprintln!("Status command not yet implemented");
-            Ok(())
-        }
+        Commands::Status => handle_status(),
 
-        Commands::History { .. } => {
-            eprintln!("History command not yet implemented");
-            Ok(())
-        }
+        Commands::History { limit } => handle_history(limit),
     };
 
     match result {
@@ -440,6 +436,27 @@ fn handle_apply(
         eprintln!("Changes committed to git");
     }
     
+    Ok(())
+}
+
+fn handle_status() -> Result<()> {
+    let refaktor_dir = PathBuf::from(".refaktor");
+    let status = get_status(&refaktor_dir)
+        .context("Failed to get status")?;
+    
+    print!("{}", status.format());
+    Ok(())
+}
+
+fn handle_history(limit: Option<usize>) -> Result<()> {
+    let refaktor_dir = PathBuf::from(".refaktor");
+    let history = History::load(&refaktor_dir)
+        .context("Failed to load history")?;
+    
+    let entries = history.list_entries(limit);
+    let formatted = format_history(&entries, false)?;
+    
+    println!("{}", formatted);
     Ok(())
 }
 

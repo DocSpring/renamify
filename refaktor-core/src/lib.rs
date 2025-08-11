@@ -7,14 +7,19 @@
 
 pub mod apply;
 pub mod case_model;
+pub mod history;
 pub mod pattern;
 pub mod preview;
 pub mod rename;
 pub mod scanner;
+pub mod undo;
 
 pub use apply::{apply_plan, ApplyOptions};
 pub use case_model::{
     detect_style, generate_variant_map, parse_to_tokens, to_style, Style, Token, TokenModel,
+};
+pub use history::{
+    create_history_entry, format_history, get_status, History, HistoryEntry, StatusInfo,
 };
 pub use pattern::{build_pattern, find_matches, is_boundary, Match, MatchPattern};
 pub use preview::{render_plan, write_preview, PreviewFormat};
@@ -25,4 +30,5 @@ pub use rename::{
 pub use scanner::{
     scan_repository, write_plan, MatchHunk, Plan, PlanOptions, Rename, RenameKind, Stats,
 };
+pub use undo::{redo_refactoring, undo_refactoring};
 

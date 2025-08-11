@@ -607,7 +607,7 @@
           8,
           7
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -615,7 +615,7 @@
             "description": "Develop a system to persist applied plans in .refaktor/history.json, ensuring each entry includes metadata such as id, creation timestamp, old and new values, styles, includes, excludes, affected files, renames, checksums, backups path, and optional revert_of id.",
             "dependencies": [],
             "details": "Create an append-only JSON structure to log each applied plan with comprehensive metadata. Implement SHA-256 checksums for each file to verify integrity post-application. Ensure the system can handle concurrent operations and maintains data consistency.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Develop unit tests to validate the serialization and deserialization of history entries. Implement integration tests to ensure that after applying a plan, the history is accurately recorded with all required metadata."
           },
           {
@@ -626,7 +626,7 @@
               "10.1"
             ],
             "details": "Develop functionality to read the specified history entry, restore all affected files from the backups_path, and reverse any renames using the same staged logic. Append a new history entry indicating the revert operation with a link to the original plan ID.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Conduct integration tests that apply a plan and then perform an undo operation, verifying that the repository is restored to its exact previous state, including file contents and names."
           },
           {
@@ -638,7 +638,7 @@
               "10.2"
             ],
             "details": "Create functionality to reapply the changes from a specified history entry, utilizing the stored plan and backups. Append a new history entry linking to the original plan ID to indicate the redo operation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Perform integration tests that apply a plan, undo it, and then redo it, ensuring the repository returns to the post-apply state accurately."
           },
           {
@@ -649,7 +649,7 @@
               "10.1"
             ],
             "details": "Develop functionality to assess the current state of the repository by comparing it against the recorded history. Display the last applied plan ID, any pending conflicts, and indicate whether the working tree is clean. Avoid direct interaction with Git unless the --commit flag was used previously.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Develop unit tests to verify the accuracy of the status output under various scenarios, including clean states, pending conflicts, and after applying, undoing, and redoing plans."
           },
           {
@@ -660,7 +660,7 @@
               "10.1"
             ],
             "details": "Create functionality to read the history.json file and present the list of past plans up to a specified limit. Implement options to display the history in a table or JSON format for user convenience.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Conduct unit tests to ensure the history listing accurately reflects the contents of history.json and respects the specified limit and format options."
           }
         ]
@@ -997,7 +997,7 @@
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T05:00:36.501Z",
+      "updated": "2025-08-11T05:07:04.131Z",
       "description": "Tasks for master context"
     }
   }

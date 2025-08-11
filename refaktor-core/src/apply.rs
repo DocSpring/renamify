@@ -1,6 +1,7 @@
 use crate::scanner::Plan;
+use crate::history::{create_history_entry, History};
 use anyhow::{anyhow, Context, Result};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -150,7 +151,7 @@ fn backup_file(path: &Path, backup_dir: &Path, plan_id: &str) -> Result<FileBack
 }
 
 /// Calculate SHA256 checksum of a file
-fn calculate_checksum(path: &Path) -> Result<String> {
+pub fn calculate_checksum(path: &Path) -> Result<String> {
     let mut file = File::open(path)?;
     let mut hasher = Sha256::new();
     io::copy(&mut file, &mut hasher)?;
@@ -450,6 +451,38 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         
         state.log(&format!("Created git commit: {}", commit_message))?;
     }
+    
+    // Record in history
+    state.log("Recording in history")?;
+    
+    // Calculate checksums for all affected files
+    let mut affected_files = HashMap::new();
+    for path in &state.content_edits_applied {
+        if path.exists() {
+            let checksum = calculate_checksum(path)?;
+            affected_files.insert(path.clone(), checksum);
+        }
+    }
+    
+    // Also include renamed files
+    for (_, to) in &state.renames_performed {
+        if to.exists() && to.is_file() {
+            let checksum = calculate_checksum(to)?;
+            affected_files.insert(to.clone(), checksum);
+        }
+    }
+    
+    let history_entry = create_history_entry(
+        plan,
+        affected_files,
+        state.renames_performed.clone(),
+        options.backup_dir.join(&plan.id),
+        None, // Not a revert
+        None, // Not a redo
+    );
+    
+    let mut history = History::load(&options.backup_dir.parent().unwrap_or(Path::new(".refaktor")))?;
+    history.add_entry(history_entry)?;
     
     state.log("Apply completed successfully")?;
     Ok(())
