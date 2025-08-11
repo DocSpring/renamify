@@ -106,6 +106,21 @@ Alias for `plan --dry-run`. Shows what would be changed without creating a plan 
 refaktor dry-run <OLD> <NEW> [OPTIONS]
 ```
 
+### `init` - Initialize Refaktor Ignore Settings
+
+Adds `.refaktor/` to ignore files to prevent tracking of Refaktor's workspace.
+
+```bash
+refaktor init [OPTIONS]
+```
+
+**Options:**
+
+- `--local` - Add to `.git/info/exclude` instead of `.gitignore`
+- `--global` - Add to global git excludes file
+- `--check` - Check if `.refaktor` is ignored (exit 0 if yes, 1 if no)
+- `--configure-global` - Configure global excludes file if it doesn't exist (requires `--global`)
+
 ## File Filtering and Ignore Rules
 
 ### Respecting .gitignore (Default Behavior)
@@ -225,6 +240,61 @@ On macOS and Windows (typically case-insensitive), Refaktor:
 - Symlink files can be renamed if their names match the pattern
 - Symlink targets are never modified
 
+## Auto-Initialization
+
+Refaktor automatically prompts to ignore the `.refaktor/` directory on first use. This ensures your workspace files aren't accidentally committed to version control.
+
+### Interactive Prompt
+
+When running commands that create `.refaktor/` for the first time, you'll see:
+
+```
+Refaktor uses .refaktor/ for plans, backups, and history.
+Ignore it now?
+  [Y] Repo .gitignore   [l] Local .git/info/exclude   [g] Global excludesfile   [n] No
+Choice (Y/l/g/n): 
+```
+
+- **Y (default)**: Add to `.gitignore` in the current directory
+- **l**: Add to `.git/info/exclude` (repository-specific, not committed)
+- **g**: Add to global git excludes file
+- **n**: Skip initialization
+
+### Command-Line Flags
+
+Control auto-initialization behavior with these flags:
+
+- `--auto-init=MODE` - Automatically initialize with specified mode (repo|local|global)
+- `--no-auto-init` - Disable automatic initialization
+- `-y, --yes` - Assume yes for all prompts (uses repo mode for auto-init)
+
+**Examples:**
+
+```bash
+# Always add to .gitignore without prompting
+refaktor --auto-init=repo plan old new
+
+# Prevent any auto-initialization
+refaktor --no-auto-init plan old new
+
+# Use -y for non-interactive environments
+refaktor -y plan old new
+```
+
+### CI/CD Usage
+
+For CI/CD pipelines:
+
+```bash
+# Check if .refaktor is properly ignored
+refaktor init --check || exit 1
+
+# Auto-initialize in CI without prompts
+refaktor --auto-init=repo plan old new
+```
+
+Non-TTY environments (like CI) will never show prompts unless `--auto-init` is explicitly set.
+
 ## Configuration
 
 ### Project-Level Settings
@@ -246,6 +316,7 @@ ignore = ["vendor/**", "node_modules/**"]
 ### Environment Variables
 
 - `NO_COLOR` - Disable colored output
+- `REFAKTOR_YES` - Same as `-y` flag (assume yes for prompts)
 
 ## Examples
 

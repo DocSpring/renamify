@@ -26,6 +26,18 @@ struct Cli {
     /// -uuu: Same as -uu, plus treat binary files as text
     #[arg(short = 'u', long = "unrestricted", global = true, action = clap::ArgAction::Count)]
     unrestricted: u8,
+    
+    /// Automatically initialize .refaktor ignore (repo|local|global)
+    #[arg(long, global = true, value_name = "MODE")]
+    auto_init: Option<String>,
+    
+    /// Disable automatic initialization prompt
+    #[arg(long, global = true, conflicts_with = "auto_init")]
+    no_auto_init: bool,
+    
+    /// Assume yes for all prompts
+    #[arg(short = 'y', long = "yes", global = true, env = "REFAKTOR_YES")]
+    yes: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -156,6 +168,25 @@ enum Commands {
         #[arg(long, value_enum, default_value = "table")]
         preview_format: PreviewFormatArg,
     },
+
+    /// Initialize refaktor in the current repository
+    Init {
+        /// Add to .git/info/exclude instead of .gitignore
+        #[arg(long, conflicts_with = "global")]
+        local: bool,
+
+        /// Add to global git excludes file
+        #[arg(long, conflicts_with = "local")]
+        global: bool,
+        
+        /// Check if .refaktor is ignored (exit 0 if yes, 1 if no)
+        #[arg(long, conflicts_with_all = ["local", "global", "configure_global"])]
+        check: bool,
+        
+        /// Configure global excludes file if it doesn't exist
+        #[arg(long, requires = "global")]
+        configure_global: bool,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -212,6 +243,19 @@ fn main() {
 
     let cli = Cli::parse();
     let use_color = !cli.no_color && io::stdout().is_terminal();
+    
+    // Check if we need to auto-init before running commands that create .refaktor/
+    let needs_refaktor_dir = matches!(
+        cli.command,
+        Commands::Plan { .. } | Commands::Apply { .. } | Commands::DryRun { .. }
+    );
+    
+    if needs_refaktor_dir && !cli.no_auto_init {
+        if let Err(e) = check_and_auto_init(&cli.auto_init, cli.yes) {
+            eprintln!("Error during auto-initialization: {:#}", e);
+            process::exit(2);
+        }
+    }
 
     let result = match cli.command {
         Commands::Plan {
@@ -297,6 +341,10 @@ fn main() {
         Commands::Status => handle_status(),
 
         Commands::History { limit } => handle_history(limit),
+
+        Commands::Init { local, global, check, configure_global } => {
+            handle_init(local, global, check, configure_global)
+        }
     };
 
     match result {
@@ -469,6 +517,342 @@ fn handle_history(limit: Option<usize>) -> Result<()> {
     
     println!("{}", formatted);
     Ok(())
+}
+
+fn is_refaktor_ignored() -> Result<bool> {
+    // Check if .refaktor is already ignored in any ignore file
+    
+    // 1. Check .gitignore
+    if let Ok(content) = std::fs::read_to_string(".gitignore") {
+        if is_pattern_in_content(&content) {
+            return Ok(true);
+        }
+    }
+    
+    // 2. Check .git/info/exclude (if in git repo)
+    if let Ok(git_dir) = find_git_dir() {
+        let exclude_path = git_dir.join("info").join("exclude");
+        if let Ok(content) = std::fs::read_to_string(exclude_path) {
+            if is_pattern_in_content(&content) {
+                return Ok(true);
+            }
+        }
+    }
+    
+    // 3. Check global excludes
+    if let Ok(global_path) = get_global_excludes_path() {
+        if let Ok(content) = std::fs::read_to_string(global_path) {
+            if is_pattern_in_content(&content) {
+                return Ok(true);
+            }
+        }
+    }
+    
+    Ok(false)
+}
+
+fn is_pattern_in_content(content: &str) -> bool {
+    content.lines()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .any(|line| {
+            line == ".refaktor" || 
+            line == ".refaktor/" || 
+            line == "/.refaktor" ||
+            line == "/.refaktor/"
+        })
+}
+
+fn check_and_auto_init(auto_init: &Option<String>, yes: bool) -> Result<()> {
+    // If .refaktor is already ignored, nothing to do
+    if is_refaktor_ignored()? {
+        return Ok(());
+    }
+    
+    // Check if .refaktor is tracked in git
+    if is_in_git_repo()? && is_file_tracked(".refaktor")? {
+        eprintln!("\n⚠ Error: .refaktor directory is already tracked by git.");
+        eprintln!("  Please run: git rm -r --cached .refaktor");
+        eprintln!("  Then run your command again.");
+        process::exit(1);
+    }
+    
+    // Determine init mode
+    let mode = if let Some(mode) = auto_init {
+        // Explicit mode specified
+        match mode.as_str() {
+            "repo" => InitMode::Repo,
+            "local" => InitMode::Local,
+            "global" => InitMode::Global,
+            _ => {
+                eprintln!("Invalid auto-init mode: {}. Use repo, local, or global.", mode);
+                process::exit(2);
+            }
+        }
+    } else if yes {
+        // -y flag: default to repo
+        InitMode::Repo
+    } else if io::stdin().is_terminal() && io::stdout().is_terminal() {
+        // Interactive mode: show prompt
+        prompt_for_init()?
+    } else {
+        // Non-interactive: do nothing
+        return Ok(());
+    };
+    
+    // Perform the initialization
+    match mode {
+        InitMode::Repo => do_init(false, false, false)?,
+        InitMode::Local => do_init(true, false, false)?,
+        InitMode::Global => do_init(false, true, false)?,
+        InitMode::Skip => return Ok(()),
+    }
+    
+    Ok(())
+}
+
+#[derive(Debug)]
+enum InitMode {
+    Repo,
+    Local,
+    Global,
+    Skip,
+}
+
+fn prompt_for_init() -> Result<InitMode> {
+    use std::io::Write;
+    
+    eprintln!("\nRefaktor uses .refaktor/ for plans, backups, and history.");
+    eprintln!("Ignore it now?");
+    eprintln!("  [Y] Repo .gitignore   [l] Local .git/info/exclude   [g] Global excludesfile   [n] No");
+    eprint!("Choice (Y/l/g/n): ");
+    io::stdout().flush()?;
+    
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+    let choice = input.trim().to_lowercase();
+    
+    match choice.as_str() {
+        "" | "y" | "yes" => Ok(InitMode::Repo),
+        "l" | "local" => Ok(InitMode::Local),
+        "g" | "global" => Ok(InitMode::Global),
+        "n" | "no" => Ok(InitMode::Skip),
+        _ => {
+            eprintln!("Invalid choice. Please enter Y, l, g, or n.");
+            prompt_for_init()
+        }
+    }
+}
+
+fn do_init(local: bool, global: bool, _configure_global: bool) -> Result<()> {
+    // This is the core init logic
+    const REFAKTOR_PATTERN: &str = ".refaktor/";
+    
+    // Determine which file to modify
+    let target_path = if global {
+        // Get global git excludes file
+        get_global_excludes_path()?
+    } else if local {
+        // Use .git/info/exclude
+        let git_dir = find_git_dir()?;
+        git_dir.join("info").join("exclude")
+    } else {
+        // Default: .gitignore in current directory
+        PathBuf::from(".gitignore")
+    };
+    
+    // Check if pattern already exists in file
+    let existing_content = if target_path.exists() {
+        std::fs::read_to_string(&target_path)
+            .with_context(|| format!("Failed to read {}", target_path.display()))?
+    } else {
+        String::new()
+    };
+    
+    // Check if pattern already exists
+    if is_pattern_in_content(&existing_content) {
+        eprintln!(".refaktor is already ignored in {}", target_path.display());
+        return Ok(());
+    }
+    
+    // Ensure parent directory exists
+    if let Some(parent) = target_path.parent() {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("Failed to create directory {}", parent.display()))?;
+    }
+    
+    // Append pattern to file
+    let mut content = existing_content;
+    
+    // Add newline if file doesn't end with one
+    if !content.is_empty() && !content.ends_with('\n') {
+        content.push('\n');
+    }
+    
+    // Add comment and pattern
+    if !content.is_empty() {
+        content.push('\n');  // Blank line before our section
+    }
+    content.push_str("# Refaktor workspace\n");
+    content.push_str(REFAKTOR_PATTERN);
+    content.push('\n');
+    
+    // Write atomically
+    use std::io::Write;
+    let temp_path = target_path.with_extension("tmp");
+    {
+        let mut file = std::fs::File::create(&temp_path)
+            .with_context(|| format!("Failed to create temporary file {}", temp_path.display()))?;
+        file.write_all(content.as_bytes())
+            .context("Failed to write content")?;
+        file.sync_all()
+            .context("Failed to sync file")?;
+    }
+    
+    std::fs::rename(&temp_path, &target_path)
+        .with_context(|| format!("Failed to rename {} to {}", temp_path.display(), target_path.display()))?;
+    
+    eprintln!("✓ Added .refaktor/ to {}", target_path.display());
+    
+    Ok(())
+}
+
+fn configure_global_excludes() -> Result<()> {
+    // Check if global excludes file is already configured
+    let output = std::process::Command::new("git")
+        .args(["config", "--global", "core.excludesFile"])
+        .output()
+        .context("Failed to run git config")?;
+    
+    if output.status.success() {
+        let existing = String::from_utf8(output.stdout)?
+            .trim()
+            .to_string();
+        if !existing.is_empty() {
+            eprintln!("Global excludes file already configured: {}", existing);
+            return Ok(());
+        }
+    }
+    
+    // Set default global excludes path
+    let default_path = if let Some(config_dir) = dirs::config_dir() {
+        config_dir.join("git").join("ignore")
+    } else {
+        return Err(anyhow!("Could not determine config directory"));
+    };
+    
+    eprintln!("Setting global excludes file to: {}", default_path.display());
+    
+    std::process::Command::new("git")
+        .args([
+            "config",
+            "--global",
+            "core.excludesFile",
+            &default_path.to_string_lossy(),
+        ])
+        .output()
+        .context("Failed to set git config")?;
+    
+    Ok(())
+}
+
+fn handle_init(local: bool, global: bool, check: bool, configure_global: bool) -> Result<()> {
+    // Check mode: just verify if .refaktor is ignored
+    if check {
+        if is_refaktor_ignored()? {
+            eprintln!(".refaktor is properly ignored");
+            return Ok(());
+        } else {
+            eprintln!(".refaktor is NOT ignored");
+            process::exit(1);
+        }
+    }
+    
+    // Handle configure_global flag
+    if configure_global && global {
+        configure_global_excludes()?;
+    }
+    
+    // Use the common init logic
+    do_init(local, global, configure_global)?;
+    
+    // Check if .refaktor is tracked by git (only if not using --global)
+    if !global && is_in_git_repo()? {
+        if is_file_tracked(".refaktor")? {
+            eprintln!("\n⚠ Warning: .refaktor directory is already tracked by git.");
+            eprintln!("  You may want to run: git rm -r --cached .refaktor");
+        }
+    }
+    
+    Ok(())
+}
+
+fn find_git_dir() -> Result<PathBuf> {
+    let output = std::process::Command::new("git")
+        .args(["rev-parse", "--git-dir"])
+        .output()
+        .context("Failed to run git rev-parse")?;
+    
+    if !output.status.success() {
+        return Err(anyhow!("Not in a git repository"));
+    }
+    
+    let git_dir = String::from_utf8(output.stdout)
+        .context("Invalid UTF-8 in git output")?
+        .trim()
+        .to_string();
+    
+    Ok(PathBuf::from(git_dir))
+}
+
+fn get_global_excludes_path() -> Result<PathBuf> {
+    // First check if core.excludesFile is configured
+    let output = std::process::Command::new("git")
+        .args(["config", "--global", "core.excludesFile"])
+        .output()
+        .context("Failed to run git config")?;
+    
+    if output.status.success() {
+        let path = String::from_utf8(output.stdout)
+            .context("Invalid UTF-8 in git output")?
+            .trim()
+            .to_string();
+        
+        if !path.is_empty() {
+            // Expand ~ if present
+            if path.starts_with("~/") {
+                if let Some(home) = dirs::home_dir() {
+                    return Ok(home.join(&path[2..]));
+                }
+            }
+            return Ok(PathBuf::from(path));
+        }
+    }
+    
+    // Use default location
+    if let Some(config_dir) = dirs::config_dir() {
+        Ok(config_dir.join("git").join("ignore"))
+    } else {
+        Err(anyhow!("Could not determine global git excludes path"))
+    }
+}
+
+fn is_in_git_repo() -> Result<bool> {
+    let output = std::process::Command::new("git")
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .output()
+        .context("Failed to run git rev-parse")?;
+    
+    Ok(output.status.success())
+}
+
+fn is_file_tracked(path: &str) -> Result<bool> {
+    let output = std::process::Command::new("git")
+        .args(["ls-files", "--error-unmatch", path])
+        .output()
+        .context("Failed to run git ls-files")?;
+    
+    Ok(output.status.success())
 }
 
 // Generate shell completions

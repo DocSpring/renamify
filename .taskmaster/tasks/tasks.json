@@ -998,7 +998,7 @@
         "id": 16,
         "title": "Fix gitignore handling for rename operations",
         "description": "Rename operations must match ripgrep's unrestricted behavior using ignore::WalkBuilder wiring. We already use the correct primitives; the task is to configure them properly across scanner and rename so that -u/-uu/-uuu behave exactly like ripgrep: default respects all ignore files and skips hidden; -u disables .gitignore only; -uu disables all ignore files and shows hidden; -uuu also treats binary as text.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           7
         ],
@@ -1019,7 +1019,7 @@
             "id": 2,
             "title": "Extend PlanOptions with unrestricted level (0-3) and derived binary_as_text flag",
             "description": "Add field and defaults; map legacy flags to a level; expose getter for binary_as_text when level == 3.",
-            "status": "in progress",
+            "status": "done",
             "dependencies": [],
             "details": "",
             "testStrategy": ""
@@ -1028,7 +1028,7 @@
             "id": 3,
             "title": "Implement shared WalkBuilder configuration helper and use it in scanner and rename",
             "description": "Create configure_walkbuilder(root, opts) mapping levels to git_ignore/ignore/parents/hidden; replace ad-hoc configs.",
-            "status": "in progress",
+            "status": "done",
             "dependencies": [],
             "details": "",
             "testStrategy": ""
@@ -1037,7 +1037,7 @@
             "id": 4,
             "title": "Wire binary-as-text behavior into scanner for -uuu",
             "description": "Ensure scanner does not short-circuit on binary files when unrestricted level is 3.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "",
             "testStrategy": ""
@@ -1046,7 +1046,7 @@
             "id": 5,
             "title": "Add CLI -u flag (repeatable up to three times) and map to PlanOptions",
             "description": "Update CLI parsing and help; precedence rules: explicit -u overrides any legacy ignore flags.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "",
             "testStrategy": ""
@@ -1055,7 +1055,7 @@
             "id": 6,
             "title": "Add comprehensive tests for traversal, rename planning, and scanner across levels 0..3",
             "description": "Unit and integration tests covering .gitignore vs .ignore/.rgignore, hidden files, and binary behavior at -uuu.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "",
             "testStrategy": ""
@@ -1078,7 +1078,7 @@
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T05:30:37.623Z",
+      "updated": "2025-08-11T05:37:02.546Z",
       "description": "Tasks for master context"
     }
   }
