@@ -22,7 +22,9 @@ impl From<PreviewFormatArg> for PreviewFormat {
             PreviewFormatArg::Diff => PreviewFormat::Diff,
         }
     }
-}"#
+}
+struct ShouldReplacePreviewFormatPlease { }
+fn getPreviewFormatOption() -> PreviewFormatOption { }"#
     ).unwrap();
     
     let options = PlanOptions {
@@ -56,9 +58,11 @@ impl From<PreviewFormatArg> for PreviewFormat {
     // Line 3: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
     // Line 5: PreviewFormatArg -> PreviewArg (twice), PreviewFormat -> Preview (twice)
     // Line 6: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
+    // Line 9: ShouldReplacePreviewFormatPlease -> ShouldReplacePreviewPlease
+    // Line 10: getPreviewFormatOption -> getPreviewOption, PreviewFormatOption -> PreviewOption
     
-    // Total: 11 replacements
-    assert_eq!(plan.stats.total_matches, 11, 
+    // Total: 14 replacements
+    assert_eq!(plan.stats.total_matches, 14, 
                "Should find all compound Pascal case variants including PreviewFormatArg");
     
     // Verify PreviewFormatArg is replaced with PreviewArg
