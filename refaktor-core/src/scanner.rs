@@ -1,5 +1,6 @@
 use crate::case_model::{generate_variant_map, Style};
 use crate::pattern::{build_pattern, find_matches, Match};
+use crate::rename::plan_renames;
 use anyhow::Result;
 use bstr::ByteSlice;
 use content_inspector::ContentType;
@@ -276,59 +277,6 @@ fn generate_hunks(
     hunks
 }
 
-fn plan_renames(
-    root: &Path,
-    mapping: &BTreeMap<String, String>,
-    _options: &PlanOptions,
-) -> Result<Vec<Rename>> {
-    let mut renames = Vec::new();
-    
-    for entry in walkdir::WalkDir::new(root)
-        .into_iter()
-        .filter_map(|e| e.ok())
-    {
-        let path = entry.path();
-        if let Some(file_name) = path.file_name() {
-            let file_name_str = file_name.to_string_lossy();
-            
-            for (old, new) in mapping {
-                if file_name_str.contains(old) {
-                    let new_name = file_name_str.replace(old, new);
-                    let new_path = path.with_file_name(new_name);
-                    
-                    let kind = if path.is_dir() {
-                        RenameKind::Dir
-                    } else {
-                        RenameKind::File
-                    };
-                    
-                    renames.push(Rename {
-                        from: path.to_path_buf(),
-                        to: new_path,
-                        kind,
-                    });
-                    break;
-                }
-            }
-        }
-    }
-    
-    renames.sort_by(|a, b| {
-        let a_depth = a.from.components().count();
-        let b_depth = b.from.components().count();
-        
-        match (
-            matches!(a.kind, RenameKind::Dir),
-            matches!(b.kind, RenameKind::Dir),
-        ) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => b_depth.cmp(&a_depth),
-        }
-    });
-    
-    Ok(renames)
-}
 
 fn generate_plan_id(old: &str, new: &str, options: &PlanOptions) -> String {
     let mut hasher = Sha256::new();
