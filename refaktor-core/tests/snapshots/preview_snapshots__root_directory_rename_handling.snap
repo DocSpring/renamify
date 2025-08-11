@@ -1,0 +1,22 @@
+---
+source: refaktor-core/tests/preview_snapshots.rs
+expression: normalized
+---
++------------------------+--------------------+-----------+------------------------------------------+
+| File                   | Kind               | Matches   | Variants                                 |
++====================================================================================================+
+| README.md              | Content            | 1         | refaktor                                 |
+|------------------------+--------------------+-----------+------------------------------------------|
+| /project/refaktor-core | Rename (Dir)       |           | → /project/smart-search-and-replace-core |
+|------------------------+--------------------+-----------+------------------------------------------|
+| ─────────              | ─────────          | ───────── | ─────────                                |
+|------------------------+--------------------+-----------+------------------------------------------|
+| TOTALS                 | 1 files, 1 renames | 1         | 1 variants                               |
++------------------------+--------------------+-----------+------------------------------------------+
+
+Next Steps:
+  • Root directory rename: /project → /smart_search_and_replace
+    After applying this refactoring:
+    1. cd /smart_search_and_replace
+    2. Rebuild/reload project in your IDE
+    3. Update any scripts that reference the old directory name

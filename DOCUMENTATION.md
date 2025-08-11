@@ -14,9 +14,23 @@ Refaktor automatically detects and converts between different naming conventions
 - **kebab-case** → `old-name` → `new-name`
 - **camelCase** → `oldName` → `newName`
 - **PascalCase** → `OldName` → `NewName`
-- **UPPER_SNAKE_CASE** → `OLD_NAME` → `NEW_NAME`
+- **SCREAMING_SNAKE_CASE** → `OLD_NAME` → `NEW_NAME`
+- **Title Case** → `Old Name` → `New Name`
+- **Train-Case** → `Old-Name` → `New-Name`
+- **dot.case** → `old.name` → `new.name`
 
 When you provide a search and replace pattern, Refaktor will automatically apply the transformation to all detected case variants.
+
+### Contextual Separator Coercion
+
+Refaktor includes intelligent contextual separator coercion that adapts the replacement style based on the surrounding code context:
+
+- **Context-aware replacement**: `refaktor_core::Engine` becomes `smart_search_and_replace_core::Engine` (snake_case context)
+- **Path-aware**: `src/refaktor/main.rs` becomes `src/smart-search-and-replace/main.rs` (kebab-case for paths)
+- **URL-aware**: `https://github.com/user/refaktor` becomes `https://github.com/user/smart-search-and-replace`
+- **Module-aware**: `refaktor::core::apply()` becomes `smart_search_and_replace::core::apply()`
+
+The coercion analyzes the immediate context around each match to determine the most appropriate separator style, making refactoring feel more natural and reducing manual corrections.
 
 ### File and Directory Renaming
 
@@ -25,6 +39,33 @@ In addition to replacing text within files, Refaktor can rename:
 - Files that match the pattern
 - Directories that match the pattern
 - Both are renamed in dependency order (deepest directories first)
+
+### Root Directory Renaming
+
+**NEW**: Refaktor can now rename the project root directory itself when the directory name matches your pattern:
+
+- **Default behavior**: Root directory renaming is disabled for safety
+- **Enable with `--rename-root`**: Explicitly allow root directory renaming
+- **Manual confirmation**: Always requires interactive confirmation
+- **Next steps snippet**: Provides instructions for rebuilding/reloading after root rename
+
+**Example:**
+```bash
+# This will offer to rename the project directory itself
+cd /path/to/refaktor-project
+refaktor rename refaktor smart_search_and_replace --rename-root
+
+# Refaktor will show a "Next Steps" snippet like:
+# Next Steps:
+# 1. cd ../smart-search-and-replace-project  
+# 2. cargo build --release  # if Rust project
+# 3. Update any IDE project settings
+```
+
+**Safety considerations:**
+- Always commit changes before root directory rename
+- Update build scripts, IDE settings, and documentation paths
+- Consider impact on CI/CD pipelines that reference the directory name
 
 ## Commands
 
@@ -42,7 +83,7 @@ refaktor plan <OLD> <NEW> [OPTIONS]
 - `--exclude <PATTERNS>` - Skip files matching these glob patterns (comma-separated)
 - `--no-rename-files` - Don't rename matching files
 - `--no-rename-dirs` - Don't rename matching directories
-- `--styles <STYLES>` - Specify which case styles to use (comma-separated: snake,kebab,camel,pascal,screaming-snake)
+- `--styles <STYLES>` - Specify which case styles to use (comma-separated: snake,kebab,camel,pascal,screaming-snake,title,train,dot)
 - `--preview-format <FORMAT>` - Output format: table (default), diff, json
 - `--plan-out <PATH>` - Where to save the plan (default: .refaktor/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
@@ -97,6 +138,38 @@ refaktor history [OPTIONS]
 **Options:**
 
 - `--limit <N>` - Show only the N most recent entries
+
+### `rename` - Fast Path Plan and Apply
+
+**NEW**: Combines planning and applying in a single command with confirmation prompts. Perfect for quick, interactive refactoring.
+
+```bash
+refaktor rename <OLD> <NEW> [OPTIONS]
+```
+
+**Options:**
+
+- `--include <PATTERNS>` - Only process files matching these glob patterns
+- `--exclude <PATTERNS>` - Skip files matching these glob patterns  
+- `--no-rename-files` - Don't rename matching files
+- `--no-rename-dirs` - Don't rename matching directories
+- `--styles <STYLES>` - Specify which case styles to use (comma-separated)
+- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json)
+- `--commit` - Create a git commit after applying changes
+- `--large` - Acknowledge large changes (>500 files or >100 renames)
+- `--force-with-conflicts` - Force apply even with conflicts
+- `--confirm-collisions` - Confirm case-insensitive or collision renames
+- `--rename-root` - Allow renaming the root project directory (requires confirmation)
+- `--no-rename-root` - Never rename the root project directory
+
+**Example:**
+```bash
+# Quick rename with table preview
+refaktor rename old_name new_name --preview table
+
+# Commit changes automatically
+refaktor rename getUserName fetchUserProfile --commit
+```
 
 ### `dry-run` - Preview Changes Without Saving
 
@@ -315,7 +388,7 @@ ignore = ["vendor/**", "node_modules/**"]
 
 ### Environment Variables
 
-- `NO_COLOR` - Disable colored output
+- `NO_COLOR` - Disable colored output (respects the NO_COLOR standard)
 - `REFAKTOR_YES` - Same as `-y` flag (assume yes for prompts)
 
 ## Examples
@@ -342,6 +415,9 @@ Only transform specific naming conventions:
 ```bash
 # Only handle snake_case and camelCase
 refaktor plan old_name new_name --styles snake,camel
+
+# Include the new case styles
+refaktor plan old_name new_name --styles snake,kebab,title,train,dot
 ```
 
 ### Rename in Specific Directories
@@ -364,6 +440,26 @@ refaktor dry-run old_name new_name
 refaktor dry-run old_name new_name --preview-format diff
 ```
 
+### Fast Interactive Renaming
+
+```bash
+# Use the new rename command for quick interactive refactoring
+refaktor rename old_name new_name --preview table
+
+# Rename with automatic git commit
+refaktor rename getUserName fetchUserProfile --commit --preview diff
+```
+
+### Root Directory Projects
+
+```bash
+# Rename the entire project directory (requires confirmation)
+refaktor rename myproject awesome_project --rename-root --commit
+
+# Or explicitly prevent root directory renaming
+refaktor rename myproject awesome_project --no-rename-root
+```
+
 ### Undo/Redo Operations
 
 ```bash
@@ -379,11 +475,14 @@ refaktor redo <id-from-history>
 
 ## Best Practices
 
-1. **Always run `plan` first** - Review changes before applying them
-2. **Use `--dry-run` for exploration** - See what would change without commitment
-3. **Commit before large refactors** - Makes it easy to revert if needed
-4. **Use specific includes** - Limit scope when working in large codebases
-5. **Check history after apply** - Verify the operation was recorded
+1. **Use `rename` for quick refactoring** - The new fast-path command with preview and confirmation
+2. **Always run `plan` first for large changes** - Review changes before applying them
+3. **Use `--dry-run` for exploration** - See what would change without commitment
+4. **Commit before large refactors** - Makes it easy to revert if needed
+5. **Use specific includes** - Limit scope when working in large codebases  
+6. **Check history after apply** - Verify the operation was recorded
+7. **Use `--preview` with rename** - Always see what changes before confirming
+8. **Be careful with `--rename-root`** - Only use when you want to rename the project directory
 
 ## Troubleshooting
 

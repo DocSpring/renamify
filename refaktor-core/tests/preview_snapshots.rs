@@ -185,3 +185,77 @@ fn test_empty_plan_diff_snapshot() {
     let output = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();
     insta::assert_snapshot!(output);
 }
+
+#[test]
+fn test_root_directory_rename_handling() {
+    // Test that root directory renames are omitted from the main table
+    // and only shown in a "Next Steps" section
+    let mut matches_by_variant = HashMap::new();
+    matches_by_variant.insert("refaktor".to_string(), 1);
+    
+    let plan = Plan {
+        id: "root-test".to_string(),
+        created_at: "1234567890".to_string(),
+        old: "refaktor".to_string(),
+        new: "smart_search_and_replace".to_string(),
+        styles: vec![Style::Snake, Style::Kebab],
+        includes: vec![],
+        excludes: vec![],
+        matches: vec![
+            MatchHunk {
+                file: PathBuf::from("README.md"),
+                line: 1,
+                col: 0,
+                variant: "refaktor".to_string(),
+                before: "# Refaktor".to_string(),
+                after: "# Smart Search And Replace".to_string(),
+                start: 2,
+                end: 10,
+                coercion_applied: None,
+            },
+        ],
+        renames: vec![
+            // Regular directory rename - should appear in table
+            Rename {
+                from: PathBuf::from("/project/refaktor-core"),
+                to: PathBuf::from("/project/smart-search-and-replace-core"),
+                kind: RenameKind::Dir,
+                coercion_applied: None,
+            },
+            // Root directory rename - should be omitted from table and shown in Next Steps
+            Rename {
+                from: PathBuf::from("/project"),
+                to: PathBuf::from("/smart_search_and_replace"),
+                kind: RenameKind::Dir,
+                coercion_applied: None,
+            },
+        ],
+        stats: Stats {
+            files_scanned: 1,
+            total_matches: 1,
+            matches_by_variant,
+            files_with_matches: 1,
+        },
+        version: "1.0.0".to_string(),
+    };
+    
+    let output = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
+    let normalized = normalize_paths(output);
+    
+    // The root directory rename should NOT appear in the main table
+    // Split the output into table and next steps sections
+    let parts: Vec<&str> = normalized.split("Next Steps:").collect();
+    let table_section = parts[0];
+    
+    // Check that root directory does not appear in the table section
+    assert!(!table_section.lines().any(|line| line.contains("/project") && !line.contains("/project/")), 
+        "Root directory /project should not appear in main table");
+    assert!(normalized.contains("refaktor-core"), "Regular directory should appear in table");
+    
+    // There should be a "Next Steps" section mentioning the root directory
+    // (This assertion will fail until we implement the feature)
+    assert!(normalized.contains("Next Steps") || normalized.contains("next steps"), 
+        "Should contain Next Steps section for root directory rename");
+    
+    insta::assert_snapshot!(normalized);
+}

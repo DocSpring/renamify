@@ -7,6 +7,17 @@ use std::collections::HashMap;
 use std::io::{self, IsTerminal, Write};
 use std::path::Path;
 
+/// Check if a rename represents a root directory rename
+/// A root directory rename is when the from path equals the current working directory
+fn is_root_directory_rename(rename: &Rename) -> bool {
+    let from_path = &rename.from;
+    
+    // Check if this rename is for the current working directory
+    std::env::current_dir()
+        .map(|current_dir| from_path == &current_dir)
+        .unwrap_or(false)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PreviewFormat {
     Table,
@@ -111,8 +122,12 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
         }
     }
     
-    // Add rename rows
-    for rename in &plan.renames {
+    // Separate root directory renames from regular renames
+    let (root_renames, regular_renames): (Vec<_>, Vec<_>) = plan.renames.iter()
+        .partition(|rename| is_root_directory_rename(rename));
+    
+    // Add regular rename rows (excluding root directory renames)
+    for rename in &regular_renames {
         let from_str = rename.from.display().to_string();
         let to_str = rename.to.display().to_string();
         let kind_str = match rename.kind {
@@ -137,10 +152,10 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
         }
     }
     
-    // Add footer with totals
+    // Add footer with totals (exclude root directory renames from regular totals)
     let total_matches = plan.stats.total_matches;
     let total_files = plan.stats.files_with_matches;
-    let total_renames = plan.renames.len();
+    let total_renames = regular_renames.len();
     
     if use_color {
         table.add_row(vec![
@@ -170,7 +185,23 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
         ]);
     }
     
-    Ok(table.to_string())
+    let mut result = table.to_string();
+    
+    // Add "Next Steps" section for root directory renames
+    if !root_renames.is_empty() {
+        result.push_str("\n\nNext Steps:\n");
+        for rename in &root_renames {
+            let from_str = rename.from.display().to_string();
+            let to_str = rename.to.display().to_string();
+            result.push_str(&format!("  • Root directory rename: {} → {}\n", from_str, to_str));
+            result.push_str("    After applying this refactoring:\n");
+            result.push_str(&format!("    1. cd {}\n", to_str));
+            result.push_str("    2. Rebuild/reload project in your IDE\n");
+            result.push_str("    3. Update any scripts that reference the old directory name\n");
+        }
+    }
+    
+    Ok(result)
 }
 
 /// Render plan as unified diffs
@@ -475,6 +506,49 @@ mod tests {
         assert!(output.contains("\u{1b}["), "Should contain ANSI color codes when explicitly requested");
         
         assert!(!output_no_color.contains("\u{1b}["), "Should not contain ANSI color codes when explicitly disabled");
+    }
+
+    #[test]
+    fn test_is_root_directory_rename() {
+        use std::path::PathBuf;
+        
+        // Get the actual current working directory for testing
+        let current_dir = std::env::current_dir().unwrap();
+        
+        // Test case that should be considered a root directory rename (current working directory)
+        let root_rename = Rename {
+            from: current_dir.clone(),
+            to: PathBuf::from("smart_search_and_replace"),
+            kind: RenameKind::Dir,
+            coercion_applied: None,
+        };
+        assert!(is_root_directory_rename(&root_rename), "Current working directory should be root");
+        
+        // Test case for a relative path - should NOT be considered root unless it matches current dir
+        let relative_rename = Rename {
+            from: PathBuf::from("project"),
+            to: PathBuf::from("smart_search_and_replace"),
+            kind: RenameKind::Dir,
+            coercion_applied: None,
+        };
+        assert!(!is_root_directory_rename(&relative_rename), "Relative path should not be root unless it's the current directory");
+        
+        // Test cases that should NOT be considered root directory renames
+        let subdir_rename = Rename {
+            from: current_dir.join("subdir"),
+            to: PathBuf::from("smart-search-and-replace-subdir"),
+            kind: RenameKind::Dir,
+            coercion_applied: None,
+        };
+        assert!(!is_root_directory_rename(&subdir_rename), "Subdirectory should not be root");
+        
+        let different_path_rename = Rename {
+            from: PathBuf::from("/some/other/path"),
+            to: PathBuf::from("/some/other/new_path"),
+            kind: RenameKind::Dir,
+            coercion_applied: None,
+        };
+        assert!(!is_root_directory_rename(&different_path_rename), "Different path should not be root");
     }
 
     #[test]
