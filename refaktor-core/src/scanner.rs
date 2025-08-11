@@ -286,23 +286,21 @@ fn generate_hunks(
         let mut after = new_variant.clone();
         let mut coercion_applied = None;
 
-        // Apply coercion if enabled
+        // Apply coercion if enabled - but only if we don't already have an explicit mapping
+        // If the variant_map has an explicit mapping, trust that over coercion
         if let CoercionMode::Auto = options.coerce_separators {
-            if let Some((coerced, reason)) = crate::coercion::apply_coercion(&line_string, &m.variant, new_variant) {
-                // Extract just the replacement part from the coerced result
-                // Find the position of the old variant in the original line and get the corresponding part from coerced result
-                if let Some(variant_pos) = line_string.find(&m.variant) {
-                    let variant_end = variant_pos + m.variant.len();
-                    if let Some(coerced_variant_end) = coerced.char_indices().nth(variant_pos + new_variant.chars().count()) {
-                        after = coerced[variant_pos..coerced_variant_end.0].to_string();
-                    } else {
-                        // Fallback: use the new variant from coercion extraction
-                        if let Some(start_pos) = coerced.find(new_variant) {
-                            after = coerced[start_pos..start_pos + new_variant.len()].to_string();
-                        }
+            // Check if this is an explicit mapping (the new_variant matches exactly what's in variant_map)
+            let has_explicit_mapping = variant_map.get(&m.variant)
+                .map(|mapped| mapped == new_variant)
+                .unwrap_or(false);
+                
+            if !has_explicit_mapping {
+                if let Some((_coerced, reason)) = crate::coercion::apply_coercion(&line_string, &m.variant, new_variant) {
+                    if let Some(coerced_variant) = apply_coercion_to_variant(&line_string, &m.variant, new_variant) {
+                        after = coerced_variant;
                     }
+                    coercion_applied = Some(reason);
                 }
-                coercion_applied = Some(reason);
             }
         }
 
@@ -322,6 +320,22 @@ fn generate_hunks(
     hunks
 }
 
+/// Apply coercion logic to just the variant (word-level), not the entire container
+fn apply_coercion_to_variant(container: &str, _old_variant: &str, new_variant: &str) -> Option<String> {
+    // Detect the container style
+    let container_style = crate::coercion::detect_style(container);
+    
+    // If container has mixed or unknown style, no coercion
+    if container_style == crate::coercion::Style::Mixed || container_style == crate::coercion::Style::Dot {
+        return None;
+    }
+    
+    // Apply the container's style to the new variant
+    let new_tokens = crate::coercion::tokenize(new_variant);
+    let coerced_variant = crate::coercion::render_tokens(&new_tokens, container_style);
+    
+    Some(coerced_variant)
+}
 
 fn generate_plan_id(old: &str, new: &str, options: &PlanOptions) -> String {
     let mut hasher = Sha256::new();
