@@ -338,31 +338,37 @@ fn generate_hunks(
 
         // Check if this is a compound match (text field contains replacement)
         // or an exact match (use variant map)
-        let (before, mut after) = if variant_map.contains_key(&m.variant) {
+        let is_compound_match = !variant_map.contains_key(&m.variant);
+        let (before, mut after) = if is_compound_match {
+            // Compound match - text field has the replacement
+            (m.variant.clone(), m.text.clone())
+        } else {
             // Exact match - use variant map
             let new_variant = variant_map.get(&m.variant).unwrap();
             (m.variant.clone(), new_variant.clone())
-        } else {
-            // Compound match - text field has the replacement
-            (m.variant.clone(), m.text.clone())
         };
         let mut coercion_applied = None;
 
-        // Apply coercion if enabled
+        // Apply coercion if enabled (but skip for compound matches - they're already correct)
         if let CoercionMode::Auto = options.coerce_separators {
-            // Find the match position within the line and extract context
-            if let Some(match_pos) = line_string.find(&before) {
-                let context =
-                    extract_immediate_context(&line_string, match_pos, match_pos + before.len());
+            if !is_compound_match {
+                // Find the match position within the line and extract context
+                if let Some(match_pos) = line_string.find(&before) {
+                    let context = extract_immediate_context(
+                        &line_string,
+                        match_pos,
+                        match_pos + before.len(),
+                    );
 
-                if let Some((_coerced, reason)) =
-                    crate::coercion::apply_coercion(&context, &before, &after)
-                {
-                    if let Some(coerced_variant) =
-                        apply_coercion_to_variant(&context, &before, &after)
+                    if let Some((_coerced, reason)) =
+                        crate::coercion::apply_coercion(&context, &before, &after)
                     {
-                        after = coerced_variant;
-                        coercion_applied = Some(reason);
+                        if let Some(coerced_variant) =
+                            apply_coercion_to_variant(&context, &before, &after)
+                        {
+                            after = coerced_variant;
+                            coercion_applied = Some(reason);
+                        }
                     }
                 }
             }

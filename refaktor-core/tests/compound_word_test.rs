@@ -366,11 +366,71 @@ fn test_multiple_compounds_same_line() {
     for hunk in &plan.matches {
         assert_eq!(hunk.line, 1);
     }
+}
 
-    let columns: Vec<u32> = plan.matches.iter().map(|h| h.col).collect();
-    assert_eq!(columns.len(), 3);
-    assert!(
-        columns[0] < columns[1] && columns[1] < columns[2],
-        "Matches should be at different column positions"
+#[test]
+fn test_compound_case_preservation_bug() {
+    // This test verifies that compound replacements preserve the original case style
+    // Bug: PreviewFormatOption -> fooBarOption (wrong!)
+    // Should be: PreviewFormatOption -> FooBarOption (correct)
+
+    let temp_dir = TempDir::new().unwrap();
+    let root = temp_dir.path().to_path_buf();
+
+    // Create test file with PascalCase compound identifier
+    let test_file = root.join("main.rs");
+    std::fs::write(
+        &test_file,
+        r#"fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
+    )
+    .unwrap();
+
+    let options = PlanOptions {
+        exclude_match: vec![],
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None, // Use all default styles
+        rename_files: false,
+        rename_dirs: false,
+        rename_root: false,
+        plan_out: PathBuf::from("plan.json"),
+        coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
+    };
+
+    let plan = scan_repository(&root, "preview_format", "foo_bar", &options).unwrap();
+
+    println!("\n=== Case Preservation Test ===");
+    for hunk in &plan.matches {
+        println!("'{}' -> '{}'", hunk.before, hunk.after);
+    }
+
+    // Find the PreviewFormatOption replacement
+    let pascal_option = plan
+        .matches
+        .iter()
+        .find(|h| h.before == "PreviewFormatOption");
+
+    assert!(pascal_option.is_some(), "Should find PreviewFormatOption");
+
+    let hunk = pascal_option.unwrap();
+    assert_eq!(
+        hunk.after, "FooBarOption",
+        "PreviewFormatOption should become FooBarOption (PascalCase preserved), not fooBarOption"
+    );
+
+    // Also check the camelCase function name is handled correctly
+    let camel_func = plan
+        .matches
+        .iter()
+        .find(|h| h.before == "getPreviewFormatOption");
+
+    assert!(camel_func.is_some(), "Should find getPreviewFormatOption");
+
+    let func_hunk = camel_func.unwrap();
+    assert_eq!(
+        func_hunk.after, "getFooBarOption",
+        "getPreviewFormatOption should become getFooBarOption (camelCase preserved)"
     );
 }

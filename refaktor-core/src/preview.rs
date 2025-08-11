@@ -256,21 +256,70 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
             output.push_str(&format!("--- {}\n+++ {}\n", file.display(), file.display()));
         }
 
-        // Create a unified diff from all hunks in this file
+        // Group hunks by line number to merge multiple changes on the same line
+        let mut line_hunks: HashMap<u64, Vec<&MatchHunk>> = HashMap::new();
         for hunk in hunks {
-            // Use line context if available, otherwise fall back to word-only
-            let before_text = hunk.line_before.as_ref().unwrap_or(&hunk.before);
-            let after_text = hunk.line_after.as_ref().unwrap_or(&hunk.after);
+            line_hunks.entry(hunk.line).or_default().push(hunk);
+        }
 
-            let diff = TextDiff::from_lines(before_text, after_text);
+        // Sort lines for deterministic output
+        let mut sorted_lines: Vec<_> = line_hunks.keys().cloned().collect();
+        sorted_lines.sort();
+
+        // Create a unified diff from all hunks in this file
+        for line_num in sorted_lines {
+            let line_hunk_group = &line_hunks[&line_num];
+
+            // For multiple hunks on the same line, we need to show the cumulative effect
+            // Start with the original line and apply all replacements to get the final result
+            let first_hunk = line_hunk_group[0];
+
+            // Get the original line - use line_before if available, otherwise construct from hunk
+            let before_text = if let Some(ref line_before) = first_hunk.line_before {
+                line_before.clone()
+            } else {
+                // Fallback: just use the word itself if no line context
+                first_hunk.before.clone()
+            };
+
+            // For the after text, if we have multiple hunks we need to apply all changes
+            let after_text = if line_hunk_group.len() == 1 {
+                // Single hunk - use line_after if available
+                if let Some(ref line_after) = first_hunk.line_after {
+                    line_after.clone()
+                } else {
+                    // Fallback: just the replacement word
+                    first_hunk.after.clone()
+                }
+            } else {
+                // Multiple hunks on same line - apply all replacements
+                let mut after_line = before_text.clone();
+
+                // Sort hunks by column position (reverse order to avoid position shifts)
+                let mut sorted_hunks = line_hunk_group.clone();
+                sorted_hunks.sort_by(|a, b| b.col.cmp(&a.col));
+
+                // Apply replacements from right to left to maintain positions
+                for hunk in sorted_hunks {
+                    let col = hunk.col as usize;
+                    if col < after_line.len() && after_line[col..].starts_with(&hunk.before) {
+                        let end = col + hunk.before.len();
+                        after_line.replace_range(col..end, &hunk.after);
+                    }
+                }
+
+                after_line
+            };
+
+            let diff = TextDiff::from_lines(&before_text, &after_text);
 
             if use_color {
                 output.push_str(&format!(
                     "{}",
-                    AnsiColor::Blue.paint(format!("@@ line {} @@\n", hunk.line))
+                    AnsiColor::Blue.paint(format!("@@ line {} @@\n", line_num))
                 ));
             } else {
-                output.push_str(&format!("@@ line {} @@\n", hunk.line));
+                output.push_str(&format!("@@ line {} @@\n", line_num));
             }
 
             for change in diff.iter_all_changes() {
@@ -381,8 +430,8 @@ mod tests {
                     after: "new_name".to_string(),
                     start: 4,
                     end: 12,
-                    line_before: None, // Not needed for these tests
-                    line_after: None,
+                    line_before: Some("let old_name = 42;".to_string()),
+                    line_after: Some("let new_name = 42;".to_string()),
                     coercion_applied: None,
                 },
                 MatchHunk {
@@ -394,8 +443,8 @@ mod tests {
                     after: "newName".to_string(),
                     start: 3,
                     end: 10,
-                    line_before: None,
-                    line_after: None,
+                    line_before: Some("return oldName;".to_string()),
+                    line_after: Some("return newName;".to_string()),
                     coercion_applied: None,
                 },
             ],
@@ -444,8 +493,11 @@ mod tests {
         assert!(result.contains("--- src/main.rs"));
         assert!(result.contains("+++ src/main.rs"));
         assert!(result.contains("@@ line 10 @@"));
-        assert!(result.contains("-old_name"));
-        assert!(result.contains("+new_name"));
+        assert!(result.contains("-let old_name = 42;"));
+        assert!(result.contains("+let new_name = 42;"));
+        assert!(result.contains("@@ line 20 @@"));
+        assert!(result.contains("-return oldName;"));
+        assert!(result.contains("+return newName;"));
         assert!(result.contains("=== RENAMES ==="));
         assert!(result.contains("old_name.txt → new_name.txt"));
     }
