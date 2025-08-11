@@ -1,12 +1,12 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
-import starlightImageZoom from 'starlight-image-zoom';
+import starlightImageZoom from "starlight-image-zoom";
 
 // https://astro.build/config
 export default defineConfig({
   site: "https://docspring.github.io",
-  base: "/",
+  base: "/refaktor",
   integrations: [
     starlight({
       title: "Refaktor",
