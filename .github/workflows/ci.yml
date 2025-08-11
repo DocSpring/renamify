@@ -114,3 +114,88 @@ jobs:
           # Downgrade half package for MSRV compatibility
           cargo update half@2.6.0 --precise 2.4.1 || true
           cargo check --all-targets
+
+  self-referential-demo:
+    name: Self-Referential Demo
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build refaktor
+        run: cargo build --release
+
+      - name: Test refaktor -> smart_search_and_replace
+        run: |
+          echo "=== Testing refaktor rename to smart_search_and_replace ==="
+          
+          # Use refaktor to rename itself
+          ./target/release/refaktor --auto-init=repo plan refaktor smart_search_and_replace
+          ./target/release/refaktor apply
+          
+          # Verify the rename worked by checking key files
+          if [ -f "refaktor-core/Cargo.toml" ]; then
+            echo "ERROR: refaktor-core/Cargo.toml still exists!"
+            exit 1
+          fi
+          if [ ! -f "smart_search_and_replace-core/Cargo.toml" ]; then
+            echo "ERROR: smart_search_and_replace-core/Cargo.toml not found!"
+            exit 1
+          fi
+          
+          # Clean and rebuild with new name
+          rm -rf target
+          cargo build --release
+          
+          # Verify the new binary exists and works
+          ./target/release/smart_search_and_replace --version
+        shell: bash
+
+      - name: Test smart_search_and_replace -> refaktor
+        run: |
+          echo "=== Testing smart_search_and_replace rename back to refaktor ==="
+          
+          # Use smart_search_and_replace to rename itself back
+          ./target/release/smart_search_and_replace plan smart_search_and_replace refaktor
+          ./target/release/smart_search_and_replace apply
+          
+          # Verify the rename worked
+          if [ -f "smart_search_and_replace-core/Cargo.toml" ]; then
+            echo "ERROR: smart_search_and_replace-core/Cargo.toml still exists!"
+            exit 1
+          fi
+          if [ ! -f "refaktor-core/Cargo.toml" ]; then
+            echo "ERROR: refaktor-core/Cargo.toml not found!"
+            exit 1
+          fi
+          
+          # Clean and rebuild with original name
+          rm -rf target
+          cargo build --release
+          
+          # Final verification
+          ./target/release/refaktor --version
+          ./target/release/refaktor --help
+        shell: bash
+
+      - name: Verify git status is clean
+        run: |
+          # The working directory should be clean after the round-trip
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "ERROR: Working directory is not clean after round-trip!"
+            git status
+            git diff
+            exit 1
+          fi
+          echo "✓ Working directory is clean - round-trip successful!"
+        shell: bash
