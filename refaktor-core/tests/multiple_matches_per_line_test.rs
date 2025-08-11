@@ -11,7 +11,7 @@ fn test_multiple_matches_per_line() {
     let test_file = root.join("test.rs");
     std::fs::write(&test_file, "let old_name = old_name + old_name; // old_name\n").unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -55,7 +55,7 @@ fn test_module_path_replacement() {
          refaktor_core::apply();\n"
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -94,7 +94,7 @@ fn test_dot_path_replacement() {
          rm -rf .refaktor\n"
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -128,7 +128,7 @@ fn test_consecutive_occurrences() {
     let test_file = root.join("test.txt");
     std::fs::write(&test_file, "old_nameold_name old_name_old_name\n").unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -143,14 +143,16 @@ fn test_consecutive_occurrences() {
     
     let plan = scan_repository(&root, "old_name", "new_name", &options).unwrap();
     
-    // Should find matches (word boundaries prevent matching inside words)
+    // Should find the compound identifier and replace ALL occurrences within it
     println!("Found {} matches", plan.stats.total_matches);
     for hunk in &plan.matches {
-        println!("Match: '{}' at col {}", hunk.before, hunk.col);
+        println!("Match: '{}' -> '{}' at col {}", hunk.before, hunk.after, hunk.col);
     }
-    // Word boundaries mean we won't match inside "old_nameold_name" or "old_name_old_name"
-    // So this test shows expected behavior - word boundaries are working
-    assert!(plan.stats.total_matches >= 0, "Word boundary detection is working");
+    
+    // Should find old_name_old_name and replace it with new_name_new_name
+    assert_eq!(plan.stats.total_matches, 1, "Should find the compound identifier");
+    assert_eq!(plan.matches[0].before, "old_name_old_name");
+    assert_eq!(plan.matches[0].after, "new_name_new_name");
 }
 
 #[test]
@@ -164,7 +166,7 @@ fn test_camel_case_variant_multiple_per_line() {
         "function getUserName(userName: string): UserName { return new UserName(userName); }\n"
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -183,13 +185,9 @@ fn test_camel_case_variant_multiple_per_line() {
     
     let plan = scan_repository(&root, "user_name", "customer_name", &options).unwrap();
     
-    // Should find getUserName, userName (twice), UserName (twice)
-    println!("Found {} matches", plan.stats.total_matches);
-    for hunk in &plan.matches {
-        println!("Match: '{}' at col {}", hunk.variant, hunk.col);
-    }
-    // getUserName is not matched as it's a different compound word
-    assert_eq!(plan.stats.total_matches, 4, "Should find userName (2x) and UserName (2x)");
+    // Should find getUserName (compound), userName (twice), UserName (twice)
+    // getUserName IS matched because it's a compound word containing userName
+    assert_eq!(plan.stats.total_matches, 5, "Should find getUserName (1x), userName (2x) and UserName (2x)");
 }
 
 #[test]
@@ -203,7 +201,7 @@ fn test_mixed_separators_on_same_line() {
         "name: user-name, path: user_name, class: UserName, var: userName\n"
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -253,7 +251,7 @@ fn test_markdown_code_blocks() {
          ```\n"
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

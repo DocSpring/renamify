@@ -27,7 +27,7 @@ struct ShouldReplacePreviewFormatPlease { }
 fn getPreviewFormatOption() -> PreviewFormatOption { }"#
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -59,11 +59,11 @@ fn getPreviewFormatOption() -> PreviewFormatOption { }"#
     // Line 5: PreviewFormatArg -> PreviewArg (twice), PreviewFormat -> Preview (twice)
     // Line 6: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
     // Line 9: ShouldReplacePreviewFormatPlease -> ShouldReplacePreviewPlease
-    // Line 10: getPreviewFormatOption -> getPreviewOption, PreviewFormatOption -> PreviewOption
+    // Line 10: PreviewFormatOption -> PreviewOption (Pascal only, not getPreviewFormatOption)
     
-    // Total: 14 replacements
-    assert_eq!(plan.stats.total_matches, 14, 
-               "Should find all compound Pascal case variants including PreviewFormatArg");
+    // Total: 11 replacements (Pascal only)
+    assert_eq!(plan.stats.total_matches, 11, 
+               "Should find all compound Pascal case variants");
     
     // Verify PreviewFormatArg is replaced with PreviewArg
     let preview_format_arg_replacements: Vec<_> = plan.matches.iter()
@@ -94,7 +94,7 @@ match preview_format_type {
 }"#
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -151,7 +151,7 @@ function setPreviewFormatType(previewFormatType) {
 }"#
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -173,11 +173,13 @@ function setPreviewFormatType(previewFormatType) {
     }
     
     // Should find and replace:
-    // previewFormatArg -> previewArg (3 times)
-    // previewFormatOption -> previewOption
-    // previewFormatType -> previewType (3 times)
+    // previewFormatArg -> previewArg (2 times on lines 1 and 2)
+    // getPreviewFormatArg -> getPreviewArg (line 1)
+    // previewFormatOption -> previewOption (line 2)
+    // setPreviewFormatType -> setPreviewType (line 3)
+    // previewFormatType -> previewType (3 times on lines 3 and 4)
     
-    assert_eq!(plan.stats.total_matches, 7, "Should find all camelCase compounds");
+    assert_eq!(plan.stats.total_matches, 8, "Should find all camelCase compounds");
     
     // Verify camelCase compounds are properly replaced
     let camel_compounds = vec![
@@ -199,6 +201,72 @@ function setPreviewFormatType(previewFormatType) {
 }
 
 #[test]
+fn test_compound_pascal_and_camel_case_replacement() {
+    // Same test as pascal-only but with both styles enabled
+    // This should find MORE matches including getPreviewFormatOption
+    
+    let temp_dir = TempDir::new().unwrap();
+    let root = temp_dir.path().to_path_buf();
+    
+    // Same test file as Pascal test
+    let test_file = root.join("main.rs");
+    std::fs::write(&test_file, 
+        r#"struct PreviewFormatArg { }
+impl From<PreviewFormatArg> for PreviewFormat {
+    fn from(arg: PreviewFormatArg) -> PreviewFormat {
+        match arg {
+            PreviewFormatArg::Table => PreviewFormat::Table,
+            PreviewFormatArg::Diff => PreviewFormat::Diff,
+        }
+    }
+}
+struct ShouldReplacePreviewFormatPlease { }
+fn getPreviewFormatOption() -> PreviewFormatOption { }"#
+    ).unwrap();
+    
+    let options = PlanOptions { exclude_match: vec![], 
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: Some(vec![refaktor_core::Style::Pascal, refaktor_core::Style::Camel]),
+        rename_files: false,
+        rename_dirs: false,
+        rename_root: false,
+        plan_out: PathBuf::from("plan.json"),
+        coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
+    };
+    
+    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    
+    println!("\n=== Compound Pascal + Camel Case Test ===");
+    println!("Total matches: {}", plan.stats.total_matches);
+    for hunk in &plan.matches {
+        println!("Line {}, Col {}: '{}' -> '{}'", 
+                 hunk.line, hunk.col, hunk.before, hunk.after);
+    }
+    
+    // Should find:
+    // Line 1: PreviewFormatArg -> PreviewArg
+    // Line 2: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview  
+    // Line 3: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
+    // Line 5: PreviewFormatArg -> PreviewArg (twice), PreviewFormat -> Preview (twice)
+    // Line 6: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
+    // Line 9: ShouldReplacePreviewFormatPlease -> ShouldReplacePreviewPlease
+    // Line 10: getPreviewFormatOption -> getPreviewOption (ADDITIONAL because Camel is included)
+    // Line 10: PreviewFormatOption -> PreviewOption
+    
+    // Total: 12 replacements (one more than Pascal-only)
+    assert_eq!(plan.stats.total_matches, 12, 
+               "Should find all compound Pascal AND Camel case variants");
+    
+    // Verify we found the camelCase function name
+    let camel_match = plan.matches.iter()
+        .find(|h| h.before == "getPreviewFormatOption");
+    assert!(camel_match.is_some(), "Should find getPreviewFormatOption when Camel style is included");
+}
+
+#[test]
 fn test_multiple_compounds_same_line() {
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
@@ -209,7 +277,7 @@ fn test_multiple_compounds_same_line() {
         "fn convert(preview_format_arg: PreviewFormatArg) -> PreviewFormatOption { }\n"
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

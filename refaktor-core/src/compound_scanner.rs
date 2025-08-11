@@ -102,6 +102,7 @@ pub fn find_enhanced_matches(
             
             let column = start - line_start;
             
+            // Add the compound match
             all_matches.push(Match {
                 file: file.to_string(),
                 line: line_number,

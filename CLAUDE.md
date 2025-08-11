@@ -195,6 +195,12 @@ Boundary rules
 - If showing apt commands, always include `-y`
 - Prefer actionable diffs and files over long explanations
 
+## Testing Guidelines
+
+- **ALWAYS use the --dry-run flag when testing the refaktor CLI** to avoid creating unwanted plan files and modifications
+- When running test commands with refaktor, use: `./target/debug/refaktor plan ... --dry-run`
+- This prevents the creation of `.refaktor/plan.json` files during testing
+
 ## UPDATE THIS FILE!
 
 Remember to update your own CLAUDE.md file with corrections and improvements while you are working.

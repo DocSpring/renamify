@@ -23,7 +23,7 @@ type PreviewFormatArg = String;
 type PreviewFormatOption = i32;"#
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -95,7 +95,7 @@ type ShouldPreviewFormatPlease = String;
 type GetPreviewFormatOption = i32;"#
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -167,7 +167,7 @@ type GetPreviewFormat = String;
 type LoadPreviewFormat = i32;"#
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -231,7 +231,7 @@ let PreviewFormat = PreviewFormat::new();
 let previewFormat = getPreviewFormat();"#
     ).unwrap();
     
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

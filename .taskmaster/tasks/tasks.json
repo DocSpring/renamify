@@ -1074,11 +1074,79 @@
         ],
         "priority": "low",
         "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Implement --exclude-match CLI option to skip specific matches",
+        "description": "Add a repeatable --exclude-match option to the plan command that filters out specific exact-text matches from both content edits and rename candidates during scanning.",
+        "details": "Scope and behavior:\n- Introduce a new repeatable CLI option --exclude-match <TEXT> on refaktor plan that allows users to specify exact match texts to be skipped from the generated plan. Matching is exact, byte-for-byte, case-sensitive, and literal (no regex/glob semantics). Multiple values are supported either by repeating the flag or via comma-separated values in a single flag instance.\n- Apply this filter to both content matches (MatchHunk.before) and rename candidates (file/dir rename source names) so excluded texts are not included in plan.json.\n- Persist the user-supplied exclude list in the plan metadata for auditability.\n\nCLI (clap 4.5) changes:\n- In the plan subcommand args (main.rs), add a Vec<String> field for exclude-match. Best practice in clap 4 is to use a Vec type to accept multiple occurrences and value_delimiter to support comma-separated lists.\n  Example (Rust):\n  #[derive(clap::Parser)]\n  struct PlanArgs {\n      // ...existing args...\n      #[arg(\n          long = \"exclude-match\",\n          value_name = \"TEXT\",\n          num_args = 1..,\n          value_delimiter = ','.into(),\n          help = \"Skip matches whose exact text equals any provided value; repeatable or comma-separated\"\n      )]\n      exclude_match: Vec<String>,\n  }\n- Thread this vector into PlanOptions (see below) when invoking the scanning/planning API.\n\nCore API changes (scanner/plan generator):\n- Extend PlanOptions to carry the new setting:\n  pub struct PlanOptions {\n      // existing fields...\n      pub exclude_matches: Vec<String>,\n  }\n- Optionally, record the list in Plan for traceability (add a new optional field):\n  pub struct Plan { /* existing fields... */ pub excluded_matches: Option<Vec<String>>, }\n  This is a backward-compatible additive field. If you prefer not to touch Plan, you may omit storing it, but including it improves debuggability.\n\nFiltering logic (fast path and minimal allocations):\n- At the start of the scan, construct a HashSet<String> (or FxHashSet if crate is in use) from options.exclude_matches, after trimming surrounding whitespace and deduplicating. Reject empty strings.\n- Content matches: Prior to pushing a MatchHunk into plan.matches, compare the candidate hunk.before against the set; if present, skip emitting the hunk.\n- Rename candidates: When computing renames for files/dirs, derive the source name string used for the style-based transformation (typically the basename for files and the directory name for dirs). If that source equals any excluded string, skip emitting that Rename entry. Do not attempt partial/path-segment matching beyond the style source name; keep semantics predictable and literal.\n- Performance: The check is O(1) with a HashSet; place it on the hot path right before pushing results. Avoid cloning strings unnecessarily; compare &str against the set by interning the set as String and comparing via &str.\n\nEdge cases and considerations:\n- Exact, literal semantics only. No wildcard/regex. Document this clearly in the help text.\n- Case sensitivity: matches must equal exactly; do not normalize case or Unicode. Document this.\n- Interaction with includes/excludes and ignore levels: apply include/exclude globs and ignore handling first, then apply exclude-match filtering to the resulting candidate matches.\n- Styles interaction: The excluded text is compared against the hunk.before, which is the text as found. If the user wants to exclude multiple style variants, they must pass each explicitly.\n- Plan versioning: Adding an optional field to Plan is backward-compatible; keep version as-is if consumers tolerate additive fields. If consumers are strict, gate the field behind a feature flag or skip storing it in Plan.\n- Help and UX: Update --help for plan to describe the new option with examples, including repetition and comma-separated usage.\n\nExample usage:\n- refaktor plan foo bar --exclude-match bazFooQux\n- refaktor plan foo bar --exclude-match bazFooQux --exclude-match quux\n- refaktor plan foo bar --exclude-match bazFooQux,quux\n",
+        "testStrategy": "Unit tests (Rust):\n- Parser tests (clap): Use clap::Command::debug_assert to ensure arg shape; confirm that repeated flags and comma-separated values parse into Vec<String> correctly and reject empty strings.\n- Options propagation: A unit test that constructs PlanArgs with multiple exclude-match values and verifies PlanOptions.exclude_matches receives them intact.\n\nScanner/Planner tests:\n- Content match filtering: In a temp repo, create files containing: \"foo\", \"bazFooQux\", \"Foo\", \"bazfooqux\". Run plan for old=foo new=bar with styles that would match the variants you support. Assert that without exclude-match, a hunk exists for \"bazFooQux\"; with --exclude-match bazFooQux, that hunk is absent while other foo-derived matches remain.\n- Rename filtering: Create files or dirs named bazFooQux that would be scheduled for rename under the same plan. Assert the rename is suppressed when excluded.\n- Mixed values: Provide multiple exclude values via repeated flags and via comma-separated in a single flag; ensure both are honored and duplicates do not cause issues.\n- Non-match stability: Provide an exclude value that does not occur; ensure plan output is unchanged relative to baseline.\n- Performance sanity: On a generated directory with many matches, ensure enabling exclude-match with a small set does not meaningfully regress scan time (>5% tolerance) compared to baseline (coarse-grained assertion).\n\nCLI integration tests (assert_cmd + assert_fs):\n- Help text includes the new option and documents the semantics and examples.\n- End-to-end: Run refaktor plan ... --exclude-match bazFooQux and verify plan.json contains no matches whose before equals \"bazFooQux\" and, if rename flags are on, no rename entries for that source name.\n- Apply pass-through: Execute refaktor apply on the produced plan and confirm that files previously containing bazFooQux remain unchanged while other matches are applied.\n\nRegression tests:\n- Ensure behavior is unaffected when the flag is omitted.\n- Verify interaction with existing include/exclude globs and ignore levels remains correct (e.g., using the fixtures from ignore handling tests; the exclude-match filtering should not re-include ignored paths).",
+        "status": "in-progress",
+        "dependencies": [
+          7,
+          4
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add --exclude-match option to CLI",
+            "description": "Introduce a repeatable --exclude-match <TEXT> option to the refaktor plan command, allowing users to specify exact match texts to be skipped from the generated plan.",
+            "dependencies": [],
+            "details": "Implement the --exclude-match option in the CLI using clap 4.5. Ensure it supports multiple values either by repeating the flag or via comma-separated values in a single flag instance. Update the help text to clearly document the exact, case-sensitive, and literal matching semantics.",
+            "status": "pending",
+            "testStrategy": "Write unit tests to verify that the --exclude-match option is correctly parsed and that multiple occurrences and comma-separated values are handled appropriately."
+          },
+          {
+            "id": 2,
+            "title": "Extend PlanOptions to include exclude_matches",
+            "description": "Modify the PlanOptions struct to carry the new exclude_matches setting, enabling the core API to recognize and utilize the exclusion list.",
+            "dependencies": [
+              "18.1"
+            ],
+            "details": "Add a Vec<String> field named exclude_matches to the PlanOptions struct. Ensure that this field is properly initialized and accessible throughout the planning process.",
+            "status": "pending",
+            "testStrategy": "Develop unit tests to confirm that the exclude_matches field is correctly populated and accessible within the PlanOptions struct."
+          },
+          {
+            "id": 3,
+            "title": "Implement filtering logic for content matches and rename candidates",
+            "description": "Develop the logic to filter out matches and rename candidates based on the exclude_matches list, ensuring that excluded texts are not included in plan.json.",
+            "dependencies": [
+              "18.2"
+            ],
+            "details": "Construct a HashSet<String> from the exclude_matches list, trimming surrounding whitespace and deduplicating entries. For content matches, compare each MatchHunk.before against the set and skip emitting the hunk if a match is found. For rename candidates, compare the source name string used for the style-based transformation against the set and skip emitting the Rename entry if a match is found.",
+            "status": "pending",
+            "testStrategy": "Create unit tests to verify that matches and rename candidates containing excluded texts are correctly filtered out and not included in the generated plan.json."
+          },
+          {
+            "id": 4,
+            "title": "Persist exclude_matches list in plan metadata",
+            "description": "Record the user-supplied exclude_matches list in the plan metadata for auditability and traceability.",
+            "dependencies": [
+              "18.2"
+            ],
+            "details": "Add an optional field named excluded_matches to the Plan struct to store the exclude_matches list. Ensure that this field is populated when the exclude_matches option is used and remains backward-compatible.",
+            "status": "pending",
+            "testStrategy": "Write unit tests to confirm that the excluded_matches field is correctly populated in the Plan struct and that the plan remains backward-compatible when the field is absent."
+          },
+          {
+            "id": 5,
+            "title": "Update documentation and help text",
+            "description": "Revise the CLI help text and documentation to include information about the new --exclude-match option, its usage, and examples.",
+            "dependencies": [
+              "18.1"
+            ],
+            "details": "Update the --help output for the refaktor plan command to describe the new --exclude-match option, including its exact, case-sensitive, and literal matching semantics. Provide examples demonstrating the use of repeated flags and comma-separated values.",
+            "status": "pending",
+            "testStrategy": "Conduct manual testing to ensure that the updated help text and documentation accurately describe the --exclude-match option and provide clear usage examples."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T05:37:02.546Z",
+      "updated": "2025-08-11T09:57:39.471Z",
       "description": "Tasks for master context"
     }
   }

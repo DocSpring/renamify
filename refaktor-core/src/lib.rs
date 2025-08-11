@@ -11,6 +11,7 @@ pub mod coercion;
 pub mod compound_matcher;
 pub mod compound_scanner;
 pub mod history;
+pub mod lock;
 pub mod pattern;
 pub mod preview;
 pub mod rename;
@@ -24,6 +25,7 @@ pub use case_model::{
 pub use history::{
     create_history_entry, format_history, get_status, History, HistoryEntry, StatusInfo,
 };
+pub use lock::LockFile;
 pub use pattern::{build_pattern, find_matches, is_boundary, Match, MatchPattern};
 pub use preview::{render_plan, write_preview, PreviewFormat};
 pub use rename::{

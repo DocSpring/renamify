@@ -43,7 +43,8 @@ pub fn detect_style(s: &str) -> Option<Style> {
 
     let has_underscore = s.contains('_');
     let has_hyphen = s.contains('-');
-    let has_dot = s.contains('.');
+    // Only consider it dot style if the dot is in the middle, not at the start
+    let has_dot = s.contains('.') && !s.starts_with('.');
     let has_space = s.contains(' ');
     let has_upper = s.bytes().any(|b| b.is_ascii_uppercase());
     let has_lower = s.bytes().any(|b| b.is_ascii_lowercase());
@@ -253,15 +254,56 @@ pub fn generate_variant_map(
     let new_tokens = parse_to_tokens(new);
 
     let mut map = BTreeMap::new();
+    
+    // Detect the original pattern's style
+    let original_style = detect_style(old);
+    
+    // Check if the original pattern should be included
+    let include_original = if let Some(orig_style) = original_style {
+        // If we have explicit styles, only include original if its style is in the list
+        styles.iter().any(|&s| s == orig_style)
+    } else {
+        // If original style can't be detected, include it anyway (backwards compat)
+        true
+    };
+
+    // Add the original pattern if its style is not excluded
+    if include_original {
+        map.insert(old.to_string(), new.to_string());
+    }
 
     for style in styles {
         let old_variant = to_style(&old_tokens, *style);
         let new_variant = to_style(&new_tokens, *style);
-        map.insert(old_variant, new_variant);
+        
+        // Skip if this variant is the same as the original (to avoid duplicates)
+        if old_variant != old {
+            map.insert(old_variant, new_variant);
+        }
     }
 
-    map.insert(old.to_lowercase(), new.to_lowercase());
-    map.insert(old.to_uppercase(), new.to_uppercase());
+    // Add case variants (lowercase and uppercase) but only if:
+    // 1. They're different from the original
+    // 2. They're not already in the map
+    // 3. The original is included (or they're genuinely different)
+    let lower_old = old.to_lowercase();
+    let upper_old = old.to_uppercase();
+    
+    // Only add lowercase if it's different from original AND (original is included OR it's actually different)
+    if lower_old != old && !map.contains_key(&lower_old) {
+        map.insert(lower_old, new.to_lowercase());
+    } else if lower_old == old && include_original && !map.contains_key(&lower_old) {
+        // If lowercase IS the original, only add it if we're including the original
+        map.insert(lower_old, new.to_lowercase());
+    }
+    
+    // Only add uppercase if it's different from original AND not already in map
+    if upper_old != old && !map.contains_key(&upper_old) {
+        map.insert(upper_old, new.to_uppercase());
+    } else if upper_old == old && include_original && !map.contains_key(&upper_old) {
+        // If uppercase IS the original, only add it if we're including the original
+        map.insert(upper_old, new.to_uppercase());
+    }
 
     map
 }
@@ -455,6 +497,43 @@ mod tests {
         assert_eq!(map.get("Old Name"), Some(&"New Name".to_string()));
         assert_eq!(map.get("old.name"), Some(&"new.name".to_string()));
         assert!(!map.contains_key("old-name"));
+        // Original camelCase pattern should NOT be included since Camel is not in styles
+        assert!(!map.contains_key("oldName"));
+    }
+    
+    #[test]
+    fn test_variant_map_excludes_original_style() {
+        // Test excluding snake_case when the original is snake_case
+        let styles = vec![Style::Camel, Style::Pascal, Style::Kebab];
+        let map = generate_variant_map("old_name", "new_name", Some(&styles));
+        
+        // Debug: print the map
+        eprintln!("Map with excluded Snake style:");
+        for (k, v) in &map {
+            eprintln!("  '{}' -> '{}'", k, v);
+        }
+        
+        // Should NOT include the original snake_case since Snake is not in styles
+        assert!(!map.contains_key("old_name"), "Map should not contain 'old_name' when Snake is excluded");
+        
+        // Should include the other styles
+        assert_eq!(map.get("oldName"), Some(&"newName".to_string()));
+        assert_eq!(map.get("OldName"), Some(&"NewName".to_string()));
+        assert_eq!(map.get("old-name"), Some(&"new-name".to_string()));
+        
+        // Case variants should still be there if different
+        assert_eq!(map.get("OLD_NAME"), Some(&"NEW_NAME".to_string()));
+    }
+    
+    #[test]
+    fn test_variant_map_includes_original_when_style_present() {
+        // Test that original is included when its style IS in the list
+        let styles = vec![Style::Snake, Style::Camel];
+        let map = generate_variant_map("old_name", "new_name", Some(&styles));
+        
+        // Should include the original since Snake is in styles
+        assert_eq!(map.get("old_name"), Some(&"new_name".to_string()));
+        assert_eq!(map.get("oldName"), Some(&"newName".to_string()));
     }
 
     #[test]

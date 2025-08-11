@@ -85,7 +85,9 @@ refaktor plan <OLD> <NEW> [OPTIONS]
 - `--exclude <PATTERNS>` - Skip files matching these glob patterns (comma-separated)
 - `--no-rename-files` - Don't rename matching files
 - `--no-rename-dirs` - Don't rename matching directories
-- `--styles <STYLES>` - Specify which case styles to use (comma-separated: snake,kebab,camel,pascal,screaming-snake,title,train,dot)
+- `--exclude-styles <STYLES>` - Exclude specific case styles from the default set (comma-separated: snake,kebab,camel,pascal,screaming-snake)
+- `--include-styles <STYLES>` - Add additional case styles to the active set (comma-separated: title,train,dot)
+- `--only-styles <STYLES>` - Use only these case styles, ignoring defaults (comma-separated: any combination)
 - `--preview-format <FORMAT>` - Output format: table (default), diff, json
 - `--plan-out <PATH>` - Where to save the plan (default: .refaktor/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
@@ -155,7 +157,9 @@ refaktor rename <OLD> <NEW> [OPTIONS]
 - `--exclude <PATTERNS>` - Skip files matching these glob patterns
 - `--no-rename-files` - Don't rename matching files
 - `--no-rename-dirs` - Don't rename matching directories
-- `--styles <STYLES>` - Specify which case styles to use (comma-separated)
+- `--exclude-styles <STYLES>` - Exclude specific case styles from the default set (comma-separated)
+- `--include-styles <STYLES>` - Add additional case styles to the active set (comma-separated)
+- `--only-styles <STYLES>` - Use only these case styles, ignoring defaults (comma-separated)
 - `--preview <FORMAT>` - Show preview before confirmation (table, diff, json)
 - `--commit` - Create a git commit after applying changes
 - `--large` - Acknowledge large changes (>500 files or >100 renames)
@@ -552,6 +556,12 @@ Refaktor works with any text file. Binary files are automatically detected and s
 - Maximum file size: Limited by available memory for pattern matching
 - Path length: OS-dependent (260 chars on Windows without long path support)
 - Number of files: No hard limit, but plans with >10,000 files may be slow
+
+### Why "Refaktor"?
+
+- Looks cool
+- Pronounced the same as "refactor"
+- The name of the tool explains exactly what it does
 
 ---
 

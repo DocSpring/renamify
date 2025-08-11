@@ -50,14 +50,23 @@ fn test_plan_command_with_styles() {
     let test_file = temp_dir.child("test.rs");
     test_file.write_str("fn oldName() { let old_name = 42; }").unwrap();
     
+    // Test excluding styles (exclude kebab and pascal, keeping snake and camel)
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old-name", "new-name", "--styles", "snake,camel", "--dry-run"])
+        .args(["plan", "old-name", "new-name", "--exclude-styles", "kebab,pascal,screaming-snake", "--dry-run"])
         .assert()
         .success()
         .stdout(predicate::str::contains("test.rs"))
         .stdout(predicate::str::contains("old_name"))
         .stdout(predicate::str::contains("oldName"));
+    
+    // Test including additional styles
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["plan", "old-name", "new-name", "--include-styles", "title,train", "--dry-run"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("test.rs"));
 }
 
 #[test]
@@ -733,16 +742,13 @@ fn test_rename_command_basic() {
     let updated_content = std::fs::read_to_string(temp_dir.path().join("test.txt")).unwrap();
     assert!(updated_content.contains("new_name"));
     
-    // Check if old_name still exists (it should not, except in "test_old_name")
+    // Check that all old_name occurrences are replaced, including compounds
     let old_name_count = updated_content.matches("old_name").count();
-    let test_old_name_count = updated_content.matches("test_old_name").count();
+    assert_eq!(old_name_count, 0, "All old_name occurrences should be replaced");
     
-    // If old_name appears, it should only be as part of "test_old_name"
-    assert_eq!(old_name_count, test_old_name_count);
-    
-    // Should have replaced both "old_name" occurrences but left "test_old_name" untouched
-    assert_eq!(updated_content.matches("new_name").count(), 2);
-    assert!(updated_content.contains("test_old_name")); // This should be unchanged
+    // Should have replaced all occurrences: 2 standalone + 1 in test_old_name = 3 total
+    assert_eq!(updated_content.matches("new_name").count(), 3);
+    assert!(updated_content.contains("test_new_name")); // Compound should be updated
 }
 
 #[test]
@@ -794,7 +800,7 @@ fn test_rename_command_with_file_rename() {
     assert!(renamed_file_content.contains("content with new_name"));
     
     let test_file_content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
-    assert!(test_file_content.contains("fn test_old_name()")); // Should be unchanged
+    assert!(test_file_content.contains("fn test_new_name()")); // Compound should be updated
 }
 
 #[test]

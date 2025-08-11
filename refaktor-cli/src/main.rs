@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use refaktor_core::{
     apply_plan, ApplyOptions, Plan, PlanOptions, PreviewFormat, scan_repository, write_plan, 
     write_preview, Style, History, format_history, get_status, undo_refactoring, redo_refactoring,
+    LockFile,
 };
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
@@ -72,9 +73,21 @@ enum Commands {
         #[arg(long = "no-rename-dirs")]
         no_rename_dirs: bool,
 
-        /// Naming styles to use
-        #[arg(long, value_enum, value_delimiter = ',')]
-        styles: Vec<StyleArg>,
+        /// Case styles to exclude from the default set (snake, kebab, camel, pascal, screaming-snake)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with = "only_styles")]
+        exclude_styles: Vec<StyleArg>,
+
+        /// Additional case styles to include (title, train, dot)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with = "only_styles")]
+        include_styles: Vec<StyleArg>,
+
+        /// Use only these case styles (overrides defaults)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
+        only_styles: Vec<StyleArg>,
+
+        /// Specific matches to exclude (e.g., compound words to ignore)
+        #[arg(long, value_delimiter = ',')]
+        exclude_match: Vec<String>,
 
         /// Preview output format
         #[arg(long, value_enum, default_value = "table")]
@@ -162,9 +175,21 @@ enum Commands {
         #[arg(long = "no-rename-dirs")]
         no_rename_dirs: bool,
 
-        /// Naming styles to use
-        #[arg(long, value_enum, value_delimiter = ',')]
-        styles: Vec<StyleArg>,
+        /// Case styles to exclude from the default set (snake, kebab, camel, pascal, screaming-snake)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with = "only_styles")]
+        exclude_styles: Vec<StyleArg>,
+
+        /// Additional case styles to include (title, train, dot)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with = "only_styles")]
+        include_styles: Vec<StyleArg>,
+
+        /// Use only these case styles (overrides defaults)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
+        only_styles: Vec<StyleArg>,
+
+        /// Specific matches to exclude (e.g., compound words to ignore)
+        #[arg(long, value_delimiter = ',')]
+        exclude_match: Vec<String>,
 
         /// Preview output format
         #[arg(long, value_enum, default_value = "table")]
@@ -214,9 +239,21 @@ enum Commands {
         #[arg(long = "no-rename-dirs")]
         no_rename_dirs: bool,
 
-        /// Naming styles to use
-        #[arg(long, value_enum, value_delimiter = ',')]
-        styles: Vec<StyleArg>,
+        /// Case styles to exclude from the default set (snake, kebab, camel, pascal, screaming-snake)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with = "only_styles")]
+        exclude_styles: Vec<StyleArg>,
+
+        /// Additional case styles to include (title, train, dot)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with = "only_styles")]
+        include_styles: Vec<StyleArg>,
+
+        /// Use only these case styles (overrides defaults)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
+        only_styles: Vec<StyleArg>,
+
+        /// Specific matches to exclude (e.g., compound words to ignore)
+        #[arg(long, value_delimiter = ',')]
+        exclude_match: Vec<String>,
 
         /// Show preview before confirmation prompt
         #[arg(long, value_enum)]
@@ -252,7 +289,7 @@ enum Commands {
     },
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, ValueEnum)]
 enum StyleArg {
     Snake,
     Kebab,
@@ -262,6 +299,15 @@ enum StyleArg {
     Title,
     Train,
     Dot,
+}
+
+impl StyleArg {
+    /// Returns all available style arguments
+    /// Using a match ensures we don't miss any variants at compile time
+    fn all() -> Vec<Self> {
+        use StyleArg::*;
+        vec![Snake, Kebab, Camel, Pascal, ScreamingSnake, Title, Train, Dot]
+    }
 }
 
 impl From<StyleArg> for Style {
@@ -331,7 +377,10 @@ fn main() {
             respect_gitignore,
             no_rename_files,
             no_rename_dirs,
-            styles,
+            exclude_styles,
+            include_styles,
+            only_styles,
+            exclude_match,
             preview_format,
             plan_out,
             dry_run,
@@ -344,7 +393,10 @@ fn main() {
             cli.unrestricted,
             !no_rename_files,
             !no_rename_dirs,
-            styles,
+            exclude_styles,
+            include_styles,
+            only_styles,
+            exclude_match,
             preview_format.into(),
             plan_out,
             dry_run,
@@ -359,7 +411,10 @@ fn main() {
             respect_gitignore,
             no_rename_files,
             no_rename_dirs,
-            styles,
+            exclude_styles,
+            include_styles,
+            only_styles,
+            exclude_match,
             preview_format,
         } => handle_plan(
             &old,
@@ -370,7 +425,10 @@ fn main() {
             cli.unrestricted,
             !no_rename_files,
             !no_rename_dirs,
-            styles,
+            exclude_styles,
+            include_styles,
+            only_styles,
+            exclude_match,
             preview_format.into(),
             PathBuf::from(".refaktor/plan.json"),
             true, // Always dry-run
@@ -418,7 +476,10 @@ fn main() {
             exclude,
             no_rename_files,
             no_rename_dirs,
-            styles,
+            exclude_styles,
+            include_styles,
+            only_styles,
+            exclude_match,
             preview,
             commit,
             large,
@@ -435,7 +496,10 @@ fn main() {
             cli.unrestricted,
             !no_rename_files,
             !no_rename_dirs,
-            styles,
+            exclude_styles,
+            include_styles,
+            only_styles,
+            exclude_match,
             preview,
             commit,
             large,
@@ -477,18 +541,57 @@ fn handle_plan(
     unrestricted: u8,
     rename_files: bool,
     rename_dirs: bool,
-    styles: Vec<StyleArg>,
+    exclude_styles: Vec<StyleArg>,
+    include_styles: Vec<StyleArg>,
+    only_styles: Vec<StyleArg>,
+    exclude_match: Vec<String>,
     preview_format: PreviewFormat,
     plan_out: PathBuf,
     dry_run: bool,
     use_color: bool,
 ) -> Result<()> {
     let root = std::env::current_dir().context("Failed to get current directory")?;
+    
+    // Acquire lock
+    let refaktor_dir = root.join(".refaktor");
+    let _lock = LockFile::acquire(&refaktor_dir)
+        .context("Failed to acquire lock for refaktor operation")?;
 
-    let styles = if styles.is_empty() {
-        None
-    } else {
-        Some(styles.into_iter().map(Into::into).collect())
+    // Build the list of styles to use based on exclude, include, and only options
+    let styles = {
+        if !only_styles.is_empty() {
+            // If --only-styles is specified, use only those styles
+            Some(only_styles.into_iter().map(Into::into).collect())
+        } else {
+            // Start with the default styles
+            let default_styles = vec![
+                StyleArg::Snake,
+                StyleArg::Kebab,
+                StyleArg::Camel,
+                StyleArg::Pascal,
+                StyleArg::ScreamingSnake,
+            ];
+            
+            // Remove excluded styles from defaults
+            let mut active_styles: Vec<StyleArg> = default_styles
+                .into_iter()
+                .filter(|s| !exclude_styles.contains(s))
+                .collect();
+            
+            // Add included styles (Title, Train, Dot)
+            for style in include_styles {
+                if !active_styles.contains(&style) {
+                    active_styles.push(style);
+                }
+            }
+            
+            if active_styles.is_empty() {
+                eprintln!("Warning: All styles have been excluded, using default styles");
+                None  // Use default styles
+            } else {
+                Some(active_styles.into_iter().map(Into::into).collect())
+            }
+        }
     };
 
     let options = PlanOptions {
@@ -502,6 +605,7 @@ fn handle_plan(
         rename_root: false,  // Default: do not allow root directory renames in plan
         plan_out: plan_out.clone(),
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,  // TODO: make configurable
+        exclude_match,
     };
 
     // Scan the repository
@@ -548,6 +652,13 @@ fn handle_apply(
     commit: bool,
     force_with_conflicts: bool,
 ) -> Result<()> {
+    let root = std::env::current_dir().context("Failed to get current directory")?;
+    
+    // Acquire lock
+    let refaktor_dir = root.join(".refaktor");
+    let _lock = LockFile::acquire(&refaktor_dir)
+        .context("Failed to acquire lock for refaktor operation")?;
+    
     // Determine which plan to load
     let plan_path = if let Some(path) = plan_path {
         path

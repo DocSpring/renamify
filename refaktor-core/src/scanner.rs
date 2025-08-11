@@ -27,6 +27,7 @@ pub struct PlanOptions {
     pub rename_root: bool,        // Allow renaming the root directory
     pub plan_out: PathBuf,
     pub coerce_separators: CoercionMode,
+    pub exclude_match: Vec<String>,  // Specific matches to exclude
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -56,6 +57,7 @@ impl Default for PlanOptions {
             rename_root: false,       // Default: do not rename root directory
             plan_out: PathBuf::from(".refaktor/plan.json"),
             coerce_separators: CoercionMode::Auto,
+            exclude_match: vec![],
         }
     }
 }
@@ -177,11 +179,8 @@ pub fn scan_repository(
                 continue;
             }
 
-            // First pass: Fast regex for exact matches
-            let mut file_matches = find_matches(&pattern, &content, path.to_str().unwrap_or(""));
-            
-            // Second pass: Find compound matches
-            let compound_matches = crate::compound_scanner::find_enhanced_matches(
+            // Only use compound scanner (which also finds exact matches)
+            let mut file_matches = crate::compound_scanner::find_enhanced_matches(
                 &content,
                 path.to_str().unwrap_or(""),
                 old,
@@ -195,20 +194,6 @@ pub fn scan_repository(
                     Style::ScreamingSnake,
                 ]),
             );
-            
-            // Filter compound matches to only include those not already found
-            let exact_positions: std::collections::HashSet<_> = file_matches
-                .iter()
-                .map(|m| m.start)
-                .collect();
-            
-            let unique_compound_matches: Vec<_> = compound_matches
-                .into_iter()
-                .filter(|m| !exact_positions.contains(&m.start))
-                .collect();
-            
-            // Combine both sets of matches
-            file_matches.extend(unique_compound_matches);
             
             if !file_matches.is_empty() {
                 // Sort by position to maintain order
@@ -311,6 +296,11 @@ fn generate_hunks(
     let mut hunks = Vec::new();
 
     for m in matches {
+        // Check if this match should be excluded
+        if options.exclude_match.contains(&m.variant) || options.exclude_match.contains(&m.text) {
+            continue;
+        }
+        
         let line_idx = m.line.saturating_sub(1);
         if line_idx >= lines.len() {
             continue;
@@ -350,15 +340,27 @@ fn generate_hunks(
         let line_before = line_string.trim_end().to_string();
         
         // Create the after line by replacing the variant in the original line
-        let line_after = if let Some(match_pos) = line_string.find(&before) {
+        // Use the column position from the match to ensure we replace the right occurrence
+        let match_col = m.column;
+        let line_after = if match_col < line_string.len() && 
+                           line_string[match_col..].starts_with(&before) {
             let mut after_line = String::new();
-            after_line.push_str(&line_string[..match_pos]);
+            after_line.push_str(&line_string[..match_col]);
             after_line.push_str(&after);
-            after_line.push_str(&line_string[match_pos + before.len()..]);
+            after_line.push_str(&line_string[match_col + before.len()..]);
             after_line.trim_end().to_string()
         } else {
-            // Fallback to original line if we can't find the match (shouldn't happen)
-            line_before.clone()
+            // Fallback: try to find the match in the line
+            if let Some(match_pos) = line_string.find(&before) {
+                let mut after_line = String::new();
+                after_line.push_str(&line_string[..match_pos]);
+                after_line.push_str(&after);
+                after_line.push_str(&line_string[match_pos + before.len()..]);
+                after_line.trim_end().to_string()
+            } else {
+                // Could not find the match in the line - this shouldn't happen
+                line_before.clone()
+            }
         };
 
         hunks.push(MatchHunk {

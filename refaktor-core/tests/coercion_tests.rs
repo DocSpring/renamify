@@ -103,7 +103,7 @@ fn test_end_to_end_coercion_with_files() {
     fs::create_dir(temp_dir.path().join("refaktor-plugins")).unwrap();
     fs::create_dir(temp_dir.path().join("refaktor_tests")).unwrap();
 
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -177,7 +177,7 @@ fn test_coercion_disabled() {
     
     fs::write(temp_dir.path().join("refaktor-core.rs"), "test").unwrap();
 
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -226,7 +226,7 @@ let refaktor-service = RefaktorService::new();
 let config = refaktor.config.load();
 "#).unwrap();
 
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -237,7 +237,7 @@ let config = refaktor.config.load();
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
-    };
+        };
 
     let plan = scan_repository(
         temp_dir.path(),
@@ -304,7 +304,7 @@ let binary = "refaktor-v1.2.3-beta.tar.gz";
 let regex_pattern = r"refaktor[_-](\w+)";
 "#).unwrap();
 
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -315,7 +315,7 @@ let regex_pattern = r"refaktor[_-](\w+)";
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
-    };
+        };
 
     let plan = scan_repository(
         temp_dir.path(),
@@ -377,7 +377,7 @@ let module = refaktor::scanner::scan();
 let nested = refaktor::core::pattern::Match;
 "#).unwrap();
 
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -388,7 +388,7 @@ let nested = refaktor::core::pattern::Match;
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
-    };
+        };
 
     let plan = scan_repository(
         temp_dir.path(),
@@ -422,7 +422,7 @@ let weird3 = refaktor.some-weird_MIX;
 let snake_case_var = refaktor_core; let camelVar = refaktorService;
 "#).unwrap();
 
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -433,7 +433,7 @@ let snake_case_var = refaktor_core; let camelVar = refaktorService;
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
-    };
+        };
 
     let plan = scan_repository(
         temp_dir.path(),
@@ -445,9 +445,17 @@ let snake_case_var = refaktor_core; let camelVar = refaktorService;
     // All matches should still do replacement, even if coercion is skipped
     assert!(!plan.matches.is_empty());
     
-    // Every match should have the basic replacement
+    // Every match should have the replacement in an appropriate style
     for m in &plan.matches {
-        assert!(m.after.contains("smart_search_and_replace") || m.after.contains("smart-search-and-replace"));
+        // The replacement should contain the new pattern in some form
+        let after_lower = m.after.to_lowercase();
+        assert!(
+            after_lower.contains("smartsearchandreplace") || 
+            after_lower.contains("smart_search_and_replace") || 
+            after_lower.contains("smart-search-and-replace"),
+            "Expected replacement to contain new pattern, got: {}",
+            m.after
+        );
     }
 }
 
@@ -485,7 +493,7 @@ version = "0.1.0"
 refaktor = { path = "../refaktor" }
 "#).unwrap();
 
-    let options = PlanOptions {
+    let options = PlanOptions { exclude_match: vec![], 
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -496,7 +504,7 @@ refaktor = { path = "../refaktor" }
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
-    };
+        };
 
     let plan = scan_repository(
         temp_dir.path(),

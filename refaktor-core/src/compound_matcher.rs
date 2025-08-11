@@ -59,40 +59,62 @@ pub fn find_compound_variants(
         return matches; // Pattern is longer than identifier, can't be a compound
     }
     
-    // Sliding window to find the pattern within the identifier
-    for start_pos in 0..=(identifier_len - pattern_len) {
-        let end_pos = start_pos + pattern_len;
-        let window = &identifier_tokens.tokens[start_pos..end_pos];
+    // Find ALL occurrences of the pattern and replace them all
+    let mut replacement_tokens = identifier_tokens.tokens.clone();
+    let mut replacements_made = 0;
+    let mut pos = 0;
+    
+    while pos <= replacement_tokens.len().saturating_sub(pattern_len) {
+        let window = &replacement_tokens[pos..pos + pattern_len];
         
         if tokens_match(window, &old_tokens.tokens) {
-            // Found the pattern! Now construct the replacement
-            let mut replacement_tokens = Vec::new();
+            // Found a match! Replace these tokens with the new pattern
+            let mut new_tokens_adjusted = Vec::new();
             
-            // Add tokens before the pattern
-            replacement_tokens.extend_from_slice(&identifier_tokens.tokens[..start_pos]);
-            
-            // Add the new pattern tokens
-            replacement_tokens.extend_from_slice(&new_tokens.tokens);
-            
-            // Add tokens after the pattern
-            replacement_tokens.extend_from_slice(&identifier_tokens.tokens[end_pos..]);
-            
-            // Detect the style of the original identifier
-            if let Some(style) = crate::case_model::detect_style(identifier) {
-                // Check if this style is in our target styles
-                if styles.contains(&style) {
-                    // Convert the replacement tokens to the same style
-                    let replacement_model = TokenModel::new(replacement_tokens);
-                    let replacement = to_style(&replacement_model, style);
-                    
-                    matches.push(CompoundMatch {
-                        full_identifier: identifier.to_string(),
-                        replacement,
-                        style,
-                        pattern_start: start_pos,
-                        pattern_end: end_pos,
-                    });
+            // Preserve case from the original tokens
+            for (i, new_token) in new_tokens.tokens.iter().enumerate() {
+                if i < window.len() && window[i].text.chars().next().map_or(false, |c| c.is_uppercase()) {
+                    // Original token started with uppercase, preserve it
+                    let mut adjusted_token = Token::new(new_token.text.clone());
+                    if let Some(first_char) = adjusted_token.text.chars().next() {
+                        adjusted_token.text = first_char.to_uppercase().to_string() + &adjusted_token.text[1..];
+                    }
+                    new_tokens_adjusted.push(adjusted_token);
+                } else {
+                    new_tokens_adjusted.push(new_token.clone());
                 }
+            }
+            
+            // Replace the tokens at this position
+            replacement_tokens.splice(pos..pos + pattern_len, new_tokens_adjusted.clone());
+            replacements_made += 1;
+            
+            // Move position forward by the length of the replacement
+            pos += new_tokens.tokens.len();
+        } else {
+            pos += 1;
+        }
+    }
+    
+    // If we made any replacements, create the compound match
+    if replacements_made > 0 {
+        // Detect the style of the original identifier
+        if let Some(style) = crate::case_model::detect_style(identifier) {
+            // Identifier detected with style and replacements made
+            // Check if this style is in our target styles
+            if styles.contains(&style) {
+                // Convert the replacement tokens to the same style
+                let replacement_model = TokenModel::new(replacement_tokens.clone());
+                let replacement = to_style(&replacement_model, style);
+                // Successfully created replacement in same style
+                
+                matches.push(CompoundMatch {
+                    full_identifier: identifier.to_string(),
+                    replacement,
+                    style,
+                    pattern_start: 0, // Not meaningful when we have multiple replacements
+                    pattern_end: 0,   // Not meaningful when we have multiple replacements
+                });
             }
         }
     }
@@ -193,5 +215,35 @@ mod tests {
         );
         
         assert_eq!(matches.len(), 0);
+    }
+    
+    #[test]
+    fn test_multiple_occurrences_in_single_identifier() {
+        let styles = vec![Style::Snake];
+        let matches = find_compound_variants(
+            "old_name_old_name",
+            "old_name",
+            "new_name",
+            &styles,
+        );
+        
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].full_identifier, "old_name_old_name");
+        assert_eq!(matches[0].replacement, "new_name_new_name");
+    }
+    
+    #[test]
+    fn test_multiple_occurrences_camel_case() {
+        let styles = vec![Style::Camel];
+        let matches = find_compound_variants(
+            "oldNameAndOldName",
+            "old_name",
+            "new_name",
+            &styles,
+        );
+        
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].full_identifier, "oldNameAndOldName");
+        assert_eq!(matches[0].replacement, "newNameAndNewName");
     }
 }

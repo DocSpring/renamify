@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use refaktor_core::{
-    apply_plan, ApplyOptions, Plan, PlanOptions, scan_repository, History,
+    apply_plan, ApplyOptions, Plan, PlanOptions, scan_repository, History, LockFile,
 };
 use std::collections::HashMap;
 use std::fs;
@@ -17,7 +17,10 @@ pub fn handle_rename(
     unrestricted: u8,
     rename_files: bool,
     rename_dirs: bool,
-    styles: Vec<StyleArg>,
+    exclude_styles: Vec<StyleArg>,
+    include_styles: Vec<StyleArg>,
+    only_styles: Vec<StyleArg>,
+    exclude_match: Vec<String>,
     preview: Option<PreviewFormatArg>,
     commit: bool,
     large: bool,
@@ -30,10 +33,46 @@ pub fn handle_rename(
     use_color: bool,
 ) -> Result<()> {
     let root = std::env::current_dir().context("Failed to get current directory")?;
-    let styles = if styles.is_empty() {
-        None
-    } else {
-        Some(styles.into_iter().map(Into::into).collect())
+    
+    // Acquire lock
+    let refaktor_dir = root.join(".refaktor");
+    let _lock = LockFile::acquire(&refaktor_dir)
+        .context("Failed to acquire lock for refaktor operation")?;
+    
+    // Build the list of styles to use based on exclude, include, and only options
+    let styles = {
+        if !only_styles.is_empty() {
+            // If --only-styles is specified, use only those styles
+            Some(only_styles.into_iter().map(Into::into).collect())
+        } else {
+            // Start with the default styles
+            let default_styles = vec![
+                StyleArg::Snake,
+                StyleArg::Kebab,
+                StyleArg::Camel,
+                StyleArg::Pascal,
+                StyleArg::ScreamingSnake,
+            ];
+            
+            // Remove excluded styles from defaults
+            let mut active_styles: Vec<StyleArg> = default_styles
+                .into_iter()
+                .filter(|s| !exclude_styles.contains(s))
+                .collect();
+            
+            // Add included styles (Title, Train, Dot)
+            for style in include_styles {
+                if !active_styles.contains(&style) {
+                    active_styles.push(style);
+                }
+            }
+            
+            if active_styles.is_empty() {
+                None  // Use default styles
+            } else {
+                Some(active_styles.into_iter().map(Into::into).collect())
+            }
+        }
     };
 
     // Generate the plan
@@ -48,6 +87,7 @@ pub fn handle_rename(
         rename_root: false,  // Default: do not allow root directory renames
         plan_out: PathBuf::from(".refaktor/temp_plan.json"), // temporary, will be stored in history
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
+        exclude_match,
     };
 
     let mut plan = scan_repository(&root, old, new, &options)
