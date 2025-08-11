@@ -1,0 +1,73 @@
+---
+title: Installation
+description: How to install Refaktor
+---
+
+## Homebrew (macOS/Linux)
+
+*Coming soon*
+
+```bash
+brew install refaktor
+```
+
+## Download Binary
+
+*Coming soon*
+
+Download pre-built binaries from the [releases page](https://github.com/DocSpring/refaktor/releases):
+
+- **Linux (x86_64)**: `refaktor-linux-x86_64.tar.gz`
+- **macOS (Intel)**: `refaktor-macos-x86_64.tar.gz` 
+- **macOS (Apple Silicon)**: `refaktor-macos-arm64.tar.gz`
+- **Windows**: `refaktor-windows-x86_64.zip`
+
+Extract and add to your PATH.
+
+## Install Script
+
+*Coming soon*
+
+```bash
+curl -fsSL https://install.refaktor.dev | sh
+```
+
+## Package Managers
+
+*Coming soon*
+
+```bash
+# Cargo
+cargo install refaktor
+
+# Chocolatey (Windows)
+choco install refaktor
+
+# Arch Linux
+yay -S refaktor
+```
+
+## Build from Source
+
+For developers who want to build from source:
+
+**Prerequisites**: Rust 1.89.0 or later
+
+```bash
+git clone https://github.com/DocSpring/refaktor
+cd refaktor
+cargo build --release
+cp ./target/release/refaktor /usr/local/bin/
+```
+
+## Verify Installation
+
+```bash
+refaktor --help
+```
+
+You should see the help output showing available commands and options.
+
+## Build Status
+
+[![CI](https://github.com/DocSpring/refaktor/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/refaktor/actions/workflows/ci.yml)

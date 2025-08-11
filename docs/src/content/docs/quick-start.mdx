@@ -1,0 +1,121 @@
+---
+title: Quick Start
+description: Get started with Refaktor in minutes
+---
+
+## Basic Renaming
+
+The fastest way to rename something across your codebase:
+
+```bash
+refaktor rename old_name new_name --preview table
+```
+
+This will:
+1. Show you a preview of all changes
+2. Ask for confirmation
+3. Apply changes atomically
+4. Create backups for undo
+
+## Your First Refactor
+
+Let's say you want to rename `getUserName` to `fetchUserProfile`:
+
+```bash
+# Preview what will change
+refaktor rename getUserName fetchUserProfile --preview table
+```
+
+You'll see output like:
+
+```
+Files to modify: 15
+┌─────────────────────────────────────┬──────────┬────────────────────┬─────────────────────┐
+│ File                                │ Lines    │ Old                │ New                 │
+├─────────────────────────────────────┼──────────┼────────────────────┼─────────────────────┤
+│ src/auth.js                         │ 23, 45   │ getUserName        │ fetchUserProfile    │
+│ src/auth.js                         │ 12       │ get_user_name      │ fetch_user_profile  │
+│ components/UserProfile.tsx          │ 89       │ GetUserName        │ FetchUserProfile    │
+│ constants.py                        │ 5        │ GET_USER_NAME      │ FETCH_USER_PROFILE  │
+└─────────────────────────────────────┴──────────┴────────────────────┴─────────────────────┘
+
+Files to rename: 2
+┌─────────────────────────────────────┬─────────────────────────────────────┐
+│ Current Path                        │ New Path                            │
+├─────────────────────────────────────┼─────────────────────────────────────┤
+│ utils/get-user-name.js              │ utils/fetch-user-profile.js         │
+│ tests/getUserName.test.js           │ tests/fetchUserProfile.test.js      │
+└─────────────────────────────────────┴─────────────────────────────────────┘
+
+Apply these changes? [y/N]: y
+✅ Applied successfully! Operation ID: abc123
+```
+
+## Undo if Needed
+
+If you make a mistake, you can easily undo:
+
+```bash
+# See recent operations
+refaktor history
+
+# Undo the last operation
+refaktor undo abc123
+```
+
+## Plan and Apply Workflow
+
+For large refactors, use the plan/apply workflow for extra safety:
+
+```bash
+# Step 1: Create a plan
+refaktor plan old_name new_name --preview table
+
+# Step 2: Review the plan file
+cat .refaktor/plan.json
+
+# Step 3: Apply when ready
+refaktor apply
+```
+
+## Common Options
+
+### Limit to Specific Files
+
+```bash
+# Only rename in src/ directory
+refaktor rename old_name new_name --include "src/**"
+
+# Exclude test files
+refaktor rename old_name new_name --exclude "**/*test*"
+```
+
+### Control What Gets Renamed
+
+```bash
+# Don't rename files, only content
+refaktor rename old_name new_name --no-rename-files
+
+# Don't rename directories
+refaktor rename old_name new_name --no-rename-dirs
+```
+
+### Limit Case Styles
+
+```bash
+# Only handle camelCase and snake_case
+refaktor rename old_name new_name --only-styles camel,snake
+```
+
+## Safe Practices
+
+1. **Always preview first** - Use `--preview table` to see changes
+2. **Commit before large refactors** - Makes git-based rollback possible
+3. **Start small** - Try on a subset with `--include` first
+4. **Use undo** - Refaktor's undo is often faster than git reset
+
+## Next Steps
+
+- Learn about [case-aware transformations](/features/case-transformations)
+- Explore [safety features](/features/safety)
+- See more [examples](/examples)

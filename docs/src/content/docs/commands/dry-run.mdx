@@ -1,0 +1,46 @@
+---
+title: dry-run
+description: Preview changes without saving a plan file
+---
+
+# refaktor dry-run
+
+The `dry-run` command is an alias for `plan --dry-run`. It shows what would be changed without creating a plan file.
+
+## Usage
+
+```bash
+refaktor dry-run <OLD> <NEW> [OPTIONS]
+```
+
+This is equivalent to:
+```bash
+refaktor plan <OLD> <NEW> --dry-run [OPTIONS]
+```
+
+## Use Cases
+
+Perfect for:
+- **Exploring potential changes** before committing to a plan
+- **Testing include/exclude patterns** to see what files would be affected  
+- **Understanding scope** of a refactoring operation
+- **Quick previews** without cluttering your workspace
+
+## Examples
+
+```bash
+# Quick preview of what would change
+refaktor dry-run getUserName fetchUserProfile
+
+# Test include patterns
+refaktor dry-run old_name new_name --include "src/**/*.{js,ts}"
+
+# See changes in diff format
+refaktor dry-run old_name new_name --preview-format diff
+```
+
+## Benefits
+
+- **No files created** - Doesn't create `.refaktor/plan.json`
+- **Fast exploration** - Quick way to understand impact
+- **Safe testing** - No risk of accidentally applying changes

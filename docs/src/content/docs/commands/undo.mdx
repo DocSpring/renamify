@@ -1,0 +1,42 @@
+---
+title: undo
+description: Revert a previously applied refactoring operation
+---
+
+# refaktor undo
+
+The `undo` command reverts a previously applied refactoring using the backup system.
+
+## Usage
+
+```bash
+refaktor undo <OPERATION_ID>
+```
+
+## Arguments
+
+- `<OPERATION_ID>` - The unique ID of the operation to undo (from `refaktor history`)
+
+## Examples
+
+```bash
+# See recent operations
+refaktor history
+
+# Undo a specific operation
+refaktor undo abc123-20241201-143022
+```
+
+## How It Works
+
+1. **Locates backups** for the specified operation ID
+2. **Verifies integrity** using stored checksums  
+3. **Restores original file contents** atomically
+4. **Reverts file and directory renames** in reverse order
+5. **Records undo operation** for potential redo
+
+## Safety
+
+- Uses the same atomic operations as apply
+- Verifies backup integrity before restoration
+- Can be undone with `refaktor redo`

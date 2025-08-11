@@ -1,0 +1,249 @@
+---
+title: plan
+description: Generate a detailed refactoring plan without modifying files
+---
+
+# refaktor plan
+
+The `plan` command generates a detailed plan of all changes that will be made without modifying any files. This is the first step in Refaktor's two-phase workflow.
+
+## Usage
+
+```bash
+refaktor plan <OLD> <NEW> [OPTIONS]
+```
+
+## Arguments
+
+- `<OLD>` - The text pattern to find and replace
+- `<NEW>` - The replacement text
+
+## Options
+
+### Output Control
+- `--preview-format <FORMAT>` - Output format: table (default), diff, json
+- `--plan-out <PATH>` - Where to save the plan (default: .refaktor/plan.json)
+- `--dry-run` - Only show preview, don't write plan file
+
+### File Processing
+- `--include <PATTERNS>` - Only process files matching these glob patterns
+- `--exclude <PATTERNS>` - Skip files matching these glob patterns
+- `--no-rename-files` - Don't rename matching files
+- `--no-rename-dirs` - Don't rename matching directories
+
+### Case Styles
+- `--exclude-styles <STYLES>` - Exclude specific case styles from the default set
+- `--include-styles <STYLES>` - Add additional case styles to the active set
+- `--only-styles <STYLES>` - Use only these case styles, ignoring defaults
+
+### Match Control
+- `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
+
+### Unrestricted Mode
+- `-u` - Disable .gitignore files
+- `-uu` - Disable all ignore files, show hidden files  
+- `-uuu` - Disable all ignore files, show hidden files, process binary files
+
+## Output Formats
+
+### Table Format (Default)
+```bash
+refaktor plan getUserName fetchUserProfile --preview-format table
+```
+
+Shows a clear table view of all changes:
+```
+Files to modify: 12
+┌─────────────────────────────────────┬──────────┬────────────────────┬─────────────────────┐
+│ File                                │ Lines    │ Old                │ New                 │
+├─────────────────────────────────────┼──────────┼────────────────────┼─────────────────────┤
+│ src/auth.js                         │ 23, 45   │ getUserName        │ fetchUserProfile    │
+│ src/types.ts                        │ 8        │ GetUserName        │ FetchUserProfile    │
+│ utils/helpers.py                    │ 156      │ get_user_name      │ fetch_user_profile  │
+└─────────────────────────────────────┴──────────┴────────────────────┴─────────────────────┘
+
+Files to rename: 3
+┌─────────────────────────────────────┬─────────────────────────────────────┐
+│ Current Path                        │ New Path                            │
+├─────────────────────────────────────┼─────────────────────────────────────┤
+│ src/getUserName.js                  │ src/fetchUserProfile.js             │
+│ components/GetUserName.tsx          │ components/FetchUserProfile.tsx     │
+│ tests/get_user_name.test.py         │ tests/fetch_user_profile.test.py    │
+└─────────────────────────────────────┴─────────────────────────────────────┘
+```
+
+### Diff Format
+```bash
+refaktor plan getUserName fetchUserProfile --preview-format diff
+```
+
+Shows changes in diff format:
+```diff
+--- src/auth.js
++++ src/auth.js
+@@ -20,7 +20,7 @@
+ function authenticateUser(token) {
+-    const username = getUserName(token);
++    const username = fetchUserProfile(token);
+     return validateUser(username);
+ }
+```
+
+### JSON Format
+```bash
+refaktor plan getUserName fetchUserProfile --preview-format json
+```
+
+Outputs structured JSON for programmatic use:
+```json
+{
+  "id": "abc123-20241201-143022",
+  "created_at": "2024-12-01T14:30:22Z",
+  "old": "getUserName",
+  "new": "fetchUserProfile", 
+  "matches": [
+    {
+      "file": "src/auth.js",
+      "line": 23,
+      "old_text": "getUserName",
+      "new_text": "fetchUserProfile"
+    }
+  ],
+  "renames": [
+    {
+      "old_path": "src/getUserName.js",
+      "new_path": "src/fetchUserProfile.js"
+    }
+  ]
+}
+```
+
+## Examples
+
+### Basic Planning
+```bash
+# Create a plan with table preview
+refaktor plan old_name new_name --preview-format table
+
+# Plan is saved to .refaktor/plan.json
+cat .refaktor/plan.json
+```
+
+### Dry Run (No Plan File)
+```bash
+# Just see what would change, don't create a plan file
+refaktor plan old_name new_name --dry-run --preview-format table
+```
+
+### Custom Plan Location
+```bash
+# Save plan to a specific location
+refaktor plan old_name new_name --plan-out ./refactor-plan.json
+```
+
+### Specific File Types
+```bash
+# Only plan changes for Rust files
+refaktor plan old_name new_name --include "**/*.rs"
+
+# Plan for source files, exclude tests
+refaktor plan old_name new_name \
+  --include "src/**/*.{js,ts}" \
+  --exclude "**/*test*"
+```
+
+### Case Style Control
+```bash
+# Only plan camelCase and snake_case transformations
+refaktor plan oldName newName --only-styles camel,snake
+
+# Exclude SCREAMING_SNAKE_CASE from default styles
+refaktor plan oldName newName --exclude-styles screaming-snake
+```
+
+### Large Codebase Planning
+```bash
+# Include gitignored files (like vendor directories)
+refaktor plan old_name new_name -u
+
+# Plan for everything (including hidden files)
+refaktor plan old_name new_name -uu
+```
+
+## Plan File Structure
+
+The generated plan file (`.refaktor/plan.json`) contains:
+
+```json
+{
+  "id": "unique-operation-id",
+  "created_at": "2024-12-01T14:30:22Z",
+  "old": "original_pattern", 
+  "new": "replacement_pattern",
+  "styles": ["snake", "kebab", "camel", "pascal", "screaming-snake"],
+  "includes": ["**/*"],
+  "excludes": ["target/**", "node_modules/**"],
+  "matches": [
+    {
+      "file": "relative/path/to/file.js",
+      "line": 42,
+      "column": 10,
+      "old_text": "matched_text",
+      "new_text": "replacement_text",
+      "context": "surrounding context for verification"
+    }
+  ],
+  "renames": [
+    {
+      "old_path": "old/file/path.js",
+      "new_path": "new/file/path.js",
+      "is_dir": false
+    }
+  ],
+  "stats": {
+    "files_scanned": 1247,
+    "files_to_modify": 23,
+    "files_to_rename": 5,
+    "directories_to_rename": 2,
+    "total_matches": 89
+  }
+}
+```
+
+## After Planning
+
+Once you have a plan, you can:
+
+### Apply the Plan
+```bash
+refaktor apply
+```
+
+### Review Before Applying  
+```bash
+# Look at the plan in detail
+cat .refaktor/plan.json | jq .
+
+# Count total changes
+jq '.stats.total_matches' .refaktor/plan.json
+```
+
+### Modify the Plan
+Advanced users can edit the plan file directly before applying (not recommended for beginners).
+
+### Create a New Plan
+Running `plan` again will overwrite the existing plan file.
+
+## Exit Codes
+
+- `0` - Plan created successfully
+- `1` - Conflicts detected in planned changes
+- `2` - Invalid input or arguments  
+- `3` - Internal error or system issue
+
+## Performance Tips
+
+For large codebases:
+- Use specific `--include` patterns to limit scope
+- Use `--exclude` to skip large directories like `node_modules/`
+- Consider using `-u` flags judiciously to include necessary ignored files

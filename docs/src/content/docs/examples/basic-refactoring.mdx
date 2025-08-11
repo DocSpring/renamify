@@ -1,0 +1,144 @@
+---
+title: Basic Refactoring
+description: Common refactoring examples with Refaktor
+---
+
+# Basic Refactoring Examples
+
+## Function Renaming
+
+Rename a function across your entire codebase:
+
+```bash
+# Generate a plan and review
+refaktor plan getUserName fetchUserProfile --preview-format table
+
+# Apply the changes
+refaktor apply
+```
+
+Or use the fast-path:
+
+```bash
+# Plan, preview, confirm, and apply in one command
+refaktor rename getUserName fetchUserProfile --preview table
+```
+
+### What Gets Changed
+
+**JavaScript/TypeScript files:**
+```js
+// Before
+function getUserName(id) { ... }
+const name = getUserName(userId);
+export { getUserName };
+
+// After  
+function fetchUserProfile(id) { ... }
+const name = fetchUserProfile(userId);
+export { fetchUserProfile };
+```
+
+**Python files:**
+```python
+# Before
+def get_user_name(user_id): ...
+name = get_user_name(id)
+
+# After
+def fetch_user_profile(user_id): ...
+name = fetch_user_profile(id)
+```
+
+**Files and directories:**
+- `utils/getUserName.js` → `utils/fetchUserProfile.js`
+- `tests/get_user_name.test.py` → `tests/fetch_user_profile.test.py`
+
+## Variable Renaming
+
+Rename variables and constants:
+
+```bash
+refaktor rename apiKey secretKey --preview table
+```
+
+### What Gets Changed
+
+**Various naming conventions:**
+```js
+// Before
+const apiKey = "...";
+const API_KEY = process.env.API_KEY;
+const api_key = config.api_key;
+
+// After
+const secretKey = "...";
+const SECRET_KEY = process.env.SECRET_KEY;  
+const secret_key = config.secret_key;
+```
+
+## Component Renaming
+
+Rename React/Vue components:
+
+```bash
+refaktor rename UserCard ProfileCard --preview table
+```
+
+### What Gets Changed
+
+**Component files:**
+- `components/UserCard.tsx` → `components/ProfileCard.tsx`
+- `components/user-card.vue` → `components/profile-card.vue`
+
+**Component usage:**
+```tsx
+// Before
+import UserCard from './UserCard';
+<UserCard user={currentUser} />
+
+// After
+import ProfileCard from './ProfileCard';
+<ProfileCard user={currentUser} />
+```
+
+## Class Renaming
+
+Rename classes across multiple files:
+
+```bash
+refaktor rename DatabaseManager DataManager --preview table
+```
+
+### What Gets Changed
+
+```python
+# Before
+class DatabaseManager:
+    def __init__(self): ...
+
+db_manager = DatabaseManager()
+```
+
+```python
+# After  
+class DataManager:
+    def __init__(self): ...
+
+data_manager = DataManager()
+```
+
+## Safe Undo
+
+If you make a mistake, easily undo:
+
+```bash
+# See recent operations
+refaktor history
+
+# Undo the last operation  
+refaktor undo abc123-20241201-143022
+
+# Or redo if you change your mind
+refaktor redo abc123-20241201-143022
+```

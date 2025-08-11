@@ -1,0 +1,232 @@
+---
+title: Project-Wide Changes
+description: Large-scale refactoring examples
+---
+
+# Project-Wide Changes
+
+## Renaming a Library/Module
+
+Rename an entire library or module throughout your project:
+
+```bash
+refaktor rename mylib awesome_lib --preview table --commit
+```
+
+### What This Changes
+
+**File structure:**
+```
+src/
+├── mylib/               → awesome_lib/
+│   ├── core.js         → core.js (contents updated)
+│   └── utils.js        → utils.js (contents updated)
+├── components/
+│   └── MyLibWidget.tsx → AwesomeLibWidget.tsx
+└── tests/
+    └── mylib.test.js   → awesome_lib.test.js
+```
+
+**Import statements:**
+```js
+// Before
+import { helper } from 'mylib/utils';
+import MyLibWidget from './components/MyLibWidget';
+
+// After
+import { helper } from 'awesome_lib/utils';
+import AwesomeLibWidget from './components/AwesomeLibWidget';
+```
+
+**Package.json and configuration:**
+```json
+// Before
+{
+  "name": "mylib",
+  "main": "src/mylib/index.js"
+}
+
+// After
+{
+  "name": "awesome_lib", 
+  "main": "src/awesome_lib/index.js"
+}
+```
+
+## API Endpoint Refactoring
+
+Rename API endpoints consistently:
+
+```bash
+refaktor rename getUserData fetchUserProfile \
+  --include "**/*.{js,ts,py,go}" \
+  --preview table
+```
+
+### What This Changes
+
+**Backend code:**
+```python
+# Before
+@app.route('/api/getUserData')
+def get_user_data(user_id): ...
+
+# After
+@app.route('/api/fetchUserProfile')  
+def fetch_user_profile(user_id): ...
+```
+
+**Frontend code:**
+```js
+// Before
+const response = await fetch('/api/getUserData');
+const getUserData = async (id) => { ... };
+
+// After
+const response = await fetch('/api/fetchUserProfile');
+const fetchUserProfile = async (id) => { ... };
+```
+
+## Database Schema Changes
+
+Rename database-related code:
+
+```bash
+refaktor rename user_profile account_profile \
+  --include "**/*.{sql,js,py,rb}" \
+  --exclude "migrations/**" \
+  --preview table
+```
+
+### What This Changes
+
+**Model definitions:**
+```python
+# Before
+class UserProfile(models.Model):
+    def get_user_profile_data(self): ...
+
+# After
+class AccountProfile(models.Model):
+    def get_account_profile_data(self): ...
+```
+
+**SQL queries:**
+```sql
+-- Before
+SELECT * FROM user_profile WHERE id = ?;
+UPDATE user_profile SET name = ? WHERE id = ?;
+
+-- After
+SELECT * FROM account_profile WHERE id = ?;
+UPDATE account_profile SET name = ? WHERE id = ?;
+```
+
+## Configuration Key Updates
+
+Update configuration keys across your application:
+
+```bash
+refaktor rename redis_url cache_url \
+  --include "**/*.{js,py,rb,yml,yaml,json,toml}" \
+  --preview table
+```
+
+### What This Changes
+
+**Environment files:**
+```bash
+# Before
+REDIS_URL=redis://localhost:6379
+redis_url=redis://localhost:6379
+
+# After  
+CACHE_URL=redis://localhost:6379
+cache_url=redis://localhost:6379
+```
+
+**Configuration files:**
+```yaml
+# Before
+database:
+  redis_url: ${REDIS_URL}
+
+# After
+database:
+  cache_url: ${CACHE_URL}
+```
+
+## Rename with Exclusions
+
+Sometimes you need to be selective about what gets changed:
+
+```bash
+refaktor rename config settings \
+  --exclude-match ConfigurationManager,ConfigService \
+  --include "src/**" \
+  --exclude "**/*test*" \
+  --preview table
+```
+
+This will:
+- ✅ Change `config` → `settings`
+- ✅ Change `getConfig` → `getSettings`  
+- ❌ Skip `ConfigurationManager` (excluded match)
+- ❌ Skip `ConfigService` (excluded match)
+- ❌ Skip test files
+
+## Root Directory Renaming
+
+Rename the entire project directory:
+
+```bash
+refaktor rename myproject awesome_project \
+  --rename-root \
+  --commit \
+  --preview table
+```
+
+After confirmation, you'll see:
+```
+✅ Applied successfully! 
+
+Next Steps:
+1. cd ../awesome_project
+2. npm install  # or cargo build, etc.
+3. Update any IDE project settings
+```
+
+### Safety Considerations
+
+- Always commit changes before root directory rename
+- Update build scripts and CI/CD pipelines
+- Consider impact on deployment scripts
+- Update documentation and README files
+
+## Performance Tips for Large Projects
+
+### Limit Scope
+```bash
+# Only process source files, not dependencies
+refaktor rename old_name new_name \
+  --include "src/**/*.{js,ts,tsx}" \
+  --exclude "node_modules/**"
+```
+
+### Use Dry Run First
+```bash
+# Explore the scope before committing
+refaktor dry-run old_name new_name --include "src/**"
+
+# Count potential matches
+refaktor dry-run old_name new_name | grep -c "│"
+```
+
+### Parallel Workflow
+```bash
+# Create plan and review while system is idle
+refaktor plan large_change huge_change --preview-format json > plan.json
+
+# Apply later when ready  
+refaktor apply --plan plan.json
+```

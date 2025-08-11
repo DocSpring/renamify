@@ -1,0 +1,77 @@
+---
+title: init
+description: Initialize Refaktor ignore settings
+---
+
+# refaktor init
+
+The `init` command adds `.refaktor/` to ignore files to prevent tracking of Refaktor's workspace files.
+
+## Usage
+
+```bash
+refaktor init [OPTIONS]
+```
+
+## Options
+
+- `--local` - Add to `.git/info/exclude` instead of `.gitignore`
+- `--global` - Add to global git excludes file
+- `--check` - Check if `.refaktor` is ignored (exit 0 if yes, 1 if no)
+- `--configure-global` - Configure global excludes file if it doesn't exist (requires `--global`)
+
+## Examples
+
+### Initialize Repository Ignore
+```bash
+# Add .refaktor/ to .gitignore (most common)
+refaktor init
+```
+
+### Local-Only Ignore
+```bash
+# Add to .git/info/exclude (not committed)
+refaktor init --local
+```
+
+### Global Ignore
+```bash
+# Add to global git excludes file
+refaktor init --global --configure-global
+```
+
+### Check Status
+```bash
+# Check if .refaktor is already ignored
+refaktor init --check
+echo $?  # 0 if ignored, 1 if not
+```
+
+## Auto-Initialization
+
+Refaktor automatically prompts to initialize on first use:
+
+```
+Refaktor uses .refaktor/ for plans, backups, and history.
+Ignore it now?
+  [Y] Repo .gitignore   [l] Local .git/info/exclude   [g] Global excludesfile   [n] No
+Choice (Y/l/g/n): Y
+```
+
+### Disable Auto-Init
+```bash
+# Prevent automatic initialization prompts
+refaktor --no-auto-init plan old new
+
+# Force automatic repo initialization
+refaktor --auto-init=repo plan old new
+```
+
+## Why Initialize?
+
+The `.refaktor/` directory contains:
+- **Plans**: `plan.json` files with refactoring details
+- **Backups**: Complete backups of modified files  
+- **History**: `history.json` with operation records
+
+These are workspace files that shouldn't be committed to version control.

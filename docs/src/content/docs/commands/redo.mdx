@@ -1,0 +1,32 @@
+---
+title: redo
+description: Re-apply a previously undone refactoring operation
+---
+
+# refaktor redo
+
+The `redo` command re-applies a refactoring that was previously undone.
+
+## Usage
+
+```bash
+refaktor redo <OPERATION_ID>
+```
+
+## Arguments
+
+- `<OPERATION_ID>` - The unique ID of the operation to redo
+
+## Examples
+
+```bash
+# Undo an operation
+refaktor undo abc123-20241201-143022
+
+# Change your mind and redo it
+refaktor redo abc123-20241201-143022
+```
+
+## How It Works
+
+Re-applies the original refactoring operation using the stored plan data.

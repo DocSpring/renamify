@@ -1,0 +1,278 @@
+---
+title: Technology-Specific Examples
+description: Refactoring examples for specific programming languages and frameworks
+---
+
+# Technology-Specific Examples
+
+## React/TypeScript Projects
+
+### Component Refactoring
+```bash
+# Rename a React component across the entire project
+refaktor rename UserCard ProfileCard \
+  --include "src/**/*.{tsx,ts,js,jsx}" \
+  --exclude "**/*.test.*" \
+  --preview table
+```
+
+**Changes made:**
+- Component files: `UserCard.tsx` → `ProfileCard.tsx`
+- Test files: `UserCard.test.tsx` → `ProfileCard.test.tsx` (if not excluded)
+- Import statements: `import UserCard from './UserCard'`
+- JSX usage: `<UserCard />` → `<ProfileCard />`
+- Type definitions: `UserCardProps` → `ProfileCardProps`
+
+### Hook Refactoring
+```bash
+# Rename a custom React hook
+refaktor rename useUserData useProfileData \
+  --include "src/**/*.{ts,tsx}" \
+  --preview table
+```
+
+**Changes made:**
+```tsx
+// Before
+function useUserData(id: string) { ... }
+const { data, loading } = useUserData(userId);
+
+// After  
+function useProfileData(id: string) { ... }
+const { data, loading } = useProfileData(userId);
+```
+
+## Python Projects
+
+### Django Model Refactoring
+```bash
+# Rename Django models and related code
+refaktor rename UserProfile AccountProfile \
+  --include "**/*.py" \
+  --exclude "migrations/**" \
+  --preview table
+```
+
+**Changes made:**
+```python
+# models.py - Before
+class UserProfile(models.Model):
+    def get_user_profile_display(self): ...
+
+# models.py - After
+class AccountProfile(models.Model):
+    def get_account_profile_display(self): ...
+
+# views.py - Before
+def user_profile_view(request): ...
+profile = UserProfile.objects.get(id=1)
+
+# views.py - After
+def account_profile_view(request): ...
+profile = AccountProfile.objects.get(id=1)
+```
+
+### Flask API Refactoring
+```bash
+# Rename Flask route handlers
+refaktor rename getUserData fetchUserProfile \
+  --include "**/*.py" \
+  --exclude "venv/**" \
+  --preview table
+```
+
+## Rust Projects
+
+### Module Refactoring
+```bash
+# Rename Rust modules and functions
+refaktor rename user_manager profile_manager \
+  --include "**/*.rs" \
+  --exclude "target/**" \
+  --preview table
+```
+
+**Changes made:**
+```rust
+// Before
+mod user_manager {
+    pub fn get_user_manager() -> UserManager { ... }
+}
+use user_manager::UserManager;
+
+// After
+mod profile_manager {
+    pub fn get_profile_manager() -> ProfileManager { ... }
+}
+use profile_manager::ProfileManager;
+```
+
+### Cargo.toml Updates
+```bash
+# Rename crate references
+refaktor rename my_crate awesome_crate \
+  --include "**/Cargo.toml,**/*.rs" \
+  --preview table
+```
+
+## Go Projects
+
+### Package Refactoring
+```bash
+# Rename Go packages
+refaktor rename userservice profileservice \
+  --include "**/*.go" \
+  --exclude "vendor/**" \
+  --preview table
+```
+
+**Changes made:**
+```go
+// Before
+package userservice
+
+func GetUserService() *UserService { ... }
+
+// After
+package profileservice
+
+func GetProfileService() *ProfileService { ... }
+```
+
+## Node.js/JavaScript Projects
+
+### NPM Package Refactoring
+```bash
+# Rename throughout a Node.js project
+refaktor rename mypackage awesome_package \
+  --include "**/*.{js,json,md}" \
+  --exclude "node_modules/**" \
+  --preview table
+```
+
+**Changes made:**
+- `package.json` name field
+- Import statements: `require('mypackage')`
+- Documentation references
+- Configuration files
+
+### Express.js Routes
+```bash
+# Rename Express route handlers
+refaktor rename userRoutes profileRoutes \
+  --include "**/*.js" \
+  --exclude "node_modules/**" \
+  --preview table
+```
+
+## Database Projects
+
+### SQL Schema Refactoring
+```bash
+# Rename database tables and columns (be careful!)
+refaktor rename user_data profile_data \
+  --include "**/*.sql" \
+  --exclude "migrations/**" \
+  --preview table \
+  --dry-run  # Always dry-run first for SQL!
+```
+
+**Changes made:**
+```sql
+-- Before
+CREATE TABLE user_data (
+    id SERIAL PRIMARY KEY,
+    user_data_json JSONB
+);
+
+-- After
+CREATE TABLE profile_data (
+    id SERIAL PRIMARY KEY, 
+    profile_data_json JSONB
+);
+```
+
+## Configuration Files
+
+### Environment Variables
+```bash
+# Update environment variable names
+refaktor rename DATABASE_HOST DB_HOST \
+  --include "**/*.{env,yml,yaml,json}" \
+  --preview table
+```
+
+### Docker and K8s
+```bash
+# Rename service references in Docker/K8s files  
+refaktor rename userservice profileservice \
+  --include "**/*.{yml,yaml,dockerfile}" \
+  --preview table
+```
+
+## Multi-Language Projects
+
+### Microservices Architecture
+```bash
+# Rename across multiple languages in a microservice setup
+refaktor rename userservice profileservice \
+  --include "**/*.{js,py,go,rs,yml,yaml,json}" \
+  --exclude "**/node_modules/**,**/target/**,**/__pycache__/**" \
+  --preview table
+```
+
+This handles:
+- Service names in configuration files
+- API endpoint references  
+- Docker service names
+- Inter-service communication code
+- Documentation updates
+
+## Framework-Specific Tips
+
+### Next.js Projects
+```bash
+# Include Next.js specific files
+refaktor rename oldPage newPage \
+  --include "**/*.{tsx,ts,js,jsx}" \
+  --include "pages/**" \
+  --include "app/**" \
+  --preview table
+```
+
+### Vue.js Projects  
+```bash
+# Include Vue single file components
+refaktor rename UserWidget ProfileWidget \
+  --include "**/*.{vue,js,ts}" \
+  --include "src/components/**" \
+  --preview table
+```
+
+### Laravel Projects
+```bash
+# PHP Laravel project refactoring
+refaktor rename UserController ProfileController \
+  --include "**/*.php" \
+  --exclude "vendor/**" \
+  --preview table
+```
+
+## Best Practices by Technology
+
+### Always Exclude Dependencies
+- **Node.js**: `--exclude "node_modules/**"`
+- **Rust**: `--exclude "target/**"`
+- **Python**: `--exclude "venv/**,__pycache__/**"`
+- **Go**: `--exclude "vendor/**"`
+
+### Include Relevant Extensions
+- **Web**: `--include "**/*.{js,ts,tsx,jsx,html,css,scss}"`
+- **Backend**: `--include "**/*.{py,js,go,rs,rb,php}"`
+- **Config**: `--include "**/*.{json,yml,yaml,toml,env}"`
+
+### Test Safely First
+```bash
+# Always start with dry-run for unfamiliar codebases
+refaktor dry-run pattern replacement --include "src/**"
+```

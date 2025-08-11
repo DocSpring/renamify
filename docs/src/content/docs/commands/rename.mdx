@@ -1,0 +1,170 @@
+---
+title: rename
+description: Fast-path command that combines planning and applying with confirmation
+---
+
+# refaktor rename
+
+The `rename` command is the fastest way to refactor your codebase. It combines planning and applying in a single interactive command with preview and confirmation.
+
+## Usage
+
+```bash
+refaktor rename <OLD> <NEW> [OPTIONS]
+```
+
+## Arguments
+
+- `<OLD>` - The text pattern to find and replace
+- `<NEW>` - The replacement text
+
+## Options
+
+### Preview and Confirmation
+- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json)
+- `--large` - Acknowledge large changes (>500 files or >100 renames)
+
+### File Processing
+- `--include <PATTERNS>` - Only process files matching these glob patterns
+- `--exclude <PATTERNS>` - Skip files matching these glob patterns  
+- `--no-rename-files` - Don't rename matching files
+- `--no-rename-dirs` - Don't rename matching directories
+
+### Root Directory
+- `--rename-root` - Allow renaming the root project directory (requires confirmation)
+- `--no-rename-root` - Never rename the root project directory
+
+### Case Styles
+- `--exclude-styles <STYLES>` - Exclude specific case styles from the default set
+- `--include-styles <STYLES>` - Add additional case styles to the active set  
+- `--only-styles <STYLES>` - Use only these case styles, ignoring defaults
+
+### Match Control
+- `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
+
+### Safety and Git
+- `--commit` - Create a git commit after applying changes
+- `--force-with-conflicts` - Force apply even with conflicts
+- `--confirm-collisions` - Confirm case-insensitive or collision renames
+
+### Unrestricted Mode
+- `-u` - Disable .gitignore files
+- `-uu` - Disable all ignore files, show hidden files
+- `-uuu` - Disable all ignore files, show hidden files, process binary files
+
+## Examples
+
+### Basic Rename
+```bash
+# Rename with table preview and confirmation
+refaktor rename getUserName fetchUserProfile --preview table
+```
+
+### Specific File Types
+```bash
+# Only process TypeScript files
+refaktor rename oldName newName --include "**/*.{ts,tsx}" --preview table
+```
+
+### Exclude Certain Areas
+```bash
+# Skip test files and node_modules
+refaktor rename oldApi newApi \
+  --exclude "**/*test*,node_modules/**" \
+  --preview table
+```
+
+### Case Style Control
+```bash
+# Only handle camelCase and PascalCase (common in React projects)
+refaktor rename oldComponent newComponent \
+  --only-styles camel,pascal \
+  --preview table
+```
+
+### With Git Commit
+```bash
+# Automatically commit changes after applying
+refaktor rename old_function new_function --commit --preview diff
+```
+
+### Project-Wide Rename
+```bash  
+# Rename entire project including root directory
+refaktor rename myproject awesome_project \
+  --rename-root \
+  --commit \
+  --preview table
+```
+
+### Exclude Specific Matches
+```bash
+# Skip compound words that contain your pattern
+refaktor rename config settings \
+  --exclude-match ConfigurationManager,ConfigService \
+  --preview table
+```
+
+## Interactive Flow
+
+When you run `rename`, this is what happens:
+
+1. **Scanning**: Refaktor scans your codebase for matches
+2. **Preview**: Shows a table/diff of all planned changes
+3. **Confirmation**: Prompts "Apply these changes? [y/N]:"
+4. **Apply**: If confirmed, applies changes atomically
+5. **Results**: Shows operation ID for potential undo
+
+### Example Session
+```bash
+$ refaktor rename getUserName fetchUserProfile --preview table
+
+Files to modify: 12
+┌─────────────────────────────────────┬──────────┬────────────────────┬─────────────────────┐
+│ File                                │ Lines    │ Old                │ New                 │  
+├─────────────────────────────────────┼──────────┼────────────────────┼─────────────────────┤
+│ src/auth.js                         │ 23, 45   │ getUserName        │ fetchUserProfile    │
+│ src/auth.js                         │ 12       │ get_user_name      │ fetch_user_profile  │
+│ components/UserProfile.tsx          │ 89       │ GetUserName        │ FetchUserProfile    │
+└─────────────────────────────────────┴──────────┴────────────────────┴─────────────────────┘
+
+Files to rename: 2
+┌─────────────────────────────────────┬─────────────────────────────────────┐
+│ Current Path                        │ New Path                            │
+├─────────────────────────────────────┼─────────────────────────────────────┤  
+│ utils/get-user-name.js              │ utils/fetch-user-profile.js         │
+│ tests/getUserName.test.js           │ tests/fetchUserProfile.test.js      │
+└─────────────────────────────────────┴─────────────────────────────────────┘
+
+Apply these changes? [y/N]: y
+✅ Applied successfully! Operation ID: abc123-20241201-143022
+```
+
+## When to Use rename vs plan/apply
+
+**Use `rename` when**:
+- Making smaller, focused changes
+- You want immediate feedback and confirmation
+- Working interactively and want speed
+- The preview looks correct and you're confident
+
+**Use `plan`/`apply` when**:
+- Making large, complex refactoring operations  
+- You need time to review the plan thoroughly
+- Working with teammates who need to review changes
+- You want to save and potentially modify the plan
+
+## Safety Features
+
+The `rename` command includes all of Refaktor's safety features:
+- **Atomic operations**: All changes succeed or none do
+- **Automatic backups**: Created before applying changes
+- **Conflict detection**: Warns about potential issues
+- **Undo support**: Use `refaktor undo <id>` to revert
+
+## Exit Codes
+
+- `0` - Success
+- `1` - Conflicts detected (use `--force-with-conflicts` to override)
+- `2` - Invalid input or arguments
+- `3` - Internal error or system issue

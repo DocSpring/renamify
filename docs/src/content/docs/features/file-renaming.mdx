@@ -1,0 +1,150 @@
+---
+title: File and Directory Renaming
+description: Rename files and directories that match your patterns
+---
+
+# File and Directory Renaming
+
+In addition to replacing text within files, Refaktor can rename files and directories that match your pattern.
+
+## What Gets Renamed
+
+### Files
+Any file whose name contains your search pattern will be renamed:
+- `getUserName.js` → `fetchUserProfile.js`
+- `get_user_name.py` → `fetch_user_profile.py` 
+- `GetUserName.tsx` → `FetchUserProfile.tsx`
+
+### Directories
+Directory names are also transformed:
+- `user-name/` → `user-profile/`
+- `getUserName/` → `fetchUserProfile/`
+
+### Rename Order
+Refaktor renames in dependency order:
+1. Files first
+2. Then directories, deepest first
+This prevents conflicts and ensures all operations succeed.
+
+## Root Directory Renaming
+
+**NEW**: Refaktor can now rename the project root directory itself when the directory name matches your pattern.
+
+### Safety First
+- **Default behavior**: Root directory renaming is disabled for safety
+- **Enable with `--rename-root`**: Explicitly allow root directory renaming
+- **Manual confirmation**: Always requires interactive confirmation
+- **Next steps snippet**: Provides instructions for rebuilding/reloading after root rename
+
+### Example
+
+```bash
+# This will offer to rename the project directory itself
+cd /path/to/refaktor-project
+refaktor rename refaktor smart_search_and_replace --rename-root
+```
+
+Refaktor will show a "Next Steps" snippet like:
+```
+Next Steps:
+1. cd ../smart-search-and-replace-project
+2. cargo build --release  # if Rust project
+3. Update any IDE project settings
+```
+
+### Safety Considerations
+- Always commit changes before root directory rename
+- Update build scripts, IDE settings, and documentation paths
+- Consider impact on CI/CD pipelines that reference the directory name
+
+## Controlling Rename Behavior
+
+### Disable File Renaming
+```bash
+refaktor rename old_name new_name --no-rename-files
+```
+
+### Disable Directory Renaming
+```bash
+refaktor rename old_name new_name --no-rename-dirs
+```
+
+### Prevent Root Directory Renaming
+```bash
+refaktor rename old_name new_name --no-rename-root
+```
+
+## Examples
+
+### Basic File Renaming
+```bash
+refaktor rename getUserName fetchUserProfile --preview table
+```
+
+Might show:
+```
+Files to rename: 3
+┌─────────────────────────────────────┬─────────────────────────────────────┐
+│ Current Path                        │ New Path                            │
+├─────────────────────────────────────┼─────────────────────────────────────┤
+│ src/getUserName.js                  │ src/fetchUserProfile.js             │
+│ components/GetUserName.tsx          │ components/FetchUserProfile.tsx     │
+│ tests/get_user_name.test.py         │ tests/fetch_user_profile.test.py    │
+└─────────────────────────────────────┴─────────────────────────────────────┘
+```
+
+### Project-Wide Rename
+```bash
+refaktor rename myproject awesome_project --rename-root --preview table
+```
+
+This could rename:
+- The root directory: `myproject/` → `awesome_project/`
+- Files: `myproject.config.js` → `awesome_project.config.js`
+- Directories: `src/myproject/` → `src/awesome_project/`
+- Content references within files
+
+## Conflict Detection
+
+Refaktor detects several types of renaming conflicts:
+
+### Multiple-to-One Conflicts
+When multiple files would be renamed to the same destination:
+```
+❌ Error: Multiple files would be renamed to 'utils.js':
+  - old_utils.js
+  - oldUtils.js
+```
+
+### Case-Insensitive Filesystem Conflicts
+On macOS and Windows (case-insensitive filesystems):
+```
+⚠️  Warning: Renaming 'OldName.js' to 'oldName.js' requires special handling
+```
+
+Refaktor uses two-step renames for case-only changes:
+1. `OldName.js` → `temp_12345.js`
+2. `temp_12345.js` → `oldName.js`
+
+### Windows Reserved Names
+Prevents creating files with Windows reserved names:
+```
+❌ Error: Cannot create file 'CON.js' (Windows reserved name)
+```
+
+## Platform Compatibility
+
+### Unix Systems (Linux, macOS)
+- Handles case-sensitive and case-insensitive filesystems
+- Supports long file paths
+- Preserves file permissions
+
+### Windows
+- Handles path length limitations (260 chars)
+- Prevents reserved filenames (CON, PRN, AUX, etc.)
+- Supports both forward and backward slashes
+
+### Symbolic Links
+- Symlink files can be renamed if their names match
+- Symlink targets are never modified
+- By default, symlinks are not followed during traversal

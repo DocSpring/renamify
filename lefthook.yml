@@ -16,6 +16,7 @@ pre-commit:
       stage_fixed: true
 
     typos:
+      glob: "*.{rs,md,txt,toml,yml,yaml}"
       run: typos {staged_files}
 
     test:

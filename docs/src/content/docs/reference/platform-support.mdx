@@ -1,0 +1,205 @@
+---
+title: Platform Support
+description: Cross-platform compatibility and platform-specific considerations
+---
+
+# Platform Support
+
+Refaktor is designed to work consistently across Linux, macOS, and Windows, while handling platform-specific quirks intelligently.
+
+## Supported Platforms
+
+✅ **Linux** (x86_64)
+✅ **macOS** (Intel and Apple Silicon)  
+✅ **Windows** (x86_64)
+
+## Case-Insensitive Filesystems
+
+### macOS (APFS/HFS+)
+Most macOS systems use case-insensitive filesystems. Refaktor handles this by:
+
+- **Automatic detection** of filesystem case sensitivity
+- **Two-step renames** for case-only changes:
+  1. `OldName.js` → `temp_12345.js`
+  2. `temp_12345.js` → `oldName.js`
+- **Conflict warnings** when case changes might cause issues
+
+### Windows (NTFS)
+Windows filesystems are typically case-insensitive. Refaktor provides:
+
+- **Smart rename handling** similar to macOS
+- **Reserved filename detection** (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
+- **Path length validation** (260 character limit without long path support)
+
+### Linux (ext4/btrfs/etc.)
+Most Linux filesystems are case-sensitive, allowing:
+
+- **Direct renames** without intermediate steps
+- **Full Unicode support** for international characters
+- **No reserved filename restrictions**
+
+## Path Handling
+
+### Path Separators
+Refaktor accepts both forward slashes and backslashes:
+
+```bash
+# These are equivalent on Windows
+refaktor plan old new --include "src/**/*.js"
+refaktor plan old new --include "src\\**\\*.js"
+```
+
+### Path Length Limits
+
+**Windows**: 260 characters by default
+```bash
+# Refaktor detects and warns about long paths
+❌ Error: Path too long for Windows: 
+"C:\very\long\path\that\exceeds\260\characters\..."
+
+Enable long paths or use shorter directory names.
+```
+
+**macOS/Linux**: Much higher limits (typically 4096+ characters)
+
+### Unicode Support
+Refaktor fully supports Unicode filenames and content:
+
+```bash
+# Works with international characters
+refaktor rename 用户 profile --preview table
+refaktor rename josé maria --preview table
+```
+
+## Symbolic Links
+
+### Behavior
+- **Symlink files** can be renamed if their names match the pattern
+- **Symlink targets** are never modified  
+- **Directory traversal** does not follow symlinks by default
+
+### Cross-Platform Differences
+
+**Linux/macOS**:
+- Full symlink support
+- Can create and modify symlinks
+
+**Windows**:
+- Limited symlink support (requires admin privileges)
+- Refaktor handles gracefully without errors
+
+## File Permissions
+
+### Unix-like Systems (Linux/macOS)
+```bash
+# Refaktor respects and preserves file permissions
+ls -la before.js    # -rw-r--r--
+refaktor rename old new
+ls -la after.js     # -rw-r--r-- (preserved)
+```
+
+### Windows
+- Uses Windows ACLs appropriately
+- Handles read-only files with clear error messages
+
+## Performance Characteristics
+
+### Linux
+- **Fastest performance** due to efficient filesystem operations
+- **Parallel directory traversal** scales well with CPU cores
+- **Memory-mapped file I/O** for large files
+
+### macOS
+- **Good performance** with some filesystem overhead
+- **APFS optimizations** for recent macOS versions
+- **Slightly slower renames** due to case-insensitivity handling
+
+### Windows
+- **Adequate performance** with some Windows-specific overhead
+- **NTFS optimizations** where possible
+- **Antivirus interaction** may slow operations
+
+## Known Platform Issues
+
+### macOS
+- **Unicode normalization**: macOS may normalize Unicode differently
+- **Resource forks**: Very old HFS+ volumes may have resource forks (rarely an issue)
+- **Spotlight indexing**: May temporarily slow file operations
+
+### Windows
+- **Antivirus scanning**: Real-time scanners may slow file operations
+- **File locking**: Some editors/IDEs lock files more aggressively
+- **Long path support**: Must be enabled in Windows 10+ for very long paths
+
+### Linux
+- **Case sensitivity**: Be careful when moving code between case-sensitive and case-insensitive systems
+- **Filesystem differences**: Some network filesystems may have quirks
+
+## Environment Variables
+
+### Platform Detection
+Refaktor automatically detects platform capabilities:
+
+```bash
+# Force platform behavior (rarely needed)
+REFAKTOR_PLATFORM=linux refaktor plan old new    # Force Linux behavior
+REFAKTOR_PLATFORM=windows refaktor plan old new  # Force Windows behavior
+```
+
+### File System Override
+```bash
+# Force case sensitivity detection (expert use only)
+REFAKTOR_CASE_SENSITIVE=true refaktor plan old new
+REFAKTOR_CASE_SENSITIVE=false refaktor plan old new
+```
+
+## Best Practices by Platform
+
+### Linux
+```bash
+# Take advantage of case sensitivity
+refaktor rename oldName OldName  # Works directly
+
+# Use parallel processing for large projects
+refaktor plan old new --include "**/*.rs"  # Fast on Linux
+```
+
+### macOS
+```bash
+# Be aware of case insensitivity
+refaktor rename oldName OldName --preview table  # Shows two-step rename
+
+# Consider filesystem overhead for huge projects
+refaktor plan old new --include "src/**" --exclude "node_modules/**"
+```
+
+### Windows
+```bash
+# Use forward slashes for consistency
+refaktor plan old new --include "src/**/*.js"
+
+# Be mindful of path lengths
+refaktor plan old new --exclude "**/very/deeply/nested/directories/**"
+```
+
+## Cross-Platform Testing
+
+For teams working across platforms:
+
+```bash
+# Test your refactoring on multiple platforms
+git branch test-refactor
+refaktor rename old new --preview table
+git commit -m "Test refactor"
+
+# Have team members test on their platforms
+git push origin test-refactor
+```
+
+## Platform-Specific Optimizations
+
+### Planned Improvements
+- **macOS**: Better APFS optimization
+- **Windows**: Long path support detection and enablement
+- **Linux**: io_uring support for faster file operations
+- **All**: Platform-specific ignore patterns

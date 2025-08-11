@@ -1,0 +1,198 @@
+---
+title: Safety Features
+description: Refaktor's comprehensive safety mechanisms for worry-free refactoring
+---
+
+# Safety Features
+
+Refaktor is built with safety as a core principle. Multiple layers of protection ensure your code remains intact during refactoring operations.
+
+## Plan/Apply Workflow
+
+### Two-Step Process
+1. **Plan**: Generate a detailed preview of all changes without modifying anything
+2. **Apply**: Execute the plan atomically after review
+
+```bash
+# Step 1: Create and review the plan
+refaktor plan old_name new_name --preview table
+
+# Step 2: Apply when satisfied
+refaktor apply
+```
+
+### Fast Path for Simple Changes
+The `rename` command combines planning and applying with confirmation:
+
+```bash
+refaktor rename old_name new_name --preview table
+# Shows preview → asks for confirmation → applies atomically
+```
+
+## Atomic Operations
+
+All file modifications are atomic by default:
+
+### How It Works
+1. **Temporary files**: Changes are written to temporary files first
+2. **Atomic rename**: Files are atomically renamed into place
+3. **Directory sync**: Parent directories are synced (on Unix systems) 
+4. **Rollback on failure**: If any operation fails, all changes are rolled back
+
+### Benefits
+- **No partial states**: Your codebase never exists in a half-modified state
+- **Interruption safety**: Safe to interrupt (Ctrl+C) during operations
+- **Consistency**: All changes succeed together or none at all
+
+## Backup and History System
+
+### Automatic Backups
+Before applying changes, Refaktor creates backups of all affected files:
+
+```
+.refaktor/
+├── backups/
+│   └── abc123-20241201-143022/
+│       ├── src/
+│       │   └── auth.js
+│       └── components/
+│           └── UserProfile.tsx
+└── history.json
+```
+
+### Integrity Verification
+- Each backup includes SHA-256 checksums
+- Checksums are verified during restore operations
+- Corrupted backups are detected and reported
+
+### Unlimited Undo/Redo
+```bash
+# See all operations
+refaktor history
+
+# Undo any operation by ID
+refaktor undo abc123
+
+# Redo if you change your mind  
+refaktor redo abc123
+```
+
+## Conflict Detection
+
+Refaktor detects various types of conflicts before making changes:
+
+### File Rename Conflicts
+
+**Multiple-to-One**: When multiple files would rename to the same destination
+```
+❌ Conflict detected: Multiple files would be renamed to 'utils.js':
+  - old_utils.js
+  - oldUtils.js
+
+Use --exclude or --include patterns to resolve this conflict.
+```
+
+**Case-Insensitive Filesystems**: On macOS/Windows
+```
+⚠️  Case-insensitive rename detected: 'OldName.js' → 'oldName.js'
+This will be handled with a two-step rename process.
+```
+
+**Windows Reserved Names**: Prevents creating invalid files
+```
+❌ Cannot create 'CON.js' - reserved filename on Windows
+```
+
+### Content Conflicts
+- **Overlapping matches**: When the same text would be replaced multiple times
+- **Boundary violations**: When matches don't respect word boundaries (with warnings)
+
+## Lock File Protection
+
+Refaktor prevents concurrent operations that could corrupt your workspace:
+
+### Lock Mechanism
+- Lock file created at `.refaktor/refaktor.lock` during operations
+- Contains process ID and timestamp for tracking
+- Automatically cleaned up when operations complete
+
+### Stale Lock Handling
+- Stale locks (older than 5 minutes) are automatically removed
+- Manual cleanup if needed: `rm .refaktor/refaktor.lock`
+
+```bash
+# If you see this error:
+❌ Another refaktor operation is in progress (PID: 12345)
+
+# Check if the process is actually running:
+ps 12345
+
+# If not, remove the stale lock:
+rm .refaktor/refaktor.lock
+```
+
+## Git Integration
+
+### Status Checking
+Refaktor can check git status before operations:
+
+```bash
+# Apply with automatic git commit
+refaktor apply --commit
+```
+
+### Best Practices
+- **Commit before large refactors**: Makes git-based rollback possible
+- **Clean working directory**: Start with committed changes when possible
+- **Branch for experiments**: Use git branches for exploratory refactoring
+
+## Dry Run Mode
+
+Preview changes without creating plan files:
+
+```bash
+# See what would change without any file creation
+refaktor dry-run old_name new_name --preview table
+```
+
+Perfect for:
+- Exploring potential changes
+- Testing include/exclude patterns
+- Understanding scope before committing to a plan
+
+## Error Handling
+
+### Graceful Degradation
+- **Permission errors**: Clear reporting with suggested fixes
+- **Disk space**: Checks available space before large operations
+- **Filesystem errors**: Detailed error messages with context
+
+### Recovery Guidance
+When operations fail, Refaktor provides:
+- **Clear error messages**: What went wrong and why
+- **Recovery steps**: How to fix the issue
+- **Safe cleanup**: How to return to a clean state
+
+### Example Error Handling
+```bash
+❌ Error: Permission denied writing to 'src/readonly.js'
+
+Suggestions:
+1. Check file permissions: ls -la src/readonly.js
+2. Make writable: chmod +w src/readonly.js
+3. Or exclude from refactoring: --exclude "src/readonly.js"
+```
+
+## Force Options (Use with Caution)
+
+For advanced users who understand the risks:
+
+```bash
+# Apply even if conflicts are detected
+refaktor apply --force-with-conflicts
+
+# Confirm case-insensitive or collision renames
+refaktor rename old new --confirm-collisions
+```
+
+**⚠️ Warning**: Force options bypass safety checks. Use only when you understand the implications and have backups.

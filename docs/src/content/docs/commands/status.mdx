@@ -1,0 +1,39 @@
+---
+title: status
+description: Show current refactoring status
+---
+
+# refaktor status
+
+The `status` command displays information about the current state of refactoring operations.
+
+## Usage
+
+```bash
+refaktor status
+```
+
+## Information Shown
+
+- **Current plan**: If a plan exists and hasn't been applied
+- **Recent operations**: Last few operations with their status  
+- **Workspace state**: Lock files, backup directories
+- **Git integration**: Whether git auto-commit is available
+
+## Examples
+
+```bash
+$ refaktor status
+
+📋 Active plan: .refaktor/plan.json
+   Created: 2024-12-01 14:30:22
+   Pattern: getUserName → fetchUserProfile
+   Files to modify: 23
+   Files to rename: 5
+
+🔒 Workspace: Clean (no active operations)
+
+📚 Recent operations:
+   abc123... Applied (2024-12-01 14:25:15)
+   def456... Undone   (2024-12-01 14:20:08)
+```

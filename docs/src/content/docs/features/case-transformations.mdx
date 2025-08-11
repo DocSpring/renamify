@@ -1,0 +1,122 @@
+---
+title: Case-Aware Transformations
+description: How Refaktor handles different naming conventions automatically
+---
+
+# Case-Aware Transformations
+
+Refaktor's most powerful feature is its ability to understand and convert between different naming conventions automatically.
+
+## Supported Case Styles
+
+When you provide a search and replace pattern, Refaktor automatically applies the transformation to all detected case variants:
+
+### Default Case Styles
+
+- **snake_case** → `old_name` → `new_name`
+- **kebab-case** → `old-name` → `new-name`  
+- **camelCase** → `oldName` → `newName`
+- **PascalCase** → `OldName` → `NewName`
+- **SCREAMING_SNAKE_CASE** → `OLD_NAME` → `NEW_NAME`
+
+### Additional Case Styles
+
+- **Title Case** → `Old Name` → `New Name`
+- **Train-Case** → `Old-Name` → `New-Name`
+- **dot.case** → `old.name` → `new.name`
+
+## Contextual Separator Coercion
+
+Refaktor includes intelligent contextual separator coercion that adapts the replacement style based on the surrounding code context:
+
+- **Context-aware replacement**: `refaktor_core::Engine` becomes `smart_search_and_replace_core::Engine` (snake_case context)
+- **Path-aware**: `src/refaktor/main.rs` becomes `src/smart-search-and-replace/main.rs` (kebab-case for paths)
+- **URL-aware**: `https://github.com/user/refaktor` becomes `https://github.com/user/smart-search-and-replace`
+- **Module-aware**: `refaktor::core::apply()` becomes `smart_search_and_replace::core::apply()`
+
+The coercion analyzes the immediate context around each match to determine the most appropriate separator style, making refactoring feel more natural and reducing manual corrections.
+
+## Controlling Case Styles
+
+### Use Only Specific Styles
+
+```bash
+# Only handle camelCase and snake_case
+refaktor plan old_name new_name --only-styles camel,snake
+```
+
+### Exclude Specific Styles
+
+```bash
+# Use defaults but exclude SCREAMING_SNAKE_CASE
+refaktor plan old_name new_name --exclude-styles screaming-snake
+```
+
+### Include Additional Styles
+
+```bash
+# Add Title Case and dot.case to the defaults
+refaktor plan old_name new_name --include-styles title,dot
+```
+
+## Style Names Reference
+
+| Style Name | Example |
+|------------|---------|
+| `snake` | `snake_case` |
+| `kebab` | `kebab-case` |
+| `camel` | `camelCase` |
+| `pascal` | `PascalCase` |
+| `screaming-snake` | `SCREAMING_SNAKE_CASE` |
+| `title` | `Title Case` |
+| `train` | `Train-Case` |
+| `dot` | `dot.case` |
+
+## Examples
+
+### Basic Case Transformation
+
+```bash
+refaktor plan getUserName fetchUserProfile --preview table
+```
+
+This will find and replace:
+- `getUserName` → `fetchUserProfile`
+- `get_user_name` → `fetch_user_profile`
+- `GetUserName` → `FetchUserProfile`
+- `GET_USER_NAME` → `FETCH_USER_PROFILE`
+- `get-user-name` → `fetch-user-profile`
+
+### Custom Style Selection
+
+```bash
+# Only transform camelCase and PascalCase (common in TypeScript/React)
+refaktor plan oldComponent newComponent --only-styles camel,pascal
+
+# Exclude SCREAMING_SNAKE_CASE (maybe it's used for constants you don't want to change)
+refaktor plan apiKey secretKey --exclude-styles screaming-snake
+```
+
+### Including Extra Styles
+
+```bash
+# Include title case for documentation or UI text
+refaktor plan user_profile account_settings --include-styles title
+```
+
+This would also transform:
+- `User Profile` → `Account Settings`
+
+## Boundary Detection
+
+Refaktor is smart about word boundaries to avoid partial matches:
+
+✅ **Good matches**:
+- `getUserName()` - function call
+- `const getUserName` - variable declaration  
+- `getUserName:` - object property
+- `get_user_name.py` - filename
+
+❌ **Avoided**:
+- `getUserNameFromAPI` - part of a longer identifier
+- `prefixgetUserName` - not at word boundary

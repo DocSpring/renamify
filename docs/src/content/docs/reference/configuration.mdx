@@ -1,0 +1,203 @@
+---
+title: Configuration
+description: Refaktor configuration options and environment variables
+---
+
+# Configuration
+
+## Project-Level Settings
+
+Refaktor looks for configuration in `.refaktor/config.toml`:
+
+```toml
+# Example configuration (not yet fully implemented)
+[defaults]
+respect_gitignore = true
+atomic = true
+create_backups = true
+
+[patterns]
+# Custom ignore patterns
+ignore = ["vendor/**", "node_modules/**"]
+
+[styles]
+# Default case styles to use
+default = ["snake", "kebab", "camel", "pascal", "screaming-snake"]
+```
+
+## Environment Variables
+
+### NO_COLOR
+Disable colored output (respects the [NO_COLOR standard](https://no-color.org/)):
+
+```bash
+NO_COLOR=1 refaktor plan old new
+```
+
+### REFAKTOR_YES
+Equivalent to the `-y` flag (assume yes for all prompts):
+
+```bash
+REFAKTOR_YES=1 refaktor plan old new
+# Same as: refaktor -y plan old new
+```
+
+Useful for:
+- CI/CD environments
+- Automated scripts  
+- Non-interactive contexts
+
+## Auto-Initialization Settings
+
+Control how Refaktor initializes its workspace:
+
+### Command-Line Options
+```bash
+# Automatically add to .gitignore without prompting
+refaktor --auto-init=repo plan old new
+
+# Add to local git exclude instead
+refaktor --auto-init=local plan old new
+
+# Add to global git excludes
+refaktor --auto-init=global plan old new
+
+# Disable auto-initialization completely
+refaktor --no-auto-init plan old new
+```
+
+### Environment Integration
+```bash
+# For CI/CD - assume yes and use repo initialization
+export REFAKTOR_YES=1
+refaktor --auto-init=repo plan old new
+```
+
+## Workspace Structure
+
+Refaktor creates and manages these directories and files:
+
+```
+.refaktor/
+├── config.toml          # Project configuration (optional)
+├── plan.json           # Current active plan
+├── history.json        # Operation history
+├── refaktor.lock       # Process lock file (temporary)
+└── backups/            # Backup directories
+    ├── abc123-timestamp/
+    │   ├── file1.js    # Original file contents
+    │   ├── file2.py
+    │   ├── checksums.json      # Integrity verification
+    │   └── operation-info.json # Operation metadata
+    └── def456-timestamp/
+```
+
+## Ignore Configuration
+
+### Repository Level (.gitignore)
+Most users should add to their repository's `.gitignore`:
+
+```
+# Refaktor workspace
+.refaktor/
+```
+
+### Local Level (.git/info/exclude)
+For personal use without affecting the team:
+
+```
+# Add to .git/info/exclude
+.refaktor/
+```
+
+### Global Level
+For all your projects:
+
+```bash
+# Configure global excludes file
+git config --global core.excludesfile ~/.gitignore_global
+
+# Add to ~/.gitignore_global
+echo '.refaktor/' >> ~/.gitignore_global
+```
+
+## Performance Tuning
+
+### Large Codebase Settings
+
+For projects with many files, consider these optimizations:
+
+```bash
+# Use specific includes to limit scope
+refaktor plan old new --include "src/**/*.{js,ts}"
+
+# Exclude large directories early
+refaktor plan old new --exclude "node_modules/**,target/**"
+
+# Use unrestricted flags judiciously
+refaktor plan old new -u  # Only if you need gitignored files
+```
+
+### Memory Considerations
+
+Very large plans may require significant memory. Monitor usage with:
+
+```bash
+# Check plan file size
+ls -lh .refaktor/plan.json
+
+# For huge plans, consider splitting the work:
+refaktor plan old new --include "src/module1/**"  # First part
+refaktor apply
+refaktor plan old new --include "src/module2/**"  # Second part  
+refaktor apply
+```
+
+## Platform-Specific Settings
+
+### Windows
+- Handles path length limitations (260 chars)
+- Prevents Windows reserved filenames (CON, PRN, AUX, etc.)
+- Supports both `/` and `\` path separators
+
+### macOS
+- Detects case-insensitive APFS/HFS+ filesystems
+- Uses two-step renames for case-only changes
+- Handles Unicode normalization differences
+
+### Linux
+- Generally case-sensitive filesystem support
+- Efficient parallel directory traversal
+- Memory-mapped file reading for performance
+
+## Future Configuration Options
+
+Planned configuration features (not yet implemented):
+
+```toml
+[defaults]
+# Default preview format
+preview_format = "table"  # table, diff, json
+
+# Default unrestricted level  
+unrestricted = 0  # 0, 1, 2, 3
+
+# Automatic git operations
+auto_commit = false
+commit_message_template = "Refactor: {old} → {new}"
+
+[safety]
+# Backup retention
+backup_retention_days = 30
+max_backup_size_mb = 1000
+
+# Conflict handling
+conflict_strategy = "ask"  # ask, skip, force
+
+[performance] 
+# Parallel processing
+max_threads = 0  # 0 = auto-detect
+
+# Memory limits
+max_plan_size_mb = 100
+```

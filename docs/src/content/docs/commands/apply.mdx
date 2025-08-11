@@ -1,0 +1,274 @@
+---
+title: apply
+description: Execute a previously generated refactoring plan
+---
+
+# refaktor apply
+
+The `apply` command executes a previously generated plan, making all the planned changes to your codebase atomically.
+
+## Usage
+
+```bash
+refaktor apply [OPTIONS]
+```
+
+## Options
+
+- `--plan <PATH>` - Path to plan file (default: .refaktor/plan.json)
+- `--atomic` - Apply changes atomically (default: true)
+- `--commit` - Create a git commit after applying
+- `--force-with-conflicts` - Apply even if conflicts are detected
+
+## How It Works
+
+When you run `apply`, Refaktor:
+
+1. **Loads the plan** from the specified file
+2. **Validates the plan** and checks for conflicts
+3. **Creates backups** of all files to be modified
+4. **Applies content changes** to files atomically
+5. **Renames files and directories** in dependency order
+6. **Records the operation** in history for undo support
+7. **Optionally commits** to git if requested
+
+## Examples
+
+### Basic Apply
+```bash
+# Apply the default plan
+refaktor apply
+```
+
+### Apply Specific Plan
+```bash
+# Apply a plan from a custom location
+refaktor apply --plan ./my-refactor-plan.json
+```
+
+### Apply with Git Commit
+```bash
+# Apply changes and create a git commit
+refaktor apply --commit
+```
+
+### Force Apply (Dangerous)
+```bash
+# Apply even if conflicts are detected
+refaktor apply --force-with-conflicts
+```
+
+## Atomic Operations
+
+By default, `apply` uses atomic operations:
+
+### What "Atomic" Means
+- **All or nothing**: Either all changes succeed or none are applied
+- **Temporary files**: Changes are written to temporary files first
+- **Atomic rename**: Files are moved into place atomically
+- **Rollback on failure**: If any step fails, all changes are reverted
+
+### Benefits
+- **No partial states**: Your codebase is never left in a half-modified state
+- **Safe interruption**: You can safely Ctrl+C during application
+- **Consistency**: All files are updated simultaneously
+
+### Example Atomic Process
+```bash
+$ refaktor apply
+
+📋 Loading plan: .refaktor/plan.json
+🔍 Validating 23 file modifications, 5 renames...
+💾 Creating backups...
+✏️  Applying content changes...
+📁 Renaming files and directories...
+✅ Applied successfully! Operation ID: def456-20241201-150322
+
+Backups stored in: .refaktor/backups/def456-20241201-150322/
+```
+
+## Conflict Detection
+
+Before applying, Refaktor checks for various conflicts:
+
+### File Modification Conflicts
+```
+❌ Conflict: File 'src/utils.js' has been modified since plan was created
+   Plan checksum: abc123...
+   Current checksum: def456...
+
+Resolve by:
+1. Recreating the plan: refaktor plan old new
+2. Or force apply: refaktor apply --force-with-conflicts
+```
+
+### File Rename Conflicts
+```
+❌ Conflict: Multiple files would be renamed to 'components/Utils.js':
+  - components/old_utils.js
+  - components/oldUtils.js
+
+Resolve by recreating plan with --exclude patterns.
+```
+
+### Missing Files
+```
+❌ Conflict: File 'src/missing.js' in plan no longer exists
+
+The plan may be outdated. Consider recreating it.
+```
+
+## Git Integration
+
+### Automatic Commits
+```bash
+refaktor apply --commit
+```
+
+Creates a commit message like:
+```
+Refactor: getUserName → fetchUserProfile
+
+Applied refactoring operation def456-20241201-150322:
+- Modified 23 files
+- Renamed 5 files  
+- Renamed 2 directories
+
+Operation can be undone with: refaktor undo def456-20241201-150322
+```
+
+### Pre-commit Requirements
+If using `--commit`, ensure:
+- Git working directory is clean (or you're okay with a mixed commit)
+- You have appropriate git configuration (user.name, user.email)
+
+## Backup System
+
+Every apply operation creates comprehensive backups:
+
+### Backup Structure
+```
+.refaktor/backups/def456-20241201-150322/
+├── src/
+│   ├── auth.js                 # Original file content
+│   └── utils.js
+├── components/
+│   └── UserProfile.tsx
+├── checksums.json              # File integrity checksums
+└── operation-info.json         # Operation metadata
+```
+
+### Backup Contents
+- **Original file contents**: Exact copies before modification
+- **Checksums**: SHA-256 hashes for integrity verification  
+- **Operation metadata**: Plan details, timestamps, file paths
+- **Rename records**: Original → new path mappings
+
+## Error Handling
+
+### Partial Application Failures
+If any step fails during application:
+
+```bash
+❌ Error applying changes to 'src/readonly.js': Permission denied
+
+Rolling back all changes...
+✅ All changes have been rolled back successfully.
+
+To fix:
+1. Check file permissions: ls -la src/readonly.js
+2. Make writable: chmod +w src/readonly.js  
+3. Retry: refaktor apply
+```
+
+### Recovery Steps
+1. **Check file permissions** - Ensure you can write to all files
+2. **Free disk space** - Ensure adequate space for operations
+3. **Close editors** - Some editors may lock files  
+4. **Retry application** - Most errors are temporary
+
+### Force Application
+Use `--force-with-conflicts` only when you understand the risks:
+
+```bash
+# This bypasses safety checks - use carefully!
+refaktor apply --force-with-conflicts
+```
+
+## After Application
+
+### Verify Changes
+```bash
+# Check what was actually applied
+refaktor history --limit 1
+
+# Test your code
+npm test  # or cargo test, etc.
+```
+
+### Undo if Needed
+```bash
+# Undo the last operation
+refaktor undo def456-20241201-150322
+
+# Or see all operations and pick one
+refaktor history
+refaktor undo <operation-id>
+```
+
+### Clean Up
+The plan file remains after application for reference:
+
+```bash
+# Remove the plan file if done
+rm .refaktor/plan.json
+
+# Or keep it for documentation
+```
+
+## Performance Considerations
+
+### Large Applications
+For very large refactoring operations:
+
+- **Disk space**: Ensure you have space for backups (roughly 2x the size of modified files)
+- **Memory usage**: Large plans may require significant RAM
+- **Time**: Atomic operations on thousands of files can take time
+
+### Optimization Tips
+- **Close unnecessary programs** to free system resources
+- **Use SSD storage** for faster file operations
+- **Ensure stable power** for long operations
+
+## Exit Codes
+
+- `0` - Applied successfully
+- `1` - Conflicts detected (use `--force-with-conflicts` to override)  
+- `2` - Invalid plan file or arguments
+- `3` - Internal error or system issue
+
+## Integration with Other Commands
+
+### Typical Workflow
+```bash
+# 1. Plan the changes
+refaktor plan old_name new_name --preview-format table
+
+# 2. Review the plan
+cat .refaktor/plan.json | jq '.stats'
+
+# 3. Apply the plan  
+refaktor apply --commit
+
+# 4. Verify and test
+git log --oneline -1
+npm test
+```
+
+### Alternative: Use rename
+For simpler cases, consider using `refaktor rename` which combines planning and applying:
+
+```bash
+# This does plan + apply in one step with confirmation
+refaktor rename old_name new_name --preview table --commit
+```
