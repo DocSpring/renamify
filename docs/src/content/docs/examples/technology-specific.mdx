@@ -12,8 +12,10 @@ description: Refactoring examples for specific programming languages and framewo
 # Rename a React component across the entire project
 refaktor rename UserCard ProfileCard \
   --include "src/**/*.{tsx,ts,js,jsx}" \
-  --exclude "**/*.test.*" \
-  --preview table
+  --exclude "**/*.test.*"
+
+# Or use specific paths
+refaktor rename UserCard ProfileCard src/components/ src/pages/
 ```
 
 **Changes made:**
@@ -27,8 +29,10 @@ refaktor rename UserCard ProfileCard \
 ```bash
 # Rename a custom React hook
 refaktor rename useUserData useProfileData \
-  --include "src/**/*.{ts,tsx}" \
-  --preview table
+  --include "src/**/*.{ts,tsx}"
+
+# Or target specific directories
+refaktor rename useUserData useProfileData src/hooks/ src/components/
 ```
 
 **Changes made:**
@@ -49,8 +53,10 @@ const { data, loading } = useProfileData(userId);
 # Rename Django models and related code
 refaktor rename UserProfile AccountProfile \
   --include "**/*.py" \
-  --exclude "migrations/**" \
-  --preview table
+  --exclude "migrations/**"
+
+# Or target specific app directories
+refaktor rename UserProfile AccountProfile apps/users/ apps/accounts/
 ```
 
 **Changes made:**
@@ -77,8 +83,10 @@ profile = AccountProfile.objects.get(id=1)
 # Rename Flask route handlers
 refaktor rename getUserData fetchUserProfile \
   --include "**/*.py" \
-  --exclude "venv/**" \
-  --preview table
+  --exclude "venv/**"
+
+# Or target specific modules
+refaktor rename getUserData fetchUserProfile app/ routes/
 ```
 
 ## Rust Projects
@@ -88,8 +96,10 @@ refaktor rename getUserData fetchUserProfile \
 # Rename Rust modules and functions
 refaktor rename user_manager profile_manager \
   --include "**/*.rs" \
-  --exclude "target/**" \
-  --preview table
+  --exclude "target/**"
+
+# Or target specific source directories
+refaktor rename user_manager profile_manager src/ lib/
 ```
 
 **Changes made:**
@@ -111,8 +121,7 @@ use profile_manager::ProfileManager;
 ```bash
 # Rename crate references
 refaktor rename my_crate awesome_crate \
-  --include "**/Cargo.toml,**/*.rs" \
-  --preview table
+  --include "**/Cargo.toml,**/*.rs"
 ```
 
 ## Go Projects
@@ -122,8 +131,10 @@ refaktor rename my_crate awesome_crate \
 # Rename Go packages
 refaktor rename userservice profileservice \
   --include "**/*.go" \
-  --exclude "vendor/**" \
-  --preview table
+  --exclude "vendor/**"
+
+# Or target specific packages
+refaktor rename userservice profileservice pkg/ cmd/
 ```
 
 **Changes made:**
@@ -146,8 +157,10 @@ func GetProfileService() *ProfileService { ... }
 # Rename throughout a Node.js project
 refaktor rename mypackage awesome_package \
   --include "**/*.{js,json,md}" \
-  --exclude "node_modules/**" \
-  --preview table
+  --exclude "node_modules/**"
+
+# Or target specific directories
+refaktor rename mypackage awesome_package src/ lib/ docs/
 ```
 
 **Changes made:**
@@ -161,8 +174,10 @@ refaktor rename mypackage awesome_package \
 # Rename Express route handlers
 refaktor rename userRoutes profileRoutes \
   --include "**/*.js" \
-  --exclude "node_modules/**" \
-  --preview table
+  --exclude "node_modules/**"
+
+# Or target route directories
+refaktor rename userRoutes profileRoutes routes/ controllers/
 ```
 
 ## Database Projects
@@ -173,7 +188,6 @@ refaktor rename userRoutes profileRoutes \
 refaktor rename user_data profile_data \
   --include "**/*.sql" \
   --exclude "migrations/**" \
-  --preview table \
   --dry-run  # Always dry-run first for SQL!
 ```
 
@@ -198,16 +212,14 @@ CREATE TABLE profile_data (
 ```bash
 # Update environment variable names
 refaktor rename DATABASE_HOST DB_HOST \
-  --include "**/*.{env,yml,yaml,json}" \
-  --preview table
+  --include "**/*.{env,yml,yaml,json}"
 ```
 
 ### Docker and K8s
 ```bash
 # Rename service references in Docker/K8s files  
 refaktor rename userservice profileservice \
-  --include "**/*.{yml,yaml,dockerfile}" \
-  --preview table
+  --include "**/*.{yml,yaml,dockerfile}"
 ```
 
 ## Multi-Language Projects
@@ -217,8 +229,10 @@ refaktor rename userservice profileservice \
 # Rename across multiple languages in a microservice setup
 refaktor rename userservice profileservice \
   --include "**/*.{js,py,go,rs,yml,yaml,json}" \
-  --exclude "**/node_modules/**,**/target/**,**/__pycache__/**" \
-  --preview table
+  --exclude "**/node_modules/**,**/target/**,**/__pycache__/**"
+
+# Or target specific service directories
+refaktor rename userservice profileservice services/ api/ config/
 ```
 
 This handles:
@@ -236,8 +250,10 @@ This handles:
 refaktor rename oldPage newPage \
   --include "**/*.{tsx,ts,js,jsx}" \
   --include "pages/**" \
-  --include "app/**" \
-  --preview table
+  --include "app/**"
+
+# Or target specific Next.js directories
+refaktor rename oldPage newPage pages/ app/ components/
 ```
 
 ### Vue.js Projects  
@@ -245,8 +261,10 @@ refaktor rename oldPage newPage \
 # Include Vue single file components
 refaktor rename UserWidget ProfileWidget \
   --include "**/*.{vue,js,ts}" \
-  --include "src/components/**" \
-  --preview table
+  --include "src/components/**"
+
+# Or target Vue directories
+refaktor rename UserWidget ProfileWidget src/components/ src/views/
 ```
 
 ### Laravel Projects
@@ -254,8 +272,10 @@ refaktor rename UserWidget ProfileWidget \
 # PHP Laravel project refactoring
 refaktor rename UserController ProfileController \
   --include "**/*.php" \
-  --exclude "vendor/**" \
-  --preview table
+  --exclude "vendor/**"
+
+# Or target specific Laravel directories
+refaktor rename UserController ProfileController app/Http/Controllers/ app/Models/
 ```
 
 ## Best Practices by Technology

@@ -134,7 +134,14 @@ fn render_table_with_fixed_width(
     // Add content rows
     for file in sorted_files {
         let (count, variants) = &file_stats[&file];
-        let file_str = file.display().to_string();
+        // Make path relative to current directory for cleaner display
+        let file_str = match std::env::current_dir()
+            .ok()
+            .and_then(|cwd| file.strip_prefix(cwd).ok())
+        {
+            Some(relative_path) => relative_path.display().to_string(),
+            None => file.display().to_string(),
+        };
         let variants_str = variants.join(", ");
 
         if use_color {
@@ -156,8 +163,21 @@ fn render_table_with_fixed_width(
 
     // Add rename rows (root directory renames should not be in plans unless explicitly requested)
     for rename in &plan.renames {
-        let from_str = rename.from.display().to_string();
-        let to_str = rename.to.display().to_string();
+        // Make paths relative to current directory for cleaner display
+        let from_str = match std::env::current_dir()
+            .ok()
+            .and_then(|cwd| rename.from.strip_prefix(cwd).ok())
+        {
+            Some(relative_path) => relative_path.display().to_string(),
+            None => rename.from.display().to_string(),
+        };
+        let to_str = match std::env::current_dir()
+            .ok()
+            .and_then(|cwd| rename.to.strip_prefix(cwd).ok())
+        {
+            Some(relative_path) => relative_path.display().to_string(),
+            None => rename.to.display().to_string(),
+        };
         let kind_str = match rename.kind {
             RenameKind::File => "Rename (File)",
             RenameKind::Dir => "Rename (Dir)",

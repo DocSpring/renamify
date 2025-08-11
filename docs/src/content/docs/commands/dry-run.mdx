@@ -32,6 +32,9 @@ Perfect for:
 # Quick preview of what would change
 refaktor dry-run getUserName fetchUserProfile
 
+# Test specific paths
+refaktor dry-run old_name new_name src/ tests/
+
 # Test include patterns
 refaktor dry-run old_name new_name --include "src/**/*.{js,ts}"
 

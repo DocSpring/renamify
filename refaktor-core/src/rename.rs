@@ -1,3 +1,4 @@
+use crate::scanner::build_globset;
 use anyhow::{anyhow, Result};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
@@ -84,6 +85,10 @@ pub fn plan_renames_with_conflicts(
     let mut collected_renames = Vec::new();
     let case_insensitive_fs = detect_case_insensitive_fs(root);
 
+    // Build globsets for include/exclude filtering using shared logic
+    let include_globs = build_globset(&options.includes)?;
+    let exclude_globs = build_globset(&options.excludes)?;
+
     // Use shared walker configuration
     let walker = crate::configure_walker(&[root.to_path_buf()], options).build();
 
@@ -95,6 +100,21 @@ pub fn plan_renames_with_conflicts(
         };
 
         let path = entry.path();
+
+        // Apply include/exclude filters (use relative path for matching)
+        let relative_path = path.strip_prefix(root).unwrap_or(path);
+
+        if let Some(ref includes) = include_globs {
+            if !includes.is_match(relative_path) {
+                continue;
+            }
+        }
+
+        if let Some(ref excludes) = exclude_globs {
+            if excludes.is_match(relative_path) {
+                continue;
+            }
+        }
 
         // Get file type from entry metadata
         let file_type = match entry.file_type() {

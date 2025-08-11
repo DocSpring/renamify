@@ -17,6 +17,9 @@ importers:
       sharp:
         specifier: ^0.34.2
         version: 0.34.3
+      starlight-image-zoom:
+        specifier: ^0.13.0
+        version: 0.13.0(@astrojs/starlight@0.35.2(astro@5.12.9(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2)))
 
 packages:
 
@@ -1606,6 +1609,12 @@ packages:
 
   space-separated-tokens@2.0.2:
     resolution: {integrity: sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==}
+
+  starlight-image-zoom@0.13.0:
+    resolution: {integrity: sha512-7K/7gshnKooYd4ePy5vtyv1jFoFVNUb8IoXWDcnY69+nxvmLATNrmOzD2M4TJ/aKynPSBSM6j9ia4s/PPy/JGA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@astrojs/starlight': '>=0.32.0'
 
   stream-replace-string@2.0.0:
     resolution: {integrity: sha512-TlnjJ1C0QrmxRNrON00JvaFFlNh5TTG00APw23j74ET7gkQpTASi6/L2fuiav8pzK715HXtUeClpBTw2NPSn6w==}
@@ -4060,6 +4069,16 @@ snapshots:
   source-map@0.7.6: {}
 
   space-separated-tokens@2.0.2: {}
+
+  starlight-image-zoom@0.13.0(@astrojs/starlight@0.35.2(astro@5.12.9(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2))):
+    dependencies:
+      '@astrojs/starlight': 0.35.2(astro@5.12.9(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2))
+      mdast-util-mdx-jsx: 3.2.0
+      rehype-raw: 7.0.0
+      unist-util-visit: 5.0.0
+      unist-util-visit-parents: 6.0.1
+    transitivePeerDependencies:
+      - supports-color
 
   stream-replace-string@2.0.0: {}
 

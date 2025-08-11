@@ -10,18 +10,20 @@ The `rename` command is the fastest way to refactor your codebase. It combines p
 ## Usage
 
 ```bash
-refaktor rename <OLD> <NEW> [OPTIONS]
+refaktor rename <OLD> <NEW> [PATHS]... [OPTIONS]
 ```
 
 ## Arguments
 
-- `<OLD>` - The text pattern to find and replace
-- `<NEW>` - The replacement text
+- `<OLD>` - Old identifier to replace
+- `<NEW>` - New identifier to replace with
+- `[PATHS]...` - Search paths (files or directories)
 
 ## Options
 
 ### Preview and Confirmation
-- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json)
+- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json, none) [default: table]
+- `--dry-run` - Show preview only, don't apply changes
 - `--large` - Acknowledge large changes (>500 files or >100 renames)
 
 ### File Processing
@@ -56,36 +58,40 @@ refaktor rename <OLD> <NEW> [OPTIONS]
 
 ### Basic Rename
 ```bash
-# Rename with table preview and confirmation
-refaktor rename getUserName fetchUserProfile --preview table
+# Rename with automatic preview and confirmation
+refaktor rename getUserName fetchUserProfile
+
+# Or specify specific paths
+refaktor rename getUserName fetchUserProfile src/ tests/
 ```
 
 ### Specific File Types
 ```bash
-# Only process TypeScript files
-refaktor rename oldName newName --include "**/*.{ts,tsx}" --preview table
+# Only process TypeScript files using patterns
+refaktor rename oldName newName --include "**/*.{ts,tsx}"
+
+# Or use specific paths
+refaktor rename oldName newName src/components/ src/utils/
 ```
 
 ### Exclude Certain Areas
 ```bash
 # Skip test files and node_modules
 refaktor rename oldApi newApi \
-  --exclude "**/*test*,node_modules/**" \
-  --preview table
+  --exclude "**/*test*,node_modules/**"
 ```
 
 ### Case Style Control
 ```bash
 # Only handle camelCase and PascalCase (common in React projects)
 refaktor rename oldComponent newComponent \
-  --only-styles camel,pascal \
-  --preview table
+  --only-styles camel,pascal
 ```
 
 ### With Git Commit
 ```bash
 # Automatically commit changes after applying
-refaktor rename old_function new_function --commit --preview diff
+refaktor rename old_function new_function --commit
 ```
 
 ### Project-Wide Rename
@@ -93,16 +99,14 @@ refaktor rename old_function new_function --commit --preview diff
 # Rename entire project including root directory
 refaktor rename myproject awesome_project \
   --rename-root \
-  --commit \
-  --preview table
+  --commit
 ```
 
 ### Exclude Specific Matches
 ```bash
 # Skip compound words that contain your pattern
 refaktor rename config settings \
-  --exclude-match ConfigurationManager,ConfigService \
-  --preview table
+  --exclude-match ConfigurationManager,ConfigService
 ```
 
 ## Interactive Flow
@@ -117,7 +121,7 @@ When you run `rename`, this is what happens:
 
 ### Example Session
 ```bash
-$ refaktor rename getUserName fetchUserProfile --preview table
+$ refaktor rename getUserName fetchUserProfile
 
 Files to modify: 12
 ┌─────────────────────────────────────┬──────────┬────────────────────┬─────────────────────┐

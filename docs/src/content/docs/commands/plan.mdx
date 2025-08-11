@@ -10,13 +10,14 @@ The `plan` command generates a detailed plan of all changes that will be made wi
 ## Usage
 
 ```bash
-refaktor plan <OLD> <NEW> [OPTIONS]
+refaktor plan <OLD> <NEW> [PATHS]... [OPTIONS]
 ```
 
 ## Arguments
 
-- `<OLD>` - The text pattern to find and replace
-- `<NEW>` - The replacement text
+- `<OLD>` - Old identifier to replace
+- `<NEW>` - New identifier to replace with
+- `[PATHS]...` - Search paths (files or directories)
 
 ## Options
 
@@ -48,7 +49,7 @@ refaktor plan <OLD> <NEW> [OPTIONS]
 
 ### Table Format (Default)
 ```bash
-refaktor plan getUserName fetchUserProfile --preview-format table
+refaktor plan getUserName fetchUserProfile
 ```
 
 Shows a clear table view of all changes:
@@ -122,17 +123,20 @@ Outputs structured JSON for programmatic use:
 
 ### Basic Planning
 ```bash
-# Create a plan with table preview
-refaktor plan old_name new_name --preview-format table
+# Create a plan with table preview (default)
+refaktor plan old_name new_name
 
 # Plan is saved to .refaktor/plan.json
 cat .refaktor/plan.json
+
+# Or specify specific paths
+refaktor plan old_name new_name src/ tests/
 ```
 
 ### Dry Run (No Plan File)
 ```bash
 # Just see what would change, don't create a plan file
-refaktor plan old_name new_name --dry-run --preview-format table
+refaktor plan old_name new_name --dry-run
 ```
 
 ### Custom Plan Location
@@ -143,7 +147,10 @@ refaktor plan old_name new_name --plan-out ./refactor-plan.json
 
 ### Specific File Types
 ```bash
-# Only plan changes for Rust files
+# Only plan changes for Rust files using paths
+refaktor plan old_name new_name src/ lib/
+
+# Or use include patterns for more control
 refaktor plan old_name new_name --include "**/*.rs"
 
 # Plan for source files, exclude tests

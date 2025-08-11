@@ -10,7 +10,7 @@ description: Large-scale refactoring examples
 Rename an entire library or module throughout your project:
 
 ```bash
-refaktor rename mylib awesome_lib --preview table --commit
+refaktor rename mylib awesome_lib --commit
 ```
 
 ### What This Changes
@@ -59,8 +59,7 @@ Rename API endpoints consistently:
 
 ```bash
 refaktor rename getUserData fetchUserProfile \
-  --include "**/*.{js,ts,py,go}" \
-  --preview table
+  --include "**/*.{js,ts,py,go}"
 ```
 
 ### What This Changes
@@ -94,8 +93,7 @@ Rename database-related code:
 ```bash
 refaktor rename user_profile account_profile \
   --include "**/*.{sql,js,py,rb}" \
-  --exclude "migrations/**" \
-  --preview table
+  --exclude "migrations/**"
 ```
 
 ### What This Changes
@@ -128,8 +126,7 @@ Update configuration keys across your application:
 
 ```bash
 refaktor rename redis_url cache_url \
-  --include "**/*.{js,py,rb,yml,yaml,json,toml}" \
-  --preview table
+  --include "**/*.{js,py,rb,yml,yaml,json,toml}"
 ```
 
 ### What This Changes
@@ -164,8 +161,7 @@ Sometimes you need to be selective about what gets changed:
 refaktor rename config settings \
   --exclude-match ConfigurationManager,ConfigService \
   --include "src/**" \
-  --exclude "**/*test*" \
-  --preview table
+  --exclude "**/*test*"
 ```
 
 This will:
@@ -182,8 +178,7 @@ Rename the entire project directory:
 ```bash
 refaktor rename myproject awesome_project \
   --rename-root \
-  --commit \
-  --preview table
+  --commit
 ```
 
 After confirmation, you'll see:
@@ -211,11 +206,17 @@ Next Steps:
 refaktor rename old_name new_name \
   --include "src/**/*.{js,ts,tsx}" \
   --exclude "node_modules/**"
+
+# Or use specific paths
+refaktor rename old_name new_name src/ lib/
 ```
 
 ### Use Dry Run First
 ```bash
 # Explore the scope before committing
+refaktor dry-run old_name new_name src/
+
+# Or with patterns
 refaktor dry-run old_name new_name --include "src/**"
 
 # Count potential matches

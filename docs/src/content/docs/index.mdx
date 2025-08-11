@@ -47,7 +47,7 @@ Refaktor handles all of these automatically in a single operation.
 Rename `getUserName` to `fetchUserProfile` across your entire codebase:
 
 ```bash
-refaktor rename getUserName fetchUserProfile --preview table
+refaktor rename getUserName fetchUserProfile
 ```
 
 This automatically handles:
@@ -56,6 +56,11 @@ This automatically handles:
 - `GetUserName` → `FetchUserProfile`
 - `GET_USER_NAME` → `FETCH_USER_PROFILE`
 - Files like `getUserName.js` → `fetchUserProfile.js`
+
+You can also specify specific paths:
+```bash
+refaktor rename getUserName fetchUserProfile src/ tests/
+```
 
 ## Demo
 
@@ -68,14 +73,14 @@ cd refaktor
 cargo build --release
 
 # Use refaktor to rename itself to smart_search_and_replace
-./target/release/refaktor rename refaktor smart_search_and_replace --preview table
+./target/release/refaktor rename refaktor smart_search_and_replace
 
 # Rebuild with the new name
 rm -rf target
 cargo build --release
 
 # Now use smart_search_and_replace to rename itself back to refaktor!
-./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --preview table
+./target/release/smart_search_and_replace rename smart_search_and_replace refaktor
 
 # Back to the original
 rm -rf target

@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import starlightImageZoom from 'starlight-image-zoom';
 
 // https://astro.build/config
 export default defineConfig({
@@ -11,6 +12,7 @@ export default defineConfig({
       title: "Refaktor",
       description:
         "Smart search & replace for code and files with case-aware transformations",
+      plugins: [starlightImageZoom()],
       social: [
         {
           icon: "github",
@@ -48,6 +50,10 @@ export default defineConfig({
         {
           label: "Examples",
           autogenerate: { directory: "examples" },
+        },
+        {
+          label: "Case Studies",
+          autogenerate: { directory: "case-studies" },
         },
         {
           label: "Integration",

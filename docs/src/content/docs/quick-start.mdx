@@ -8,7 +8,7 @@ description: Get started with Refaktor in minutes
 The fastest way to rename something across your codebase:
 
 ```bash
-refaktor rename old_name new_name --preview table
+refaktor rename old_name new_name
 ```
 
 This will:
@@ -22,8 +22,8 @@ This will:
 Let's say you want to rename `getUserName` to `fetchUserProfile`:
 
 ```bash
-# Preview what will change
-refaktor rename getUserName fetchUserProfile --preview table
+# Rename with preview and confirmation
+refaktor rename getUserName fetchUserProfile
 ```
 
 You'll see output like:
@@ -69,7 +69,7 @@ For large refactors, use the plan/apply workflow for extra safety:
 
 ```bash
 # Step 1: Create a plan
-refaktor plan old_name new_name --preview table
+refaktor plan old_name new_name
 
 # Step 2: Review the plan file
 cat .refaktor/plan.json
@@ -84,6 +84,9 @@ refaktor apply
 
 ```bash
 # Only rename in src/ directory
+refaktor rename old_name new_name src/
+
+# Or use include patterns for more control
 refaktor rename old_name new_name --include "src/**"
 
 # Exclude test files
@@ -109,7 +112,7 @@ refaktor rename old_name new_name --only-styles camel,snake
 
 ## Safe Practices
 
-1. **Always preview first** - Use `--preview table` to see changes
+1. **Preview is automatic** - Refaktor shows a preview by default before applying
 2. **Commit before large refactors** - Makes git-based rollback possible
 3. **Start small** - Try on a subset with `--include` first
 4. **Use undo** - Refaktor's undo is often faster than git reset

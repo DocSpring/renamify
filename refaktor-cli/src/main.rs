@@ -667,15 +667,17 @@ fn handle_plan(
         exclude_match,
     };
 
-    // Resolve all search paths to absolute paths
+    // Resolve all search paths to absolute paths and canonicalize them
     let resolved_paths: Vec<PathBuf> = search_paths
         .iter()
         .map(|path| {
-            if path.is_absolute() {
+            let absolute_path = if path.is_absolute() {
                 path.clone()
             } else {
                 current_dir.join(path)
-            }
+            };
+            // Canonicalize to remove . and .. components
+            absolute_path.canonicalize().unwrap_or(absolute_path)
         })
         .collect();
 

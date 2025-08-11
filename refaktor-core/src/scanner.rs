@@ -267,14 +267,28 @@ pub fn scan_repository_multi(
     })
 }
 
-fn build_globset(patterns: &[String]) -> Result<Option<GlobSet>> {
+pub fn build_globset(patterns: &[String]) -> Result<Option<GlobSet>> {
     if patterns.is_empty() {
         return Ok(None);
     }
 
     let mut builder = GlobSetBuilder::new();
     for pattern in patterns {
+        // Add the pattern as-is
         builder.add(Glob::new(pattern)?);
+
+        // If pattern looks like a directory (ends with / or no wildcards and no extension),
+        // also add a pattern that matches everything under it
+        if pattern.ends_with('/')
+            || (!pattern.contains('*') && !pattern.contains('?') && !pattern.contains('.'))
+        {
+            let recursive_pattern = if pattern.ends_with('/') {
+                format!("{}**", pattern)
+            } else {
+                format!("{}/**", pattern)
+            };
+            builder.add(Glob::new(&recursive_pattern)?);
+        }
     }
     Ok(Some(builder.build()?))
 }
@@ -539,6 +553,38 @@ mod tests {
         assert!(globset.is_match("test.rs"));
         assert!(globset.is_match("src/main.rs"));
         assert!(!globset.is_match("test.txt"));
+    }
+
+    #[test]
+    fn test_build_globset_directory_exclusion() {
+        // Test that directory patterns like "docs" automatically match subdirectories
+        let patterns = vec!["docs".to_string()];
+        let result = build_globset(&patterns).unwrap();
+        assert!(result.is_some());
+
+        let globset = result.unwrap();
+        // Should match the directory itself
+        assert!(globset.is_match("docs"));
+        // Should match files and subdirectories within it
+        assert!(globset.is_match("docs/README.md"));
+        assert!(globset.is_match("docs/src/assets/file.png"));
+        assert!(globset.is_match("docs/deep/nested/path.txt"));
+        // Should not match other directories
+        assert!(!globset.is_match("src/docs.rs"));
+        assert!(!globset.is_match("other/file.md"));
+    }
+
+    #[test]
+    fn test_build_globset_directory_with_slash() {
+        // Test that "docs/" also works
+        let patterns = vec!["docs/".to_string()];
+        let result = build_globset(&patterns).unwrap();
+        assert!(result.is_some());
+
+        let globset = result.unwrap();
+        assert!(globset.is_match("docs/"));
+        assert!(globset.is_match("docs/README.md"));
+        assert!(globset.is_match("docs/src/assets/file.png"));
     }
 
     #[test]

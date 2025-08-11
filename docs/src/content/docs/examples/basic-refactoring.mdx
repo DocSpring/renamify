@@ -11,7 +11,7 @@ Rename a function across your entire codebase:
 
 ```bash
 # Generate a plan and review
-refaktor plan getUserName fetchUserProfile --preview-format table
+refaktor plan getUserName fetchUserProfile
 
 # Apply the changes
 refaktor apply
@@ -21,7 +21,7 @@ Or use the fast-path:
 
 ```bash
 # Plan, preview, confirm, and apply in one command
-refaktor rename getUserName fetchUserProfile --preview table
+refaktor rename getUserName fetchUserProfile
 ```
 
 ### What Gets Changed
@@ -59,7 +59,7 @@ name = fetch_user_profile(id)
 Rename variables and constants:
 
 ```bash
-refaktor rename apiKey secretKey --preview table
+refaktor rename apiKey secretKey
 ```
 
 ### What Gets Changed
@@ -82,7 +82,7 @@ const secret_key = config.secret_key;
 Rename React/Vue components:
 
 ```bash
-refaktor rename UserCard ProfileCard --preview table
+refaktor rename UserCard ProfileCard
 ```
 
 ### What Gets Changed
@@ -107,7 +107,7 @@ import ProfileCard from './ProfileCard';
 Rename classes across multiple files:
 
 ```bash
-refaktor rename DatabaseManager DataManager --preview table
+refaktor rename DatabaseManager DataManager
 ```
 
 ### What Gets Changed
