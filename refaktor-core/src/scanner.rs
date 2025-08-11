@@ -1,0 +1,583 @@
+use crate::case_model::{generate_variant_map, Style};
+use crate::pattern::{build_pattern, find_matches, Match};
+use anyhow::Result;
+use bstr::ByteSlice;
+use content_inspector::ContentType;
+use globset::{Glob, GlobSet, GlobSetBuilder};
+use ignore::WalkBuilder;
+use memmap2::Mmap;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, HashMap};
+use std::fs::{self, File};
+use std::io::BufWriter;
+use std::path::{Path, PathBuf};
+use std::time::SystemTime;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlanOptions {
+    pub includes: Vec<String>,
+    pub excludes: Vec<String>,
+    pub respect_gitignore: bool,
+    pub styles: Option<Vec<Style>>,
+    pub rename_files: bool,
+    pub rename_dirs: bool,
+    pub plan_out: PathBuf,
+}
+
+impl Default for PlanOptions {
+    fn default() -> Self {
+        Self {
+            includes: vec![],
+            excludes: vec![],
+            respect_gitignore: true,
+            styles: None,
+            rename_files: true,
+            rename_dirs: true,
+            plan_out: PathBuf::from(".refaktor/plan.json"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatchHunk {
+    pub file: PathBuf,
+    pub line: u64,
+    pub col: u32,
+    pub variant: String,
+    pub before: String,
+    pub after: String,
+    pub start: usize,
+    pub end: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Rename {
+    pub from: PathBuf,
+    pub to: PathBuf,
+    pub kind: RenameKind,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RenameKind {
+    File,
+    Dir,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Stats {
+    pub files_scanned: usize,
+    pub total_matches: usize,
+    pub matches_by_variant: HashMap<String, usize>,
+    pub files_with_matches: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Plan {
+    pub id: String,
+    pub created_at: String,
+    pub old: String,
+    pub new: String,
+    pub styles: Vec<Style>,
+    pub includes: Vec<String>,
+    pub excludes: Vec<String>,
+    pub matches: Vec<MatchHunk>,
+    pub renames: Vec<Rename>,
+    pub stats: Stats,
+    pub version: String,
+}
+
+pub fn scan_repository(
+    root: &Path,
+    old: &str,
+    new: &str,
+    options: &PlanOptions,
+) -> Result<Plan> {
+    let variant_map = generate_variant_map(old, new, options.styles.as_deref());
+    let variants: Vec<String> = variant_map.keys().cloned().collect();
+    let pattern = build_pattern(&variants)?;
+
+    let include_globs = build_globset(&options.includes)?;
+    let exclude_globs = build_globset(&options.excludes)?;
+
+    let mut matches = Vec::new();
+    let mut stats = Stats {
+        files_scanned: 0,
+        total_matches: 0,
+        matches_by_variant: HashMap::new(),
+        files_with_matches: 0,
+    };
+
+    // Use non-parallel walker for simplicity and reliability
+    let walker = WalkBuilder::new(root)
+        .git_ignore(options.respect_gitignore)
+        .git_global(options.respect_gitignore)
+        .git_exclude(options.respect_gitignore)
+        .hidden(false)
+        .parents(false)
+        .build();
+
+    for entry in walker {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+
+        // Skip non-files
+        if !entry.file_type().map_or(false, |t| t.is_file()) {
+            continue;
+        }
+
+        let path = entry.path();
+        
+        // Apply include/exclude filters
+        if let Some(ref includes) = include_globs {
+            if !includes.is_match(path) {
+                continue;
+            }
+        }
+        
+        if let Some(ref excludes) = exclude_globs {
+            if excludes.is_match(path) {
+                continue;
+            }
+        }
+
+        if let Ok(content) = read_file_content(path) {
+            stats.files_scanned += 1;
+            
+            if is_binary(&content) {
+                continue;
+            }
+
+            let file_matches = find_matches(&pattern, &content, path.to_str().unwrap_or(""));
+            
+            if !file_matches.is_empty() {
+                let hunks = generate_hunks(&file_matches, &content, &variant_map, path);
+                
+                stats.files_with_matches += 1;
+                stats.total_matches += hunks.len();
+                
+                for hunk in &hunks {
+                    *stats.matches_by_variant
+                        .entry(hunk.variant.clone())
+                        .or_insert(0) += 1;
+                }
+                
+                matches.extend(hunks);
+            }
+        }
+    }
+
+    let renames = if options.rename_files || options.rename_dirs {
+        plan_renames(root, &variant_map, options)?
+    } else {
+        vec![]
+    };
+
+    let id = generate_plan_id(old, new, options);
+    let created_at = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        .to_string();
+
+    Ok(Plan {
+        id,
+        created_at,
+        old: old.to_string(),
+        new: new.to_string(),
+        styles: options.styles.clone().unwrap_or_else(|| {
+            vec![
+                Style::Snake,
+                Style::Kebab,
+                Style::Camel,
+                Style::Pascal,
+                Style::ScreamingSnake,
+            ]
+        }),
+        includes: options.includes.clone(),
+        excludes: options.excludes.clone(),
+        matches,
+        renames,
+        stats,
+        version: "1.0.0".to_string(),
+    })
+}
+
+fn build_globset(patterns: &[String]) -> Result<Option<GlobSet>> {
+    if patterns.is_empty() {
+        return Ok(None);
+    }
+
+    let mut builder = GlobSetBuilder::new();
+    for pattern in patterns {
+        builder.add(Glob::new(pattern)?);
+    }
+    Ok(Some(builder.build()?))
+}
+
+fn read_file_content(path: &Path) -> Result<Vec<u8>> {
+    let file = File::open(path)?;
+    let metadata = file.metadata()?;
+    
+    if metadata.len() > 50 * 1024 * 1024 {
+        let mut content = Vec::new();
+        use std::io::Read;
+        std::fs::File::open(path)?.read_to_end(&mut content)?;
+        Ok(content)
+    } else {
+        let mmap = unsafe { Mmap::map(&file)? };
+        Ok(mmap.to_vec())
+    }
+}
+
+fn is_binary(content: &[u8]) -> bool {
+    matches!(
+        content_inspector::inspect(content),
+        ContentType::BINARY
+    )
+}
+
+fn generate_hunks(
+    matches: &[Match],
+    content: &[u8],
+    variant_map: &BTreeMap<String, String>,
+    path: &Path,
+) -> Vec<MatchHunk> {
+    let lines: Vec<&[u8]> = content.lines_with_terminator().collect();
+    let mut hunks = Vec::new();
+
+    for m in matches {
+        let line_idx = m.line.saturating_sub(1);
+        if line_idx >= lines.len() {
+            continue;
+        }
+
+        let line = lines[line_idx];
+        let before = String::from_utf8_lossy(line).to_string();
+        
+        let new_variant = variant_map.get(&m.variant).unwrap_or(&m.variant);
+        let after = before.replace(&m.variant, new_variant);
+
+        hunks.push(MatchHunk {
+            file: path.to_path_buf(),
+            line: m.line as u64,
+            col: m.column as u32,
+            variant: m.variant.clone(),
+            before: before.trim_end().to_string(),
+            after: after.trim_end().to_string(),
+            start: m.start,
+            end: m.end,
+        });
+    }
+
+    hunks
+}
+
+fn plan_renames(
+    root: &Path,
+    mapping: &BTreeMap<String, String>,
+    _options: &PlanOptions,
+) -> Result<Vec<Rename>> {
+    let mut renames = Vec::new();
+    
+    for entry in walkdir::WalkDir::new(root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        let path = entry.path();
+        if let Some(file_name) = path.file_name() {
+            let file_name_str = file_name.to_string_lossy();
+            
+            for (old, new) in mapping {
+                if file_name_str.contains(old) {
+                    let new_name = file_name_str.replace(old, new);
+                    let new_path = path.with_file_name(new_name);
+                    
+                    let kind = if path.is_dir() {
+                        RenameKind::Dir
+                    } else {
+                        RenameKind::File
+                    };
+                    
+                    renames.push(Rename {
+                        from: path.to_path_buf(),
+                        to: new_path,
+                        kind,
+                    });
+                    break;
+                }
+            }
+        }
+    }
+    
+    renames.sort_by(|a, b| {
+        let a_depth = a.from.components().count();
+        let b_depth = b.from.components().count();
+        
+        match (
+            matches!(a.kind, RenameKind::Dir),
+            matches!(b.kind, RenameKind::Dir),
+        ) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => b_depth.cmp(&a_depth),
+        }
+    });
+    
+    Ok(renames)
+}
+
+fn generate_plan_id(old: &str, new: &str, options: &PlanOptions) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(old.as_bytes());
+    hasher.update(new.as_bytes());
+    hasher.update(format!("{:?}", options).as_bytes());
+    hasher.update(
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            .to_string()
+            .as_bytes(),
+    );
+    format!("{:x}", hasher.finalize())[..16].to_string()
+}
+
+pub fn write_plan(plan: &Plan, path: &Path) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    
+    let file = File::create(path)?;
+    let writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(writer, plan)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_plan_options_default() {
+        let opts = PlanOptions::default();
+        assert!(opts.respect_gitignore);
+        assert!(opts.rename_files);
+        assert!(opts.rename_dirs);
+        assert_eq!(opts.plan_out, PathBuf::from(".refaktor/plan.json"));
+    }
+
+    #[test]
+    fn test_is_binary() {
+        assert!(!is_binary(b"hello world"));
+        assert!(is_binary(&[0x00, 0x01, 0x02, 0x03]));
+        assert!(!is_binary(&[0xFF, 0xFE, 0xFD]));
+    }
+
+    #[test]
+    fn test_generate_plan_id() {
+        let opts = PlanOptions::default();
+        let id1 = generate_plan_id("old", "new", &opts);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        let id2 = generate_plan_id("old", "new", &opts);
+        
+        assert_eq!(id1.len(), 16);
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn test_build_globset_empty() {
+        let result = build_globset(&[]).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_build_globset_patterns() {
+        let patterns = vec!["*.rs".to_string(), "src/**".to_string()];
+        let result = build_globset(&patterns).unwrap();
+        assert!(result.is_some());
+        
+        let globset = result.unwrap();
+        assert!(globset.is_match("test.rs"));
+        assert!(globset.is_match("src/main.rs"));
+        assert!(!globset.is_match("test.txt"));
+    }
+
+    #[test]
+    fn test_scan_empty_directory() {
+        let temp_dir = TempDir::new().unwrap();
+        let opts = PlanOptions::default();
+        
+        let plan = scan_repository(temp_dir.path(), "old", "new", &opts).unwrap();
+        
+        assert_eq!(plan.old, "old");
+        assert_eq!(plan.new, "new");
+        assert_eq!(plan.matches.len(), 0);
+        assert_eq!(plan.renames.len(), 0);
+        assert_eq!(plan.stats.files_scanned, 0);
+    }
+    
+    #[test]
+    fn test_generate_hunks() {
+        use crate::pattern::Match;
+        
+        let content = b"old_name and oldName here";
+        let mut variant_map = BTreeMap::new();
+        variant_map.insert("old_name".to_string(), "new_name".to_string());
+        variant_map.insert("oldName".to_string(), "newName".to_string());
+        
+        let matches = vec![
+            Match {
+                file: "test.txt".to_string(),
+                line: 1,
+                column: 1,
+                start: 0,
+                end: 8,
+                variant: "old_name".to_string(),
+                text: "old_name".to_string(),
+            },
+            Match {
+                file: "test.txt".to_string(),
+                line: 1,
+                column: 14,
+                start: 13,
+                end: 20,
+                variant: "oldName".to_string(),
+                text: "oldName".to_string(),
+            },
+        ];
+        
+        let hunks = generate_hunks(&matches, content, &variant_map, Path::new("test.txt"));
+        
+        assert_eq!(hunks.len(), 2);
+        assert_eq!(hunks[0].variant, "old_name");
+        assert_eq!(hunks[0].before, "old_name and oldName here");
+        assert_eq!(hunks[0].after, "new_name and oldName here");
+        assert_eq!(hunks[1].variant, "oldName");
+        assert_eq!(hunks[1].before, "old_name and oldName here");
+        assert_eq!(hunks[1].after, "old_name and newName here");
+    }
+
+    #[test]
+    fn test_walk_directory() {
+        use ignore::Walk;
+        
+        let temp_dir = TempDir::new().unwrap();
+        let test_file = temp_dir.path().join("test.txt");
+        std::fs::write(&test_file, "test content").unwrap();
+        
+        let walker = Walk::new(temp_dir.path());
+        let files: Vec<_> = walker
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().map_or(false, |t| t.is_file()))
+            .collect();
+            
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].path().file_name().unwrap(), "test.txt");
+    }
+    
+    #[test]
+    fn test_scan_with_matches() {
+        // Create a simple test case
+        let temp_dir = TempDir::new().unwrap();
+        let test_file = temp_dir.path().join("test.txt");
+        std::fs::write(&test_file, "old_name and oldName here").unwrap();
+        
+        // Use non-parallel walk for testing
+        use ignore::Walk;
+        let walker = Walk::new(temp_dir.path());
+        let mut file_count = 0;
+        for entry in walker {
+            if let Ok(e) = entry {
+                if e.file_type().map_or(false, |t| t.is_file()) {
+                    file_count += 1;
+                }
+            }
+        }
+        assert_eq!(file_count, 1, "Walker should find 1 file");
+        
+        // Now test with scan_repository
+        let mut opts = PlanOptions::default();
+        opts.respect_gitignore = false;
+        
+        let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+        
+        // We expect 2 matches: "old_name" and "oldName"
+        assert_eq!(plan.matches.len(), 2, "Expected 2 matches, found {}", plan.matches.len());
+        assert_eq!(plan.stats.files_scanned, 1);
+        assert_eq!(plan.stats.files_with_matches, 1);
+    }
+
+    #[test]
+    fn test_rename_sorting() {
+        let mut renames = vec![
+            Rename {
+                from: PathBuf::from("/a/b/file.txt"),
+                to: PathBuf::from("/a/b/new.txt"),
+                kind: RenameKind::File,
+            },
+            Rename {
+                from: PathBuf::from("/a/dir"),
+                to: PathBuf::from("/a/new_dir"),
+                kind: RenameKind::Dir,
+            },
+            Rename {
+                from: PathBuf::from("/a/b/c/deep.txt"),
+                to: PathBuf::from("/a/b/c/new_deep.txt"),
+                kind: RenameKind::File,
+            },
+        ];
+        
+        renames.sort_by(|a, b| {
+            let a_depth = a.from.components().count();
+            let b_depth = b.from.components().count();
+            
+            match (
+                matches!(a.kind, RenameKind::Dir),
+                matches!(b.kind, RenameKind::Dir),
+            ) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => b_depth.cmp(&a_depth),
+            }
+        });
+        
+        assert!(matches!(renames[0].kind, RenameKind::Dir));
+        assert_eq!(renames[1].from.components().count(), 5);
+    }
+
+    #[test]
+    fn test_write_plan() {
+        let temp_dir = TempDir::new().unwrap();
+        let plan_path = temp_dir.path().join(".refaktor/plan.json");
+        
+        let plan = Plan {
+            id: "test123".to_string(),
+            created_at: "123456789".to_string(),
+            old: "old".to_string(),
+            new: "new".to_string(),
+            styles: vec![Style::Snake],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![],
+            renames: vec![],
+            stats: Stats {
+                files_scanned: 1,
+                total_matches: 0,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 0,
+            },
+            version: "1.0.0".to_string(),
+        };
+        
+        write_plan(&plan, &plan_path).unwrap();
+        assert!(plan_path.exists());
+        
+        let content = std::fs::read_to_string(&plan_path).unwrap();
+        assert!(content.contains("\"id\": \"test123\""));
+    }
+}

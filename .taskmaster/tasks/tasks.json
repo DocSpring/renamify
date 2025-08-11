@@ -217,7 +217,7 @@
             "description": "Develop a fast, one-pass repository scanner that respects .gitignore files and user-defined globs, excluding binaries by default.",
             "dependencies": [],
             "details": "Utilize the ignore crate's WalkBuilder to create a recursive directory iterator that honors .gitignore files and user-specified include/exclude globs. Ensure the scanner skips binary files unless explicitly included.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Create test repositories with various .gitignore configurations and glob patterns. Verify that the scanner correctly includes and excludes files as specified."
           },
           {
@@ -226,7 +226,7 @@
             "description": "Enhance the repository scanner to perform parallel file scanning for improved performance.",
             "dependencies": [],
             "details": "Use WalkBuilder's build_parallel method to enable parallel directory traversal. Implement a worker pool using the rayon crate to process files concurrently.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Benchmark the parallel scanner against a large repository to ensure performance improvements. Verify that the parallel processing does not introduce race conditions or data inconsistencies."
           },
           {
@@ -235,7 +235,7 @@
             "description": "Incorporate binary file detection and efficient content reading into the scanner.",
             "dependencies": [],
             "details": "Use the content_inspector crate to detect binary files and skip them unless explicitly included. For content reading, utilize the memmap2 crate for memory-mapped file access where possible, falling back to buffered reading when necessary.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Test the scanner with repositories containing both text and binary files. Ensure that binary files are correctly identified and skipped unless specified otherwise. Verify that content reading is efficient and accurate."
           },
           {
@@ -244,7 +244,7 @@
             "description": "Develop functionality to find pattern matches and generate minimal context hunks.",
             "dependencies": [],
             "details": "Apply patterns from Task 3 to identify match positions within files. Compute 'before' and 'after' contexts by applying mappings for each match, producing hunks with minimal context.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Create test cases with known patterns and expected hunk outputs. Verify that the generated hunks accurately represent the matches with the correct context."
           },
           {
@@ -253,7 +253,7 @@
             "description": "Implement streaming of matches and hunks into the .refaktor/plan.json file.",
             "dependencies": [],
             "details": "Use serde_json::Serializer with pretty printing disabled to stream JSON data. Write the header, then incrementally add matches and renames arrays to avoid high memory usage. Maintain statistics counters per variant and per file.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Test the streaming functionality with large datasets to ensure that memory usage remains bounded. Verify that the plan.json file is correctly formatted and contains all expected data."
           }
         ]
@@ -997,7 +997,7 @@
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T04:21:04.142Z",
+      "updated": "2025-08-11T04:21:39.737Z",
       "description": "Tasks for master context"
     }
   }
