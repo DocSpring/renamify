@@ -336,7 +336,7 @@
           4,
           5
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -344,7 +344,7 @@
             "description": "Develop a table view for the plan using the comfy-table crate with ANSI coloring via nu-ansi-term. The table should include columns for File, Kind (Content/Rename), Matches, and Variants, along with footer totals.",
             "dependencies": [],
             "details": "Utilize the comfy-table crate to create a structured table output. Apply ANSI coloring using nu-ansi-term to enhance readability. Ensure the table displays the specified columns and includes footer totals for comprehensive data representation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Create snapshot tests using the insta crate to verify the table rendering. Ensure the output matches expected snapshots across different platforms, normalizing path separators as needed."
           },
           {
@@ -353,7 +353,7 @@
             "description": "Create a unified diff view for content changes using the similar crate's unified_diff module. Compute minimal hunks and add badges for renames, grouping them separately.",
             "dependencies": [],
             "details": "Leverage the similar crate's unified_diff module to generate unified diffs. Implement logic to compute minimal hunks for efficient diff representation. Introduce badges to indicate renames, ensuring they are grouped separately for clarity.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Implement snapshot tests with the insta crate to validate the diff output. Compare the generated diffs against saved snapshots to ensure consistency and correctness."
           },
           {
@@ -362,7 +362,7 @@
             "description": "Develop functionality to emit the plan.json path or stream JSON to stdout when the --preview-format=json option is used.",
             "dependencies": [],
             "details": "Ensure the application can output the plan in JSON format. When the --preview-format=json option is specified, either display the path to the plan.json file or stream the JSON content directly to stdout.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Create tests to verify the correct JSON output is produced when the --preview-format=json option is used. Ensure the output is valid JSON and matches expected structures."
           },
           {
@@ -371,7 +371,7 @@
             "description": "Add CLI integration to allow users to select the preview format (table, diff, or JSON) using the --preview-format option, with the default set to table.",
             "dependencies": [],
             "details": "Modify the CLI to include a --preview-format option that accepts 'table', 'diff', or 'json' as arguments. Set the default behavior to display the table view if no option is specified.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Implement tests to ensure the CLI correctly parses the --preview-format option and displays the appropriate output format. Verify that the default behavior is to show the table view."
           },
           {
@@ -383,7 +383,7 @@
               "6.2"
             ],
             "details": "Create a directory structure under tests/snapshots/ to store snapshot files. Utilize the insta crate to capture and manage snapshots of the table and diff outputs for testing purposes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Develop tests that generate the table and diff outputs and compare them against the stored snapshots. Ensure that any changes to the output are intentional and reviewed."
           }
         ]
@@ -400,7 +400,7 @@
           5,
           6
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -408,7 +408,7 @@
             "description": "Utilize clap 4.5 with derive to define the CLI commands (plan, apply, undo, redo, status, history, dry-run) and their respective arguments and flags as specified in the PRD.",
             "dependencies": [],
             "details": "Implement the CLI structure using clap's derive macros to parse commands and arguments. Ensure each command is accurately represented with its required and optional parameters.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Develop unit tests to verify that each command and its arguments are parsed correctly, ensuring that the CLI responds appropriately to valid and invalid inputs."
           },
           {
@@ -419,7 +419,7 @@
               "7.1"
             ],
             "details": "Define enumerations for styles and preview formats to facilitate argument parsing. Implement functionality to parse and validate comma-separated lists for these arguments.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write tests to confirm that the enumerations are correctly defined and that the parsing logic accurately processes comma-separated lists into the appropriate enum variants."
           },
           {
@@ -430,7 +430,7 @@
               "7.1"
             ],
             "details": "Utilize anyhow to handle errors in a consistent and informative manner, ensuring that all potential error cases are addressed and reported appropriately.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Create scenarios that trigger various error conditions and verify that the application handles them gracefully, providing clear and actionable error messages."
           },
           {
@@ -441,7 +441,7 @@
               "7.1"
             ],
             "details": "Leverage clap's built-in functionality to generate shell completion scripts, enhancing the user experience by providing command and argument suggestions in supported shells.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test the generated completion scripts in different shell environments to ensure they function correctly and provide accurate suggestions."
           },
           {
@@ -452,7 +452,7 @@
               "7.1"
             ],
             "details": "Set up signal handlers to intercept SIGINT (Ctrl+C) and ensure that ongoing operations are safely aborted, and any temporary files or resources are cleaned up appropriately.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Simulate SIGINT during various stages of operation and verify that the application terminates processes safely and cleans up resources as expected."
           }
         ]
@@ -997,7 +997,7 @@
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T04:38:25.990Z",
+      "updated": "2025-08-11T04:52:19.787Z",
       "description": "Tasks for master context"
     }
   }
