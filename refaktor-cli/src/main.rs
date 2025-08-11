@@ -1,7 +1,8 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use refaktor_core::{
-    PlanOptions, PreviewFormat, scan_repository, write_plan, write_preview, Style,
+    apply_plan, ApplyOptions, Plan, PlanOptions, PreviewFormat, scan_repository, write_plan, 
+    write_preview, Style,
 };
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
@@ -258,10 +259,19 @@ fn main() {
             use_color,
         ),
 
-        Commands::Apply { .. } => {
-            eprintln!("Apply command not yet implemented");
-            Ok(())
-        }
+        Commands::Apply { 
+            plan,
+            id,
+            atomic,
+            commit,
+            force_with_conflicts,
+        } => handle_apply(
+            plan,
+            id,
+            atomic,
+            commit,
+            force_with_conflicts,
+        ),
 
         Commands::Undo { .. } => {
             eprintln!("Undo command not yet implemented");
@@ -370,6 +380,67 @@ fn check_for_conflicts(_plan: &refaktor_core::Plan) -> Option<usize> {
     // This is a placeholder - would need to check the actual conflicts
     // from the rename module
     None
+}
+
+fn handle_apply(
+    plan_path: Option<PathBuf>,
+    id: Option<String>,
+    atomic: bool,
+    commit: bool,
+    force_with_conflicts: bool,
+) -> Result<()> {
+    // Determine which plan to load
+    let plan_path = if let Some(path) = plan_path {
+        path
+    } else if let Some(id) = id {
+        // Load from history by ID (placeholder for now)
+        eprintln!("Loading plan from history ID {} not yet implemented", id);
+        return Ok(());
+    } else {
+        // Default to last plan
+        PathBuf::from(".refaktor/plan.json")
+    };
+    
+    // Load the plan
+    let plan_json = std::fs::read_to_string(&plan_path)
+        .with_context(|| format!("Failed to read plan from {}", plan_path.display()))?;
+    
+    let plan: Plan = serde_json::from_str(&plan_json)
+        .context("Failed to parse plan JSON")?;
+    
+    // Check for conflicts if not forcing
+    if !force_with_conflicts {
+        if let Some(conflicts) = check_for_conflicts(&plan) {
+            eprintln!("Error: {} conflicts detected. Use --force-with-conflicts to apply anyway", conflicts);
+            return Err(anyhow!("Conflicts detected"));
+        }
+    }
+    
+    // Set up apply options
+    let options = ApplyOptions {
+        atomic,
+        commit,
+        force: force_with_conflicts,
+        ..Default::default()
+    };
+    
+    eprintln!("Applying plan {} ({} edits, {} renames)...", 
+        plan.id, 
+        plan.matches.len(),
+        plan.renames.len()
+    );
+    
+    // Apply the plan
+    apply_plan(&plan, &options)
+        .context("Failed to apply plan")?;
+    
+    eprintln!("Plan applied successfully!");
+    
+    if commit {
+        eprintln!("Changes committed to git");
+    }
+    
+    Ok(())
 }
 
 // Generate shell completions

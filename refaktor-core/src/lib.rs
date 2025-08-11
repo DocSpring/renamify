@@ -5,12 +5,14 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 
+pub mod apply;
 pub mod case_model;
 pub mod pattern;
 pub mod preview;
 pub mod rename;
 pub mod scanner;
 
+pub use apply::{apply_plan, ApplyOptions};
 pub use case_model::{
     detect_style, generate_variant_map, parse_to_tokens, to_style, Style, Token, TokenModel,
 };

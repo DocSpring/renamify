@@ -468,7 +468,7 @@
           5,
           7
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -476,7 +476,7 @@
             "description": "Create a system to back up each file slated for modification or renaming, ensuring data integrity in case of failure.",
             "dependencies": [],
             "details": "Implement a backup process that copies each target file to a designated backup directory, preserving file permissions. Utilize hard links where feasible to conserve space.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that backups are correctly created for all targeted files, with accurate permissions and content. Test scenarios where hard links are used to ensure space efficiency."
           },
           {
@@ -487,7 +487,7 @@
               "8.1"
             ],
             "details": "For each file requiring content edits, load the file, minimally re-validate its context, write the changes to a temporary file in the same directory, perform an fsync operation, and then rename the temporary file over the original to achieve atomicity.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Simulate interruptions during the editing process to confirm that partial edits do not affect the original files. Validate that the final content matches expectations after successful edits."
           },
           {
@@ -498,7 +498,7 @@
               "8.2"
             ],
             "details": "Implement a renaming process that traverses directories depth-first. For case-insensitive filesystems, handle case-only renames by performing a two-step process: rename the original file to a temporary name, then rename it to the target name. Detect cross-filesystem moves and fallback to copy-and-delete operations while preserving metadata.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test renaming operations on case-insensitive filesystems to ensure correct handling of case-only changes. Validate that cross-filesystem moves preserve file metadata and content integrity."
           },
           {
@@ -511,7 +511,7 @@
               "8.3"
             ],
             "details": "On encountering any error during the apply process, restore all files from their backups and revert any renames performed, ensuring the system returns to its original state.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Induce errors at various stages of the apply process and verify that the rollback mechanism correctly restores all files and directories to their initial states."
           },
           {
@@ -522,7 +522,7 @@
               "8.4"
             ],
             "details": "If the '--commit' option is specified, execute Git commands to add all changes and commit them with a message indicating the rename operation and associated ID. Ensure that the implementation uses standard Git commands and does not interact directly with Git internals.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test the commit functionality by applying changes with the '--commit' flag and verifying that the Git repository reflects the changes with the correct commit message. Ensure that the process does not interfere with Git internals."
           }
         ]
@@ -997,7 +997,7 @@
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T04:52:19.787Z",
+      "updated": "2025-08-11T05:00:36.501Z",
       "description": "Tasks for master context"
     }
   }

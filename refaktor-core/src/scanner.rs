@@ -59,7 +59,7 @@ pub struct Rename {
     pub kind: RenameKind,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum RenameKind {
     File,
