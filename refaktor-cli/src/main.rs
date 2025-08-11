@@ -301,15 +301,6 @@ enum StyleArg {
     Dot,
 }
 
-impl StyleArg {
-    /// Returns all available style arguments
-    /// Using a match ensures we don't miss any variants at compile time
-    fn all() -> Vec<Self> {
-        use StyleArg::*;
-        vec![Snake, Kebab, Camel, Pascal, ScreamingSnake, Title, Train, Dot]
-    }
-}
-
 impl From<StyleArg> for Style {
     fn from(arg: StyleArg) -> Self {
         match arg {
