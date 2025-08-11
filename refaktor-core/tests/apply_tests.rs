@@ -313,6 +313,13 @@ fn test_apply_with_git_commit() {
         .output()
         .unwrap();
     
+    // Disable GPG signing for test
+    Command::new("git")
+        .args(["config", "commit.gpgsign", "false"])
+        .current_dir(temp_dir.path())
+        .output()
+        .unwrap();
+    
     // Create and commit initial file
     let test_file = temp_dir.path().join("test.rs");
     fs::write(&test_file, "fn old_name() {}").unwrap();
