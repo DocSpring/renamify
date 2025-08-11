@@ -28,6 +28,7 @@ tempfile = { workspace = true }
 sha2 = { workspace = true }
 aho-corasick = "1.1"
 chrono = { version = "0.4", features = ["serde"] }
+toml = "0.8"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

@@ -1,0 +1,23 @@
+# Refaktor Configuration File
+# Copy this file to .refaktor/config.toml to customize defaults
+
+[defaults]
+# Default preview format: "table", "diff", or "json"
+preview_format = "diff"
+
+# Whether to rename files by default
+rename_files = true
+
+# Whether to rename directories by default
+rename_dirs = true
+
+# Default unrestricted level
+# 0 = respect all .gitignore files (default)
+# 1 = -u  (don't respect .gitignore files in the repo) 
+# 2 = -uu (don't respect .gitignore or .ignore files)
+# 3 = -uuu (don't respect any ignore files, search binary files)
+unrestricted_level = 0
+
+# Whether to use color output by default
+# Options: true, false, or omit for auto-detection based on terminal
+# use_color = true

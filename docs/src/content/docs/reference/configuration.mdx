@@ -10,20 +10,30 @@ description: Refaktor configuration options and environment variables
 Refaktor looks for configuration in `.refaktor/config.toml`:
 
 ```toml
-# Example configuration (not yet fully implemented)
+# Refaktor Configuration File
 [defaults]
-respect_gitignore = true
-atomic = true
-create_backups = true
+# Default preview format: "table", "diff", or "json"
+preview_format = "diff"
 
-[patterns]
-# Custom ignore patterns
-ignore = ["vendor/**", "node_modules/**"]
+# Whether to rename files by default
+rename_files = true
 
-[styles]
-# Default case styles to use
-default = ["snake", "kebab", "camel", "pascal", "screaming-snake"]
+# Whether to rename directories by default
+rename_dirs = true
+
+# Default unrestricted level
+# 0 = respect all .gitignore files (default)
+# 1 = -u  (don't respect .gitignore files in the repo) 
+# 2 = -uu (don't respect .gitignore or .ignore files)
+# 3 = -uuu (don't respect any ignore files, search binary files)
+unrestricted_level = 0
+
+# Whether to use color output by default
+# Options: true, false, or omit for auto-detection based on terminal
+# use_color = true
 ```
+
+See `.refaktor/config.toml.example` for a complete example configuration.
 
 ## Environment Variables
 
@@ -176,12 +186,6 @@ Planned configuration features (not yet implemented):
 
 ```toml
 [defaults]
-# Default preview format
-preview_format = "table"  # table, diff, json
-
-# Default unrestricted level  
-unrestricted = 0  # 0, 1, 2, 3
-
 # Automatic git operations
 auto_commit = false
 commit_message_template = "Refactor: {old} → {new}"

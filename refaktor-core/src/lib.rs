@@ -10,6 +10,7 @@ pub mod case_model;
 pub mod coercion;
 pub mod compound_matcher;
 pub mod compound_scanner;
+pub mod config;
 pub mod history;
 pub mod lock;
 pub mod pattern;
@@ -22,6 +23,7 @@ pub use apply::{apply_plan, ApplyOptions};
 pub use case_model::{
     detect_style, generate_variant_map, parse_to_tokens, to_style, Style, Token, TokenModel,
 };
+pub use config::Config;
 pub use history::{
     create_history_entry, format_history, get_status, History, HistoryEntry, StatusInfo,
 };

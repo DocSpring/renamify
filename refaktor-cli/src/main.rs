@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use refaktor_core::{
     apply_plan, format_history, get_status, redo_refactoring, scan_repository_multi,
-    undo_refactoring, write_plan, write_preview, ApplyOptions, History, LockFile, Plan,
+    undo_refactoring, write_plan, write_preview, ApplyOptions, Config, History, LockFile, Plan,
     PlanOptions, PreviewFormat, Style,
 };
 use std::io::{self, IsTerminal};
@@ -107,9 +107,9 @@ enum Commands {
         #[arg(long, value_delimiter = ',')]
         exclude_match: Vec<String>,
 
-        /// Preview output format
-        #[arg(long, value_enum, default_value = "table")]
-        preview_format: PreviewFormatArg,
+        /// Preview output format (defaults from config if not specified)
+        #[arg(long, value_enum)]
+        preview_format: Option<PreviewFormatArg>,
 
         /// Output path for the plan
         #[arg(long, default_value = ".refaktor/plan.json")]
@@ -223,9 +223,9 @@ enum Commands {
         #[arg(long, value_delimiter = ',')]
         exclude_match: Vec<String>,
 
-        /// Preview output format
-        #[arg(long, value_enum, default_value = "table")]
-        preview_format: PreviewFormatArg,
+        /// Preview output format (defaults from config if not specified)
+        #[arg(long, value_enum)]
+        preview_format: Option<PreviewFormatArg>,
     },
 
     /// Initialize refaktor in the current repository
@@ -370,6 +370,18 @@ enum PreviewFormatArg {
     None,
 }
 
+impl PreviewFormatArg {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "table" => Some(Self::Table),
+            "diff" => Some(Self::Diff),
+            "json" => Some(Self::Json),
+            "none" => Some(Self::None),
+            _ => None,
+        }
+    }
+}
+
 impl From<PreviewFormatArg> for PreviewFormat {
     fn from(arg: PreviewFormatArg) -> Self {
         match arg {
@@ -418,6 +430,9 @@ fn main() {
         }
     }
 
+    // Load config to get defaults
+    let config = Config::load().unwrap_or_default();
+
     let result = match cli.command {
         Commands::Plan {
             old,
@@ -435,25 +450,33 @@ fn main() {
             preview_format,
             plan_out,
             dry_run,
-        } => handle_plan(
-            &old,
-            &new,
-            paths,
-            include,
-            exclude,
-            respect_gitignore,
-            cli.unrestricted,
-            !no_rename_files,
-            !no_rename_dirs,
-            exclude_styles,
-            include_styles,
-            only_styles,
-            exclude_match,
-            preview_format.into(),
-            plan_out,
-            dry_run,
-            use_color,
-        ),
+        } => {
+            // Use preview format from CLI arg or config default
+            let format = preview_format.map(|f| f.into()).unwrap_or_else(|| {
+                PreviewFormat::from_str(&config.defaults.preview_format)
+                    .unwrap_or(PreviewFormat::Diff)
+            });
+
+            handle_plan(
+                &old,
+                &new,
+                paths,
+                include,
+                exclude,
+                respect_gitignore,
+                cli.unrestricted,
+                !no_rename_files,
+                !no_rename_dirs,
+                exclude_styles,
+                include_styles,
+                only_styles,
+                exclude_match,
+                format,
+                plan_out,
+                dry_run,
+                use_color,
+            )
+        },
 
         Commands::DryRun {
             old,
@@ -469,25 +492,33 @@ fn main() {
             only_styles,
             exclude_match,
             preview_format,
-        } => handle_plan(
-            &old,
-            &new,
-            paths,
-            include,
-            exclude,
-            respect_gitignore,
-            cli.unrestricted,
-            !no_rename_files,
-            !no_rename_dirs,
-            exclude_styles,
-            include_styles,
-            only_styles,
-            exclude_match,
-            preview_format.into(),
-            PathBuf::from(".refaktor/plan.json"),
-            true, // Always dry-run
-            use_color,
-        ),
+        } => {
+            // Use preview format from CLI arg or config default
+            let format = preview_format.map(|f| f.into()).unwrap_or_else(|| {
+                PreviewFormat::from_str(&config.defaults.preview_format)
+                    .unwrap_or(PreviewFormat::Diff)
+            });
+
+            handle_plan(
+                &old,
+                &new,
+                paths,
+                include,
+                exclude,
+                respect_gitignore,
+                cli.unrestricted,
+                !no_rename_files,
+                !no_rename_dirs,
+                exclude_styles,
+                include_styles,
+                only_styles,
+                exclude_match,
+                format,
+                PathBuf::from(".refaktor/plan.json"),
+                true, // Always dry-run
+                use_color,
+            )
+        },
 
         Commands::Apply {
             plan,
@@ -538,30 +569,36 @@ fn main() {
             rename_root,
             no_rename_root,
             dry_run,
-        } => rename::handle_rename(
-            &old,
-            &new,
-            paths,
-            include,
-            exclude,
-            cli.unrestricted,
-            !no_rename_files,
-            !no_rename_dirs,
-            exclude_styles,
-            include_styles,
-            only_styles,
-            exclude_match,
-            preview,
-            commit,
-            large,
-            force_with_conflicts,
-            confirm_collisions,
-            rename_root,
-            no_rename_root,
-            dry_run,
-            cli.yes,
-            use_color,
-        ),
+        } => {
+            // Use preview format from CLI arg or config default
+            let format =
+                preview.or_else(|| PreviewFormatArg::from_str(&config.defaults.preview_format));
+
+            rename::handle_rename(
+                &old,
+                &new,
+                paths,
+                include,
+                exclude,
+                cli.unrestricted,
+                !no_rename_files,
+                !no_rename_dirs,
+                exclude_styles,
+                include_styles,
+                only_styles,
+                exclude_match,
+                format,
+                commit,
+                large,
+                force_with_conflicts,
+                confirm_collisions,
+                rename_root,
+                no_rename_root,
+                dry_run,
+                cli.yes,
+                use_color,
+            )
+        },
     };
 
     match result {

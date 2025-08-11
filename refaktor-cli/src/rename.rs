@@ -179,16 +179,15 @@ pub fn handle_rename(
         ));
     }
 
-    // Show preview (default to table unless explicitly set to none)
-    // If preview is None (not specified), default to table format
-    // If preview is Some(format), use that format (unless it's None)
-    let preview_format = preview.unwrap_or(PreviewFormatArg::Table);
-
-    if preview_format != PreviewFormatArg::None {
-        let preview_output =
-            refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;
-        println!("{}", preview_output);
-        println!(); // Add spacing before summary
+    // Show preview unless explicitly set to none
+    // The preview parameter already has the config default applied if not specified
+    if let Some(preview_format) = preview {
+        if preview_format != PreviewFormatArg::None {
+            let preview_output =
+                refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;
+            println!("{}", preview_output);
+            println!(); // Add spacing before summary
+        }
     }
 
     // Show summary
