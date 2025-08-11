@@ -19,7 +19,7 @@ impl LockFile {
     /// Acquire a lock for the refaktor operation
     pub fn acquire(refaktor_dir: &Path) -> Result<Self> {
         let lock_path = refaktor_dir.join(LOCK_FILE_NAME);
-        
+
         // Check if lock file exists
         if lock_path.exists() {
             // Read existing lock file
@@ -28,23 +28,22 @@ impl LockFile {
                 .context("Failed to read lock file")?
                 .read_to_string(&mut content)
                 .context("Failed to read lock file content")?;
-            
+
             // Parse lock file content (format: "pid:timestamp")
             let parts: Vec<&str> = content.trim().split(':').collect();
             if parts.len() == 2 {
                 let pid = parts[0].parse::<u32>().unwrap_or(0);
                 let timestamp = parts[1].parse::<u64>().unwrap_or(0);
-                
+
                 // Check if the lock is stale
                 let current_time = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_secs();
-                
+
                 if current_time - timestamp > STALE_LOCK_TIMEOUT_SECS {
                     // Lock is stale, remove it
-                    fs::remove_file(&lock_path)
-                        .context("Failed to remove stale lock file")?;
+                    fs::remove_file(&lock_path).context("Failed to remove stale lock file")?;
                 } else if is_process_running(pid) {
                     // Process is still running
                     return Err(anyhow!(
@@ -55,44 +54,42 @@ impl LockFile {
                     ));
                 } else {
                     // Process is not running, remove the lock
-                    fs::remove_file(&lock_path)
-                        .context("Failed to remove orphaned lock file")?;
+                    fs::remove_file(&lock_path).context("Failed to remove orphaned lock file")?;
                 }
             }
         }
-        
+
         // Create the lock file
         let pid = process::id();
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         let lock_content = format!("{}:{}", pid, timestamp);
-        
+
         // Ensure the directory exists
         if let Some(parent) = lock_path.parent() {
-            fs::create_dir_all(parent)
-                .context("Failed to create refaktor directory")?;
+            fs::create_dir_all(parent).context("Failed to create refaktor directory")?;
         }
-        
+
         // Write lock file atomically
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true) // Fail if file exists (race condition protection)
             .open(&lock_path)
             .context("Failed to create lock file")?;
-        
+
         file.write_all(lock_content.as_bytes())
             .context("Failed to write lock file")?;
-        
+
         Ok(LockFile {
             path: lock_path,
             pid,
             timestamp,
         })
     }
-    
+
     /// Release the lock
     pub fn release(self) -> Result<()> {
         if self.path.exists() {
@@ -102,11 +99,10 @@ impl LockFile {
                 .context("Failed to read lock file")?
                 .read_to_string(&mut content)
                 .context("Failed to read lock file content")?;
-            
+
             let expected_content = format!("{}:{}", self.pid, self.timestamp);
             if content.trim() == expected_content {
-                fs::remove_file(&self.path)
-                    .context("Failed to remove lock file")?;
+                fs::remove_file(&self.path).context("Failed to remove lock file")?;
             }
         }
         Ok(())
@@ -126,17 +122,15 @@ impl Drop for LockFile {
 #[cfg(unix)]
 fn is_process_running(pid: u32) -> bool {
     // On Unix, we can check if a process exists by sending signal 0
-    unsafe {
-        libc::kill(pid as libc::pid_t, 0) == 0
-    }
+    unsafe { libc::kill(pid as libc::pid_t, 0) == 0 }
 }
 
 #[cfg(windows)]
 fn is_process_running(pid: u32) -> bool {
+    use winapi::um::handleapi::CloseHandle;
     use winapi::um::processthreadsapi::OpenProcess;
     use winapi::um::winnt::PROCESS_QUERY_INFORMATION;
-    use winapi::um::handleapi::CloseHandle;
-    
+
     unsafe {
         let handle = OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
         if handle.is_null() {

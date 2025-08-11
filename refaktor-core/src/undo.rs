@@ -9,61 +9,64 @@ use std::path::{Path, PathBuf};
 /// Undo a previously applied refactoring
 pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
     let mut history = History::load(refaktor_dir)?;
-    
+
     // Find the entry to undo
     let entry = history
         .find_entry(id)
         .ok_or_else(|| anyhow!("History entry '{}' not found", id))?
         .clone();
-    
+
     // Check if this was already reverted
     if entry.revert_of.is_some() {
         return Err(anyhow!("Entry '{}' is already a revert operation", id));
     }
-    
+
     // Check if any later entry was already reverted
     let has_later_revert = history
         .list_entries(None)
         .iter()
         .any(|e| e.revert_of.as_ref() == Some(&entry.id));
-    
+
     if has_later_revert {
         return Err(anyhow!("Entry '{}' has already been reverted", id));
     }
-    
+
     eprintln!("Undoing refactoring '{}'...", id);
-    
+
     // Restore files from backups
     let mut restored_files = Vec::new();
     for (path, _checksum) in &entry.affected_files {
-        let backup_path = entry.backups_path.join(
-            path.strip_prefix("/").unwrap_or(path)
-        );
-        
+        let backup_path = entry
+            .backups_path
+            .join(path.strip_prefix("/").unwrap_or(path));
+
         if backup_path.exists() {
             // Create parent directories if needed
             if let Some(parent) = path.parent() {
                 fs::create_dir_all(parent)?;
             }
-            
+
             // Restore the file
             fs::copy(&backup_path, path)
                 .with_context(|| format!("Failed to restore {} from backup", path.display()))?;
-            
+
             restored_files.push(path.clone());
             eprintln!("  Restored: {}", path.display());
         }
     }
-    
+
     // Reverse renames (to -> from)
     let mut reversed_renames = Vec::new();
     for (from, to) in entry.renames.iter().rev() {
         if to.exists() {
             // Handle case-only renames on case-insensitive filesystems
-            let case_only = from.to_string_lossy().to_lowercase() == to.to_string_lossy().to_lowercase()
+            let case_only = from.to_string_lossy().to_lowercase()
+                == to.to_string_lossy().to_lowercase()
                 && from != to;
-            
-            if case_only && crate::rename::detect_case_insensitive_fs(to.parent().unwrap_or(Path::new("."))) {
+
+            if case_only
+                && crate::rename::detect_case_insensitive_fs(to.parent().unwrap_or(Path::new(".")))
+            {
                 // Two-step rename for case-only changes
                 let temp_name = to.with_extension(format!("{}.refaktor.tmp", std::process::id()));
                 fs::rename(to, &temp_name)?;
@@ -71,12 +74,12 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
             } else {
                 fs::rename(to, from)?;
             }
-            
+
             reversed_renames.push((to.clone(), from.clone()));
             eprintln!("  Renamed: {} -> {}", to.display(), from.display());
         }
     }
-    
+
     // Calculate checksums of restored files
     let mut affected_files = HashMap::new();
     for path in &restored_files {
@@ -85,7 +88,7 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
             affected_files.insert(path.clone(), checksum);
         }
     }
-    
+
     // Create a revert history entry
     let revert_entry = crate::history::HistoryEntry {
         id: format!("revert-{}-{}", entry.id, chrono::Local::now().timestamp()),
@@ -101,9 +104,9 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         revert_of: Some(entry.id.clone()),
         redo_of: None,
     };
-    
+
     history.add_entry(revert_entry)?;
-    
+
     eprintln!("Successfully undid refactoring '{}'", id);
     Ok(())
 }
@@ -111,27 +114,27 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
 /// Redo a previously undone refactoring
 pub fn redo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
     let history = History::load(refaktor_dir)?;
-    
+
     // Find the original entry
     let entry = history
         .find_entry(id)
         .ok_or_else(|| anyhow!("History entry '{}' not found", id))?;
-    
+
     // Check if this entry was reverted
     let entries = history.list_entries(None);
     let revert_entry = entries
         .iter()
         .find(|e| e.revert_of.as_ref() == Some(&entry.id));
-    
+
     if revert_entry.is_none() {
         return Err(anyhow!("Entry '{}' has not been reverted", id));
     }
-    
+
     eprintln!("Redoing refactoring '{}'...", id);
-    
+
     // Create a plan from the history entry
     let plan = history_entry_to_plan(entry)?;
-    
+
     // Apply the plan again
     let options = ApplyOptions {
         backup_dir: refaktor_dir.join("backups"),
@@ -139,9 +142,9 @@ pub fn redo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         atomic: true,
         ..Default::default()
     };
-    
+
     apply_plan(&plan, &options)?;
-    
+
     eprintln!("Successfully redid refactoring '{}'", id);
     Ok(())
 }
@@ -168,7 +171,7 @@ fn history_entry_to_plan(entry: &crate::history::HistoryEntry) -> Result<Plan> {
         },
         version: "1.0.0".to_string(),
     };
-    
+
     // Convert rename tuples to Rename structs
     for (from, to) in &entry.renames {
         let kind = if from.is_dir() {
@@ -176,7 +179,7 @@ fn history_entry_to_plan(entry: &crate::history::HistoryEntry) -> Result<Plan> {
         } else {
             RenameKind::File
         };
-        
+
         plan.renames.push(Rename {
             from: from.clone(),
             to: to.clone(),
@@ -184,7 +187,7 @@ fn history_entry_to_plan(entry: &crate::history::HistoryEntry) -> Result<Plan> {
             coercion_applied: None,
         });
     }
-    
+
     Ok(plan)
 }
 
@@ -192,7 +195,7 @@ fn history_entry_to_plan(entry: &crate::history::HistoryEntry) -> Result<Plan> {
 mod tests {
     use super::*;
     use tempfile::TempDir;
-    
+
     #[test]
     fn test_history_entry_to_plan() {
         let entry = crate::history::HistoryEntry {
@@ -204,16 +207,14 @@ mod tests {
             includes: vec!["*.rs".to_string()],
             excludes: vec!["target/**".to_string()],
             affected_files: HashMap::new(),
-            renames: vec![
-                (PathBuf::from("old.txt"), PathBuf::from("new.txt")),
-            ],
+            renames: vec![(PathBuf::from("old.txt"), PathBuf::from("new.txt"))],
             backups_path: PathBuf::from("/tmp/backups"),
             revert_of: None,
             redo_of: None,
         };
-        
+
         let plan = history_entry_to_plan(&entry).unwrap();
-        
+
         assert_eq!(plan.old, "old_name");
         assert_eq!(plan.new, "new_name");
         assert_eq!(plan.includes, vec!["*.rs"]);

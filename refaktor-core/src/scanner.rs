@@ -19,22 +19,22 @@ use std::time::SystemTime;
 pub struct PlanOptions {
     pub includes: Vec<String>,
     pub excludes: Vec<String>,
-    pub respect_gitignore: bool,  // Deprecated, use unrestricted_level instead
-    pub unrestricted_level: u8,   // 0=default, 1=-u, 2=-uu, 3=-uuu
+    pub respect_gitignore: bool, // Deprecated, use unrestricted_level instead
+    pub unrestricted_level: u8,  // 0=default, 1=-u, 2=-uu, 3=-uuu
     pub styles: Option<Vec<Style>>,
     pub rename_files: bool,
     pub rename_dirs: bool,
-    pub rename_root: bool,        // Allow renaming the root directory
+    pub rename_root: bool, // Allow renaming the root directory
     pub plan_out: PathBuf,
     pub coerce_separators: CoercionMode,
-    pub exclude_match: Vec<String>,  // Specific matches to exclude
+    pub exclude_match: Vec<String>, // Specific matches to exclude
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum CoercionMode {
-    Auto,     // Default: automatically detect and apply
-    Off,      // Disable coercion
-    Force(crate::coercion::Style),  // Force a specific style
+    Auto,                          // Default: automatically detect and apply
+    Off,                           // Disable coercion
+    Force(crate::coercion::Style), // Force a specific style
 }
 
 impl PlanOptions {
@@ -49,12 +49,12 @@ impl Default for PlanOptions {
         Self {
             includes: vec![],
             excludes: vec![],
-            respect_gitignore: true,  // For backward compatibility
-            unrestricted_level: 0,    // Default: respect all ignore files
+            respect_gitignore: true, // For backward compatibility
+            unrestricted_level: 0,   // Default: respect all ignore files
             styles: None,
             rename_files: true,
             rename_dirs: true,
-            rename_root: false,       // Default: do not rename root directory
+            rename_root: false, // Default: do not rename root directory
             plan_out: PathBuf::from(".refaktor/plan.json"),
             coerce_separators: CoercionMode::Auto,
             exclude_match: vec![],
@@ -68,16 +68,16 @@ pub struct MatchHunk {
     pub line: u64,
     pub col: u32,
     pub variant: String,
-    pub before: String,  // The word/variant being replaced
-    pub after: String,   // The replacement word/variant
+    pub before: String, // The word/variant being replaced
+    pub after: String,  // The replacement word/variant
     pub start: usize,
     pub end: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub line_before: Option<String>,  // Full line context for diff preview
+    pub line_before: Option<String>, // Full line context for diff preview
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub line_after: Option<String>,   // Full line with replacement for diff preview
+    pub line_after: Option<String>, // Full line with replacement for diff preview
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub coercion_applied: Option<String>,  // Details about coercion if applied
+    pub coercion_applied: Option<String>, // Details about coercion if applied
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,7 +86,7 @@ pub struct Rename {
     pub to: PathBuf,
     pub kind: RenameKind,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub coercion_applied: Option<String>,  // Details about coercion if applied
+    pub coercion_applied: Option<String>, // Details about coercion if applied
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -119,12 +119,7 @@ pub struct Plan {
     pub version: String,
 }
 
-pub fn scan_repository(
-    root: &Path,
-    old: &str,
-    new: &str,
-    options: &PlanOptions,
-) -> Result<Plan> {
+pub fn scan_repository(root: &Path, old: &str, new: &str, options: &PlanOptions) -> Result<Plan> {
     let variant_map = generate_variant_map(old, new, options.styles.as_deref());
     let variants: Vec<String> = variant_map.keys().cloned().collect();
     let pattern = build_pattern(&variants)?;
@@ -155,16 +150,16 @@ pub fn scan_repository(
         }
 
         let path = entry.path();
-        
+
         // Apply include/exclude filters (use relative path for matching)
         let relative_path = path.strip_prefix(root).unwrap_or(path);
-        
+
         if let Some(ref includes) = include_globs {
             if !includes.is_match(relative_path) {
                 continue;
             }
         }
-        
+
         if let Some(ref excludes) = exclude_globs {
             if excludes.is_match(relative_path) {
                 continue;
@@ -173,7 +168,7 @@ pub fn scan_repository(
 
         if let Ok(content) = read_file_content(path) {
             stats.files_scanned += 1;
-            
+
             // Skip binary files unless we're in -uuu mode
             if !options.binary_as_text() && is_binary(&content) {
                 continue;
@@ -194,22 +189,23 @@ pub fn scan_repository(
                     Style::ScreamingSnake,
                 ]),
             );
-            
+
             if !file_matches.is_empty() {
                 // Sort by position to maintain order
                 file_matches.sort_by_key(|m| (m.line, m.column));
-                
+
                 let hunks = generate_hunks(&file_matches, &content, &variant_map, path, options);
-                
+
                 stats.files_with_matches += 1;
                 stats.total_matches += hunks.len();
-                
+
                 for hunk in &hunks {
-                    *stats.matches_by_variant
+                    *stats
+                        .matches_by_variant
                         .entry(hunk.variant.clone())
                         .or_insert(0) += 1;
                 }
-                
+
                 matches.extend(hunks);
             }
         }
@@ -266,7 +262,7 @@ fn build_globset(patterns: &[String]) -> Result<Option<GlobSet>> {
 fn read_file_content(path: &Path) -> Result<Vec<u8>> {
     let file = File::open(path)?;
     let metadata = file.metadata()?;
-    
+
     if metadata.len() > 50 * 1024 * 1024 {
         let mut content = Vec::new();
         use std::io::Read;
@@ -279,10 +275,7 @@ fn read_file_content(path: &Path) -> Result<Vec<u8>> {
 }
 
 fn is_binary(content: &[u8]) -> bool {
-    matches!(
-        content_inspector::inspect(content),
-        ContentType::BINARY
-    )
+    matches!(content_inspector::inspect(content), ContentType::BINARY)
 }
 
 fn generate_hunks(
@@ -300,7 +293,7 @@ fn generate_hunks(
         if options.exclude_match.contains(&m.variant) || options.exclude_match.contains(&m.text) {
             continue;
         }
-        
+
         let line_idx = m.line.saturating_sub(1);
         if line_idx >= lines.len() {
             continue;
@@ -308,7 +301,7 @@ fn generate_hunks(
 
         let line = lines[line_idx];
         let line_string = String::from_utf8_lossy(line).to_string();
-        
+
         // Check if this is a compound match (text field contains replacement)
         // or an exact match (use variant map)
         let (before, mut after) = if variant_map.contains_key(&m.variant) {
@@ -325,43 +318,48 @@ fn generate_hunks(
         if let CoercionMode::Auto = options.coerce_separators {
             // Find the match position within the line and extract context
             if let Some(match_pos) = line_string.find(&before) {
-                let context = extract_immediate_context(&line_string, match_pos, match_pos + before.len());
-                
-                if let Some((_coerced, reason)) = crate::coercion::apply_coercion(&context, &before, &after) {
-                    if let Some(coerced_variant) = apply_coercion_to_variant(&context, &before, &after) {
+                let context =
+                    extract_immediate_context(&line_string, match_pos, match_pos + before.len());
+
+                if let Some((_coerced, reason)) =
+                    crate::coercion::apply_coercion(&context, &before, &after)
+                {
+                    if let Some(coerced_variant) =
+                        apply_coercion_to_variant(&context, &before, &after)
+                    {
                         after = coerced_variant;
                         coercion_applied = Some(reason);
                     }
                 }
             }
         }
-        
+
         // For diff mode, we need the full line context
         let line_before = line_string.trim_end().to_string();
-        
+
         // Create the after line by replacing the variant in the original line
         // Use the column position from the match to ensure we replace the right occurrence
         let match_col = m.column;
-        let line_after = if match_col < line_string.len() && 
-                           line_string[match_col..].starts_with(&before) {
-            let mut after_line = String::new();
-            after_line.push_str(&line_string[..match_col]);
-            after_line.push_str(&after);
-            after_line.push_str(&line_string[match_col + before.len()..]);
-            after_line.trim_end().to_string()
-        } else {
-            // Fallback: try to find the match in the line
-            if let Some(match_pos) = line_string.find(&before) {
+        let line_after =
+            if match_col < line_string.len() && line_string[match_col..].starts_with(&before) {
                 let mut after_line = String::new();
-                after_line.push_str(&line_string[..match_pos]);
+                after_line.push_str(&line_string[..match_col]);
                 after_line.push_str(&after);
-                after_line.push_str(&line_string[match_pos + before.len()..]);
+                after_line.push_str(&line_string[match_col + before.len()..]);
                 after_line.trim_end().to_string()
             } else {
-                // Could not find the match in the line - this shouldn't happen
-                line_before.clone()
-            }
-        };
+                // Fallback: try to find the match in the line
+                if let Some(match_pos) = line_string.find(&before) {
+                    let mut after_line = String::new();
+                    after_line.push_str(&line_string[..match_pos]);
+                    after_line.push_str(&after);
+                    after_line.push_str(&line_string[match_pos + before.len()..]);
+                    after_line.trim_end().to_string()
+                } else {
+                    // Could not find the match in the line - this shouldn't happen
+                    line_before.clone()
+                }
+            };
 
         hunks.push(MatchHunk {
             file: path.to_path_buf(),
@@ -384,24 +382,21 @@ fn generate_hunks(
 /// Extract the immediate context around a match to make better coercion decisions
 fn extract_immediate_context(line: &str, match_start: usize, match_end: usize) -> String {
     let chars: Vec<char> = line.chars().collect();
-    
+
     // Convert byte positions to character indices
     let char_start = line[..match_start].chars().count();
     let char_end = line[..match_end].chars().count();
-    
+
     let mut context_start = char_start;
     let mut context_end = char_end;
-    
+
     // Characters that are part of identifiers or compound names
-    let is_identifier_char = |c: char| -> bool {
-        c.is_alphanumeric() || c == '_' || c == '-' || c == '.'
-    };
-    
+    let is_identifier_char =
+        |c: char| -> bool { c.is_alphanumeric() || c == '_' || c == '-' || c == '.' };
+
     // Characters that indicate we should stop extending context but might be part of a path/namespace
-    let is_path_separator = |c: char| -> bool {
-        c == '/' || c == '\\' || c == ':' || c == '@'
-    };
-    
+    let is_path_separator = |c: char| -> bool { c == '/' || c == '\\' || c == ':' || c == '@' };
+
     // Extend backwards to find the start of the identifier/path chain
     while context_start > 0 {
         let prev_char = chars[context_start - 1];
@@ -411,8 +406,8 @@ fn extract_immediate_context(line: &str, match_start: usize, match_end: usize) -
             break;
         }
     }
-    
-    // Extend forwards to find the end of the identifier/path chain  
+
+    // Extend forwards to find the end of the identifier/path chain
     while context_end < chars.len() {
         let next_char = chars[context_end];
         if is_identifier_char(next_char) || is_path_separator(next_char) {
@@ -421,25 +416,31 @@ fn extract_immediate_context(line: &str, match_start: usize, match_end: usize) -
             break;
         }
     }
-    
+
     // Extract the context substring
     chars[context_start..context_end].iter().collect()
 }
 
 /// Apply coercion logic to just the variant (word-level), not the entire container
-fn apply_coercion_to_variant(container: &str, _old_variant: &str, new_variant: &str) -> Option<String> {
+fn apply_coercion_to_variant(
+    container: &str,
+    _old_variant: &str,
+    new_variant: &str,
+) -> Option<String> {
     // Detect the container style
     let container_style = crate::coercion::detect_style(container);
-    
+
     // If container has mixed or unknown style, no coercion
-    if container_style == crate::coercion::Style::Mixed || container_style == crate::coercion::Style::Dot {
+    if container_style == crate::coercion::Style::Mixed
+        || container_style == crate::coercion::Style::Dot
+    {
         return None;
     }
-    
+
     // Apply the container's style to the new variant
     let new_tokens = crate::coercion::tokenize(new_variant);
     let coerced_variant = crate::coercion::render_tokens(&new_tokens, container_style);
-    
+
     Some(coerced_variant)
 }
 
@@ -463,7 +464,7 @@ pub fn write_plan(plan: &Plan, path: &Path) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    
+
     let file = File::create(path)?;
     let writer = BufWriter::new(file);
     serde_json::to_writer_pretty(writer, plan)?;
@@ -497,7 +498,7 @@ mod tests {
         let id1 = generate_plan_id("old", "new", &opts);
         std::thread::sleep(std::time::Duration::from_secs(1));
         let id2 = generate_plan_id("old", "new", &opts);
-        
+
         assert_eq!(id1.len(), 16);
         assert_ne!(id1, id2);
     }
@@ -513,7 +514,7 @@ mod tests {
         let patterns = vec!["*.rs".to_string(), "src/**".to_string()];
         let result = build_globset(&patterns).unwrap();
         assert!(result.is_some());
-        
+
         let globset = result.unwrap();
         assert!(globset.is_match("test.rs"));
         assert!(globset.is_match("src/main.rs"));
@@ -524,25 +525,25 @@ mod tests {
     fn test_scan_empty_directory() {
         let temp_dir = TempDir::new().unwrap();
         let opts = PlanOptions::default();
-        
+
         let plan = scan_repository(temp_dir.path(), "old", "new", &opts).unwrap();
-        
+
         assert_eq!(plan.old, "old");
         assert_eq!(plan.new, "new");
         assert_eq!(plan.matches.len(), 0);
         assert_eq!(plan.renames.len(), 0);
         assert_eq!(plan.stats.files_scanned, 0);
     }
-    
+
     #[test]
     fn test_generate_hunks() {
         use crate::pattern::Match;
-        
+
         let content = b"old_name and oldName here";
         let mut variant_map = BTreeMap::new();
         variant_map.insert("old_name".to_string(), "new_name".to_string());
         variant_map.insert("oldName".to_string(), "newName".to_string());
-        
+
         let matches = vec![
             Match {
                 file: "test.txt".to_string(),
@@ -563,35 +564,53 @@ mod tests {
                 text: "oldName".to_string(),
             },
         ];
-        
+
         let opts = PlanOptions::default();
-        let hunks = generate_hunks(&matches, content, &variant_map, Path::new("test.txt"), &opts);
-        
+        let hunks = generate_hunks(
+            &matches,
+            content,
+            &variant_map,
+            Path::new("test.txt"),
+            &opts,
+        );
+
         assert_eq!(hunks.len(), 2);
         assert_eq!(hunks[0].variant, "old_name");
         // The before/after fields contain just the words
         assert_eq!(hunks[0].before, "old_name");
         assert_eq!(hunks[0].after, "new_name");
         // The line context is in separate fields
-        assert_eq!(hunks[0].line_before.as_ref().unwrap(), "old_name and oldName here");
-        assert_eq!(hunks[0].line_after.as_ref().unwrap(), "new_name and oldName here");
-        
+        assert_eq!(
+            hunks[0].line_before.as_ref().unwrap(),
+            "old_name and oldName here"
+        );
+        assert_eq!(
+            hunks[0].line_after.as_ref().unwrap(),
+            "new_name and oldName here"
+        );
+
         assert_eq!(hunks[1].variant, "oldName");
         assert_eq!(hunks[1].before, "oldName");
         assert_eq!(hunks[1].after, "newName");
-        assert_eq!(hunks[1].line_before.as_ref().unwrap(), "old_name and oldName here");
-        assert_eq!(hunks[1].line_after.as_ref().unwrap(), "old_name and newName here");
+        assert_eq!(
+            hunks[1].line_before.as_ref().unwrap(),
+            "old_name and oldName here"
+        );
+        assert_eq!(
+            hunks[1].line_after.as_ref().unwrap(),
+            "old_name and newName here"
+        );
     }
-    
+
     #[test]
     fn test_generate_hunks_multiline() {
         use crate::pattern::Match;
-        
+
         let content = b"fn old_name() {\n    println!(\"oldName\");\n    old_name();\n}\n";
         let mut variant_map = BTreeMap::new();
         variant_map.insert("old_name".to_string(), "new_name".to_string());
         variant_map.insert("oldName".to_string(), "newName".to_string());
-        
+
         let matches = vec![
             Match {
                 file: "test.rs".to_string(),
@@ -621,12 +640,12 @@ mod tests {
                 text: "old_name".to_string(),
             },
         ];
-        
+
         let opts = PlanOptions::default();
         let hunks = generate_hunks(&matches, content, &variant_map, Path::new("test.rs"), &opts);
-        
+
         assert_eq!(hunks.len(), 3);
-        
+
         // First line replacement
         assert_eq!(hunks[0].variant, "old_name");
         assert_eq!(hunks[0].line, 1);
@@ -634,15 +653,21 @@ mod tests {
         assert_eq!(hunks[0].after, "new_name");
         assert_eq!(hunks[0].line_before.as_ref().unwrap(), "fn old_name() {");
         assert_eq!(hunks[0].line_after.as_ref().unwrap(), "fn new_name() {");
-        
+
         // Second line replacement
         assert_eq!(hunks[1].variant, "oldName");
         assert_eq!(hunks[1].line, 2);
         assert_eq!(hunks[1].before, "oldName");
         assert_eq!(hunks[1].after, "newName");
-        assert_eq!(hunks[1].line_before.as_ref().unwrap(), "    println!(\"oldName\");");
-        assert_eq!(hunks[1].line_after.as_ref().unwrap(), "    println!(\"newName\");");
-        
+        assert_eq!(
+            hunks[1].line_before.as_ref().unwrap(),
+            "    println!(\"oldName\");"
+        );
+        assert_eq!(
+            hunks[1].line_after.as_ref().unwrap(),
+            "    println!(\"newName\");"
+        );
+
         // Third line replacement
         assert_eq!(hunks[2].variant, "old_name");
         assert_eq!(hunks[2].line, 3);
@@ -655,28 +680,28 @@ mod tests {
     #[test]
     fn test_walk_directory() {
         use ignore::Walk;
-        
+
         let temp_dir = TempDir::new().unwrap();
         let test_file = temp_dir.path().join("test.txt");
         std::fs::write(&test_file, "test content").unwrap();
-        
+
         let walker = Walk::new(temp_dir.path());
         let files: Vec<_> = walker
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().map_or(false, |t| t.is_file()))
             .collect();
-            
+
         assert_eq!(files.len(), 1);
         assert_eq!(files[0].path().file_name().unwrap(), "test.txt");
     }
-    
+
     #[test]
     fn test_scan_with_matches() {
         // Create a simple test case
         let temp_dir = TempDir::new().unwrap();
         let test_file = temp_dir.path().join("test.txt");
         std::fs::write(&test_file, "old_name and oldName here").unwrap();
-        
+
         // Use non-parallel walk for testing
         use ignore::Walk;
         let walker = Walk::new(temp_dir.path());
@@ -689,15 +714,20 @@ mod tests {
             }
         }
         assert_eq!(file_count, 1, "Walker should find 1 file");
-        
+
         // Now test with scan_repository
         let mut opts = PlanOptions::default();
         opts.respect_gitignore = false;
-        
+
         let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
-        
+
         // We expect 2 matches: "old_name" and "oldName"
-        assert_eq!(plan.matches.len(), 2, "Expected 2 matches, found {}", plan.matches.len());
+        assert_eq!(
+            plan.matches.len(),
+            2,
+            "Expected 2 matches, found {}",
+            plan.matches.len()
+        );
         assert_eq!(plan.stats.files_scanned, 1);
         assert_eq!(plan.stats.files_with_matches, 1);
     }
@@ -724,11 +754,11 @@ mod tests {
                 coercion_applied: None,
             },
         ];
-        
+
         renames.sort_by(|a, b| {
             let a_depth = a.from.components().count();
             let b_depth = b.from.components().count();
-            
+
             match (
                 matches!(a.kind, RenameKind::Dir),
                 matches!(b.kind, RenameKind::Dir),
@@ -738,7 +768,7 @@ mod tests {
                 _ => b_depth.cmp(&a_depth),
             }
         });
-        
+
         assert!(matches!(renames[0].kind, RenameKind::Dir));
         assert_eq!(renames[1].from.components().count(), 5);
     }
@@ -747,7 +777,7 @@ mod tests {
     fn test_write_plan() {
         let temp_dir = TempDir::new().unwrap();
         let plan_path = temp_dir.path().join(".refaktor/plan.json");
-        
+
         let plan = Plan {
             id: "test123".to_string(),
             created_at: "123456789".to_string(),
@@ -766,10 +796,10 @@ mod tests {
             },
             version: "1.0.0".to_string(),
         };
-        
+
         write_plan(&plan, &plan_path).unwrap();
         assert!(plan_path.exists());
-        
+
         let content = std::fs::read_to_string(&plan_path).unwrap();
         assert!(content.contains("\"id\": \"test123\""));
     }

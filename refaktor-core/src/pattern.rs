@@ -28,18 +28,16 @@ pub fn build_pattern(variants: &[String]) -> Result<MatchPattern, regex::Error> 
     }
 
     let escaped: Vec<String> = variants.iter().map(|v| regex::escape(v)).collect();
-    
+
     let longest_first = {
         let mut sorted = escaped.clone();
         sorted.sort_by_key(|s| std::cmp::Reverse(s.len()));
         sorted
     };
-    
+
     let pattern = format!("(?:{})", longest_first.join("|"));
-    
-    let regex = RegexBuilder::new(&pattern)
-        .unicode(false)
-        .build()?;
+
+    let regex = RegexBuilder::new(&pattern).unicode(false).build()?;
 
     let matcher = AhoCorasick::new(variants).unwrap();
 
@@ -79,7 +77,7 @@ pub struct Match {
 
 pub fn find_matches(pattern: &MatchPattern, content: &[u8], file: &str) -> Vec<Match> {
     let mut matches = Vec::new();
-    
+
     for m in pattern.regex.find_iter(content) {
         if !is_boundary(content, m.start(), m.end()) {
             continue;
@@ -92,7 +90,7 @@ pub fn find_matches(pattern: &MatchPattern, content: &[u8], file: &str) -> Vec<M
             .to_string();
 
         let line_number = content[..m.start()].iter().filter(|&&b| b == b'\n').count() + 1;
-        
+
         let line_start = content[..m.start()]
             .iter()
             .rposition(|&b| b == b'\n')
@@ -155,7 +153,7 @@ mod tests {
             "foobarbaz".to_string(),
         ];
         let pattern = build_pattern(&variants).unwrap();
-        
+
         let text = b"foobarbaz";
         let m = pattern.regex.find(text).unwrap();
         assert_eq!(m.as_bytes(), b"foobarbaz");
@@ -164,22 +162,22 @@ mod tests {
     #[test]
     fn test_is_boundary() {
         let text = b"hello_world test";
-        
+
         assert!(is_boundary(text, 0, 11));
-        
+
         assert!(is_boundary(text, 12, 16));
-        
+
         assert!(!is_boundary(text, 1, 5));
-        
+
         assert!(!is_boundary(text, 6, 11));
     }
 
     #[test]
     fn test_is_boundary_underscore() {
         let text = b"hello_world_test";
-        
+
         assert!(is_boundary(text, 0, 16));
-        
+
         assert!(!is_boundary(text, 0, 5));
         assert!(!is_boundary(text, 6, 11));
     }
@@ -187,9 +185,9 @@ mod tests {
     #[test]
     fn test_is_boundary_with_punctuation() {
         let text = b"call(hello_world);";
-        
+
         assert!(is_boundary(text, 5, 16));
-        
+
         assert!(!is_boundary(text, 5, 10));
     }
 
@@ -201,7 +199,7 @@ mod tests {
             "OldName".to_string(),
         ];
         let pattern = build_pattern(&variants).unwrap();
-        
+
         assert_eq!(pattern.identify_variant(b"old_name"), Some("old_name"));
         assert_eq!(pattern.identify_variant(b"oldName"), Some("oldName"));
         assert_eq!(pattern.identify_variant(b"OldName"), Some("OldName"));
@@ -212,20 +210,20 @@ mod tests {
     fn test_find_matches() {
         let variants = vec!["hello".to_string(), "world".to_string()];
         let pattern = build_pattern(&variants).unwrap();
-        
+
         let content = b"hello world\nmore hello here";
         let matches = find_matches(&pattern, content, "test.txt");
-        
+
         assert_eq!(matches.len(), 3);
-        
+
         assert_eq!(matches[0].text, "hello");
         assert_eq!(matches[0].line, 1);
         assert_eq!(matches[0].column, 1);
-        
+
         assert_eq!(matches[1].text, "world");
         assert_eq!(matches[1].line, 1);
         assert_eq!(matches[1].column, 7);
-        
+
         assert_eq!(matches[2].text, "hello");
         assert_eq!(matches[2].line, 2);
         assert_eq!(matches[2].column, 6);
@@ -235,10 +233,10 @@ mod tests {
     fn test_find_matches_respects_boundaries() {
         let variants = vec!["test".to_string()];
         let pattern = build_pattern(&variants).unwrap();
-        
+
         let content = b"test testing attest test";
         let matches = find_matches(&pattern, content, "test.txt");
-        
+
         assert_eq!(matches.len(), 2);
         assert_eq!(matches[0].start, 0);
         assert_eq!(matches[1].start, 20);
@@ -248,10 +246,10 @@ mod tests {
     fn test_special_chars_escaped() {
         let variants = vec!["foo.bar".to_string(), "foo[bar]".to_string()];
         let pattern = build_pattern(&variants).unwrap();
-        
+
         assert!(pattern.regex.is_match(b"foo.bar"));
         assert!(pattern.regex.is_match(b"foo[bar]"));
-        
+
         assert!(!pattern.regex.is_match(b"fooXbar"));
         assert!(!pattern.regex.is_match(b"foo_bar_"));
     }
@@ -260,7 +258,7 @@ mod tests {
     fn test_empty_content() {
         let variants = vec!["test".to_string()];
         let pattern = build_pattern(&variants).unwrap();
-        
+
         let matches = find_matches(&pattern, b"", "empty.txt");
         assert_eq!(matches.len(), 0);
     }
@@ -269,15 +267,15 @@ mod tests {
     fn test_multiline_positions() {
         let variants = vec!["foo".to_string()];
         let pattern = build_pattern(&variants).unwrap();
-        
+
         let content = b"line1\nline2 foo\nfoo line3";
         let matches = find_matches(&pattern, content, "test.txt");
-        
+
         assert_eq!(matches.len(), 2);
-        
+
         assert_eq!(matches[0].line, 2);
         assert_eq!(matches[0].column, 7);
-        
+
         assert_eq!(matches[1].line, 3);
         assert_eq!(matches[1].column, 1);
     }

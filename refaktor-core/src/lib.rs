@@ -41,7 +41,7 @@ use ignore::WalkBuilder;
 use std::path::Path;
 
 /// Configure a WalkBuilder based on the unrestricted level in PlanOptions.
-/// 
+///
 /// This matches ripgrep's behavior:
 /// - Level 0 (default): Respect all ignore files, skip hidden files
 /// - Level 1 (-u): Don't respect .gitignore, but respect other ignore files, skip hidden  
@@ -49,15 +49,15 @@ use std::path::Path;
 /// - Level 3 (-uuu): Same as level 2, plus treat binary files as text (handled by caller)
 pub fn configure_walker(root: &Path, options: &scanner::PlanOptions) -> WalkBuilder {
     let mut builder = WalkBuilder::new(root);
-    
+
     // Map unrestricted level to ignore settings
     // Note: respect_gitignore is kept for backward compatibility
     let level = if !options.respect_gitignore && options.unrestricted_level == 0 {
-        1  // Legacy flag takes precedence if set
+        1 // Legacy flag takes precedence if set
     } else {
         options.unrestricted_level
     };
-    
+
     match level {
         0 => {
             // Default: respect all ignore files, skip hidden
@@ -69,7 +69,7 @@ pub fn configure_walker(root: &Path, options: &scanner::PlanOptions) -> WalkBuil
                 .parents(true)
                 .hidden(true)  // true = skip hidden files
                 .add_custom_ignore_filename(".rgignore");
-        }
+        },
         1 => {
             // -u: Don't respect .gitignore, but respect others, skip hidden
             builder
@@ -80,7 +80,7 @@ pub fn configure_walker(root: &Path, options: &scanner::PlanOptions) -> WalkBuil
                 .parents(true)      // Still check parent dirs
                 .hidden(true)       // Still skip hidden files
                 .add_custom_ignore_filename(".rgignore");
-        }
+        },
         2 | 3 => {
             // -uu/-uuu: Don't respect any ignore files, show hidden
             // Level 3 also treats binary as text, but that's handled by scanner
@@ -90,8 +90,8 @@ pub fn configure_walker(root: &Path, options: &scanner::PlanOptions) -> WalkBuil
                 .git_exclude(false)
                 .ignore(false)
                 .parents(false)
-                .hidden(false);  // false = show hidden files
-        }
+                .hidden(false); // false = show hidden files
+        },
         _ => {
             // Treat any higher level as maximum unrestricted
             builder
@@ -101,9 +101,8 @@ pub fn configure_walker(root: &Path, options: &scanner::PlanOptions) -> WalkBuil
                 .ignore(false)
                 .parents(false)
                 .hidden(false);
-        }
+        },
     }
-    
+
     builder
 }
-

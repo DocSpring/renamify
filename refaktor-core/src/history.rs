@@ -189,8 +189,8 @@ pub fn format_history(entries: &[&HistoryEntry], json: bool) -> Result<String> {
     if json {
         Ok(serde_json::to_string_pretty(entries)?)
     } else {
-        use comfy_table::{Table, Cell, Color};
-        
+        use comfy_table::{Cell, Color, Table};
+
         let mut table = Table::new();
         table.set_header(vec![
             Cell::new("ID").fg(Color::Cyan),
@@ -202,11 +202,15 @@ pub fn format_history(entries: &[&HistoryEntry], json: bool) -> Result<String> {
         ]);
 
         for entry in entries {
-            let date = entry.created_at.split('T').next().unwrap_or(&entry.created_at);
+            let date = entry
+                .created_at
+                .split('T')
+                .next()
+                .unwrap_or(&entry.created_at);
             let rename = format!("{} → {}", entry.old, entry.new);
             let files = entry.affected_files.len();
             let renames = entry.renames.len();
-            
+
             let entry_type = if entry.revert_of.is_some() {
                 "revert"
             } else if entry.redo_of.is_some() {
@@ -233,17 +237,17 @@ pub fn format_history(entries: &[&HistoryEntry], json: bool) -> Result<String> {
 pub fn get_status(refaktor_dir: &Path) -> Result<StatusInfo> {
     let history = History::load(refaktor_dir)?;
     let conflicts_dir = refaktor_dir.join("conflicts");
-    
+
     let last_plan = history.last_entry().map(|e| e.id.clone());
     let has_conflicts = history.has_pending_conflicts(&conflicts_dir);
-    
+
     // Check if working tree is clean according to our records
     let working_tree_clean = if let Some(last) = history.last_entry() {
         history.verify_checksums(last)?.is_empty()
     } else {
         true // No history means clean
     };
-    
+
     Ok(StatusInfo {
         last_plan,
         has_conflicts,
@@ -265,25 +269,25 @@ impl StatusInfo {
     /// Format status for display
     pub fn format(&self) -> String {
         let mut output = String::new();
-        
+
         if let Some(ref plan_id) = self.last_plan {
             output.push_str(&format!("Last applied plan: {}\n", plan_id));
         } else {
             output.push_str("No plans applied yet\n");
         }
-        
+
         if self.has_conflicts {
             output.push_str("⚠️  Pending conflicts detected\n");
         }
-        
+
         if self.working_tree_clean {
             output.push_str("✓ Working tree is clean\n");
         } else {
             output.push_str("⚠️  Working tree has been modified since last apply\n");
         }
-        
+
         output.push_str(&format!("Total history entries: {}\n", self.total_entries));
-        
+
         output
     }
 }
@@ -291,8 +295,8 @@ impl StatusInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::collections::HashMap;
+    use tempfile::TempDir;
 
     fn create_test_entry(id: &str) -> HistoryEntry {
         HistoryEntry {
@@ -315,12 +319,12 @@ mod tests {
     fn test_history_add_and_load() {
         let temp_dir = TempDir::new().unwrap();
         let history_path = temp_dir.path().join("history.json");
-        
+
         // Create and save history
         let mut history = History::load_from_path(&history_path).unwrap();
         let entry = create_test_entry("test123");
         history.add_entry(entry.clone()).unwrap();
-        
+
         // Load and verify
         let loaded = History::load_from_path(&history_path).unwrap();
         assert_eq!(loaded.entries.len(), 1);
@@ -331,11 +335,11 @@ mod tests {
     fn test_find_entry() {
         let temp_dir = TempDir::new().unwrap();
         let history_path = temp_dir.path().join("history.json");
-        
+
         let mut history = History::load_from_path(&history_path).unwrap();
         history.add_entry(create_test_entry("test1")).unwrap();
         history.add_entry(create_test_entry("test2")).unwrap();
-        
+
         assert!(history.find_entry("test1").is_some());
         assert!(history.find_entry("test2").is_some());
         assert!(history.find_entry("test3").is_none());
@@ -345,10 +349,10 @@ mod tests {
     fn test_duplicate_id_prevention() {
         let temp_dir = TempDir::new().unwrap();
         let history_path = temp_dir.path().join("history.json");
-        
+
         let mut history = History::load_from_path(&history_path).unwrap();
         history.add_entry(create_test_entry("test1")).unwrap();
-        
+
         // Try to add duplicate
         let result = history.add_entry(create_test_entry("test1"));
         assert!(result.is_err());
@@ -358,15 +362,17 @@ mod tests {
     fn test_list_entries_with_limit() {
         let temp_dir = TempDir::new().unwrap();
         let history_path = temp_dir.path().join("history.json");
-        
+
         let mut history = History::load_from_path(&history_path).unwrap();
         for i in 0..5 {
-            history.add_entry(create_test_entry(&format!("test{}", i))).unwrap();
+            history
+                .add_entry(create_test_entry(&format!("test{}", i)))
+                .unwrap();
         }
-        
+
         let all = history.list_entries(None);
         assert_eq!(all.len(), 5);
-        
+
         let limited = history.list_entries(Some(3));
         assert_eq!(limited.len(), 3);
         assert_eq!(limited[0].id, "test4"); // Most recent first
@@ -376,12 +382,14 @@ mod tests {
     fn test_prune() {
         let temp_dir = TempDir::new().unwrap();
         let history_path = temp_dir.path().join("history.json");
-        
+
         let mut history = History::load_from_path(&history_path).unwrap();
         for i in 0..10 {
-            history.add_entry(create_test_entry(&format!("test{}", i))).unwrap();
+            history
+                .add_entry(create_test_entry(&format!("test{}", i)))
+                .unwrap();
         }
-        
+
         history.prune(5).unwrap();
         assert_eq!(history.entries.len(), 5);
         assert_eq!(history.entries[0].id, "test5"); // Oldest kept
@@ -395,7 +403,7 @@ mod tests {
             working_tree_clean: true,
             total_entries: 5,
         };
-        
+
         let formatted = status.format();
         assert!(formatted.contains("Last applied plan: abc123"));
         assert!(formatted.contains("Working tree is clean"));

@@ -34,8 +34,10 @@ fn test_plan_command_missing_args() {
 fn test_plan_command_basic() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.child("test.rs");
-    test_file.write_str("fn old_name() { let old_name = 42; }").unwrap();
-    
+    test_file
+        .write_str("fn old_name() { let old_name = 42; }")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["plan", "old_name", "new_name", "--dry-run"])
@@ -48,22 +50,38 @@ fn test_plan_command_basic() {
 fn test_plan_command_with_styles() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.child("test.rs");
-    test_file.write_str("fn oldName() { let old_name = 42; }").unwrap();
-    
+    test_file
+        .write_str("fn oldName() { let old_name = 42; }")
+        .unwrap();
+
     // Test excluding styles (exclude kebab and pascal, keeping snake and camel)
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old-name", "new-name", "--exclude-styles", "kebab,pascal,screaming-snake", "--dry-run"])
+        .args([
+            "plan",
+            "old-name",
+            "new-name",
+            "--exclude-styles",
+            "kebab,pascal,screaming-snake",
+            "--dry-run",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("test.rs"))
         .stdout(predicate::str::contains("old_name"))
         .stdout(predicate::str::contains("oldName"));
-    
+
     // Test including additional styles
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old-name", "new-name", "--include-styles", "title,train", "--dry-run"])
+        .args([
+            "plan",
+            "old-name",
+            "new-name",
+            "--include-styles",
+            "title,train",
+            "--dry-run",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("test.rs"));
@@ -74,12 +92,25 @@ fn test_plan_command_with_includes() {
     let temp_dir = TempDir::new().unwrap();
     temp_dir.child("src").create_dir_all().unwrap();
     temp_dir.child("tests").create_dir_all().unwrap();
-    temp_dir.child("src/main.rs").write_str("fn old_name() {}").unwrap();
-    temp_dir.child("tests/test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("src/main.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+    temp_dir
+        .child("tests/test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old_name", "new_name", "--include", "src/**/*.rs", "--dry-run"])
+        .args([
+            "plan",
+            "old_name",
+            "new_name",
+            "--include",
+            "src/**/*.rs",
+            "--dry-run",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("src/main.rs"))
@@ -91,12 +122,25 @@ fn test_plan_command_with_excludes() {
     let temp_dir = TempDir::new().unwrap();
     temp_dir.child("src").create_dir_all().unwrap();
     temp_dir.child("tests").create_dir_all().unwrap();
-    temp_dir.child("src/main.rs").write_str("fn old_name() {}").unwrap();
-    temp_dir.child("tests/test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("src/main.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+    temp_dir
+        .child("tests/test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old_name", "new_name", "--exclude", "tests/**", "--dry-run"])
+        .args([
+            "plan",
+            "old_name",
+            "new_name",
+            "--exclude",
+            "tests/**",
+            "--dry-run",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("src/main.rs"))
@@ -108,10 +152,17 @@ fn test_plan_command_json_format() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.child("test.rs");
     test_file.write_str("fn old_name() {}").unwrap();
-    
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old_name", "new_name", "--preview-format", "json", "--dry-run"])
+        .args([
+            "plan",
+            "old_name",
+            "new_name",
+            "--preview-format",
+            "json",
+            "--dry-run",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("{"))
@@ -124,10 +175,17 @@ fn test_plan_command_diff_format() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.child("test.rs");
     test_file.write_str("fn old_name() {}").unwrap();
-    
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old_name", "new_name", "--preview-format", "diff", "--dry-run"])
+        .args([
+            "plan",
+            "old_name",
+            "new_name",
+            "--preview-format",
+            "diff",
+            "--dry-run",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("---"))
@@ -141,10 +199,17 @@ fn test_plan_command_table_format() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.child("test.rs");
     test_file.write_str("fn old_name() {}").unwrap();
-    
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old_name", "new_name", "--preview-format", "table", "--dry-run"])
+        .args([
+            "plan",
+            "old_name",
+            "new_name",
+            "--preview-format",
+            "table",
+            "--dry-run",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("File"))
@@ -158,7 +223,7 @@ fn test_dry_run_command() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.child("test.rs");
     test_file.write_str("fn old_name() {}").unwrap();
-    
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["dry-run", "old_name", "new_name"])
@@ -172,7 +237,7 @@ fn test_no_color_flag() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.child("test.rs");
     test_file.write_str("fn old_name() {}").unwrap();
-    
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["--no-color", "plan", "old_name", "new_name", "--dry-run"])
@@ -185,8 +250,11 @@ fn test_no_color_flag() {
 fn test_rename_files_flag() {
     let temp_dir = TempDir::new().unwrap();
     temp_dir.child("old_name.txt").write_str("test").unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["plan", "old_name", "new_name", "--dry-run"])
@@ -200,8 +268,11 @@ fn test_rename_files_flag() {
 fn test_rename_dirs_flag() {
     let temp_dir = TempDir::new().unwrap();
     temp_dir.child("old_name").create_dir_all().unwrap();
-    temp_dir.child("old_name/test.rs").write_str("fn test() {}").unwrap();
-    
+    temp_dir
+        .child("old_name/test.rs")
+        .write_str("fn test() {}")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["plan", "old_name", "new_name", "--dry-run"])
@@ -215,11 +286,20 @@ fn test_rename_dirs_flag() {
 fn test_no_rename_files_flag() {
     let temp_dir = TempDir::new().unwrap();
     temp_dir.child("old_name.txt").write_str("test").unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "old_name", "new_name", "--no-rename-files", "--dry-run"])
+        .args([
+            "plan",
+            "old_name",
+            "new_name",
+            "--no-rename-files",
+            "--dry-run",
+        ])
         .assert()
         .success()
         .stdout(predicate::str::contains("test.rs"))
@@ -240,14 +320,17 @@ fn test_apply_command_missing_plan() {
 #[test]
 fn test_apply_command_with_plan() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create a test file with content to replace
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     // First create a plan
     let refaktor_dir = temp_dir.child(".refaktor");
     refaktor_dir.create_dir_all().unwrap();
-    
+
     // Create a minimal valid plan
     let plan_json = r#"{
         "id": "test123",
@@ -267,9 +350,12 @@ fn test_apply_command_with_plan() {
         },
         "version": "1.0.0"
     }"#;
-    
-    refaktor_dir.child("plan.json").write_str(plan_json).unwrap();
-    
+
+    refaktor_dir
+        .child("plan.json")
+        .write_str(plan_json)
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["apply"])
@@ -282,42 +368,52 @@ fn test_apply_command_with_plan() {
 #[test]
 fn test_undo_command_missing_entry() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create .refaktor directory with empty history
     temp_dir.child(".refaktor").create_dir_all().unwrap();
-    temp_dir.child(".refaktor/history.json").write_str("[]").unwrap();
-    
+    temp_dir
+        .child(".refaktor/history.json")
+        .write_str("[]")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["undo", "nonexistent"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("History entry 'nonexistent' not found"));
+        .stderr(predicate::str::contains(
+            "History entry 'nonexistent' not found",
+        ));
 }
 
 #[test]
 fn test_redo_command_missing_entry() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create .refaktor directory with empty history
     temp_dir.child(".refaktor").create_dir_all().unwrap();
-    temp_dir.child(".refaktor/history.json").write_str("[]").unwrap();
-    
+    temp_dir
+        .child(".refaktor/history.json")
+        .write_str("[]")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["redo", "nonexistent"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("History entry 'nonexistent' not found"));
+        .stderr(predicate::str::contains(
+            "History entry 'nonexistent' not found",
+        ));
 }
 
 #[test]
 fn test_status_command() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create .refaktor directory
     temp_dir.child(".refaktor").create_dir_all().unwrap();
-    
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .arg("status")
@@ -331,11 +427,14 @@ fn test_status_command() {
 #[test]
 fn test_history_command_empty() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create .refaktor directory with empty history
     temp_dir.child(".refaktor").create_dir_all().unwrap();
-    temp_dir.child(".refaktor/history.json").write_str("[]").unwrap();
-    
+    temp_dir
+        .child(".refaktor/history.json")
+        .write_str("[]")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .arg("history")
@@ -350,10 +449,10 @@ fn test_history_command_empty() {
 #[test]
 fn test_history_command_with_entries() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create .refaktor directory with some history
     temp_dir.child(".refaktor").create_dir_all().unwrap();
-    
+
     let history_json = r#"[
         {
             "id": "test1",
@@ -384,9 +483,12 @@ fn test_history_command_with_entries() {
             "redo_of": null
         }
     ]"#;
-    
-    temp_dir.child(".refaktor/history.json").write_str(history_json).unwrap();
-    
+
+    temp_dir
+        .child(".refaktor/history.json")
+        .write_str(history_json)
+        .unwrap();
+
     // Test without limit - should show both entries
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -397,7 +499,7 @@ fn test_history_command_with_entries() {
         .stdout(predicate::str::contains("test2"))
         .stdout(predicate::str::contains("foo → bar"))
         .stdout(predicate::str::contains("baz → qux"));
-    
+
     // Test with limit - should show only one entry
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -428,27 +530,28 @@ fn test_invalid_preview_format() {
 fn test_exit_codes() {
     // Test normal success
     let temp_dir = TempDir::new().unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["plan", "old_name", "new_name", "--dry-run"])
         .assert()
         .success()
         .code(0);
-    
+
     // Test invalid arguments (should exit with 2)
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.arg("plan")
-        .assert()
-        .failure();
+    cmd.arg("plan").assert().failure();
 }
 
 #[test]
 fn test_init_command_default() {
     // Test default behavior: adds to .gitignore
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Run init command
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -456,24 +559,28 @@ fn test_init_command_default() {
         .assert()
         .success()
         .stderr(predicates::str::contains("Added .refaktor/ to .gitignore"));
-    
+
     // Check .gitignore was created with correct content
-    temp_dir.child(".gitignore").assert(predicates::str::contains(".refaktor/"));
-    temp_dir.child(".gitignore").assert(predicates::str::contains("# Refaktor workspace"));
+    temp_dir
+        .child(".gitignore")
+        .assert(predicates::str::contains(".refaktor/"));
+    temp_dir
+        .child(".gitignore")
+        .assert(predicates::str::contains("# Refaktor workspace"));
 }
 
 #[test]
 fn test_init_command_idempotent() {
     // Test that running init twice doesn't duplicate the entry
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Run init command first time
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .arg("init")
         .assert()
         .success();
-    
+
     // Run init command second time
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -481,7 +588,7 @@ fn test_init_command_idempotent() {
         .assert()
         .success()
         .stderr(predicates::str::contains("already ignored"));
-    
+
     // Check .gitignore only has one entry
     let content = std::fs::read_to_string(temp_dir.path().join(".gitignore")).unwrap();
     let count = content.matches(".refaktor/").count();
@@ -492,17 +599,20 @@ fn test_init_command_idempotent() {
 fn test_init_command_existing_gitignore() {
     // Test adding to existing .gitignore
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create existing .gitignore
-    temp_dir.child(".gitignore").write_str("target/\n*.tmp\n").unwrap();
-    
+    temp_dir
+        .child(".gitignore")
+        .write_str("target/\n*.tmp\n")
+        .unwrap();
+
     // Run init command
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .arg("init")
         .assert()
         .success();
-    
+
     // Check .gitignore preserved existing content and added new
     let content = std::fs::read_to_string(temp_dir.path().join(".gitignore")).unwrap();
     assert!(content.contains("target/"));
@@ -515,14 +625,14 @@ fn test_init_command_existing_gitignore() {
 fn test_init_command_local_flag() {
     // Test --local flag: adds to .git/info/exclude
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Initialize git repo
     std::process::Command::new("git")
         .args(["init"])
         .current_dir(temp_dir.path())
         .output()
         .expect("Failed to init git repo");
-    
+
     // Run init command with --local
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -530,7 +640,7 @@ fn test_init_command_local_flag() {
         .assert()
         .success()
         .stderr(predicates::str::contains(".git/info/exclude"));
-    
+
     // Check .git/info/exclude was created with correct content
     let exclude_path = temp_dir.path().join(".git/info/exclude");
     assert!(exclude_path.exists());
@@ -542,7 +652,7 @@ fn test_init_command_local_flag() {
 fn test_init_command_not_in_git_repo() {
     // Test --local flag when not in a git repo (should fail)
     let temp_dir = TempDir::new().unwrap();
-    
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["init", "--local"])
@@ -555,10 +665,13 @@ fn test_init_command_not_in_git_repo() {
 fn test_init_command_with_variations() {
     // Test that it detects existing patterns with variations
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create .gitignore with variation
-    temp_dir.child(".gitignore").write_str("/.refaktor\n").unwrap();
-    
+    temp_dir
+        .child(".gitignore")
+        .write_str("/.refaktor\n")
+        .unwrap();
+
     // Run init command - should detect existing pattern
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -572,29 +685,29 @@ fn test_init_command_with_variations() {
 fn test_init_command_appends_with_newline() {
     // Test that it properly handles files without trailing newlines
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create .gitignore without trailing newline
     temp_dir.child(".gitignore").write_str("target/").unwrap();
-    
+
     // Run init command
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .arg("init")
         .assert()
         .success();
-    
+
     // Check proper formatting
     let content = std::fs::read_to_string(temp_dir.path().join(".gitignore")).unwrap();
-    assert!(content.contains("target/\n"));  // Should have newline after existing content
-    assert!(content.contains("\n# Refaktor workspace\n"));  // Should have blank line before comment
-    assert!(content.ends_with(".refaktor/\n"));  // Should end with newline
+    assert!(content.contains("target/\n")); // Should have newline after existing content
+    assert!(content.contains("\n# Refaktor workspace\n")); // Should have blank line before comment
+    assert!(content.ends_with(".refaktor/\n")); // Should end with newline
 }
 
 #[test]
 fn test_init_check_mode() {
     // Test --check flag functionality
     let temp_dir = TempDir::new().unwrap();
-    
+
     // When .refaktor is not ignored, should exit with code 1
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -603,10 +716,13 @@ fn test_init_check_mode() {
         .failure()
         .code(1)
         .stderr(predicates::str::contains(".refaktor is NOT ignored"));
-    
+
     // Add .refaktor to .gitignore
-    temp_dir.child(".gitignore").write_str(".refaktor/\n").unwrap();
-    
+    temp_dir
+        .child(".gitignore")
+        .write_str(".refaktor/\n")
+        .unwrap();
+
     // Now --check should succeed
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -620,32 +736,52 @@ fn test_init_check_mode() {
 fn test_auto_init_flag() {
     // Test --auto-init=repo flag
     let temp_dir = TempDir::new().unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     // Run plan with --auto-init=repo
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["--auto-init=repo", "plan", "old_name", "new_name", "--dry-run"])
+        .args([
+            "--auto-init=repo",
+            "plan",
+            "old_name",
+            "new_name",
+            "--dry-run",
+        ])
         .assert()
         .success();
-    
+
     // Check .gitignore was created
-    temp_dir.child(".gitignore").assert(predicates::str::contains(".refaktor/"));
+    temp_dir
+        .child(".gitignore")
+        .assert(predicates::str::contains(".refaktor/"));
 }
 
 #[test]
 fn test_no_auto_init_flag() {
     // Test --no-auto-init flag prevents initialization
     let temp_dir = TempDir::new().unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     // Run plan with --no-auto-init
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["--no-auto-init", "plan", "old_name", "new_name", "--dry-run"])
+        .args([
+            "--no-auto-init",
+            "plan",
+            "old_name",
+            "new_name",
+            "--dry-run",
+        ])
         .assert()
         .success();
-    
+
     // Check .gitignore was NOT created
     assert!(!temp_dir.path().join(".gitignore").exists());
 }
@@ -654,39 +790,53 @@ fn test_no_auto_init_flag() {
 fn test_yes_flag_auto_init() {
     // Test -y flag chooses repo mode automatically
     let temp_dir = TempDir::new().unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     // Run plan with -y flag
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["-y", "plan", "old_name", "new_name", "--dry-run"])
         .assert()
         .success();
-    
+
     // Check .gitignore was created (default repo mode)
-    temp_dir.child(".gitignore").assert(predicates::str::contains(".refaktor/"));
+    temp_dir
+        .child(".gitignore")
+        .assert(predicates::str::contains(".refaktor/"));
 }
 
 #[test]
 fn test_auto_init_local_mode() {
     // Test --auto-init=local flag
     let temp_dir = TempDir::new().unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     // Initialize git repo
     std::process::Command::new("git")
         .args(["init"])
         .current_dir(temp_dir.path())
         .output()
         .expect("Failed to init git repo");
-    
+
     // Run plan with --auto-init=local
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["--auto-init=local", "plan", "old_name", "new_name", "--dry-run"])
+        .args([
+            "--auto-init=local",
+            "plan",
+            "old_name",
+            "new_name",
+            "--dry-run",
+        ])
         .assert()
         .success();
-    
+
     // Check .git/info/exclude was created
     let exclude_path = temp_dir.path().join(".git/info/exclude");
     assert!(exclude_path.exists());
@@ -698,22 +848,37 @@ fn test_auto_init_local_mode() {
 fn test_auto_init_idempotent() {
     // Test that auto-init doesn't duplicate entries
     let temp_dir = TempDir::new().unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     // First run with auto-init
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["--auto-init=repo", "plan", "old_name", "new_name", "--dry-run"])
+        .args([
+            "--auto-init=repo",
+            "plan",
+            "old_name",
+            "new_name",
+            "--dry-run",
+        ])
         .assert()
         .success();
-    
+
     // Second run - should not duplicate
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["--auto-init=repo", "plan", "old_name", "new_name", "--dry-run"])
+        .args([
+            "--auto-init=repo",
+            "plan",
+            "old_name",
+            "new_name",
+            "--dry-run",
+        ])
         .assert()
         .success();
-    
+
     // Check only one entry exists
     let content = std::fs::read_to_string(temp_dir.path().join(".gitignore")).unwrap();
     let count = content.matches(".refaktor/").count();
@@ -724,11 +889,11 @@ fn test_auto_init_idempotent() {
 fn test_rename_command_basic() {
     // E2E test for the rename command that creates a temp file and verifies the rename works
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create a test file with content containing old_name in various forms
     let test_content = "This is a test file with old_name in it.\nHere's another old_name reference.\nAnd a test_old_name variable too.";
     temp_dir.child("test.txt").write_str(test_content).unwrap();
-    
+
     // Run rename command with -y to auto-approve, including txt files explicitly
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
@@ -737,15 +902,18 @@ fn test_rename_command_basic() {
         .success()
         .stdout(predicate::str::contains("Applied"))
         .stdout(predicate::str::contains("replacements"));
-    
+
     // Verify the file content was changed
     let updated_content = std::fs::read_to_string(temp_dir.path().join("test.txt")).unwrap();
     assert!(updated_content.contains("new_name"));
-    
+
     // Check that all old_name occurrences are replaced, including compounds
     let old_name_count = updated_content.matches("old_name").count();
-    assert_eq!(old_name_count, 0, "All old_name occurrences should be replaced");
-    
+    assert_eq!(
+        old_name_count, 0,
+        "All old_name occurrences should be replaced"
+    );
+
     // Should have replaced all occurrences: 2 standalone + 1 in test_old_name = 3 total
     assert_eq!(updated_content.matches("new_name").count(), 3);
     assert!(updated_content.contains("test_new_name")); // Compound should be updated
@@ -755,9 +923,12 @@ fn test_rename_command_basic() {
 fn test_rename_command_with_preview() {
     // Test rename command with preview option
     let temp_dir = TempDir::new().unwrap();
-    
-    temp_dir.child("test.rs").write_str("fn old_name() { let old_name = 42; }").unwrap();
-    
+
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() { let old_name = 42; }")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["rename", "old_name", "new_name", "--preview", "table", "-y"])
@@ -767,7 +938,7 @@ fn test_rename_command_with_preview() {
         .stdout(predicate::str::contains("Kind"))
         .stdout(predicate::str::contains("test.rs"))
         .stdout(predicate::str::contains("Applied"));
-    
+
     // Verify the file was actually modified
     let content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
     assert!(content.contains("fn new_name()"));
@@ -778,11 +949,17 @@ fn test_rename_command_with_preview() {
 fn test_rename_command_with_file_rename() {
     // Test rename command that renames both content and files
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create files with matching names
-    temp_dir.child("old_name.txt").write_str("content with old_name").unwrap();
-    temp_dir.child("test.rs").write_str("fn test_old_name() {}").unwrap();
-    
+    temp_dir
+        .child("old_name.txt")
+        .write_str("content with old_name")
+        .unwrap();
+    temp_dir
+        .child("test.rs")
+        .write_str("fn test_old_name() {}")
+        .unwrap();
+
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["rename", "old_name", "new_name", "-y"])
@@ -790,15 +967,16 @@ fn test_rename_command_with_file_rename() {
         .success()
         .stdout(predicate::str::contains("Applied"))
         .stdout(predicate::str::contains("Renamed"));
-    
+
     // Verify file was renamed
     assert!(!temp_dir.path().join("old_name.txt").exists());
     assert!(temp_dir.path().join("new_name.txt").exists());
-    
+
     // Verify content was updated
-    let renamed_file_content = std::fs::read_to_string(temp_dir.path().join("new_name.txt")).unwrap();
+    let renamed_file_content =
+        std::fs::read_to_string(temp_dir.path().join("new_name.txt")).unwrap();
     assert!(renamed_file_content.contains("content with new_name"));
-    
+
     let test_file_content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
     assert!(test_file_content.contains("fn test_new_name()")); // Compound should be updated
 }
@@ -807,29 +985,35 @@ fn test_rename_command_with_file_rename() {
 fn test_rename_command_requires_confirmation() {
     // Test that rename command requires confirmation when not auto-approved
     let temp_dir = TempDir::new().unwrap();
-    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
-    
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
     // Without -y flag and in non-interactive mode, should fail
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
         .args(["rename", "old_name", "new_name"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Cannot prompt for confirmation in non-interactive mode"));
+        .stderr(predicate::str::contains(
+            "Cannot prompt for confirmation in non-interactive mode",
+        ));
 }
 
 #[test]
 fn test_rename_command_large_size_guard() {
     // Test that rename command respects the --large flag for size guards
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create many files to trigger size guard (this is a simplified test)
     for i in 0..10 {
-        temp_dir.child(format!("test_{}.rs", i))
+        temp_dir
+            .child(format!("test_{}.rs", i))
             .write_str("fn old_name() {}")
             .unwrap();
     }
-    
+
     // Should succeed with normal amount of files
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())

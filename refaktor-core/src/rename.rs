@@ -62,11 +62,7 @@ pub fn detect_case_insensitive_fs(path: &Path) -> bool {
 /// Always checks regardless of platform to ensure cross-platform compatibility
 pub fn is_windows_reserved(name: &str) -> bool {
     // Get the base name without extension
-    let base = name
-        .split('.')
-        .next()
-        .unwrap_or(name)
-        .to_uppercase();
+    let base = name.split('.').next().unwrap_or(name).to_uppercase();
 
     WINDOWS_RESERVED.contains(&base.as_str())
 }
@@ -97,15 +93,15 @@ pub fn plan_renames_with_conflicts(
             Ok(e) => e,
             Err(_) => continue,
         };
-        
+
         let path = entry.path();
-        
+
         // Get file type from entry metadata
         let file_type = match entry.file_type() {
             Some(ft) => ft,
             None => continue,
         };
-        
+
         // Skip if not renaming files/dirs based on options
         if file_type.is_dir() && !options.rename_dirs {
             continue;
@@ -116,29 +112,31 @@ pub fn plan_renames_with_conflicts(
 
         if let Some(file_name) = path.file_name() {
             let file_name_str = file_name.to_string_lossy();
-            
+
             // Check each variant mapping
             for (old, new) in mapping {
                 if file_name_str.contains(old) {
                     let mut new_name = file_name_str.replace(old, new);
                     let mut coercion_applied = None;
-                    
+
                     // Apply coercion if enabled
                     if let crate::scanner::CoercionMode::Auto = options.coerce_separators {
-                        if let Some((coerced, reason)) = crate::coercion::apply_coercion(&file_name_str, old, new) {
+                        if let Some((coerced, reason)) =
+                            crate::coercion::apply_coercion(&file_name_str, old, new)
+                        {
                             new_name = coerced;
                             coercion_applied = Some(reason);
                         }
                     }
-                    
+
                     let new_path = path.with_file_name(&new_name);
-                    
+
                     let kind = if file_type.is_dir() {
                         RenameKind::Dir
                     } else {
                         RenameKind::File
                     };
-                    
+
                     collected_renames.push(Rename {
                         from: path.to_path_buf(),
                         to: new_path,
@@ -170,7 +168,7 @@ pub fn plan_renames_with_conflicts(
         let b_is_dir = matches!(b.kind, RenameKind::Dir);
         let a_depth = a.from.components().count();
         let b_depth = b.from.components().count();
-        
+
         match (a_is_dir, b_is_dir) {
             (true, false) => std::cmp::Ordering::Less,
             (false, true) => std::cmp::Ordering::Greater,
@@ -201,7 +199,7 @@ pub fn plan_renames_with_conflicts(
         if case_insensitive_fs {
             let from_lower = rename.from.to_string_lossy().to_lowercase();
             let to_lower = rename.to.to_string_lossy().to_lowercase();
-            
+
             if from_lower != to_lower {
                 // Not a case-only change, it's a real rename
             } else if rename.from != rename.to {
@@ -260,7 +258,7 @@ pub fn plan_renames(
     options: &PlanOptions,
 ) -> Result<Vec<Rename>> {
     let plan = plan_renames_with_conflicts(root, mapping, options)?;
-    
+
     if !plan.conflicts.is_empty() {
         let conflict_count = plan.conflicts.len();
         let conflict_msg = plan
@@ -269,14 +267,14 @@ pub fn plan_renames(
             .map(|c| format!("{:?}: {:?} -> {:?}", c.kind, c.sources, c.target))
             .collect::<Vec<_>>()
             .join("\n");
-        
+
         return Err(anyhow!(
             "Found {} rename conflicts:\n{}",
             conflict_count,
             conflict_msg
         ));
     }
-    
+
     Ok(plan.renames)
 }
 
@@ -294,7 +292,7 @@ mod tests {
         assert!(is_windows_reserved("nul.log"));
         assert!(!is_windows_reserved("CONSOLE"));
         assert!(!is_windows_reserved("my_con"));
-        
+
         // The internal function only returns true on Windows
         if cfg!(windows) {
             assert!(is_windows_reserved_on_windows("CON"));
@@ -307,7 +305,7 @@ mod tests {
     fn test_case_insensitive_fs_detection() {
         let temp_dir = TempDir::new().unwrap();
         let is_case_insensitive = detect_case_insensitive_fs(temp_dir.path());
-        
+
         // Result depends on the actual filesystem
         // On macOS default FS, this is typically true
         // On Linux, this is typically false
@@ -350,7 +348,7 @@ mod tests {
             let b_is_dir = matches!(b.kind, RenameKind::Dir);
             let a_depth = a.from.components().count();
             let b_depth = b.from.components().count();
-            
+
             match (a_is_dir, b_is_dir) {
                 (true, false) => std::cmp::Ordering::Less,
                 (false, true) => std::cmp::Ordering::Greater,
@@ -364,7 +362,7 @@ mod tests {
         assert_eq!(sorted[0].from, PathBuf::from("/a/b/deep_dir"));
         assert!(matches!(sorted[1].kind, RenameKind::Dir));
         assert_eq!(sorted[1].from, PathBuf::from("/a/dir"));
-        
+
         // Then files
         assert!(matches!(sorted[2].kind, RenameKind::File));
         assert!(matches!(sorted[3].kind, RenameKind::File));
@@ -373,22 +371,24 @@ mod tests {
     #[test]
     fn test_collision_detection() {
         let temp_dir = TempDir::new().unwrap();
-        
+
         // Create test files
         std::fs::write(temp_dir.path().join("old_name1.txt"), "test1").unwrap();
         std::fs::write(temp_dir.path().join("old_name2.txt"), "test2").unwrap();
-        
+
         let mut mapping = BTreeMap::new();
         // Both files will map to "new_name.txt"
         mapping.insert("old_name1".to_string(), "new_name".to_string());
         mapping.insert("old_name2".to_string(), "new_name".to_string());
-        
+
         let opts = PlanOptions::default();
         let plan = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
-        
+
         // Should detect collision
         assert!(!plan.conflicts.is_empty());
-        let collision = plan.conflicts.iter()
+        let collision = plan
+            .conflicts
+            .iter()
             .find(|c| c.kind == ConflictKind::MultipleToOne);
         assert!(collision.is_some());
     }
@@ -398,7 +398,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let mapping = BTreeMap::new();
         let opts = PlanOptions::default();
-        
+
         let plan = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
         assert!(plan.renames.is_empty());
         assert!(plan.conflicts.is_empty());
@@ -407,21 +407,21 @@ mod tests {
     #[test]
     fn test_file_only_rename_option() {
         let temp_dir = TempDir::new().unwrap();
-        
+
         // Create a directory and a file
         let dir_path = temp_dir.path().join("old_dir");
         std::fs::create_dir(&dir_path).unwrap();
         std::fs::write(temp_dir.path().join("old_file.txt"), "test").unwrap();
-        
+
         let mut mapping = BTreeMap::new();
         mapping.insert("old".to_string(), "new".to_string());
-        
+
         let mut opts = PlanOptions::default();
         opts.rename_files = true;
         opts.rename_dirs = false;
-        
+
         let plan = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
-        
+
         // Should only rename the file, not the directory
         assert_eq!(plan.renames.len(), 1);
         assert!(plan.renames[0].from.to_string_lossy().contains("old_file"));
@@ -430,76 +430,114 @@ mod tests {
     #[test]
     fn test_respect_gitignore() {
         let temp_dir = TempDir::new().unwrap();
-        
+
         // Initialize as a git repository so .gitignore works
         std::process::Command::new("git")
             .args(["init"])
             .current_dir(temp_dir.path())
             .output()
             .expect("Failed to init git repo");
-        
+
         // Create a .gitignore file
-        std::fs::write(temp_dir.path().join(".gitignore"), "target/\n*.tmp\nbuild/\n").unwrap();
-        
+        std::fs::write(
+            temp_dir.path().join(".gitignore"),
+            "target/\n*.tmp\nbuild/\n",
+        )
+        .unwrap();
+
         // Create directories and files
         let target_dir = temp_dir.path().join("target");
         std::fs::create_dir(&target_dir).unwrap();
         std::fs::write(target_dir.join("old_name.txt"), "ignored").unwrap();
-        
+
         let build_dir = temp_dir.path().join("build");
         std::fs::create_dir(&build_dir).unwrap();
         std::fs::write(build_dir.join("old_name.exe"), "ignored").unwrap();
-        
+
         // Files that should be ignored by pattern
         std::fs::write(temp_dir.path().join("old_name.tmp"), "ignored").unwrap();
-        
+
         // Files that should NOT be ignored
         std::fs::write(temp_dir.path().join("old_name.txt"), "not ignored").unwrap();
         std::fs::write(temp_dir.path().join("old_name.rs"), "not ignored").unwrap();
-        
+
         let src_dir = temp_dir.path().join("src");
         std::fs::create_dir(&src_dir).unwrap();
         std::fs::write(src_dir.join("old_name.rs"), "not ignored").unwrap();
-        
+
         let mut mapping = BTreeMap::new();
         mapping.insert("old_name".to_string(), "new_name".to_string());
-        
+
         let mut opts = PlanOptions::default();
-        opts.unrestricted_level = 0;  // Default: respect all ignore files
-        
+        opts.unrestricted_level = 0; // Default: respect all ignore files
+
         let plan = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
-        
+
         // Should only include non-ignored files
-        let rename_paths: Vec<String> = plan.renames.iter()
-            .map(|r| r.from.strip_prefix(temp_dir.path()).unwrap().to_string_lossy().to_string())
+        let rename_paths: Vec<String> = plan
+            .renames
+            .iter()
+            .map(|r| {
+                r.from
+                    .strip_prefix(temp_dir.path())
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string()
+            })
             .collect();
-        
+
         println!("Paths with gitignore enabled: {:?}", rename_paths);
-        
+
         // Should NOT rename files in target/ or build/ directories
-        assert!(!rename_paths.iter().any(|p| p.contains("target/")), "Should NOT find target/ files when gitignore is enabled");
-        assert!(!rename_paths.iter().any(|p| p.contains("build/")), "Should NOT find build/ files when gitignore is enabled");
+        assert!(
+            !rename_paths.iter().any(|p| p.contains("target/")),
+            "Should NOT find target/ files when gitignore is enabled"
+        );
+        assert!(
+            !rename_paths.iter().any(|p| p.contains("build/")),
+            "Should NOT find build/ files when gitignore is enabled"
+        );
         // Should NOT rename .tmp files
-        assert!(!rename_paths.iter().any(|p| p.ends_with(".tmp")), "Should NOT find .tmp files when gitignore is enabled");
-        
+        assert!(
+            !rename_paths.iter().any(|p| p.ends_with(".tmp")),
+            "Should NOT find .tmp files when gitignore is enabled"
+        );
+
         // SHOULD rename these files
         assert!(rename_paths.iter().any(|p| p == "old_name.txt"));
         assert!(rename_paths.iter().any(|p| p == "old_name.rs"));
         assert!(rename_paths.iter().any(|p| p == "src/old_name.rs"));
-        
+
         // When gitignore is disabled with -uu, should include all files
-        opts.unrestricted_level = 2;  // -uu: show all files including hidden
+        opts.unrestricted_level = 2; // -uu: show all files including hidden
         let plan_no_ignore = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
-        
-        let all_paths: Vec<String> = plan_no_ignore.renames.iter()
-            .map(|r| r.from.strip_prefix(temp_dir.path()).unwrap().to_string_lossy().to_string())
+
+        let all_paths: Vec<String> = plan_no_ignore
+            .renames
+            .iter()
+            .map(|r| {
+                r.from
+                    .strip_prefix(temp_dir.path())
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string()
+            })
             .collect();
-        
+
         println!("All paths with gitignore disabled: {:?}", all_paths);
-        
+
         // Should include ignored files when respect_gitignore is false
-        assert!(all_paths.iter().any(|p| p.contains("target/")), "Should find target/ files");
-        assert!(all_paths.iter().any(|p| p.contains("build/")), "Should find build/ files");
-        assert!(all_paths.iter().any(|p| p.ends_with(".tmp")), "Should find .tmp files");
+        assert!(
+            all_paths.iter().any(|p| p.contains("target/")),
+            "Should find target/ files"
+        );
+        assert!(
+            all_paths.iter().any(|p| p.contains("build/")),
+            "Should find build/ files"
+        );
+        assert!(
+            all_paths.iter().any(|p| p.ends_with(".tmp")),
+            "Should find .tmp files"
+        );
     }
 }

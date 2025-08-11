@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Detected style of an identifier or path segment
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,13 +36,42 @@ pub fn detect_style(s: &str) -> Style {
         if dot_pos > 0 && dot_pos < s.len() - 1 {
             let extension = &s[dot_pos + 1..];
             // Common file extensions (not exhaustive, but covers most cases)
-            let is_file_extension = extension.len() <= 6 && 
-                extension.chars().all(|c| c.is_alphanumeric()) &&
-                matches!(extension, "rs" | "js" | "ts" | "py" | "java" | "cpp" | "c" | "h" | 
-                        "txt" | "md" | "json" | "xml" | "html" | "css" | "scss" | "toml" | 
-                        "yml" | "yaml" | "exe" | "dll" | "so" | "dylib" | "a" | "lib" |
-                        "png" | "jpg" | "jpeg" | "gif" | "svg" | "ico" | "pdf");
-            
+            let is_file_extension = extension.len() <= 6
+                && extension.chars().all(|c| c.is_alphanumeric())
+                && matches!(
+                    extension,
+                    "rs" | "js"
+                        | "ts"
+                        | "py"
+                        | "java"
+                        | "cpp"
+                        | "c"
+                        | "h"
+                        | "txt"
+                        | "md"
+                        | "json"
+                        | "xml"
+                        | "html"
+                        | "css"
+                        | "scss"
+                        | "toml"
+                        | "yml"
+                        | "yaml"
+                        | "exe"
+                        | "dll"
+                        | "so"
+                        | "dylib"
+                        | "a"
+                        | "lib"
+                        | "png"
+                        | "jpg"
+                        | "jpeg"
+                        | "gif"
+                        | "svg"
+                        | "ico"
+                        | "pdf"
+                );
+
             if is_file_extension {
                 &s[..dot_pos]
             } else {
@@ -54,7 +83,7 @@ pub fn detect_style(s: &str) -> Style {
     } else {
         s
     };
-    
+
     // Count separators in the basename only
     let mut hyphen_count = 0;
     let mut underscore_count = 0;
@@ -64,7 +93,7 @@ pub fn detect_style(s: &str) -> Style {
     let mut case_transitions = 0;
     let mut prev_was_lower = false;
     let mut prev_was_upper = false;
-    
+
     for ch in basename.chars() {
         match ch {
             '-' => hyphen_count += 1,
@@ -77,7 +106,7 @@ pub fn detect_style(s: &str) -> Style {
                 }
                 prev_was_upper = true;
                 prev_was_lower = false;
-            }
+            },
             _ if ch.is_lowercase() => {
                 has_lowercase = true;
                 if prev_was_upper {
@@ -85,18 +114,18 @@ pub fn detect_style(s: &str) -> Style {
                 }
                 prev_was_lower = true;
                 prev_was_upper = false;
-            }
+            },
             _ => {
                 prev_was_lower = false;
                 prev_was_upper = false;
-            }
+            },
         }
     }
-    
+
     // Determine style based on patterns
     if hyphen_count > 0 && underscore_count == 0 && dot_count == 0 {
         if has_uppercase && !has_lowercase {
-            Style::Mixed  // KEBAB-SCREAMING not a standard style
+            Style::Mixed // KEBAB-SCREAMING not a standard style
         } else {
             Style::Kebab
         }
@@ -118,9 +147,9 @@ pub fn detect_style(s: &str) -> Style {
                 Style::Camel
             }
         } else if has_uppercase && !has_lowercase {
-            Style::ScreamingSnake  // All caps, treat as screaming snake without underscores
+            Style::ScreamingSnake // All caps, treat as screaming snake without underscores
         } else {
-            Style::Snake  // All lowercase, treat as snake without underscores
+            Style::Snake // All lowercase, treat as snake without underscores
         }
     } else {
         Style::Mixed
@@ -134,14 +163,14 @@ pub fn tokenize(s: &str) -> Vec<Token> {
     let mut prev_was_lower = false;
     let mut prev_was_upper = false;
     let mut consecutive_upper = 0;
-    
+
     for ch in s.chars() {
         match ch {
             '-' | '_' | '.' | ' ' => {
                 // Separator - flush current word
                 if !current_word.is_empty() {
-                    let is_acronym = current_word.chars().all(|c| c.is_uppercase()) 
-                                    && current_word.len() > 1;
+                    let is_acronym =
+                        current_word.chars().all(|c| c.is_uppercase()) && current_word.len() > 1;
                     tokens.push(Token {
                         word: current_word.to_lowercase(),
                         is_acronym,
@@ -151,7 +180,7 @@ pub fn tokenize(s: &str) -> Vec<Token> {
                 consecutive_upper = 0;
                 prev_was_lower = false;
                 prev_was_upper = false;
-            }
+            },
             _ if ch.is_uppercase() => {
                 // Uppercase letter
                 if prev_was_lower {
@@ -172,7 +201,7 @@ pub fn tokenize(s: &str) -> Vec<Token> {
                 consecutive_upper += 1;
                 prev_was_upper = true;
                 prev_was_lower = false;
-            }
+            },
             _ if ch.is_lowercase() => {
                 // Lowercase letter
                 if prev_was_upper && consecutive_upper > 1 {
@@ -192,18 +221,18 @@ pub fn tokenize(s: &str) -> Vec<Token> {
                 consecutive_upper = 0;
                 prev_was_lower = true;
                 prev_was_upper = false;
-            }
+            },
             _ if ch.is_alphanumeric() => {
                 current_word.push(ch);
                 consecutive_upper = 0;
                 prev_was_lower = false;
                 prev_was_upper = false;
-            }
+            },
             _ => {
                 // Other character - treat as separator
                 if !current_word.is_empty() {
-                    let is_acronym = current_word.chars().all(|c| c.is_uppercase()) 
-                                    && current_word.len() > 1;
+                    let is_acronym =
+                        current_word.chars().all(|c| c.is_uppercase()) && current_word.len() > 1;
                     tokens.push(Token {
                         word: current_word.to_lowercase(),
                         is_acronym,
@@ -213,20 +242,19 @@ pub fn tokenize(s: &str) -> Vec<Token> {
                 consecutive_upper = 0;
                 prev_was_lower = false;
                 prev_was_upper = false;
-            }
+            },
         }
     }
-    
+
     // Flush remaining word
     if !current_word.is_empty() {
-        let is_acronym = current_word.chars().all(|c| c.is_uppercase()) 
-                        && current_word.len() > 1;
+        let is_acronym = current_word.chars().all(|c| c.is_uppercase()) && current_word.len() > 1;
         tokens.push(Token {
             word: current_word.to_lowercase(),
             is_acronym,
         });
     }
-    
+
     tokens
 }
 
@@ -235,20 +263,18 @@ pub fn render_tokens(tokens: &[Token], style: Style) -> String {
     if tokens.is_empty() {
         return String::new();
     }
-    
+
     match style {
-        Style::Snake => {
-            tokens.iter()
-                .map(|t| t.word.clone())
-                .collect::<Vec<_>>()
-                .join("_")
-        }
-        Style::Kebab => {
-            tokens.iter()
-                .map(|t| t.word.clone())
-                .collect::<Vec<_>>()
-                .join("-")
-        }
+        Style::Snake => tokens
+            .iter()
+            .map(|t| t.word.clone())
+            .collect::<Vec<_>>()
+            .join("_"),
+        Style::Kebab => tokens
+            .iter()
+            .map(|t| t.word.clone())
+            .collect::<Vec<_>>()
+            .join("-"),
         Style::Camel => {
             let mut result = String::new();
             for (i, token) in tokens.iter().enumerate() {
@@ -259,29 +285,26 @@ pub fn render_tokens(tokens: &[Token], style: Style) -> String {
                 }
             }
             result
-        }
-        Style::Pascal => {
-            tokens.iter()
-                .map(|t| capitalize(&t.word))
-                .collect::<Vec<_>>()
-                .join("")
-        }
-        Style::ScreamingSnake => {
-            tokens.iter()
-                .map(|t| t.word.to_uppercase())
-                .collect::<Vec<_>>()
-                .join("_")
-        }
-        Style::Dot => {
-            tokens.iter()
-                .map(|t| t.word.clone())
-                .collect::<Vec<_>>()
-                .join(".")
-        }
+        },
+        Style::Pascal => tokens
+            .iter()
+            .map(|t| capitalize(&t.word))
+            .collect::<Vec<_>>()
+            .join(""),
+        Style::ScreamingSnake => tokens
+            .iter()
+            .map(|t| t.word.to_uppercase())
+            .collect::<Vec<_>>()
+            .join("_"),
+        Style::Dot => tokens
+            .iter()
+            .map(|t| t.word.clone())
+            .collect::<Vec<_>>()
+            .join("."),
         Style::Mixed => {
             // Default to snake case for mixed styles
             render_tokens(tokens, Style::Snake)
-        }
+        },
     }
 }
 
@@ -295,34 +318,34 @@ pub fn apply_coercion(
     if container.to_lowercase() == old_pattern.to_lowercase() {
         return None;
     }
-    
+
     // Detect the container style
     let container_style = detect_style(container);
-    
+
     // If container has mixed or unknown style, no coercion
     // Also skip dot-case by default (risky for file extensions)
     if container_style == Style::Mixed || container_style == Style::Dot {
         return None;
     }
-    
+
     // Tokenize the patterns
     let old_tokens = tokenize(old_pattern);
     let new_tokens = tokenize(new_pattern);
-    
+
     // Check if the container contains the old pattern
     let container_lower = container.to_lowercase();
     let old_pattern_lower = old_pattern.to_lowercase();
-    
+
     if !container_lower.contains(&old_pattern_lower) {
         return None;
     }
-    
+
     // Render the new pattern in the container style
     let coerced_new = render_tokens(&new_tokens, container_style);
-    
+
     // Replace all occurrences (case-insensitive)
     let result = replace_case_insensitive(container, old_pattern, &coerced_new);
-    
+
     // Return the coercion details
     Some((result, format!("coerced to {:?} style", container_style)))
 }
@@ -331,26 +354,26 @@ pub fn apply_coercion(
 fn replace_case_insensitive(text: &str, pattern: &str, replacement: &str) -> String {
     let text_lower = text.to_lowercase();
     let pattern_lower = pattern.to_lowercase();
-    
+
     let mut result = String::new();
     let mut last_end = 0;
-    
+
     while let Some(start) = text_lower[last_end..].find(&pattern_lower) {
         let absolute_start = last_end + start;
         let absolute_end = absolute_start + pattern.len();
-        
+
         // Add the part before the match
         result.push_str(&text[last_end..absolute_start]);
-        
+
         // Add the replacement
         result.push_str(replacement);
-        
+
         last_end = absolute_end;
     }
-    
+
     // Add the remaining part
     result.push_str(&text[last_end..]);
-    
+
     result
 }
 
@@ -400,28 +423,54 @@ mod tests {
     #[test]
     fn test_render_tokens() {
         let tokens = vec![
-            Token { word: "smart".to_string(), is_acronym: false },
-            Token { word: "search".to_string(), is_acronym: false },
-            Token { word: "and".to_string(), is_acronym: false },
-            Token { word: "replace".to_string(), is_acronym: false },
+            Token {
+                word: "smart".to_string(),
+                is_acronym: false,
+            },
+            Token {
+                word: "search".to_string(),
+                is_acronym: false,
+            },
+            Token {
+                word: "and".to_string(),
+                is_acronym: false,
+            },
+            Token {
+                word: "replace".to_string(),
+                is_acronym: false,
+            },
         ];
 
-        assert_eq!(render_tokens(&tokens, Style::Snake), "smart_search_and_replace");
-        assert_eq!(render_tokens(&tokens, Style::Kebab), "smart-search-and-replace");
-        assert_eq!(render_tokens(&tokens, Style::Camel), "smartSearchAndReplace");
-        assert_eq!(render_tokens(&tokens, Style::Pascal), "SmartSearchAndReplace");
-        assert_eq!(render_tokens(&tokens, Style::ScreamingSnake), "SMART_SEARCH_AND_REPLACE");
-        assert_eq!(render_tokens(&tokens, Style::Dot), "smart.search.and.replace");
+        assert_eq!(
+            render_tokens(&tokens, Style::Snake),
+            "smart_search_and_replace"
+        );
+        assert_eq!(
+            render_tokens(&tokens, Style::Kebab),
+            "smart-search-and-replace"
+        );
+        assert_eq!(
+            render_tokens(&tokens, Style::Camel),
+            "smartSearchAndReplace"
+        );
+        assert_eq!(
+            render_tokens(&tokens, Style::Pascal),
+            "SmartSearchAndReplace"
+        );
+        assert_eq!(
+            render_tokens(&tokens, Style::ScreamingSnake),
+            "SMART_SEARCH_AND_REPLACE"
+        );
+        assert_eq!(
+            render_tokens(&tokens, Style::Dot),
+            "smart.search.and.replace"
+        );
     }
 
     #[test]
     fn test_apply_coercion() {
         // Test kebab-case container
-        let result = apply_coercion(
-            "refaktor-core",
-            "refaktor",
-            "smart_search_and_replace"
-        );
+        let result = apply_coercion("refaktor-core", "refaktor", "smart_search_and_replace");
         assert_eq!(
             result,
             Some((
@@ -431,11 +480,7 @@ mod tests {
         );
 
         // Test snake_case container
-        let result = apply_coercion(
-            "refaktor_core",
-            "refaktor",
-            "smart-search-and-replace"
-        );
+        let result = apply_coercion("refaktor_core", "refaktor", "smart-search-and-replace");
         assert_eq!(
             result,
             Some((
@@ -445,11 +490,7 @@ mod tests {
         );
 
         // Test PascalCase container
-        let result = apply_coercion(
-            "RefaktorCore",
-            "Refaktor",
-            "smart_search_and_replace"
-        );
+        let result = apply_coercion("RefaktorCore", "Refaktor", "smart_search_and_replace");
         assert_eq!(
             result,
             Some((

@@ -49,7 +49,14 @@ pub fn detect_style(s: &str) -> Option<Style> {
     let has_upper = s.bytes().any(|b| b.is_ascii_uppercase());
     let has_lower = s.bytes().any(|b| b.is_ascii_lowercase());
 
-    match (has_underscore, has_hyphen, has_dot, has_space, has_upper, has_lower) {
+    match (
+        has_underscore,
+        has_hyphen,
+        has_dot,
+        has_space,
+        has_upper,
+        has_lower,
+    ) {
         (true, false, false, false, false, true) => Some(Style::Snake),
         (true, false, false, false, true, false) => Some(Style::ScreamingSnake),
         (false, true, false, false, false, true) => Some(Style::Kebab),
@@ -59,7 +66,7 @@ pub fn detect_style(s: &str) -> Option<Style> {
             } else {
                 None
             }
-        }
+        },
         (false, false, true, false, _, true) => Some(Style::Dot),
         (false, false, false, true, true, true) => {
             if is_title_case(s) {
@@ -67,7 +74,7 @@ pub fn detect_style(s: &str) -> Option<Style> {
             } else {
                 None
             }
-        }
+        },
         (false, false, false, false, true, true) => {
             if s.bytes().next().map_or(false, |b| b.is_ascii_uppercase()) {
                 Some(Style::Pascal)
@@ -76,7 +83,7 @@ pub fn detect_style(s: &str) -> Option<Style> {
             } else {
                 None
             }
-        }
+        },
         _ => None,
     }
 }
@@ -181,7 +188,7 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
                 }
             }
             result
-        }
+        },
 
         Style::Pascal => model
             .tokens
@@ -254,10 +261,10 @@ pub fn generate_variant_map(
     let new_tokens = parse_to_tokens(new);
 
     let mut map = BTreeMap::new();
-    
+
     // Detect the original pattern's style
     let original_style = detect_style(old);
-    
+
     // Check if the original pattern should be included
     let include_original = if let Some(orig_style) = original_style {
         // If we have explicit styles, only include original if its style is in the list
@@ -275,7 +282,7 @@ pub fn generate_variant_map(
     for style in styles {
         let old_variant = to_style(&old_tokens, *style);
         let new_variant = to_style(&new_tokens, *style);
-        
+
         // Skip if this variant is the same as the original (to avoid duplicates)
         if old_variant != old {
             map.insert(old_variant, new_variant);
@@ -288,7 +295,7 @@ pub fn generate_variant_map(
     // 3. The original is included (or they're genuinely different)
     let lower_old = old.to_lowercase();
     let upper_old = old.to_uppercase();
-    
+
     // Only add lowercase if it's different from original AND (original is included OR it's actually different)
     if lower_old != old && !map.contains_key(&lower_old) {
         map.insert(lower_old, new.to_lowercase());
@@ -296,7 +303,7 @@ pub fn generate_variant_map(
         // If lowercase IS the original, only add it if we're including the original
         map.insert(lower_old, new.to_lowercase());
     }
-    
+
     // Only add uppercase if it's different from original AND not already in map
     if upper_old != old && !map.contains_key(&upper_old) {
         map.insert(upper_old, new.to_uppercase());
@@ -467,8 +474,8 @@ mod tests {
     #[test]
     fn test_mixed_case_detection() {
         assert_eq!(detect_style("123"), None);
-        assert_eq!(detect_style("hello world test"), None); 
-        assert_eq!(detect_style("hello-World"), None); 
+        assert_eq!(detect_style("hello world test"), None);
+        assert_eq!(detect_style("hello-World"), None);
         assert_eq!(detect_style("HELLO"), None);
         assert_eq!(detect_style("hello"), None);
     }
@@ -500,37 +507,40 @@ mod tests {
         // Original camelCase pattern should NOT be included since Camel is not in styles
         assert!(!map.contains_key("oldName"));
     }
-    
+
     #[test]
     fn test_variant_map_excludes_original_style() {
         // Test excluding snake_case when the original is snake_case
         let styles = vec![Style::Camel, Style::Pascal, Style::Kebab];
         let map = generate_variant_map("old_name", "new_name", Some(&styles));
-        
+
         // Debug: print the map
         eprintln!("Map with excluded Snake style:");
         for (k, v) in &map {
             eprintln!("  '{}' -> '{}'", k, v);
         }
-        
+
         // Should NOT include the original snake_case since Snake is not in styles
-        assert!(!map.contains_key("old_name"), "Map should not contain 'old_name' when Snake is excluded");
-        
+        assert!(
+            !map.contains_key("old_name"),
+            "Map should not contain 'old_name' when Snake is excluded"
+        );
+
         // Should include the other styles
         assert_eq!(map.get("oldName"), Some(&"newName".to_string()));
         assert_eq!(map.get("OldName"), Some(&"NewName".to_string()));
         assert_eq!(map.get("old-name"), Some(&"new-name".to_string()));
-        
+
         // Case variants should still be there if different
         assert_eq!(map.get("OLD_NAME"), Some(&"NEW_NAME".to_string()));
     }
-    
+
     #[test]
     fn test_variant_map_includes_original_when_style_present() {
         // Test that original is included when its style IS in the list
         let styles = vec![Style::Snake, Style::Camel];
         let map = generate_variant_map("old_name", "new_name", Some(&styles));
-        
+
         // Should include the original since Snake is in styles
         assert_eq!(map.get("old_name"), Some(&"new_name".to_string()));
         assert_eq!(map.get("oldName"), Some(&"newName".to_string()));
@@ -552,7 +562,7 @@ mod tests {
         let tokens = parse_to_tokens("a");
         assert_eq!(tokens.tokens.len(), 1);
         assert_eq!(tokens.tokens[0].text, "a");
-        
+
         assert_eq!(detect_style("Hello World Test"), Some(Style::Title));
         assert_eq!(detect_style("hello.World"), Some(Style::Dot));
     }
@@ -562,7 +572,7 @@ mod tests {
         let tokens = parse_to_tokens("ALLCAPS");
         assert_eq!(tokens.tokens.len(), 1);
         assert_eq!(tokens.tokens[0].text, "ALLCAPS");
-        
+
         let tokens2 = TokenModel::new(vec![Token::new("ALLCAPS")]);
         assert_eq!(to_style(&tokens2, Style::Pascal), "Allcaps");
     }

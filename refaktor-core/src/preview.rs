@@ -11,7 +11,7 @@ use std::path::Path;
 /// A root directory rename is when the from path equals the current working directory
 fn is_root_directory_rename(rename: &Rename) -> bool {
     let from_path = &rename.from;
-    
+
     // Check if this rename is for the current working directory
     std::env::current_dir()
         .map(|current_dir| from_path == &current_dir)
@@ -37,13 +37,13 @@ impl PreviewFormat {
 }
 
 /// Determine whether to use colors based on explicit preference or terminal detection
-pub fn should_use_color_with_detector<F>(use_color: Option<bool>, is_terminal: F) -> bool 
+pub fn should_use_color_with_detector<F>(use_color: Option<bool>, is_terminal: F) -> bool
 where
     F: Fn() -> bool,
 {
     match use_color {
-        Some(explicit_color) => explicit_color,  // Honor explicit color request
-        None => is_terminal(),                   // Auto-detect only when not specified
+        Some(explicit_color) => explicit_color, // Honor explicit color request
+        None => is_terminal(),                  // Auto-detect only when not specified
     }
 }
 
@@ -55,7 +55,7 @@ pub fn should_use_color(use_color: Option<bool>) -> bool {
 /// Render the plan in the specified format
 pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<String> {
     let use_color = should_use_color(use_color);
-    
+
     match format {
         PreviewFormat::Table => render_table(plan, use_color),
         PreviewFormat::Diff => render_diff(plan, use_color),
@@ -67,12 +67,12 @@ pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) 
 fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
     let mut table = Table::new();
     table.set_content_arrangement(ContentArrangement::Dynamic);
-    
+
     // Force styling even in non-TTY environments when colors are explicitly requested
     if use_color {
         table.enforce_styling();
     }
-    
+
     // Set headers
     if use_color {
         table.set_header(vec![
@@ -84,7 +84,7 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
     } else {
         table.set_header(vec!["File", "Kind", "Matches", "Variants"]);
     }
-    
+
     // Group matches by file
     let mut file_stats: HashMap<&Path, (usize, Vec<&str>)> = HashMap::new();
     for hunk in &plan.matches {
@@ -94,17 +94,17 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
             entry.1.push(&hunk.variant);
         }
     }
-    
+
     // Sort files for deterministic output
     let mut sorted_files: Vec<_> = file_stats.keys().cloned().collect();
     sorted_files.sort();
-    
+
     // Add content rows
     for file in sorted_files {
         let (count, variants) = &file_stats[&file];
         let file_str = file.display().to_string();
         let variants_str = variants.join(", ");
-        
+
         if use_color {
             table.add_row(vec![
                 Cell::new(&file_str),
@@ -121,7 +121,7 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
             ]);
         }
     }
-    
+
     // Add rename rows (root directory renames should not be in plans unless explicitly requested)
     for rename in &plan.renames {
         let from_str = rename.from.display().to_string();
@@ -130,7 +130,7 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
             RenameKind::File => "Rename (File)",
             RenameKind::Dir => "Rename (Dir)",
         };
-        
+
         if use_color {
             table.add_row(vec![
                 Cell::new(&from_str),
@@ -139,20 +139,15 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
                 Cell::new(&format!("→ {}", to_str)).fg(Color::Magenta),
             ]);
         } else {
-            table.add_row(vec![
-                &from_str,
-                kind_str,
-                "",
-                &format!("→ {}", to_str),
-            ]);
+            table.add_row(vec![&from_str, kind_str, "", &format!("→ {}", to_str)]);
         }
     }
-    
+
     // Add footer with totals
     let total_matches = plan.stats.total_matches;
     let total_files = plan.stats.files_with_matches;
     let total_renames = plan.renames.len();
-    
+
     if use_color {
         table.add_row(vec![
             Cell::new("─────────").fg(Color::DarkGrey),
@@ -167,12 +162,7 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
             Cell::new(format!("{} variants", plan.stats.matches_by_variant.len())).fg(Color::White),
         ]);
     } else {
-        table.add_row(vec![
-            "─────────",
-            "─────────",
-            "─────────",
-            "─────────",
-        ]);
+        table.add_row(vec!["─────────", "─────────", "─────────", "─────────"]);
         table.add_row(vec![
             "TOTALS",
             &format!("{} files, {} renames", total_files, total_renames),
@@ -180,46 +170,48 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
             &format!("{} variants", plan.stats.matches_by_variant.len()),
         ]);
     }
-    
+
     Ok(table.to_string())
 }
 
 /// Render plan as unified diffs
 fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
     let mut output = String::new();
-    
+
     // Group hunks by file
     let mut file_hunks: HashMap<&Path, Vec<&MatchHunk>> = HashMap::new();
     for hunk in &plan.matches {
         file_hunks.entry(&hunk.file).or_default().push(hunk);
     }
-    
+
     // Sort files for deterministic output
     let mut sorted_files: Vec<_> = file_hunks.keys().cloned().collect();
     sorted_files.sort();
-    
+
     // Generate diffs for each file
     for file in sorted_files {
         let hunks = &file_hunks[&file];
         if use_color {
             output.push_str(&format!(
                 "{}",
-                AnsiColor::Cyan.bold().paint(format!("--- {}\n+++ {}\n", 
-                    file.display(), 
-                    file.display()))
+                AnsiColor::Cyan.bold().paint(format!(
+                    "--- {}\n+++ {}\n",
+                    file.display(),
+                    file.display()
+                ))
             ));
         } else {
             output.push_str(&format!("--- {}\n+++ {}\n", file.display(), file.display()));
         }
-        
+
         // Create a unified diff from all hunks in this file
         for hunk in hunks {
             // Use line context if available, otherwise fall back to word-only
             let before_text = hunk.line_before.as_ref().unwrap_or(&hunk.before);
             let after_text = hunk.line_after.as_ref().unwrap_or(&hunk.after);
-            
+
             let diff = TextDiff::from_lines(before_text, after_text);
-            
+
             if use_color {
                 output.push_str(&format!(
                     "{}",
@@ -228,16 +220,16 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
             } else {
                 output.push_str(&format!("@@ line {} @@\n", hunk.line));
             }
-            
+
             for change in diff.iter_all_changes() {
                 let sign = match change.tag() {
                     ChangeTag::Delete => "-",
                     ChangeTag::Insert => "+",
                     ChangeTag::Equal => " ",
                 };
-                
+
                 let line = format!("{}{}", sign, change);
-                
+
                 if use_color {
                     let styled_line = match change.tag() {
                         ChangeTag::Delete => AnsiColor::Red.paint(line).to_string(),
@@ -252,7 +244,7 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
             output.push('\n');
         }
     }
-    
+
     // Add rename section
     if !plan.renames.is_empty() {
         if use_color {
@@ -263,13 +255,13 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
         } else {
             output.push_str("\n=== RENAMES ===\n");
         }
-        
+
         for rename in &plan.renames {
             let kind = match rename.kind {
                 RenameKind::File => "file",
                 RenameKind::Dir => "dir",
             };
-            
+
             if use_color {
                 output.push_str(&format!(
                     "{} {} {} {}\n",
@@ -288,7 +280,7 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
             }
         }
     }
-    
+
     Ok(output)
 }
 
@@ -318,7 +310,7 @@ mod tests {
         let mut matches_by_variant = HashMap::new();
         matches_by_variant.insert("old_name".to_string(), 2);
         matches_by_variant.insert("oldName".to_string(), 1);
-        
+
         Plan {
             id: "test123".to_string(),
             created_at: "123456789".to_string(),
@@ -337,7 +329,7 @@ mod tests {
                     after: "new_name".to_string(),
                     start: 4,
                     end: 12,
-                    line_before: None,  // Not needed for these tests
+                    line_before: None, // Not needed for these tests
                     line_after: None,
                     coercion_applied: None,
                 },
@@ -355,14 +347,12 @@ mod tests {
                     coercion_applied: None,
                 },
             ],
-            renames: vec![
-                Rename {
-                    from: PathBuf::from("old_name.txt"),
-                    to: PathBuf::from("new_name.txt"),
-                    kind: RenameKind::File,
-                    coercion_applied: None,
-                },
-            ],
+            renames: vec![Rename {
+                from: PathBuf::from("old_name.txt"),
+                to: PathBuf::from("new_name.txt"),
+                kind: RenameKind::File,
+                coercion_applied: None,
+            }],
             stats: Stats {
                 files_scanned: 10,
                 total_matches: 2,
@@ -386,7 +376,7 @@ mod tests {
     fn test_render_table_no_color() {
         let plan = create_test_plan();
         let result = render_table(&plan, false).unwrap();
-        
+
         assert!(result.contains("src/main.rs"));
         assert!(result.contains("Content"));
         assert!(result.contains("old_name"));
@@ -398,7 +388,7 @@ mod tests {
     fn test_render_diff_no_color() {
         let plan = create_test_plan();
         let result = render_diff(&plan, false).unwrap();
-        
+
         assert!(result.contains("--- src/main.rs"));
         assert!(result.contains("+++ src/main.rs"));
         assert!(result.contains("@@ line 10 @@"));
@@ -407,12 +397,12 @@ mod tests {
         assert!(result.contains("=== RENAMES ==="));
         assert!(result.contains("old_name.txt → new_name.txt"));
     }
-    
+
     #[test]
     fn test_render_diff_shows_full_line_context() {
         let mut matches_by_variant = HashMap::new();
         matches_by_variant.insert("old_func".to_string(), 1);
-        
+
         // Create a plan with hunks that have full line context
         let plan = Plan {
             id: "test_full_line".to_string(),
@@ -422,23 +412,21 @@ mod tests {
             styles: vec![Style::Snake],
             includes: vec![],
             excludes: vec![],
-            matches: vec![
-                MatchHunk {
-                    file: PathBuf::from("src/lib.rs"),
-                    line: 42,
-                    col: 12,
-                    variant: "old_func".to_string(),
-                    // Word-level replacement for apply
-                    before: "old_func".to_string(),
-                    after: "new_func".to_string(),
-                    start: 17,
-                    end: 25,
-                    // Full line context for diff preview
-                    line_before: Some("    let result = old_func(param1, param2);".to_string()),
-                    line_after: Some("    let result = new_func(param1, param2);".to_string()),
-                    coercion_applied: None,
-                },
-            ],
+            matches: vec![MatchHunk {
+                file: PathBuf::from("src/lib.rs"),
+                line: 42,
+                col: 12,
+                variant: "old_func".to_string(),
+                // Word-level replacement for apply
+                before: "old_func".to_string(),
+                after: "new_func".to_string(),
+                start: 17,
+                end: 25,
+                // Full line context for diff preview
+                line_before: Some("    let result = old_func(param1, param2);".to_string()),
+                line_after: Some("    let result = new_func(param1, param2);".to_string()),
+                coercion_applied: None,
+            }],
             renames: vec![],
             stats: Stats {
                 files_scanned: 1,
@@ -448,13 +436,13 @@ mod tests {
             },
             version: "1.0.0".to_string(),
         };
-        
+
         let result = render_diff(&plan, false).unwrap();
-        
+
         // Should show the full line, not just the word
         assert!(result.contains("-    let result = old_func(param1, param2);"));
         assert!(result.contains("+    let result = new_func(param1, param2);"));
-        
+
         // Should NOT show just the word alone
         assert!(!result.contains("-old_func\n"));
         assert!(!result.contains("+new_func\n"));
@@ -465,7 +453,7 @@ mod tests {
         let plan = create_test_plan();
         let result = render_json(&plan).unwrap();
         let parsed: Plan = serde_json::from_str(&result).unwrap();
-        
+
         assert_eq!(parsed.id, plan.id);
         assert_eq!(parsed.matches.len(), plan.matches.len());
         assert_eq!(parsed.renames.len(), plan.renames.len());
@@ -491,11 +479,11 @@ mod tests {
             },
             version: "1.0.0".to_string(),
         };
-        
+
         let table = render_table(&plan, false).unwrap();
         assert!(table.contains("TOTALS"));
         assert!(table.contains("0"));
-        
+
         let diff = render_diff(&plan, false).unwrap();
         assert!(diff.is_empty() || diff == "\n");
     }
@@ -524,37 +512,43 @@ mod tests {
     #[test]
     fn test_render_plan_with_explicit_colors() {
         let plan = create_test_plan();
-        
+
         // Test with forced colors (unset NO_COLOR for this test)
         let original_no_color = std::env::var("NO_COLOR").ok();
         std::env::remove_var("NO_COLOR");
-        
+
         // Explicit true should produce colors even in non-terminal environment
         let output = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
-        
+
         // Test with NO_COLOR set
         std::env::set_var("NO_COLOR", "1");
         let output_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
-        
+
         // Restore original NO_COLOR state
         match original_no_color {
             Some(val) => std::env::set_var("NO_COLOR", val),
             None => std::env::remove_var("NO_COLOR"),
         }
-        
+
         // Check for ANSI color codes - we expect colors when explicitly requested
-        assert!(output.contains("\u{1b}["), "Should contain ANSI color codes when explicitly requested");
-        
-        assert!(!output_no_color.contains("\u{1b}["), "Should not contain ANSI color codes when explicitly disabled");
+        assert!(
+            output.contains("\u{1b}["),
+            "Should contain ANSI color codes when explicitly requested"
+        );
+
+        assert!(
+            !output_no_color.contains("\u{1b}["),
+            "Should not contain ANSI color codes when explicitly disabled"
+        );
     }
 
     #[test]
     fn test_is_root_directory_rename() {
         use std::path::PathBuf;
-        
+
         // Get the actual current working directory for testing
         let current_dir = std::env::current_dir().unwrap();
-        
+
         // Test case that should be considered a root directory rename (current working directory)
         let root_rename = Rename {
             from: current_dir.clone(),
@@ -562,8 +556,11 @@ mod tests {
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
-        assert!(is_root_directory_rename(&root_rename), "Current working directory should be root");
-        
+        assert!(
+            is_root_directory_rename(&root_rename),
+            "Current working directory should be root"
+        );
+
         // Test case for a relative path - should NOT be considered root unless it matches current dir
         let relative_rename = Rename {
             from: PathBuf::from("project"),
@@ -571,8 +568,11 @@ mod tests {
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
-        assert!(!is_root_directory_rename(&relative_rename), "Relative path should not be root unless it's the current directory");
-        
+        assert!(
+            !is_root_directory_rename(&relative_rename),
+            "Relative path should not be root unless it's the current directory"
+        );
+
         // Test cases that should NOT be considered root directory renames
         let subdir_rename = Rename {
             from: current_dir.join("subdir"),
@@ -580,58 +580,82 @@ mod tests {
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
-        assert!(!is_root_directory_rename(&subdir_rename), "Subdirectory should not be root");
-        
+        assert!(
+            !is_root_directory_rename(&subdir_rename),
+            "Subdirectory should not be root"
+        );
+
         let different_path_rename = Rename {
             from: PathBuf::from("/some/other/path"),
             to: PathBuf::from("/some/other/new_path"),
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
-        assert!(!is_root_directory_rename(&different_path_rename), "Different path should not be root");
+        assert!(
+            !is_root_directory_rename(&different_path_rename),
+            "Different path should not be root"
+        );
     }
 
     #[test]
     fn test_color_consistency_across_formats() {
         let plan = create_test_plan();
-        
+
         // Test with environment control
         let original_no_color = std::env::var("NO_COLOR").ok();
         std::env::remove_var("NO_COLOR");
-        
+
         // All formats should respect explicit color settings consistently
         let table_colored = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
         let diff_colored = render_plan(&plan, PreviewFormat::Diff, Some(true)).unwrap();
-        
+
         // Set NO_COLOR for disabled test
         std::env::set_var("NO_COLOR", "1");
         let table_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
         let diff_no_color = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();
-        
+
         // Restore original NO_COLOR state
         match original_no_color {
             Some(val) => std::env::set_var("NO_COLOR", val),
             None => std::env::remove_var("NO_COLOR"),
         }
-        
+
         // Be lenient about colors in non-terminal environments but ensure consistency
         let table_has_colors = table_colored.contains("\u{1b}[");
         let diff_has_colors = diff_colored.contains("\u{1b}[");
-        
+
         // If one format has colors, both should (consistency check)
         if table_has_colors || diff_has_colors {
-            assert_eq!(table_has_colors, diff_has_colors, "Table and diff formats should be consistent about color usage");
+            assert_eq!(
+                table_has_colors, diff_has_colors,
+                "Table and diff formats should be consistent about color usage"
+            );
         }
-        
-        assert!(!table_no_color.contains("\u{1b}["), "Table format should not have colors when disabled");
-        assert!(!diff_no_color.contains("\u{1b}["), "Diff format should not have colors when disabled");
-        
+
+        assert!(
+            !table_no_color.contains("\u{1b}["),
+            "Table format should not have colors when disabled"
+        );
+        assert!(
+            !diff_no_color.contains("\u{1b}["),
+            "Diff format should not have colors when disabled"
+        );
+
         // JSON format should never have colors regardless of setting
         let json_colored = render_plan(&plan, PreviewFormat::Json, Some(true)).unwrap();
         let json_no_color = render_plan(&plan, PreviewFormat::Json, Some(false)).unwrap();
-        
-        assert!(!json_colored.contains("\u{1b}["), "JSON format should never have colors");
-        assert!(!json_no_color.contains("\u{1b}["), "JSON format should never have colors");
-        assert_eq!(json_colored, json_no_color, "JSON output should be identical regardless of color setting");
+
+        assert!(
+            !json_colored.contains("\u{1b}["),
+            "JSON format should never have colors"
+        );
+        assert!(
+            !json_no_color.contains("\u{1b}["),
+            "JSON format should never have colors"
+        );
+        assert_eq!(
+            json_colored, json_no_color,
+            "JSON output should be identical regardless of color setting"
+        );
     }
 }
