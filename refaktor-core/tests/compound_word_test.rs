@@ -5,8 +5,8 @@ use tempfile::TempDir;
 #[test]
 fn test_compound_pascal_case_replacement() {
     // This test demonstrates the EXPECTED behavior for compound word replacements
-    // When replacing "preview_format" with "preview", compound words like
-    // "PreviewFormatArg" should become "PreviewArg"
+    // When replacing "foo_bar" with "foo", compound words like
+    // "FooBarArg" should become "FooArg"
 
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
@@ -15,17 +15,17 @@ fn test_compound_pascal_case_replacement() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        r#"struct PreviewFormatArg { }
-impl From<PreviewFormatArg> for PreviewFormat {
-    fn from(arg: PreviewFormatArg) -> PreviewFormat {
+        r#"struct FooBarArg { }
+impl From<FooBarArg> for FooBar {
+    fn from(arg: FooBarArg) -> FooBar {
         match arg {
-            PreviewFormatArg::Table => PreviewFormat::Table,
-            PreviewFormatArg::Diff => PreviewFormat::Diff,
+            FooBarArg::Table => FooBar::Table,
+            FooBarArg::Diff => FooBar::Diff,
         }
     }
 }
-struct ShouldReplacePreviewFormatPlease { }
-fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
+struct ShouldReplaceFooBarPlease { }
+fn getFooBarOption() -> FooBarOption { }"#,
     )
     .unwrap();
 
@@ -43,7 +43,7 @@ fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound Pascal Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -58,13 +58,13 @@ fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
     }
 
     // Should find:
-    // Line 1: PreviewFormatArg -> PreviewArg
-    // Line 2: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
-    // Line 3: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
-    // Line 5: PreviewFormatArg -> PreviewArg (twice), PreviewFormat -> Preview (twice)
-    // Line 6: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
-    // Line 9: ShouldReplacePreviewFormatPlease -> ShouldReplacePreviewPlease
-    // Line 10: PreviewFormatOption -> PreviewOption (Pascal only, not getPreviewFormatOption)
+    // Line 1: FooBarArg -> FooArg
+    // Line 2: FooBarArg -> FooArg, FooBar -> Foo
+    // Line 3: FooBarArg -> FooArg, FooBar -> Foo
+    // Line 5: FooBarArg -> FooArg (twice), FooBar -> Foo (twice)
+    // Line 6: FooBarArg -> FooArg, FooBar -> Foo
+    // Line 9: ShouldReplaceFooBarPlease -> ShouldReplaceFooPlease
+    // Line 10: FooBarOption -> FooOption (Pascal only, not getFooBarOption)
 
     // Total: 11 replacements (Pascal only)
     assert_eq!(
@@ -72,22 +72,22 @@ fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
         "Should find all compound Pascal case variants"
     );
 
-    // Verify PreviewFormatArg is replaced with PreviewArg
-    let preview_format_arg_replacements: Vec<_> = plan
+    // Verify FooBarArg is replaced with FooArg
+    let foo_bar_arg_replacements: Vec<_> = plan
         .matches
         .iter()
-        .filter(|h| h.before == "PreviewFormatArg")
+        .filter(|h| h.before == "FooBarArg")
         .collect();
 
     assert!(
-        !preview_format_arg_replacements.is_empty(),
-        "Should find PreviewFormatArg occurrences"
+        !foo_bar_arg_replacements.is_empty(),
+        "Should find FooBarArg occurrences"
     );
 
-    for hunk in &preview_format_arg_replacements {
+    for hunk in &foo_bar_arg_replacements {
         assert_eq!(
-            hunk.after, "PreviewArg",
-            "PreviewFormatArg should be replaced with PreviewArg"
+            hunk.after, "FooArg",
+            "FooBarArg should be replaced with FooArg"
         );
     }
 }
@@ -101,10 +101,10 @@ fn test_compound_snake_case_replacement() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        r#"let preview_format_arg = get_preview_format_arg();
-let preview_format_option = preview_format_arg.to_option();
-match preview_format_type {
-    PreviewFormatType::Json => preview_format_json(),
+        r#"let foo_bar_arg = get_foo_bar_arg();
+let foo_bar_option = foo_bar_arg.to_option();
+match foo_bar_type {
+    FooBarType::Json => foo_bar_json(),
 }"#,
     )
     .unwrap();
@@ -126,7 +126,7 @@ match preview_format_type {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound Snake Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -135,17 +135,17 @@ match preview_format_type {
     }
 
     // Should find and replace:
-    // preview_format_arg -> preview_arg
-    // preview_format_option -> preview_option
-    // preview_format_type -> preview_type
-    // PreviewFormatType -> PreviewType
-    // preview_format_json -> preview_json
+    // foo_bar_arg -> foo_arg
+    // foo_bar_option -> foo_option
+    // foo_bar_type -> foo_type
+    // FooBarType -> FooType
+    // foo_bar_json -> foo_json
 
     let snake_compounds = vec![
-        "preview_format_arg",
-        "preview_format_option",
-        "preview_format_type",
-        "preview_format_json",
+        "foo_bar_arg",
+        "foo_bar_option",
+        "foo_bar_type",
+        "foo_bar_json",
     ];
     for compound in &snake_compounds {
         let replacements: Vec<_> = plan
@@ -155,7 +155,7 @@ match preview_format_type {
             .collect();
         assert!(!replacements.is_empty(), "Should find {}", compound);
 
-        let expected = compound.replace("preview_format", "preview");
+        let expected = compound.replace("foo_bar", "foo");
         for hunk in &replacements {
             assert_eq!(
                 hunk.after, expected,
@@ -175,10 +175,10 @@ fn test_compound_camel_case_replacement() {
     let test_file = root.join("main.js");
     std::fs::write(
         &test_file,
-        r#"const previewFormatArg = getPreviewFormatArg();
-const previewFormatOption = previewFormatArg.toOption();
-function setPreviewFormatType(previewFormatType) {
-    this.previewFormatType = previewFormatType;
+        r#"const fooBarArg = getFooBarArg();
+const fooBarOption = fooBarArg.toOption();
+function setFooBarType(fooBarType) {
+    this.fooBarType = fooBarType;
 }"#,
     )
     .unwrap();
@@ -197,7 +197,7 @@ function setPreviewFormatType(previewFormatType) {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound Camel Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -206,11 +206,11 @@ function setPreviewFormatType(previewFormatType) {
     }
 
     // Should find and replace:
-    // previewFormatArg -> previewArg (2 times on lines 1 and 2)
-    // getPreviewFormatArg -> getPreviewArg (line 1)
-    // previewFormatOption -> previewOption (line 2)
-    // setPreviewFormatType -> setPreviewType (line 3)
-    // previewFormatType -> previewType (3 times on lines 3 and 4)
+    // fooBarArg -> fooArg (2 times on lines 1 and 2)
+    // getFooBarArg -> getFooArg (line 1)
+    // fooBarOption -> fooOption (line 2)
+    // setFooBarType -> setFooType (line 3)
+    // fooBarType -> fooType (3 times on lines 3 and 4)
 
     assert_eq!(
         plan.stats.total_matches, 8,
@@ -219,9 +219,9 @@ function setPreviewFormatType(previewFormatType) {
 
     // Verify camelCase compounds are properly replaced
     let camel_compounds = vec![
-        ("previewFormatArg", "previewArg"),
-        ("previewFormatOption", "previewOption"),
-        ("previewFormatType", "previewType"),
+        ("fooBarArg", "fooArg"),
+        ("fooBarOption", "fooOption"),
+        ("fooBarType", "fooType"),
     ];
 
     for (from, to) in &camel_compounds {
@@ -237,7 +237,7 @@ function setPreviewFormatType(previewFormatType) {
 #[test]
 fn test_compound_pascal_and_camel_case_replacement() {
     // Same test as pascal-only but with both styles enabled
-    // This should find MORE matches including getPreviewFormatOption
+    // This should find MORE matches including getFooBarOption
 
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
@@ -246,17 +246,17 @@ fn test_compound_pascal_and_camel_case_replacement() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        r#"struct PreviewFormatArg { }
-impl From<PreviewFormatArg> for PreviewFormat {
-    fn from(arg: PreviewFormatArg) -> PreviewFormat {
+        r#"struct FooBarArg { }
+impl From<FooBarArg> for FooBar {
+    fn from(arg: FooBarArg) -> FooBar {
         match arg {
-            PreviewFormatArg::Table => PreviewFormat::Table,
-            PreviewFormatArg::Diff => PreviewFormat::Diff,
+            FooBarArg::Table => FooBar::Table,
+            FooBarArg::Diff => FooBar::Diff,
         }
     }
 }
-struct ShouldReplacePreviewFormatPlease { }
-fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
+struct ShouldReplaceFooBarPlease { }
+fn getFooBarOption() -> FooBarOption { }"#,
     )
     .unwrap();
 
@@ -277,7 +277,7 @@ fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound Pascal + Camel Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -289,14 +289,14 @@ fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
     }
 
     // Should find:
-    // Line 1: PreviewFormatArg -> PreviewArg
-    // Line 2: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
-    // Line 3: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
-    // Line 5: PreviewFormatArg -> PreviewArg (twice), PreviewFormat -> Preview (twice)
-    // Line 6: PreviewFormatArg -> PreviewArg, PreviewFormat -> Preview
-    // Line 9: ShouldReplacePreviewFormatPlease -> ShouldReplacePreviewPlease
-    // Line 10: getPreviewFormatOption -> getPreviewOption (ADDITIONAL because Camel is included)
-    // Line 10: PreviewFormatOption -> PreviewOption
+    // Line 1: FooBarArg -> FooArg
+    // Line 2: FooBarArg -> FooArg, FooBar -> Foo
+    // Line 3: FooBarArg -> FooArg, FooBar -> Foo
+    // Line 5: FooBarArg -> FooArg (twice), FooBar -> Foo (twice)
+    // Line 6: FooBarArg -> FooArg, FooBar -> Foo
+    // Line 9: ShouldReplaceFooBarPlease -> ShouldReplaceFooPlease
+    // Line 10: getFooBarOption -> getFooOption (ADDITIONAL because Camel is included)
+    // Line 10: FooBarOption -> FooOption
 
     // Total: 12 replacements (one more than Pascal-only)
     assert_eq!(
@@ -305,13 +305,10 @@ fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
     );
 
     // Verify we found the camelCase function name
-    let camel_match = plan
-        .matches
-        .iter()
-        .find(|h| h.before == "getPreviewFormatOption");
+    let camel_match = plan.matches.iter().find(|h| h.before == "getFooBarOption");
     assert!(
         camel_match.is_some(),
-        "Should find getPreviewFormatOption when Camel style is included"
+        "Should find getFooBarOption when Camel style is included"
     );
 }
 
@@ -324,7 +321,7 @@ fn test_multiple_compounds_same_line() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        "fn convert(preview_format_arg: PreviewFormatArg) -> PreviewFormatOption { }\n",
+        "fn convert(foo_bar_arg: FooBarArg) -> FooBarOption { }\n",
     )
     .unwrap();
 
@@ -345,7 +342,7 @@ fn test_multiple_compounds_same_line() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Multiple Compounds Same Line Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -354,9 +351,9 @@ fn test_multiple_compounds_same_line() {
     }
 
     // Should find:
-    // preview_format_arg -> preview_arg
-    // PreviewFormatArg -> PreviewArg
-    // PreviewFormatOption -> PreviewOption
+    // foo_bar_arg -> foo_arg
+    // FooBarArg -> FooArg
+    // FooBarOption -> FooOption
     assert_eq!(
         plan.stats.total_matches, 3,
         "Should find all three compound variants on the same line"
@@ -371,19 +368,15 @@ fn test_multiple_compounds_same_line() {
 #[test]
 fn test_compound_case_preservation_bug() {
     // This test verifies that compound replacements preserve the original case style
-    // Bug: PreviewFormatOption -> fooBarOption (wrong!)
-    // Should be: PreviewFormatOption -> FooBarOption (correct)
+    // Bug: FooBarOption -> bazaarQuxicleOption (wrong!)
+    // Should be: FooBarOption -> BazaarQuxicleOption (correct)
 
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
 
     // Create test file with PascalCase compound identifier
     let test_file = root.join("main.rs");
-    std::fs::write(
-        &test_file,
-        r#"fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
-    )
-    .unwrap();
+    std::fs::write(&test_file, r#"fn getFooBarOption() -> FooBarOption { }"#).unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],
@@ -399,38 +392,32 @@ fn test_compound_case_preservation_bug() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "foo_bar", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "bazaar_quxicle", &options).unwrap();
 
     println!("\n=== Case Preservation Test ===");
     for hunk in &plan.matches {
         println!("'{}' -> '{}'", hunk.before, hunk.after);
     }
 
-    // Find the PreviewFormatOption replacement
-    let pascal_option = plan
-        .matches
-        .iter()
-        .find(|h| h.before == "PreviewFormatOption");
+    // Find the FooBarOption replacement
+    let pascal_option = plan.matches.iter().find(|h| h.before == "FooBarOption");
 
-    assert!(pascal_option.is_some(), "Should find PreviewFormatOption");
+    assert!(pascal_option.is_some(), "Should find FooBarOption");
 
     let hunk = pascal_option.unwrap();
     assert_eq!(
-        hunk.after, "FooBarOption",
-        "PreviewFormatOption should become FooBarOption (PascalCase preserved), not fooBarOption"
+        hunk.after, "BazaarQuxicleOption",
+        "FooBarOption should become BazaarQuxicleOption (PascalCase preserved), not bazaarQuxicleOption"
     );
 
     // Also check the camelCase function name is handled correctly
-    let camel_func = plan
-        .matches
-        .iter()
-        .find(|h| h.before == "getPreviewFormatOption");
+    let camel_func = plan.matches.iter().find(|h| h.before == "getFooBarOption");
 
-    assert!(camel_func.is_some(), "Should find getPreviewFormatOption");
+    assert!(camel_func.is_some(), "Should find getFooBarOption");
 
     let func_hunk = camel_func.unwrap();
     assert_eq!(
-        func_hunk.after, "getFooBarOption",
-        "getPreviewFormatOption should become getFooBarOption (camelCase preserved)"
+        func_hunk.after, "getBazaarQuxicleOption",
+        "getFooBarOption should become getBazaarQuxicleOption (camelCase preserved)"
     );
 }
