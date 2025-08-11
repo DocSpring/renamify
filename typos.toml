@@ -1,0 +1,24 @@
+[default]
+# Extend the default identifier checker with these additional words
+extend-identifiers = { refaktor = "refaktor" }
+
+[files]
+extend-exclude = [
+  "target/",
+  ".git/",
+  "*.lock",
+  "*.profraw",
+  "*.profdata",
+  # Test files that intentionally contain typos
+  "**/test_*",
+  "**/*_test*",
+]
+
+[type.rust]
+extend-glob = ["*.rs"]
+
+[type.toml]
+extend-glob = ["*.toml"]
+
+[type.markdown]
+extend-glob = ["*.md"]

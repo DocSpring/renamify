@@ -1,0 +1,16 @@
+# Clippy configuration
+# Allow certain pedantic lints for now - we can gradually enable them
+avoid-breaking-exported-api = false
+
+# Disable some overly pedantic lints for development speed
+# We can re-enable these later when the codebase is more stable
+disallowed-names = []
+
+# Allow up to 10 arguments for now (some functions need many parameters)
+too-many-arguments-threshold = 10
+
+# Allow longer function bodies during development
+too-many-lines-threshold = 200
+
+# Allow more cognitive complexity during initial development
+cognitive-complexity-threshold = 50

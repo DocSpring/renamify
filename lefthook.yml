@@ -1,0 +1,42 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.rs"
+      run: cargo fmt --all -- --check
+      stage_fixed: true
+    
+    clippy:
+      glob: "*.rs" 
+      run: cargo clippy --all-targets --all-features
+    
+    test:
+      glob: "*.rs"
+      run: cargo test --all
+    
+    toml-fmt:
+      glob: "*.toml"
+      run: taplo format {staged_files}
+      stage_fixed: true
+    
+    typos:
+      run: typos {staged_files}
+
+pre-push:
+  commands:
+    test-all:
+      run: cargo test --all --release
+    
+    check-docs:
+      run: cargo doc --no-deps --all-features
+
+# Skip lefthook installation on CI
+skip_output:
+  - meta
+  - execution
+
+# Only run on Rust files for performance
+only:
+  - "*.rs"
+  - "*.toml"
+  - "*.md"
