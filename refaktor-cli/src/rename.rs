@@ -105,8 +105,12 @@ pub fn handle_rename(
         return Err(anyhow!("Conflicts detected. Use --force-with-conflicts to override."));
     }
 
-    // Show preview if requested
-    if let Some(preview_format) = preview {
+    // Show preview (default to table unless explicitly set to none)
+    // If preview is None (not specified), default to table format
+    // If preview is Some(format), use that format (unless it's None)
+    let preview_format = preview.unwrap_or(PreviewFormatArg::Table);
+    
+    if preview_format != PreviewFormatArg::None {
         let preview_output = refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;
         println!("{}", preview_output);
         println!(); // Add spacing before summary
@@ -212,7 +216,6 @@ fn show_rename_summary(plan: &Plan, include: &[String], exclude: &[String]) -> R
         println!();
     }
     
-    println!("Preview: table | diff | tui  (use --preview)");
     Ok(())
 }
 

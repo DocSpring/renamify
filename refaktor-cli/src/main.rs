@@ -275,11 +275,12 @@ impl From<StyleArg> for Style {
     }
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
 enum PreviewFormatArg {
     Table,
     Diff,
     Json,
+    None,
 }
 
 impl From<PreviewFormatArg> for PreviewFormat {
@@ -288,6 +289,7 @@ impl From<PreviewFormatArg> for PreviewFormat {
             PreviewFormatArg::Table => PreviewFormat::Table,
             PreviewFormatArg::Diff => PreviewFormat::Diff,
             PreviewFormatArg::Json => PreviewFormat::Json,
+            PreviewFormatArg::None => PreviewFormat::Table, // Default to table if None is somehow converted
         }
     }
 }

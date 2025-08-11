@@ -50,6 +50,7 @@ In addition to replacing text within files, Refaktor can rename:
 - **Next steps snippet**: Provides instructions for rebuilding/reloading after root rename
 
 **Example:**
+
 ```bash
 # This will offer to rename the project directory itself
 cd /path/to/refaktor-project
@@ -57,12 +58,13 @@ refaktor rename refaktor smart_search_and_replace --rename-root
 
 # Refaktor will show a "Next Steps" snippet like:
 # Next Steps:
-# 1. cd ../smart-search-and-replace-project  
+# 1. cd ../smart-search-and-replace-project
 # 2. cargo build --release  # if Rust project
 # 3. Update any IDE project settings
 ```
 
 **Safety considerations:**
+
 - Always commit changes before root directory rename
 - Update build scripts, IDE settings, and documentation paths
 - Consider impact on CI/CD pipelines that reference the directory name
@@ -150,7 +152,7 @@ refaktor rename <OLD> <NEW> [OPTIONS]
 **Options:**
 
 - `--include <PATTERNS>` - Only process files matching these glob patterns
-- `--exclude <PATTERNS>` - Skip files matching these glob patterns  
+- `--exclude <PATTERNS>` - Skip files matching these glob patterns
 - `--no-rename-files` - Don't rename matching files
 - `--no-rename-dirs` - Don't rename matching directories
 - `--styles <STYLES>` - Specify which case styles to use (comma-separated)
@@ -163,6 +165,7 @@ refaktor rename <OLD> <NEW> [OPTIONS]
 - `--no-rename-root` - Never rename the root project directory
 
 **Example:**
+
 ```bash
 # Quick rename with table preview
 refaktor rename old_name new_name --preview table
@@ -325,7 +328,7 @@ When running commands that create `.refaktor/` for the first time, you'll see:
 Refaktor uses .refaktor/ for plans, backups, and history.
 Ignore it now?
   [Y] Repo .gitignore   [l] Local .git/info/exclude   [g] Global excludesfile   [n] No
-Choice (Y/l/g/n): 
+Choice (Y/l/g/n):
 ```
 
 - **Y (default)**: Add to `.gitignore` in the current directory
@@ -479,7 +482,7 @@ refaktor redo <id-from-history>
 2. **Always run `plan` first for large changes** - Review changes before applying them
 3. **Use `--dry-run` for exploration** - See what would change without commitment
 4. **Commit before large refactors** - Makes it easy to revert if needed
-5. **Use specific includes** - Limit scope when working in large codebases  
+5. **Use specific includes** - Limit scope when working in large codebases
 6. **Check history after apply** - Verify the operation was recorded
 7. **Use `--preview` with rename** - Always see what changes before confirming
 8. **Be careful with `--rename-root`** - Only use when you want to rename the project directory
