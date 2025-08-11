@@ -26,14 +26,14 @@ cd refaktor
 cargo build --release
 
 # Use refaktor to rename itself to smart_search_and_replace
-./target/release/refaktor rename refaktor smart_search_and_replace
+./target/release/refaktor rename refaktor smart_search_and_replace --preview table
 
 # Rebuild with the new name
 rm -rf target
 cargo build --release
 
 # Now use smart_search_and_replace to rename itself back to refaktor!
-./target/release/smart_search_and_replace rename smart_search_and_replace refaktor
+./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --preview table
 
 # Back to the original
 rm -rf target

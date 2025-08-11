@@ -286,20 +286,17 @@ fn generate_hunks(
         let mut after = new_variant.clone();
         let mut coercion_applied = None;
 
-        // Apply coercion if enabled - but only if we don't already have an explicit mapping
-        // If the variant_map has an explicit mapping, trust that over coercion
+        // Apply coercion if enabled
         if let CoercionMode::Auto = options.coerce_separators {
-            // Check if this is an explicit mapping (the new_variant matches exactly what's in variant_map)
-            let has_explicit_mapping = variant_map.get(&m.variant)
-                .map(|mapped| mapped == new_variant)
-                .unwrap_or(false);
+            // Find the match position within the line and extract context
+            if let Some(match_pos) = line_string.find(&m.variant) {
+                let context = extract_immediate_context(&line_string, match_pos, match_pos + m.variant.len());
                 
-            if !has_explicit_mapping {
-                if let Some((_coerced, reason)) = crate::coercion::apply_coercion(&line_string, &m.variant, new_variant) {
-                    if let Some(coerced_variant) = apply_coercion_to_variant(&line_string, &m.variant, new_variant) {
+                if let Some((_coerced, reason)) = crate::coercion::apply_coercion(&context, &m.variant, new_variant) {
+                    if let Some(coerced_variant) = apply_coercion_to_variant(&context, &m.variant, new_variant) {
                         after = coerced_variant;
+                        coercion_applied = Some(reason);
                     }
-                    coercion_applied = Some(reason);
                 }
             }
         }
@@ -318,6 +315,51 @@ fn generate_hunks(
     }
 
     hunks
+}
+
+/// Extract the immediate context around a match to make better coercion decisions
+fn extract_immediate_context(line: &str, match_start: usize, match_end: usize) -> String {
+    let chars: Vec<char> = line.chars().collect();
+    
+    // Convert byte positions to character indices
+    let char_start = line[..match_start].chars().count();
+    let char_end = line[..match_end].chars().count();
+    
+    let mut context_start = char_start;
+    let mut context_end = char_end;
+    
+    // Characters that are part of identifiers or compound names
+    let is_identifier_char = |c: char| -> bool {
+        c.is_alphanumeric() || c == '_' || c == '-' || c == '.'
+    };
+    
+    // Characters that indicate we should stop extending context but might be part of a path/namespace
+    let is_path_separator = |c: char| -> bool {
+        c == '/' || c == '\\' || c == ':' || c == '@'
+    };
+    
+    // Extend backwards to find the start of the identifier/path chain
+    while context_start > 0 {
+        let prev_char = chars[context_start - 1];
+        if is_identifier_char(prev_char) || is_path_separator(prev_char) {
+            context_start -= 1;
+        } else {
+            break;
+        }
+    }
+    
+    // Extend forwards to find the end of the identifier/path chain  
+    while context_end < chars.len() {
+        let next_char = chars[context_end];
+        if is_identifier_char(next_char) || is_path_separator(next_char) {
+            context_end += 1;
+        } else {
+            break;
+        }
+    }
+    
+    // Extract the context substring
+    chars[context_start..context_end].iter().collect()
 }
 
 /// Apply coercion logic to just the variant (word-level), not the entire container

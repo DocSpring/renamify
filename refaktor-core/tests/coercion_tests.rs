@@ -252,6 +252,8 @@ let config = refaktor.config.load();
         .filter(|m| m.coercion_applied.is_some())
         .count();
     
+    
+    
     // We expect some matches to be coerced based on their context  
     // (like refaktor_core should use snake_case for the replacement)
     assert!(coerced_matches > 0, "Some content matches should have coercion applied");
@@ -262,6 +264,184 @@ let config = refaktor.config.load();
     if let Some(m) = snake_case_match {
         assert!(m.after.contains("smart_search_and_replace_core"), 
             "snake_case context should produce snake_case replacement");
+    }
+}
+
+#[test]
+fn test_comprehensive_coercion_edge_cases() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create a file with comprehensive edge cases for coercion
+    fs::write(temp_dir.path().join("edge_cases.rs"), r#"
+// Clean contexts that SHOULD get coercion
+use refaktor_core::Engine;
+let refaktor-utils = RefaktorService::new();
+const REFAKTOR_CONFIG = RefaktorKey<T>::new();
+let url = "https://github.com/user/refaktor-project";
+let path = "src/refaktor/main.rs";
+let namespace = refaktor::core::apply();
+let env_var = process.env.REFAKTOR_DEBUG;
+let css_class = ".refaktor-button:hover";
+let db_column = user_refaktor_settings_id;
+let config_key = app.refaktor.enabled;
+let package = "@scope/refaktor-utils";
+
+// Mixed contexts that might skip coercion but still do replacement
+let mixed = refaktor_someCAMEL-case;
+let ambiguous = x.refaktor.y;
+let complex_generic = HashMap<RefaktorKey<T>, Vec<RefaktorValue>>;
+
+// String literals and comments (should still be replaced)
+println!("Please use refaktor for this task");
+// The refaktor tool is great
+let docs = "refaktor: smart search and replace";
+
+// File extensions and versioning
+let binary = "refaktor-v1.2.3-beta.tar.gz";
+let regex_pattern = r"refaktor[_-](\w+)";
+"#).unwrap();
+
+    let options = PlanOptions {
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None,
+        rename_files: false,
+        rename_dirs: false,
+        plan_out: temp_dir.path().join("plan.json"),
+        coerce_separators: CoercionMode::Auto,
+    };
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "refaktor",
+        "smart_search_and_replace", 
+        &options,
+    ).unwrap();
+
+    let content_matches = &plan.matches;
+    assert!(!content_matches.is_empty(), "Should find many matches");
+
+    // Count matches with different coercion outcomes
+    let coerced_matches: Vec<_> = content_matches.iter()
+        .filter(|m| m.coercion_applied.is_some())
+        .collect();
+    
+    // let _uncoerced_matches: Vec<_> = content_matches.iter()
+    //     .filter(|m| m.coercion_applied.is_none())
+    //     .collect();
+
+    
+    // We should have several coerced matches
+    assert!(coerced_matches.len() >= 5, "Should have multiple coerced matches");
+    
+    // Check specific coercion patterns - the coercion applies to the replacement style
+    let snake_case_matches = content_matches.iter()
+        .filter(|m| m.coercion_applied.as_ref().map_or(false, |c| c.contains("Snake")))
+        .count();
+    assert!(snake_case_matches >= 1, "Should have snake_case coercion applied");
+    
+    let kebab_case_matches = content_matches.iter()
+        .filter(|m| m.coercion_applied.as_ref().map_or(false, |c| c.contains("Kebab")))
+        .count();
+    assert!(kebab_case_matches >= 1, "Should have kebab-case coercion applied");
+    
+    // Check that coerced matches use the right separators
+    let has_underscores = content_matches.iter()
+        .any(|m| m.after.contains("smart_search_and_replace"));
+    assert!(has_underscores, "Should have snake_case replacements");
+    
+    let has_hyphens = content_matches.iter()
+        .any(|m| m.after.contains("smart-search-and-replace"));
+    assert!(has_hyphens, "Should have kebab-case replacements");
+}
+
+#[test]
+fn test_path_and_namespace_coercion() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Test various path and namespace patterns
+    fs::write(temp_dir.path().join("paths.rs"), r#"
+use refaktor::core::Engine;
+use refaktor::utils::helper;
+let path1 = "src/refaktor/main.rs";
+let path2 = "./refaktor/config.toml";  
+let path3 = "/usr/bin/refaktor";
+let url = "https://github.com/user/refaktor";
+let module = refaktor::scanner::scan();
+let nested = refaktor::core::pattern::Match;
+"#).unwrap();
+
+    let options = PlanOptions {
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None,
+        rename_files: false,
+        rename_dirs: false,
+        plan_out: temp_dir.path().join("plan.json"),
+        coerce_separators: CoercionMode::Auto,
+    };
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "refaktor",
+        "smart_search_and_replace", 
+        &options,
+    ).unwrap();
+
+    let content_matches = &plan.matches;
+    
+    
+    // Check that we have some coerced matches for path-like contexts
+    let coerced_count = content_matches.iter()
+        .filter(|m| m.coercion_applied.is_some())
+        .count();
+    assert!(coerced_count > 0, "Should have coerced some path/namespace contexts");
+}
+
+#[test]
+fn test_mixed_style_handling() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Test cases where coercion might be skipped due to mixed styles
+    fs::write(temp_dir.path().join("mixed.rs"), r#"
+// These have mixed styles in the same identifier - coercion might be skipped
+let weird1 = refaktor_someCAMEL-case;
+let weird2 = refaktor-some_MIXED_Case;
+let weird3 = refaktor.some-weird_MIX;
+
+// These are on mixed-style lines but individual contexts should still work
+let snake_case_var = refaktor_core; let camelVar = refaktorService;
+"#).unwrap();
+
+    let options = PlanOptions {
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None,
+        rename_files: false,
+        rename_dirs: false,
+        plan_out: temp_dir.path().join("plan.json"),
+        coerce_separators: CoercionMode::Auto,
+    };
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "refaktor",
+        "smart_search_and_replace", 
+        &options,
+    ).unwrap();
+
+    // All matches should still do replacement, even if coercion is skipped
+    assert!(!plan.matches.is_empty());
+    
+    // Every match should have the basic replacement
+    for m in &plan.matches {
+        assert!(m.after.contains("smart_search_and_replace") || m.after.contains("smart-search-and-replace"));
     }
 }
 

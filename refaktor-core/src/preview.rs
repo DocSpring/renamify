@@ -25,9 +25,25 @@ impl PreviewFormat {
     }
 }
 
+/// Determine whether to use colors based on explicit preference or terminal detection
+pub fn should_use_color_with_detector<F>(use_color: Option<bool>, is_terminal: F) -> bool 
+where
+    F: Fn() -> bool,
+{
+    match use_color {
+        Some(explicit_color) => explicit_color,  // Honor explicit color request
+        None => is_terminal(),                   // Auto-detect only when not specified
+    }
+}
+
+/// Determine whether to use colors based on explicit preference or terminal detection
+pub fn should_use_color(use_color: Option<bool>) -> bool {
+    should_use_color_with_detector(use_color, || io::stdout().is_terminal())
+}
+
 /// Render the plan in the specified format
 pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<String> {
-    let use_color = use_color.unwrap_or_else(|| io::stdout().is_terminal());
+    let use_color = should_use_color(use_color);
     
     match format {
         PreviewFormat::Table => render_table(plan, use_color),
@@ -40,6 +56,11 @@ pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) 
 fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
     let mut table = Table::new();
     table.set_content_arrangement(ContentArrangement::Dynamic);
+    
+    // Force styling even in non-TTY environments when colors are explicitly requested
+    if use_color {
+        table.enforce_styling();
+    }
     
     // Set headers
     if use_color {
@@ -406,5 +427,97 @@ mod tests {
         
         let diff = render_diff(&plan, false).unwrap();
         assert!(diff.is_empty() || diff == "\n");
+    }
+
+    #[test]
+    fn test_should_use_color_explicit_true() {
+        // When explicitly requesting colors, should always return true regardless of terminal
+        assert!(should_use_color_with_detector(Some(true), || false));
+        assert!(should_use_color_with_detector(Some(true), || true));
+    }
+
+    #[test]
+    fn test_should_use_color_explicit_false() {
+        // When explicitly disabling colors, should always return false regardless of terminal
+        assert!(!should_use_color_with_detector(Some(false), || false));
+        assert!(!should_use_color_with_detector(Some(false), || true));
+    }
+
+    #[test]
+    fn test_should_use_color_auto_detect_terminal() {
+        // When no explicit preference, should use terminal detection
+        assert!(should_use_color_with_detector(None, || true));
+        assert!(!should_use_color_with_detector(None, || false));
+    }
+
+    #[test]
+    fn test_render_plan_with_explicit_colors() {
+        let plan = create_test_plan();
+        
+        // Test with forced colors (unset NO_COLOR for this test)
+        let original_no_color = std::env::var("NO_COLOR").ok();
+        std::env::remove_var("NO_COLOR");
+        
+        // Explicit true should produce colors even in non-terminal environment
+        let output = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
+        
+        // Test with NO_COLOR set
+        std::env::set_var("NO_COLOR", "1");
+        let output_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
+        
+        // Restore original NO_COLOR state
+        match original_no_color {
+            Some(val) => std::env::set_var("NO_COLOR", val),
+            None => std::env::remove_var("NO_COLOR"),
+        }
+        
+        // Check for ANSI color codes - we expect colors when explicitly requested
+        assert!(output.contains("\u{1b}["), "Should contain ANSI color codes when explicitly requested");
+        
+        assert!(!output_no_color.contains("\u{1b}["), "Should not contain ANSI color codes when explicitly disabled");
+    }
+
+    #[test]
+    fn test_color_consistency_across_formats() {
+        let plan = create_test_plan();
+        
+        // Test with environment control
+        let original_no_color = std::env::var("NO_COLOR").ok();
+        std::env::remove_var("NO_COLOR");
+        
+        // All formats should respect explicit color settings consistently
+        let table_colored = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
+        let diff_colored = render_plan(&plan, PreviewFormat::Diff, Some(true)).unwrap();
+        
+        // Set NO_COLOR for disabled test
+        std::env::set_var("NO_COLOR", "1");
+        let table_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
+        let diff_no_color = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();
+        
+        // Restore original NO_COLOR state
+        match original_no_color {
+            Some(val) => std::env::set_var("NO_COLOR", val),
+            None => std::env::remove_var("NO_COLOR"),
+        }
+        
+        // Be lenient about colors in non-terminal environments but ensure consistency
+        let table_has_colors = table_colored.contains("\u{1b}[");
+        let diff_has_colors = diff_colored.contains("\u{1b}[");
+        
+        // If one format has colors, both should (consistency check)
+        if table_has_colors || diff_has_colors {
+            assert_eq!(table_has_colors, diff_has_colors, "Table and diff formats should be consistent about color usage");
+        }
+        
+        assert!(!table_no_color.contains("\u{1b}["), "Table format should not have colors when disabled");
+        assert!(!diff_no_color.contains("\u{1b}["), "Diff format should not have colors when disabled");
+        
+        // JSON format should never have colors regardless of setting
+        let json_colored = render_plan(&plan, PreviewFormat::Json, Some(true)).unwrap();
+        let json_no_color = render_plan(&plan, PreviewFormat::Json, Some(false)).unwrap();
+        
+        assert!(!json_colored.contains("\u{1b}["), "JSON format should never have colors");
+        assert!(!json_no_color.contains("\u{1b}["), "JSON format should never have colors");
+        assert_eq!(json_colored, json_no_color, "JSON output should be identical regardless of color setting");
     }
 }
