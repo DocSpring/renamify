@@ -132,6 +132,20 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Install ripgrep
+        run: |
+          if ! command -v rg &> /dev/null; then
+            echo "Installing ripgrep..."
+            if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+              sudo apt-get update && sudo apt-get install -y ripgrep
+            elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+              brew install ripgrep
+            else  # windows
+              choco install ripgrep
+            fi
+          fi
+        shell: bash
+
       - name: Build refaktor
         run: cargo build --release
 
@@ -152,6 +166,14 @@ jobs:
             echo "ERROR: smart-search-and-replace-core/Cargo.toml not found!"
             exit 1
           fi
+
+          # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
+          echo "Checking for remaining instances of 'refaktor'..."
+          if rg -i "refaktor" --type-not binary; then
+            echo "ERROR: Found remaining instances of 'refaktor' in the codebase!"
+            exit 1
+          fi
+          echo "✓ No instances of 'refaktor' found"
 
           # Clean and rebuild with new name
           rm -rf target
@@ -178,6 +200,14 @@ jobs:
             echo "ERROR: refaktor-core/Cargo.toml not found!"
             exit 1
           fi
+
+          # Verify no instances of "smart_search_and_replace" or "smart-search-and-replace" remain
+          echo "Checking for remaining instances of 'smart_search_and_replace' or 'smart-search-and-replace'..."
+          if rg "(smart_search_and_replace|smart-search-and-replace|smartsearchandreplace)" --type-not binary; then
+            echo "ERROR: Found remaining instances of 'smart_search_and_replace' in the codebase!"
+            exit 1
+          fi
+          echo "✓ No instances of 'smart_search_and_replace' found"
 
           # Clean and rebuild with original name
           rm -rf target
