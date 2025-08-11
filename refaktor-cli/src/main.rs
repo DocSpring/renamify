@@ -528,10 +528,7 @@ fn main() {
             force_with_conflicts,
         } => handle_apply(plan, id, atomic, commit, force_with_conflicts),
 
-        Commands::Undo { id } => {
-            let refaktor_dir = PathBuf::from(".refaktor");
-            undo_refactoring(&id, &refaktor_dir).context("Failed to undo refactoring")
-        },
+        Commands::Undo { id } => handle_undo(id),
 
         Commands::Redo { id } => {
             let refaktor_dir = PathBuf::from(".refaktor");
@@ -828,6 +825,28 @@ fn handle_status() -> Result<()> {
 
     print!("{}", status.format());
     Ok(())
+}
+
+fn handle_undo(id: String) -> Result<()> {
+    let refaktor_dir = PathBuf::from(".refaktor");
+
+    // Handle "latest" keyword
+    let actual_id = if id == "latest" {
+        // Load history and get the most recent non-revert entry
+        let history = History::load(&refaktor_dir).context("Failed to load history")?;
+        let entries = history.list_entries(None);
+
+        // Find the most recent non-revert entry
+        entries
+            .iter()
+            .find(|e| e.revert_of.is_none())
+            .map(|e| e.id.clone())
+            .ok_or_else(|| anyhow!("No entries to undo"))?
+    } else {
+        id
+    };
+
+    undo_refactoring(&actual_id, &refaktor_dir).context("Failed to undo refactoring")
 }
 
 fn handle_history(limit: Option<usize>) -> Result<()> {

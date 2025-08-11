@@ -1021,3 +1021,265 @@ fn test_rename_command_large_size_guard() {
         .assert()
         .success();
 }
+
+#[test]
+fn test_affected_files_not_empty() {
+    // Test that affected_files is populated in history
+    let temp_dir = TempDir::new().unwrap();
+
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
+    // Apply a rename
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "old_name", "new_name", "-y"])
+        .assert()
+        .success();
+
+    // Check history has affected_files
+    let history_file = temp_dir.path().join(".refaktor/history.json");
+    let history_content = std::fs::read_to_string(&history_file).unwrap();
+    let history: Vec<serde_json::Value> = serde_json::from_str(&history_content).unwrap();
+    assert!(!history.is_empty(), "History should not be empty");
+
+    let entry = &history[0];
+    let affected_files = entry["affected_files"].as_object().unwrap();
+    assert!(
+        !affected_files.is_empty(),
+        "affected_files should NOT be empty! Files that were modified should be tracked!"
+    );
+
+    // Verify the file path is in affected_files
+    let test_file_path = temp_dir.path().join("test.rs");
+    let has_test_file = affected_files.keys().any(|k| k.ends_with("test.rs"));
+    assert!(has_test_file, "test.rs should be in affected_files");
+}
+
+#[test]
+fn test_undo_after_rename() {
+    // Integration test for undo after a rename operation
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create test files with content to rename
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() { let old_name = 42; }")
+        .unwrap();
+    temp_dir
+        .child("old_name.txt")
+        .write_str("This is the old_name file")
+        .unwrap();
+
+    // First perform a rename operation
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "old_name", "new_name", "-y"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Applied"));
+
+    // Verify files were changed
+    let test_rs_content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
+    assert!(test_rs_content.contains("new_name"));
+    assert!(!test_rs_content.contains("old_name"));
+    assert!(temp_dir.path().join("new_name.txt").exists());
+    assert!(!temp_dir.path().join("old_name.txt").exists());
+
+    // Get the history to find the ID
+    let history_file = temp_dir.path().join(".refaktor/history.json");
+    let history_content = std::fs::read_to_string(&history_file).unwrap();
+    let history: Vec<serde_json::Value> = serde_json::from_str(&history_content).unwrap();
+    let last_entry = &history[history.len() - 1];
+    let id = last_entry["id"].as_str().unwrap();
+
+    // Now undo the operation
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["undo", id])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("Successfully undid"));
+
+    // Verify files are back to original state
+    let test_rs_content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
+    assert!(test_rs_content.contains("old_name"));
+    assert!(!test_rs_content.contains("new_name"));
+    assert!(temp_dir.path().join("old_name.txt").exists());
+    assert!(!temp_dir.path().join("new_name.txt").exists());
+
+    // Verify content is restored
+    let txt_content = std::fs::read_to_string(temp_dir.path().join("old_name.txt")).unwrap();
+    assert_eq!(txt_content, "This is the old_name file");
+}
+
+#[test]
+fn test_undo_latest() {
+    // Test undo with "latest" keyword
+    let temp_dir = TempDir::new().unwrap();
+
+    temp_dir.child("test.rs").write_str("fn foo() {}").unwrap();
+
+    // Apply a rename
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "foo", "bar", "-y"])
+        .assert()
+        .success();
+
+    // Undo using "latest"
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["undo", "latest"])
+        .assert()
+        .success();
+
+    // Verify revert
+    let content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
+    assert!(content.contains("foo"));
+    assert!(!content.contains("bar"));
+}
+
+#[test]
+fn test_undo_already_undone() {
+    // Test that trying to undo twice fails
+    let temp_dir = TempDir::new().unwrap();
+
+    temp_dir
+        .child("test.rs")
+        .write_str("fn original() {}")
+        .unwrap();
+
+    // Apply a rename
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "original", "modified", "-y"])
+        .assert()
+        .success();
+
+    // Get the ID
+    let history_file = temp_dir.path().join(".refaktor/history.json");
+    let history_content = std::fs::read_to_string(&history_file).unwrap();
+    let history: Vec<serde_json::Value> = serde_json::from_str(&history_content).unwrap();
+    let id = history[0]["id"].as_str().unwrap();
+
+    // First undo succeeds
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["undo", id])
+        .assert()
+        .success();
+
+    // Second undo should fail
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["undo", id])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("already been reverted"));
+}
+
+#[test]
+fn test_redo_after_undo() {
+    // Test redo functionality
+    let temp_dir = TempDir::new().unwrap();
+
+    temp_dir
+        .child("test.rs")
+        .write_str("fn alpha() {}")
+        .unwrap();
+
+    // Apply a rename
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "alpha", "beta", "-y"])
+        .assert()
+        .success();
+
+    // Get the ID
+    let history_file = temp_dir.path().join(".refaktor/history.json");
+    let history_content = std::fs::read_to_string(&history_file).unwrap();
+    let history: Vec<serde_json::Value> = serde_json::from_str(&history_content).unwrap();
+    let id = history[0]["id"].as_str().unwrap();
+
+    // Undo the operation
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["undo", id])
+        .assert()
+        .success();
+
+    // Verify undo worked
+    let content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
+    assert!(content.contains("alpha"));
+
+    // Now redo the operation
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["redo", id])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("Successfully redid"));
+
+    // Verify redo worked
+    let content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
+    assert!(content.contains("beta"));
+    assert!(!content.contains("alpha"));
+}
+
+#[test]
+fn test_undo_with_multiple_files() {
+    // Test undo with multiple files and renames
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create multiple test files
+    temp_dir.child("src").create_dir_all().unwrap();
+    temp_dir
+        .child("src/main.rs")
+        .write_str("fn old_func() { old_func(); }")
+        .unwrap();
+    temp_dir
+        .child("src/lib.rs")
+        .write_str("pub fn old_func() {}")
+        .unwrap();
+    temp_dir
+        .child("old_func.txt")
+        .write_str("Documentation for old_func")
+        .unwrap();
+
+    // Apply a rename across all files
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "old_func", "new_func", "-y"])
+        .assert()
+        .success();
+
+    // Verify changes
+    assert!(temp_dir.path().join("new_func.txt").exists());
+    assert!(!temp_dir.path().join("old_func.txt").exists());
+    let main_content = std::fs::read_to_string(temp_dir.path().join("src/main.rs")).unwrap();
+    assert!(main_content.contains("new_func"));
+
+    // Undo the operation
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["undo", "latest"])
+        .assert()
+        .success();
+
+    // Verify all files are restored
+    assert!(temp_dir.path().join("old_func.txt").exists());
+    assert!(!temp_dir.path().join("new_func.txt").exists());
+
+    let main_content = std::fs::read_to_string(temp_dir.path().join("src/main.rs")).unwrap();
+    assert!(main_content.contains("old_func"));
+    assert!(!main_content.contains("new_func"));
+
+    let lib_content = std::fs::read_to_string(temp_dir.path().join("src/lib.rs")).unwrap();
+    assert!(lib_content.contains("old_func"));
+
+    let txt_content = std::fs::read_to_string(temp_dir.path().join("old_func.txt")).unwrap();
+    assert_eq!(txt_content, "Documentation for old_func");
+}

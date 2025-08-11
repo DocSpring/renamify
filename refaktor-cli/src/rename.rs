@@ -1,8 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use refaktor_core::{
-    apply_plan, scan_repository_multi, ApplyOptions, History, LockFile, Plan, PlanOptions,
-};
-use std::collections::HashMap;
+use refaktor_core::{apply_plan, scan_repository_multi, ApplyOptions, LockFile, Plan, PlanOptions};
 use std::fs;
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
@@ -215,28 +212,14 @@ pub fn handle_rename(
         }
     }
 
-    // Store plan in history before applying (for undo)
-    let refaktor_dir = PathBuf::from(".refaktor");
     // Create the refaktor directory if it doesn't exist
+    let refaktor_dir = PathBuf::from(".refaktor");
     fs::create_dir_all(&refaktor_dir)?;
-    let mut history = History::load(&refaktor_dir)?;
 
-    // Create history entry (we'll update this after apply with actual affected files)
-    let backup_dir = refaktor_dir.join("backups").join(&plan.id);
-    let entry = refaktor_core::history::create_history_entry(
-        &plan,
-        HashMap::new(), // Will be populated after apply
-        plan.renames
-            .iter()
-            .map(|r| (r.from.clone(), r.to.clone()))
-            .collect(),
-        backup_dir.clone(),
-        None,
-        None,
-    );
-    history.add_entry(entry)?;
-    history.save()?;
+    // Save the plan ID for the undo message
     let history_id = plan.id.clone();
+    // Don't include plan_id in backup_dir - apply_plan will add it
+    let backup_dir = refaktor_dir.join("backups");
 
     println!("Applying changes...");
 

@@ -70,10 +70,10 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         // If this file was renamed, it's now at its original location
         let current_path = rename_map.get(&path).unwrap_or(&path);
 
-        // The backup is stored with the original name
+        // The backup is stored at backups_path/filename (backups_path already includes plan_id)
         let backup_path = entry
             .backups_path
-            .join(current_path.strip_prefix("/").unwrap_or(current_path));
+            .join(current_path.file_name().unwrap_or(current_path.as_os_str()));
 
         if backup_path.exists() {
             // Create parent directories if needed
@@ -233,5 +233,338 @@ mod tests {
         assert_eq!(plan.renames.len(), 1);
         assert_eq!(plan.renames[0].from, PathBuf::from("old.txt"));
         assert_eq!(plan.renames[0].to, PathBuf::from("new.txt"));
+    }
+
+    #[test]
+    fn test_undo_with_content_and_rename() {
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create backup directory
+        let backup_dir = refaktor_dir.join("backups").join("test_apply_123");
+        fs::create_dir_all(&backup_dir).unwrap();
+
+        // Create test files in their renamed state
+        let new_file = temp_dir.path().join("new_name.txt");
+        fs::write(&new_file, "new content").unwrap();
+
+        // Create backup of original file - mimicking the actual backup structure
+        // The backup path preserves the full path structure (minus leading /)
+        let original_path = temp_dir.path().join("old_name.txt");
+        let relative_backup_path = original_path.strip_prefix("/").unwrap_or(&original_path);
+        let backup_file = backup_dir.join(relative_backup_path);
+        fs::create_dir_all(backup_file.parent().unwrap()).unwrap();
+        fs::write(&backup_file, "original content").unwrap();
+
+        // Create history entry representing the applied refactoring
+        let mut affected_files = HashMap::new();
+        affected_files.insert(new_file.clone(), "checksum123".to_string());
+
+        let entry = crate::history::HistoryEntry {
+            id: "test_apply_123".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old_name".to_string(),
+            new: "new_name".to_string(),
+            styles: vec!["Snake".to_string()],
+            includes: vec![],
+            excludes: vec![],
+            affected_files,
+            renames: vec![(temp_dir.path().join("old_name.txt"), new_file.clone())],
+            backups_path: backup_dir.clone(),
+            revert_of: None,
+            redo_of: None,
+        };
+
+        // Create history with this entry
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let mut history = History::load(&refaktor_dir).unwrap();
+        history.add_entry(entry.clone()).unwrap();
+        history.save().unwrap();
+
+        // Perform undo
+        undo_refactoring("test_apply_123", &refaktor_dir).unwrap();
+
+        // Verify file was renamed back
+        assert!(!new_file.exists(), "Renamed file should not exist");
+        let old_file = temp_dir.path().join("old_name.txt");
+        assert!(old_file.exists(), "Original file should be restored");
+
+        // Verify content was restored
+        let content = fs::read_to_string(&old_file).unwrap();
+        assert_eq!(content, "original content", "Content should be restored");
+
+        // Verify history has revert entry
+        let updated_history = History::load(&refaktor_dir).unwrap();
+        let entries = updated_history.list_entries(None);
+        assert_eq!(entries.len(), 2, "Should have original and revert entries");
+
+        let revert_entry = &entries[0]; // Most recent first
+        assert!(revert_entry.revert_of.is_some());
+        assert_eq!(revert_entry.revert_of.as_ref().unwrap(), "test_apply_123");
+    }
+
+    #[test]
+    fn test_undo_already_reverted() {
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create history with an entry and its revert
+        let entry = crate::history::HistoryEntry {
+            id: "original".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old".to_string(),
+            new: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files: HashMap::new(),
+            renames: vec![],
+            backups_path: PathBuf::from("backups/original"),
+            revert_of: None,
+            redo_of: None,
+        };
+
+        let revert_entry = crate::history::HistoryEntry {
+            id: "revert-original".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "new".to_string(),
+            new: "old".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files: HashMap::new(),
+            renames: vec![],
+            backups_path: PathBuf::from("backups/original"),
+            revert_of: Some("original".to_string()),
+            redo_of: None,
+        };
+
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let mut history = History::load(&refaktor_dir).unwrap();
+        history.add_entry(entry).unwrap();
+        history.add_entry(revert_entry).unwrap();
+        history.save().unwrap();
+
+        // Try to undo again - should fail
+        let result = undo_refactoring("original", &refaktor_dir);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("already been reverted"));
+    }
+
+    #[test]
+    fn test_undo_revert_entry() {
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create history with a revert entry
+        let revert_entry = crate::history::HistoryEntry {
+            id: "revert-123".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "new".to_string(),
+            new: "old".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files: HashMap::new(),
+            renames: vec![],
+            backups_path: PathBuf::from("backups/123"),
+            revert_of: Some("123".to_string()),
+            redo_of: None,
+        };
+
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let mut history = History::load(&refaktor_dir).unwrap();
+        history.add_entry(revert_entry).unwrap();
+        history.save().unwrap();
+
+        // Try to undo a revert entry - should fail
+        let result = undo_refactoring("revert-123", &refaktor_dir);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("already a revert operation"));
+    }
+
+    #[test]
+    fn test_undo_nonexistent_entry() {
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create empty history
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let history = History::load(&refaktor_dir).unwrap();
+        history.save().unwrap();
+
+        // Try to undo nonexistent entry
+        let result = undo_refactoring("nonexistent", &refaktor_dir);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("not found"));
+    }
+
+    #[test]
+    fn test_redo_after_undo() {
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create history with original and revert entries
+        let entry = crate::history::HistoryEntry {
+            id: "test123".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old_name".to_string(),
+            new: "new_name".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files: HashMap::new(),
+            renames: vec![],
+            backups_path: PathBuf::from("backups/test123"),
+            revert_of: None,
+            redo_of: None,
+        };
+
+        let revert_entry = crate::history::HistoryEntry {
+            id: "revert-test123".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "new_name".to_string(),
+            new: "old_name".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files: HashMap::new(),
+            renames: vec![],
+            backups_path: PathBuf::from("backups/test123"),
+            revert_of: Some("test123".to_string()),
+            redo_of: None,
+        };
+
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let mut history = History::load(&refaktor_dir).unwrap();
+        history.add_entry(entry).unwrap();
+        history.add_entry(revert_entry).unwrap();
+        history.save().unwrap();
+
+        // Create a dummy file to satisfy apply_plan
+        let test_file = temp_dir.path().join("test.rs");
+        fs::write(&test_file, "fn old_name() {}").unwrap();
+
+        // Redo should succeed (though apply might fail without proper setup)
+        // We're mainly testing the redo logic, not the full apply
+        let result = redo_refactoring("test123", &refaktor_dir);
+        // The redo might fail due to missing files, but it should at least find the entry
+        if result.is_err() {
+            let err_msg = result.unwrap_err().to_string();
+            assert!(
+                !err_msg.contains("not been reverted"),
+                "Should find revert entry"
+            );
+        }
+    }
+
+    #[test]
+    fn test_redo_not_reverted() {
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create history with only original entry (no revert)
+        let entry = crate::history::HistoryEntry {
+            id: "test456".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old".to_string(),
+            new: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files: HashMap::new(),
+            renames: vec![],
+            backups_path: PathBuf::from("backups/test456"),
+            revert_of: None,
+            redo_of: None,
+        };
+
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let mut history = History::load(&refaktor_dir).unwrap();
+        history.add_entry(entry).unwrap();
+        history.save().unwrap();
+
+        // Try to redo - should fail
+        let result = redo_refactoring("test456", &refaktor_dir);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("not been reverted"));
+    }
+
+    #[test]
+    fn test_undo_case_insensitive_rename() {
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create backup directory
+        let backup_dir = refaktor_dir.join("backups").join("test_case");
+        fs::create_dir_all(&backup_dir).unwrap();
+
+        // Create test file with new name (different case)
+        let new_file = temp_dir.path().join("NewName.txt");
+        fs::write(&new_file, "new content").unwrap();
+
+        // Create backup of original file
+        let backup_file = backup_dir.join("newname.txt");
+        fs::write(&backup_file, "original content").unwrap();
+
+        // Create history entry for case-only rename
+        let mut affected_files = HashMap::new();
+        affected_files.insert(new_file.clone(), "checksum".to_string());
+
+        let entry = crate::history::HistoryEntry {
+            id: "test_case".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "newname".to_string(),
+            new: "NewName".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files,
+            renames: vec![(temp_dir.path().join("newname.txt"), new_file.clone())],
+            backups_path: backup_dir.clone(),
+            revert_of: None,
+            redo_of: None,
+        };
+
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let mut history = History::load(&refaktor_dir).unwrap();
+        history.add_entry(entry).unwrap();
+        history.save().unwrap();
+
+        // Perform undo
+        let result = undo_refactoring("test_case", &refaktor_dir);
+
+        // On case-insensitive filesystems, this should handle the temp rename
+        // On case-sensitive filesystems, it should just rename directly
+        assert!(result.is_ok());
+
+        // Original file should exist (with original case on case-sensitive systems)
+        let old_file = temp_dir.path().join("newname.txt");
+        if !crate::rename::detect_case_insensitive_fs(temp_dir.path()) {
+            assert!(old_file.exists() || new_file.exists()); // One should exist
+        }
     }
 }

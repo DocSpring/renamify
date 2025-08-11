@@ -118,14 +118,8 @@ fn backup_file(path: &Path, backup_dir: &Path, plan_id: &str) -> Result<FileBack
     let backup_base = backup_dir.join(plan_id);
     fs::create_dir_all(&backup_base)?;
 
-    // Generate backup path preserving relative structure
-    let backup_path = if path.is_absolute() {
-        // Strip leading slash and use as relative path in backup dir
-        let relative = path.strip_prefix("/").unwrap_or(path);
-        backup_base.join(relative)
-    } else {
-        backup_base.join(path)
-    };
+    // Generate backup path using just the filename
+    let backup_path = backup_base.join(path.file_name().unwrap_or(path.as_os_str()));
 
     // Create parent directories for backup
     if let Some(parent) = backup_path.parent() {
@@ -520,21 +514,41 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
+    // Pass the correct backup path to history entry
+    // If backup_dir already includes the plan_id, use it as-is
+    // Otherwise, append the plan_id
+    let backups_path = if options.backup_dir.ends_with(&plan.id) {
+        options.backup_dir.clone()
+    } else {
+        options.backup_dir.join(&plan.id)
+    };
+
     let history_entry = create_history_entry(
         plan,
         affected_files,
         state.renames_performed.clone(),
-        options.backup_dir.join(&plan.id),
+        backups_path,
         None, // Not a revert
         None, // Not a redo
     );
 
-    let mut history = History::load(
-        &options
-            .backup_dir
-            .parent()
-            .unwrap_or(Path::new(".refaktor")),
-    )?;
+    // Determine the .refaktor directory location
+    // If backup_dir is .refaktor/backups/plan_id, we want .refaktor
+    // If backup_dir is .refaktor/backups, we want .refaktor
+    let refaktor_dir = if options.backup_dir.ends_with(&plan.id) {
+        // backup_dir is .refaktor/backups/plan_id
+        options.backup_dir
+            .parent() // .refaktor/backups
+            .and_then(|p| p.parent()) // .refaktor
+            .unwrap_or(Path::new(".refaktor"))
+    } else {
+        // backup_dir is .refaktor/backups
+        options.backup_dir
+            .parent() // .refaktor
+            .unwrap_or(Path::new(".refaktor"))
+    };
+
+    let mut history = History::load(&refaktor_dir)?;
     history.add_entry(history_entry)?;
 
     state.log("Apply completed successfully")?;
@@ -582,6 +596,207 @@ mod tests {
         assert_eq!(
             fs::read_to_string(&backup.backup_path).unwrap(),
             "test content"
+        );
+    }
+
+    #[test]
+    fn test_backup_path_no_double_id() {
+        // Test that backup paths don't have double plan IDs
+        let temp_dir = TempDir::new().unwrap();
+        let test_file = temp_dir.path().join("test.txt");
+        fs::write(&test_file, "test content").unwrap();
+
+        let backup_dir = temp_dir.path().join("backups");
+        let plan_id = "test_plan_123";
+
+        let backup = backup_file(&test_file, &backup_dir, plan_id).unwrap();
+
+        // The backup path should be: backups/test_plan_123/test.txt
+        // NOT: backups/test_plan_123/test_plan_123/test.txt
+        let expected_path = backup_dir.join(plan_id).join("test.txt");
+        assert_eq!(backup.backup_path, expected_path);
+
+        // Verify the backup actually exists at the right path
+        assert!(backup.backup_path.exists());
+        assert_eq!(
+            fs::read_to_string(&backup.backup_path).unwrap(),
+            "test content"
+        );
+    }
+
+    #[test]
+    fn test_apply_creates_correct_history_entry() {
+        // Test that apply creates history entries with correct backup paths
+        let temp_dir = TempDir::new().unwrap();
+        let test_file = temp_dir.path().join("test.rs");
+        fs::write(&test_file, "fn old_name() {}").unwrap();
+
+        let plan = Plan {
+            id: "test_plan_456".to_string(),
+            created_at: "2024-01-01".to_string(),
+            old: "old_name".to_string(),
+            new: "new_name".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![MatchHunk {
+                file: test_file.clone(),
+                line: 1,
+                col: 3,
+                variant: "old_name".to_string(),
+                before: "old_name".to_string(),
+                after: "new_name".to_string(),
+                start: 3,
+                end: 11,
+                line_before: Some("fn old_name() {}".to_string()),
+                line_after: Some("fn new_name() {}".to_string()),
+                coercion_applied: None,
+            }],
+            renames: vec![],
+            stats: Stats {
+                files_scanned: 1,
+                total_matches: 1,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 1,
+            },
+            version: "1.0.0".to_string(),
+        };
+
+        let options = ApplyOptions {
+            backup_dir: temp_dir.path().join(".refaktor/backups"),
+            create_backups: true,
+            ..Default::default()
+        };
+
+        // Apply the plan
+        apply_plan(&plan, &options).unwrap();
+
+        // Check the file was modified
+        let content = fs::read_to_string(&test_file).unwrap();
+        assert_eq!(content, "fn new_name() {}");
+
+        // Check backup was created at the right path
+        let expected_backup = options.backup_dir.join("test_plan_456").join("test.rs");
+        assert!(
+            expected_backup.exists(),
+            "Backup should exist at {:?}",
+            expected_backup
+        );
+        assert_eq!(
+            fs::read_to_string(&expected_backup).unwrap(),
+            "fn old_name() {}"
+        );
+
+        // Load history and check the entry
+        let history = History::load(temp_dir.path().join(".refaktor").as_path()).unwrap();
+        let entries = history.list_entries(None);
+        assert_eq!(entries.len(), 1);
+
+        let entry = &entries[0];
+        assert_eq!(entry.id, "test_plan_456");
+        assert_eq!(entry.backups_path, options.backup_dir.join("test_plan_456"));
+        assert!(
+            !entry.affected_files.is_empty(),
+            "affected_files should not be empty"
+        );
+    }
+
+    #[test]
+    fn test_state_tracks_content_edits() {
+        // Test that ApplyState correctly tracks content_edits_applied
+        let temp_dir = TempDir::new().unwrap();
+        let test_file = temp_dir.path().join("test.rs");
+        fs::write(&test_file, "fn old_name() {}").unwrap();
+
+        let mut state = ApplyState {
+            plan_id: "test".to_string(),
+            content_edits_applied: Vec::new(),
+            renames_performed: Vec::new(),
+            backups: Vec::new(),
+            log_file: None,
+        };
+
+        let replacements = vec![("old_name".to_string(), "new_name".to_string(), 3, 11)];
+
+        // Apply edits
+        apply_content_edits(&test_file, &replacements, &mut state).unwrap();
+
+        // Check state was updated
+        assert_eq!(
+            state.content_edits_applied.len(),
+            1,
+            "Should have tracked 1 file edit"
+        );
+        assert_eq!(
+            state.content_edits_applied[0], test_file,
+            "Should track the correct file"
+        );
+
+        // Check file was actually modified
+        let content = fs::read_to_string(&test_file).unwrap();
+        assert_eq!(content, "fn new_name() {}");
+    }
+
+    #[test]
+    fn test_apply_plan_populates_affected_files() {
+        // Test that apply_plan results in non-empty affected_files in history
+        let temp_dir = TempDir::new().unwrap();
+        let test_file = temp_dir.path().join("test.rs");
+        fs::write(&test_file, "fn old() {}").unwrap();
+
+        let plan = Plan {
+            id: "test_affected".to_string(),
+            created_at: "2024-01-01".to_string(),
+            old: "old".to_string(),
+            new: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![MatchHunk {
+                file: test_file.clone(),
+                line: 1,
+                col: 3,
+                variant: "old".to_string(),
+                before: "old".to_string(),
+                after: "new".to_string(),
+                start: 3,
+                end: 6,
+                line_before: Some("fn old() {}".to_string()),
+                line_after: Some("fn new() {}".to_string()),
+                coercion_applied: None,
+            }],
+            renames: vec![],
+            stats: Stats {
+                files_scanned: 1,
+                total_matches: 1,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 1,
+            },
+            version: "1.0.0".to_string(),
+        };
+
+        let options = ApplyOptions {
+            backup_dir: temp_dir.path().join(".refaktor/backups"),
+            create_backups: true,
+            ..Default::default()
+        };
+
+        // Apply should work
+        apply_plan(&plan, &options).unwrap();
+
+        // Load history and verify affected_files is populated
+        let history = History::load(temp_dir.path().join(".refaktor").as_path()).unwrap();
+        let entries = history.list_entries(None);
+        assert_eq!(entries.len(), 1);
+
+        let entry = &entries[0];
+        assert!(
+            !entry.affected_files.is_empty(),
+            "affected_files should NOT be empty after apply! State tracking is broken!"
+        );
+        assert!(
+            entry.affected_files.contains_key(&test_file),
+            "affected_files should contain the modified file"
         );
     }
 
