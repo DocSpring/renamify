@@ -9,7 +9,7 @@
         "testStrategy": "- CI builds on all 3 OSes.\n- Verify cargo fmt/clippy pass.\n- Add a trivial unit test in core to exercise coverage and ensure cargo-llvm-cov reports 100% for refaktor-core.\n- Ensure workflows fail if coverage < 100% for refaktor-core.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -17,7 +17,7 @@
             "description": "Set up a Rust workspace containing the refaktor-core library crate and the refaktor-cli binary crate.",
             "dependencies": [],
             "details": "Create a new directory for the workspace and add a Cargo.toml file with a [workspace] section listing 'refaktor-core' and 'refaktor-cli' as members. Within this directory, create the 'refaktor-core' library crate and the 'refaktor-cli' binary crate.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that running 'cargo build' from the workspace root compiles both crates successfully, and that the target directory is shared among them."
           },
           {
@@ -28,7 +28,7 @@
               "1.1"
             ],
             "details": "Create a 'rust-toolchain.toml' file in the workspace root to pin the Rust toolchain to stable version 1.80.x. In the Cargo.toml files of both crates, add the specified dependencies, allowing unused dependencies in the initial commit.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run 'cargo check' to ensure that the project compiles without errors and that all dependencies are correctly recognized."
           },
           {
@@ -39,7 +39,7 @@
               "1.1"
             ],
             "details": "Create a 'rustfmt.toml' file aligned with 2024+ style guidelines. Configure clippy to use pedantic and nursery lints where practical.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run 'cargo fmt --check' and 'cargo clippy -- -D warnings' to ensure code adheres to formatting and linting standards."
           },
           {
@@ -52,7 +52,7 @@
               "1.3"
             ],
             "details": "Create a '.github/workflows/ci.yml' file defining a matrix build for 'ubuntu-latest', 'macos-latest', and 'windows-latest' runners. Include steps for checking out the code, setting up the Rust toolchain, caching dependencies, running 'cargo fmt --check', 'cargo clippy -D warnings', and 'cargo test'.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Push a commit to trigger the workflow and verify that all steps complete successfully on all specified operating systems."
           },
           {
@@ -64,7 +64,7 @@
               "1.4"
             ],
             "details": "Add 'cargo-llvm-cov' as a development tool. Modify the GitHub Actions workflow to include steps for installing 'cargo-llvm-cov', running coverage analysis on refaktor-core, and uploading the coverage report as an artifact. Configure the workflow to fail if coverage is below 100%.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Add a trivial unit test in refaktor-core to exercise coverage. Push a commit to trigger the workflow and verify that it fails if coverage is below 100% and passes when coverage meets the threshold."
           }
         ]
@@ -79,7 +79,7 @@
         "dependencies": [
           1
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -87,7 +87,7 @@
             "description": "Develop a function to parse identifiers into a sequence of tokens based on defined heuristics, including splitting on delimiters and camel case boundaries.",
             "dependencies": [],
             "details": "Create the `parse_to_tokens` function that splits identifiers into tokens by recognizing delimiters (e.g., '_', '-', '.', ' ') and camel case transitions (e.g., lowercase to uppercase, digit transitions). Ensure acronyms are treated as single tokens when followed by lowercase letters (e.g., 'XMLHttp' -> ['XML', 'Http']).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Implement unit tests to verify correct tokenization of various identifier formats, including edge cases like consecutive delimiters and mixed-case acronyms."
           },
           {
@@ -96,7 +96,7 @@
             "description": "Create a function to detect the naming style of a given identifier string.",
             "dependencies": [],
             "details": "Develop the `detect_style` function that analyzes an identifier to determine its naming convention (e.g., snake_case, camelCase). This function should return an appropriate `Style` enum variant or `None` if the style is unrecognized.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Design tests with a variety of identifiers to ensure accurate style detection, including ambiguous cases and mixed styles."
           },
           {
@@ -105,7 +105,7 @@
             "description": "Create a function to convert a tokenized identifier into a specified naming style.",
             "dependencies": [],
             "details": "Implement the `to_style` function that takes a `TokenModel` and a target `Style` enum variant, producing a string representation of the identifier in the desired style. Ensure proper handling of acronyms and capitalization rules as per the implementation notes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write tests to confirm correct conversion between all supported styles, including cases with acronyms and special characters."
           },
           {
@@ -114,7 +114,7 @@
             "description": "Implement functionality to generate a mapping table between old and new identifier variants across different styles.",
             "dependencies": [],
             "details": "Develop the `generate_variant_map` function that, given an old and new identifier, produces a `BTreeMap` mapping each style's variant of the old identifier to the corresponding variant of the new identifier. Ensure deterministic ordering for stable regex alternation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Create tests to verify the correctness and stability of the generated mapping table across various identifier inputs and styles."
           },
           {
@@ -123,7 +123,7 @@
             "description": "Integrate all components and expose the API functions as specified, ensuring adherence to implementation notes and efficient performance.",
             "dependencies": [],
             "details": "Assemble the `refaktor-core` API by integrating the `parse_to_tokens`, `detect_style`, `to_style`, and `generate_variant_map` functions. Ensure the use of `bstr` for byte-wise operations, restrict processing to ASCII letters, digits, and allowed separators by default, and provide serialization for debugging purposes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Conduct comprehensive integration tests to validate the API's functionality, performance benchmarks to ensure efficiency, and serialization tests to confirm correct debugging output."
           }
         ]
@@ -146,7 +146,7 @@
             "description": "Implement the `build_pattern` function to compile a single regex that matches all provided variants, ensuring safe token boundary handling without using lookbehind assertions.",
             "dependencies": [],
             "details": "Create a function that escapes each variant, joins them with alternation, and compiles them into a single regex. Ensure the regex operates on bytes for performance and avoids lookbehind assertions.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Unit tests to verify that the compiled regex matches all provided variants and handles boundaries correctly."
           },
           {
@@ -997,7 +997,7 @@
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T03:43:57.398Z",
+      "updated": "2025-08-11T04:16:31.091Z",
       "description": "Tasks for master context"
     }
   }

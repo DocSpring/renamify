@@ -1,0 +1,33 @@
+[package]
+name = "refaktor-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Core library for Refaktor - smart search & replace for code and files"
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+regex = { workspace = true }
+bstr = { workspace = true }
+ignore = { workspace = true }
+globset = { workspace = true }
+walkdir = { workspace = true }
+content_inspector = { workspace = true }
+memmap2 = { workspace = true }
+rayon = { workspace = true }
+similar = { workspace = true }
+comfy-table = { workspace = true }
+nu-ansi-term = { workspace = true }
+tempfile = { workspace = true }
+sha2 = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+insta = { workspace = true }
+criterion = { workspace = true }

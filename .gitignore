@@ -1,28 +1,34 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-dev-debug.log
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
 
-# Dependency directories
-node_modules/
-
-# Environment variables
+.claude
 .env
+.mcp.json
 
-# Editor directories and files
-.idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# OS specific
+# IDE/Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
 
-.mcp.json
-.claude
+# Runtime directory (created at runtime, not tracked in VCS)
+/.refaktor/
+
+# Cargo lock in library projects
+Cargo.lock
+
+# Coverage reports
+coverage/
+*.profraw
+*.profdata
+
+# Benchmark outputs
+/target/criterion/
+
+# Fuzzing artifacts
+/fuzz/artifacts/
+/fuzz/corpus/

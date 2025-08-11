@@ -1,56 +1,203 @@
 ## CRITICAL: YOU ARE AN AUTONOMOUS AGENT. DO NOT STOP WORKING UNTIL ALL TASKMASTER TASKS ARE COMPLETE. DO NOT EVER "PAUSE" AFTER A TASK IS COMPLETED AND WAIT FOR THE USER TO START YOU AGAIN. START THE NEXT TASK IMMEDIATELY.
 
-## **Refaktor** – Smart Search & Replace for Code and Files
+The ONLY reason you should stop is if you have a blocking question for the user. Otherwise keep executing the workflow loop until done.
 
-Summary: Case-aware and file/directory aware search and replace to refactor with built-in undo/redo
+---
 
-# Released as
+# Refaktor - CLAUDE Agent Guide
 
-- VS Code / Cursor extension
-- CLI tool
-- MCP server
+Smart case-aware search and replace across code and files with atomic apply and undo.
 
-# Features
+## Import Task Master rules
 
-- Uses ripgrep for all search operations
-- Can automatically detect the case of your search string, e.g. “old-name” = kebab case
-- By default, it will also convert your search string into the following variations:
-  - snake_case
-  - kebab-case
-  - camelCase
-  - PascalCase
-  - UPPER_SNAKE_CASE
-- if your replace string is “new-name”
-  - old-name => new-name
-  - old_name => new_name
-  - oldName => newName
-  - OldName => NewName
-  - OLD_NAME => NEW_NAME
-  - plus plain uppercase/lowercase
-- And if you have any files or directories with that same name, they get renamed too:
-  - /path/to/old-name.txt => /path/to/new-name.txt
-  - /path/to/old_name/foo.txt => /path/to/new_name/foo.txt
-- Supports all the same UI options as VS Code’s current search and replace:
-  - Search field with case sensitivity toggle, regex - PLUS the new case options - e.g. dropdown list where you can toggle checkboxes for different cases
-  - Replace field
-  - files to include
-  - files to exclude
-  - toggle auto-exclude .gitignore, etc.
-- search results will be organized into subgroups for each case + a group for files / directories
-- built-in undo/redo
-  - A full history of search/replace actions stored per project. e.g. .refaktor/history.json
-    - Prune history automatically when the file reaches ~100kb or so
-  - Tracked separately to git since these actions are often taken while you are working on a refactor with lots of unstaged changes.
-    - It can be a pain to commit everything and get the git worktree clean before doing big renames
-  - Store the exact options used and all the replacements that were made (a “changeset”)
-  - A change can easily be undone by clicking a ‘revert’ icon in that row in the history pane, or via a TUI (CLI)
-  - Clearly show which replacements can be reverted and which have conflicts (if the line was changed)
-
-## Task Master AI Instructions
-
-**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+Treat this file as if it imports Task Master rules:
 @./.taskmaster/CLAUDE.md
 
-## CRITICAL: YOU ARE AN AUTONOMOUS AGENT. DO NOT STOP WORKING UNTIL ALL TASKMASTER TASKS ARE COMPLETE. DO NOT EVER "PAUSE" AFTER A TASK IS COMPLETED AND WAIT FOR THE USER TO START YOU AGAIN. START THE NEXT TASK IMMEDIATELY.
+## Project background
 
-The ONLY reason you should stop working and pause is if you have an urgent question for the user that requires their attention. Otherwise, continue working on all tasks, even after compacting the conversation history, continue working in a loop until all tasks are complete.
+- Greenfield, unreleased. No backwards compatibility. Delete and tidy old code immediately.
+- Goal: ship a production-ready v1.0.0
+- Prioritize developer UX and ergonomics
+- Key insight: developers need cross-case content replacement plus file and directory renames in one atomic operation with preview and history.
+
+## Project Creator / Maintainer
+
+The company who is sponsoring the development of this project and maintaining it is: DocSpring.com.
+They should be mentioned in any package files, copyright notices, etc.
+
+## Deliverables
+
+- Rust core library and CLI (`refaktor-core`, `refaktor-cli`)
+- VS Code extension (TypeScript) that shells out to the CLI
+- MCP server (TypeScript) that wraps the CLI and exposes tools for Cursor or other MCP clients
+
+## Core principles
+
+- Safety first: plan, preview, atomic apply, rollback, history
+- Case intelligence: generate all variants for a token
+- One-pass scan: compile a single regex and scan once
+- Git-aware safety. Use git for safe points and optional commits. Do not touch `.git` internals directly
+- DX over legacy. No backward compatibility constraints
+
+## Technologies
+
+- Rust for core and CLI
+- Search stack: ripgrep ecosystem crates and friends
+  - `ignore` for .gitignore and fast dir walking
+  - `globset` for include and exclude globs
+  - `regex-automata` and `aho-corasick` for matching
+  - `bstr` for fast byte string operations
+- JSON for plan and history
+- TypeScript for VS Code extension and MCP wrapper
+- Optional Node bindings in future via `napi-rs` if needed
+
+## Functional scope
+
+- Case styles: snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Title Case, Train-Case, dot.case
+- Plan: generate all old variants, map to new variants, create a single search program, scan once, write `.refaktor/plan.json`
+- Apply: update file contents, then rename files and directories, all atomically
+- Undo and redo: `.refaktor/history.json` with checksums
+- Conflicts: re-validate hunks, auto-resolve simple formatting shifts, stop on real conflicts unless forced
+- Respect `.gitignore` by default, allow include and exclude globs
+- Exclude binary files by default
+
+## Non-goals for v1
+
+- No AST or language-semantic refactors
+- Only VS Code IDE integration
+- Local execution only
+- No telemetry by default
+
+## Repo layout
+
+- `refaktor-core` - core logic
+- `refaktor-cli` - CLI frontend
+- `.claude/agents` - orchestrator, executor, checker role specs
+- `.taskmaster` - Task Master config, templates, and docs
+- `.taskmaster/docs/prd.txt` - PRD used by Task Master
+
+## Agent roles and behavior
+
+- Orchestrator: plan tasks, maintain dependency order, call Task Master commands
+- Executor: implement code and tests, propose diffs, write files, update docs
+- Checker: verify acceptance criteria, run linters and tests, measure coverage
+- Always keep moving. After finishing a task, immediately pick the next task
+- Ask the user only on blockers that cannot be resolved from repo context
+
+## Definition of done
+
+- Code compiles on macOS and Linux
+- CI passes: format, clippy, tests
+- 100 percent coverage for core operations
+- Plan and apply work on sample repos with preview, atomic apply, and undo
+
+## Quality bars
+
+- Clippy warnings are errors
+- `rustfmt` enforced
+- Property tests for case conversions and boundaries
+- Snapshot tests for plans and diffs
+- Fuzz tests for regex generation to prevent backtracking issues
+- Cross platform tests including Windows path edge cases
+
+## CLI contract
+
+Binary: `refaktor`
+
+Commands:
+
+- `refaktor plan <old> <new> [opts]`
+  - `--include` `--exclude` `--respect-gitignore` (default true)
+  - `--rename-files` `--rename-dirs` (default true)
+  - `--styles=<list>`
+  - `--preview-format table|diff|json`
+  - `--plan-out`
+- `refaktor apply [--plan PATH | --id ID] [--atomic true] [--commit]`
+- `refaktor undo <id>`
+- `refaktor redo <id>`
+- `refaktor history [--limit N]`
+- `refaktor status`
+
+Exit codes:
+
+- 0 success
+- 1 conflicts
+- 2 invalid input
+- 3 internal error
+
+## Data formats
+
+`.refaktor/plan.json`
+
+- `{ id, created_at, old, new, styles[], includes[], excludes[], matches[], renames[], stats, version }`
+
+`.refaktor/history.json`
+
+- append only with checksums and revert info
+
+## Search and plan algorithm
+
+1. Detect input case of `<old>` and `<new>`
+2. Generate all `old_variant -> new_variant` mappings
+3. Build a combined regex or Aho-Corasick automaton with boundary heuristics
+4. One walk of the repo using `ignore` with `.gitignore` honored
+5. For each match, capture file, line, byte range, and preview text
+6. For file and directory names, detect and schedule renames with depth ordering
+7. Emit `plan.json` and fast summary stats
+
+Boundary rules
+
+- Avoid partial token matches inside larger identifiers unless intended
+- Handle camel and Pascal transitions by checking case transitions in code
+- Post-filter to enforce boundaries where the regex engine cannot
+
+## Apply engine
+
+- Optional safe point: `git status` check and a user opt in to create a lightweight commit
+- Create temp backups for all files to edit
+- Apply content edits first, then renames depth first to avoid collisions
+- On failure, restore backups and revert any partial renames
+- Verify result hashes match the plan or mark conflicts
+
+## VS Code extension
+
+- Commands: Plan, Preview, Apply, Undo
+- UI: QuickPick for options, webview diff with rename badges, progress with cancel
+- Implementation: spawn CLI with JSON over stdio. Handle path to bundled or user provided binary
+
+## MCP server
+
+- Node TypeScript wrapper around the CLI
+- Tools: `plan`, `apply`, `undo`, `history`, `preview`
+- Installed via `npx`, expects `refaktor` on PATH
+
+## Coding standards
+
+- Rust edition per `rust-toolchain.toml`
+- CLI: `clap` for args, `anyhow` for error context, `serde` for JSON, `tracing` for logs
+- Tests live beside code, plus `tests/` for integration
+- Use `tempfile` for backups and test sandboxes
+
+## Workflow runbook for the agent
+
+1. Begin next task and keep going
+   - Implement tasks in order unless dependencies dictate otherwise
+2. After each task
+   - Run tests and linters
+   - Update docs if anything changed
+   - Commit with a clear message
+3. Only pause for a blocking user question
+
+## User preferences
+
+- Keep responses short and terse in chats
+- Use simple hyphen, not the em dash
+- If showing apt commands, always include `-y`
+- Prefer actionable diffs and files over long explanations
+
+## UPDATE THIS FILE!
+
+Remember to update your own CLAUDE.md file with corrections and improvements while you are working.
+This file is not set in stone, it is a living document that you should update as you work to make you more effective. Your context window will regularly reset when the conversation history is "compacted", so this file is your core memory.
+
+## CRITICAL REMINDER: YOU ARE AN AUTONOMOUS AGENT. DO NOT STOP WORKING UNTIL ALL TASKMASTER TASKS ARE COMPLETE. DO NOT EVER "PAUSE" AFTER A TASK IS COMPLETED AND WAIT FOR THE USER TO START YOU AGAIN. START THE NEXT TASK IMMEDIATELY.
