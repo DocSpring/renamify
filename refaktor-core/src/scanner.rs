@@ -277,16 +277,31 @@ fn generate_hunks(
         }
 
         let line = lines[line_idx];
-        let before = String::from_utf8_lossy(line).to_string();
+        let line_string = String::from_utf8_lossy(line).to_string();
         
         let new_variant = variant_map.get(&m.variant).unwrap_or(&m.variant);
-        let mut after = before.replace(&m.variant, new_variant);
+        
+        // The before/after should be just the matched portion, not the entire line
+        let before = m.variant.clone();
+        let mut after = new_variant.clone();
         let mut coercion_applied = None;
 
         // Apply coercion if enabled
         if let CoercionMode::Auto = options.coerce_separators {
-            if let Some((coerced, reason)) = crate::coercion::apply_coercion(&before, &m.variant, new_variant) {
-                after = coerced;
+            if let Some((coerced, reason)) = crate::coercion::apply_coercion(&line_string, &m.variant, new_variant) {
+                // Extract just the replacement part from the coerced result
+                // Find the position of the old variant in the original line and get the corresponding part from coerced result
+                if let Some(variant_pos) = line_string.find(&m.variant) {
+                    let variant_end = variant_pos + m.variant.len();
+                    if let Some(coerced_variant_end) = coerced.char_indices().nth(variant_pos + new_variant.chars().count()) {
+                        after = coerced[variant_pos..coerced_variant_end.0].to_string();
+                    } else {
+                        // Fallback: use the new variant from coercion extraction
+                        if let Some(start_pos) = coerced.find(new_variant) {
+                            after = coerced[start_pos..start_pos + new_variant.len()].to_string();
+                        }
+                    }
+                }
                 coercion_applied = Some(reason);
             }
         }
@@ -296,8 +311,8 @@ fn generate_hunks(
             line: m.line as u64,
             col: m.column as u32,
             variant: m.variant.clone(),
-            before: before.trim_end().to_string(),
-            after: after.trim_end().to_string(),
+            before: before,
+            after: after,
             start: m.start,
             end: m.end,
             coercion_applied,
@@ -434,11 +449,11 @@ mod tests {
         
         assert_eq!(hunks.len(), 2);
         assert_eq!(hunks[0].variant, "old_name");
-        assert_eq!(hunks[0].before, "old_name and oldName here");
-        assert_eq!(hunks[0].after, "new_name and oldName here");
+        assert_eq!(hunks[0].before, "old_name");
+        assert_eq!(hunks[0].after, "new_name");
         assert_eq!(hunks[1].variant, "oldName");
-        assert_eq!(hunks[1].before, "old_name and oldName here");
-        assert_eq!(hunks[1].after, "old_name and newName here");
+        assert_eq!(hunks[1].before, "oldName");
+        assert_eq!(hunks[1].after, "newName");
     }
 
     #[test]

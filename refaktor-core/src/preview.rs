@@ -297,8 +297,8 @@ mod tests {
                     line: 10,
                     col: 5,
                     variant: "old_name".to_string(),
-                    before: "let old_name = 42;".to_string(),
-                    after: "let new_name = 42;".to_string(),
+                    before: "old_name".to_string(),
+                    after: "new_name".to_string(),
                     start: 4,
                     end: 12,
                     coercion_applied: None,
@@ -308,8 +308,8 @@ mod tests {
                     line: 20,
                     col: 10,
                     variant: "oldName".to_string(),
-                    before: "fn oldName() {}".to_string(),
-                    after: "fn newName() {}".to_string(),
+                    before: "oldName".to_string(),
+                    after: "newName".to_string(),
                     start: 3,
                     end: 10,
                     coercion_applied: None,
@@ -362,8 +362,8 @@ mod tests {
         assert!(result.contains("--- src/main.rs"));
         assert!(result.contains("+++ src/main.rs"));
         assert!(result.contains("@@ line 10 @@"));
-        assert!(result.contains("-let old_name = 42;"));
-        assert!(result.contains("+let new_name = 42;"));
+        assert!(result.contains("-old_name"));
+        assert!(result.contains("+new_name"));
         assert!(result.contains("=== RENAMES ==="));
         assert!(result.contains("old_name.txt → new_name.txt"));
     }

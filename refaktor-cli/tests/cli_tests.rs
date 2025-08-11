@@ -710,3 +710,124 @@ fn test_auto_init_idempotent() {
     let count = content.matches(".refaktor/").count();
     assert_eq!(count, 1, "Should only have one .refaktor/ entry");
 }
+
+#[test]
+fn test_rename_command_basic() {
+    // E2E test for the rename command that creates a temp file and verifies the rename works
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create a test file with content containing old_name in various forms
+    let test_content = "This is a test file with old_name in it.\nHere's another old_name reference.\nAnd a test_old_name variable too.";
+    temp_dir.child("test.txt").write_str(test_content).unwrap();
+    
+    // Run rename command with -y to auto-approve, including txt files explicitly
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "old_name", "new_name", "-y", "--include=*.txt"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Applied"))
+        .stdout(predicate::str::contains("replacements"));
+    
+    // Verify the file content was changed
+    let updated_content = std::fs::read_to_string(temp_dir.path().join("test.txt")).unwrap();
+    assert!(updated_content.contains("new_name"));
+    
+    // Check if old_name still exists (it should not, except in "test_old_name")
+    let old_name_count = updated_content.matches("old_name").count();
+    let test_old_name_count = updated_content.matches("test_old_name").count();
+    
+    // If old_name appears, it should only be as part of "test_old_name"
+    assert_eq!(old_name_count, test_old_name_count);
+    
+    // Should have replaced both "old_name" occurrences but left "test_old_name" untouched
+    assert_eq!(updated_content.matches("new_name").count(), 2);
+    assert!(updated_content.contains("test_old_name")); // This should be unchanged
+}
+
+#[test]
+fn test_rename_command_with_preview() {
+    // Test rename command with preview option
+    let temp_dir = TempDir::new().unwrap();
+    
+    temp_dir.child("test.rs").write_str("fn old_name() { let old_name = 42; }").unwrap();
+    
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "old_name", "new_name", "--preview", "table", "-y"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("File"))
+        .stdout(predicate::str::contains("Kind"))
+        .stdout(predicate::str::contains("test.rs"))
+        .stdout(predicate::str::contains("Applied"));
+    
+    // Verify the file was actually modified
+    let content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
+    assert!(content.contains("fn new_name()"));
+    assert!(content.contains("let new_name = 42;"));
+}
+
+#[test]
+fn test_rename_command_with_file_rename() {
+    // Test rename command that renames both content and files
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create files with matching names
+    temp_dir.child("old_name.txt").write_str("content with old_name").unwrap();
+    temp_dir.child("test.rs").write_str("fn test_old_name() {}").unwrap();
+    
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "old_name", "new_name", "-y"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Applied"))
+        .stdout(predicate::str::contains("Renamed"));
+    
+    // Verify file was renamed
+    assert!(!temp_dir.path().join("old_name.txt").exists());
+    assert!(temp_dir.path().join("new_name.txt").exists());
+    
+    // Verify content was updated
+    let renamed_file_content = std::fs::read_to_string(temp_dir.path().join("new_name.txt")).unwrap();
+    assert!(renamed_file_content.contains("content with new_name"));
+    
+    let test_file_content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
+    assert!(test_file_content.contains("fn test_old_name()")); // Should be unchanged
+}
+
+#[test]
+fn test_rename_command_requires_confirmation() {
+    // Test that rename command requires confirmation when not auto-approved
+    let temp_dir = TempDir::new().unwrap();
+    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
+    
+    // Without -y flag and in non-interactive mode, should fail
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "old_name", "new_name"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Cannot prompt for confirmation in non-interactive mode"));
+}
+
+#[test]
+fn test_rename_command_large_size_guard() {
+    // Test that rename command respects the --large flag for size guards
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create many files to trigger size guard (this is a simplified test)
+    for i in 0..10 {
+        temp_dir.child(format!("test_{}.rs", i))
+            .write_str("fn old_name() {}")
+            .unwrap();
+    }
+    
+    // Should succeed with normal amount of files
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "old_name", "new_name", "-y"])
+        .assert()
+        .success();
+}
