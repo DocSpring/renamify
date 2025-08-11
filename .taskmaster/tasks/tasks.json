@@ -209,7 +209,7 @@
           3,
           1
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -217,7 +217,7 @@
             "description": "Develop a fast, one-pass repository scanner that respects .gitignore files and user-defined globs, excluding binaries by default.",
             "dependencies": [],
             "details": "Utilize the ignore crate's WalkBuilder to create a recursive directory iterator that honors .gitignore files and user-specified include/exclude globs. Ensure the scanner skips binary files unless explicitly included.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Create test repositories with various .gitignore configurations and glob patterns. Verify that the scanner correctly includes and excludes files as specified."
           },
           {
@@ -226,7 +226,7 @@
             "description": "Enhance the repository scanner to perform parallel file scanning for improved performance.",
             "dependencies": [],
             "details": "Use WalkBuilder's build_parallel method to enable parallel directory traversal. Implement a worker pool using the rayon crate to process files concurrently.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Benchmark the parallel scanner against a large repository to ensure performance improvements. Verify that the parallel processing does not introduce race conditions or data inconsistencies."
           },
           {
@@ -235,7 +235,7 @@
             "description": "Incorporate binary file detection and efficient content reading into the scanner.",
             "dependencies": [],
             "details": "Use the content_inspector crate to detect binary files and skip them unless explicitly included. For content reading, utilize the memmap2 crate for memory-mapped file access where possible, falling back to buffered reading when necessary.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test the scanner with repositories containing both text and binary files. Ensure that binary files are correctly identified and skipped unless specified otherwise. Verify that content reading is efficient and accurate."
           },
           {
@@ -244,7 +244,7 @@
             "description": "Develop functionality to find pattern matches and generate minimal context hunks.",
             "dependencies": [],
             "details": "Apply patterns from Task 3 to identify match positions within files. Compute 'before' and 'after' contexts by applying mappings for each match, producing hunks with minimal context.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Create test cases with known patterns and expected hunk outputs. Verify that the generated hunks accurately represent the matches with the correct context."
           },
           {
@@ -253,7 +253,7 @@
             "description": "Implement streaming of matches and hunks into the .refaktor/plan.json file.",
             "dependencies": [],
             "details": "Use serde_json::Serializer with pretty printing disabled to stream JSON data. Write the header, then incrementally add matches and renames arrays to avoid high memory usage. Maintain statistics counters per variant and per file.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test the streaming functionality with large datasets to ensure that memory usage remains bounded. Verify that the plan.json file is correctly formatted and contains all expected data."
           }
         ]
@@ -268,7 +268,7 @@
         "dependencies": [
           2
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -276,7 +276,7 @@
             "description": "Implement functionality to recursively traverse the directory tree starting from the root path, collecting all file and directory pathnames.",
             "dependencies": [],
             "details": "Utilize the 'walkdir' crate to perform efficient recursive directory traversal, ensuring all pathnames are collected for subsequent processing.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that all files and directories are correctly listed, including handling of symbolic links and hidden files as per requirements."
           },
           {
@@ -287,7 +287,7 @@
               "5.1"
             ],
             "details": "Parse each filename to detect and replace old variants with new variants as specified in the mapping, preparing a list of proposed renames.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Ensure that filenames are correctly transformed according to the mapping, including cases with multiple occurrences of old variants."
           },
           {
@@ -298,7 +298,7 @@
               "5.2"
             ],
             "details": "Implement sorting logic that prioritizes deeper directories first, followed by files, maintaining a stable order for determinism.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Validate that the sorting order is correct, ensuring directories are processed before their contents and that the order is stable across runs."
           },
           {
@@ -309,7 +309,7 @@
               "5.3"
             ],
             "details": "Build a mapping of source to target paths and detect cases where different sources result in the same target, flagging these as conflicts.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test scenarios where different files or directories map to the same target name, ensuring conflicts are correctly identified and reported."
           },
           {
@@ -320,7 +320,7 @@
               "5.4"
             ],
             "details": "Probe the file system to determine case sensitivity and check for reserved names like 'CON' or 'NUL' on Windows, setting flags or failing the plan as appropriate.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Simulate case-insensitive file systems and reserved name scenarios to ensure the system correctly identifies and handles these cases."
           }
         ]
@@ -336,7 +336,7 @@
           4,
           5
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -997,7 +997,7 @@
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T04:35:11.172Z",
+      "updated": "2025-08-11T04:38:25.990Z",
       "description": "Tasks for master context"
     }
   }

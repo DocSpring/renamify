@@ -1,0 +1,87 @@
+---
+source: refaktor-core/tests/preview_snapshots.rs
+assertion_line: 130
+expression: normalize_paths(normalized)
+---
+{
+  "created_at": "1234567890",
+  "excludes": [
+    "**/test_*.rs"
+  ],
+  "id": "abc123def456",
+  "includes": [
+    "src/**/*.rs"
+  ],
+  "matches": [
+    {
+      "after": "    let customer_name = String::new();",
+      "before": "    let user_name = String::new();",
+      "col": 12,
+      "end": 20,
+      "file": "src/models/user.rs",
+      "line": 15,
+      "start": 11,
+      "variant": "user_name"
+    },
+    {
+      "after": "    pub customerName: String,",
+      "before": "    pub userName: String,",
+      "col": 8,
+      "end": 15,
+      "file": "src/models/user.rs",
+      "line": 25,
+      "start": 7,
+      "variant": "userName"
+    },
+    {
+      "after": "struct CustomerName {",
+      "before": "struct UserName {",
+      "col": 16,
+      "end": 15,
+      "file": "src/api/handlers.rs",
+      "line": 42,
+      "start": 7,
+      "variant": "UserName"
+    },
+    {
+      "after": "    fn get_customer_name(&self) -> &str {",
+      "before": "    fn get_user_name(&self) -> &str {",
+      "col": 20,
+      "end": 20,
+      "file": "src/api/handlers.rs",
+      "line": 50,
+      "start": 11,
+      "variant": "user_name"
+    }
+  ],
+  "new": "customer_name",
+  "old": "user_name",
+  "renames": [
+    {
+      "from": "src/models/user_name.rs",
+      "kind": "file",
+      "to": "src/models/customer_name.rs"
+    },
+    {
+      "from": "tests/user_name_tests",
+      "kind": "dir",
+      "to": "tests/customer_name_tests"
+    }
+  ],
+  "stats": {
+    "files_scanned": 25,
+    "files_with_matches": 2,
+    "matches_by_variant": {
+      "UserName": 1,
+      "userName": 2,
+      "user_name": 3
+    },
+    "total_matches": 6
+  },
+  "styles": [
+    "Snake",
+    "Camel",
+    "Pascal"
+  ],
+  "version": "1.0.0"
+}
