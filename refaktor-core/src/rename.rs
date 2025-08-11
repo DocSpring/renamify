@@ -85,7 +85,7 @@ pub fn plan_renames_with_conflicts(
     let case_insensitive_fs = detect_case_insensitive_fs(root);
 
     // Use shared walker configuration
-    let walker = crate::configure_walker(root, options).build();
+    let walker = crate::configure_walker(&[root.to_path_buf()], options).build();
 
     // Collect all potential renames
     for entry in walker {

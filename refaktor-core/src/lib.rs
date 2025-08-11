@@ -33,12 +33,13 @@ pub use rename::{
     RenamePlan,
 };
 pub use scanner::{
-    scan_repository, write_plan, MatchHunk, Plan, PlanOptions, Rename, RenameKind, Stats,
+    scan_repository, scan_repository_multi, write_plan, MatchHunk, Plan, PlanOptions, Rename,
+    RenameKind, Stats,
 };
 pub use undo::{redo_refactoring, undo_refactoring};
 
 use ignore::WalkBuilder;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Configure a WalkBuilder based on the unrestricted level in PlanOptions.
 ///
@@ -47,8 +48,16 @@ use std::path::Path;
 /// - Level 1 (-u): Don't respect .gitignore, but respect other ignore files, skip hidden  
 /// - Level 2 (-uu): Don't respect any ignore files, show hidden files
 /// - Level 3 (-uuu): Same as level 2, plus treat binary files as text (handled by caller)
-pub fn configure_walker(root: &Path, options: &scanner::PlanOptions) -> WalkBuilder {
-    let mut builder = WalkBuilder::new(root);
+pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> WalkBuilder {
+    let mut builder = if roots.is_empty() {
+        WalkBuilder::new(".")
+    } else {
+        let mut b = WalkBuilder::new(&roots[0]);
+        for root in roots.iter().skip(1) {
+            b.add(root);
+        }
+        b
+    };
 
     // Map unrestricted level to ignore settings
     // Note: respect_gitignore is kept for backward compatibility

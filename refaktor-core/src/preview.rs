@@ -54,10 +54,20 @@ pub fn should_use_color(use_color: Option<bool>) -> bool {
 
 /// Render the plan in the specified format
 pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<String> {
+    render_plan_with_fixed_width(plan, format, use_color, false)
+}
+
+// Mainly for tests without a tty
+pub fn render_plan_with_fixed_width(
+    plan: &Plan,
+    format: PreviewFormat,
+    use_color: Option<bool>,
+    fixed_width: bool,
+) -> Result<String> {
     let use_color = should_use_color(use_color);
 
     match format {
-        PreviewFormat::Table => render_table(plan, use_color),
+        PreviewFormat::Table => render_table_with_fixed_width(plan, use_color, fixed_width),
         PreviewFormat::Diff => render_diff(plan, use_color),
         PreviewFormat::Json => render_json(plan),
     }
@@ -78,6 +88,7 @@ fn render_table_with_fixed_width(
 
     // Set content arrangement and constraints based on width parameter
     if fixed_width {
+        table.set_content_arrangement(ContentArrangement::Disabled);
         // Set absolute column widths for consistent layout
         table.set_constraints(vec![
             ColumnConstraint::Absolute(Width::Fixed(75)), // File
@@ -85,6 +96,8 @@ fn render_table_with_fixed_width(
             ColumnConstraint::Absolute(Width::Fixed(15)), // Matches
             ColumnConstraint::Absolute(Width::Fixed(75)), // Variants
         ]);
+    } else {
+        table.set_content_arrangement(ContentArrangement::Dynamic);
     }
 
     // Force styling even in non-TTY environments when colors are explicitly requested

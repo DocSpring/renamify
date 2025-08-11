@@ -156,44 +156,37 @@ mod tests {
     #[test]
     fn test_find_compound_at_start() {
         let styles = vec![Style::Pascal];
-        let matches =
-            find_compound_variants("PreviewFormatArg", "preview_format", "preview", &styles);
+        let matches = find_compound_variants("FooBarArg", "foo_bar", "foo", &styles);
 
         assert_eq!(matches.len(), 1);
-        assert_eq!(matches[0].full_identifier, "PreviewFormatArg");
-        assert_eq!(matches[0].replacement, "PreviewArg");
+        assert_eq!(matches[0].full_identifier, "FooBarArg");
+        assert_eq!(matches[0].replacement, "FooArg");
     }
 
     #[test]
     fn test_find_compound_in_middle() {
         let styles = vec![Style::Camel];
-        let matches = find_compound_variants(
-            "shouldPreviewFormatPlease",
-            "preview_format",
-            "preview",
-            &styles,
-        );
+        let matches = find_compound_variants("shouldFooBarPlease", "foo_bar", "foo", &styles);
 
         assert_eq!(matches.len(), 1);
-        assert_eq!(matches[0].full_identifier, "shouldPreviewFormatPlease");
-        assert_eq!(matches[0].replacement, "shouldPreviewPlease");
+        assert_eq!(matches[0].full_identifier, "shouldFooBarPlease");
+        assert_eq!(matches[0].replacement, "shouldFooPlease");
     }
 
     #[test]
     fn test_find_compound_at_end() {
         let styles = vec![Style::Snake];
-        let matches =
-            find_compound_variants("get_preview_format", "preview_format", "preview", &styles);
+        let matches = find_compound_variants("get_foo_bar", "foo_bar", "foo", &styles);
 
         assert_eq!(matches.len(), 1);
-        assert_eq!(matches[0].full_identifier, "get_preview_format");
-        assert_eq!(matches[0].replacement, "get_preview");
+        assert_eq!(matches[0].full_identifier, "get_foo_bar");
+        assert_eq!(matches[0].replacement, "get_foo");
     }
 
     #[test]
     fn test_exact_match_returns_empty() {
         let styles = vec![Style::Pascal];
-        let matches = find_compound_variants("PreviewFormat", "preview_format", "preview", &styles);
+        let matches = find_compound_variants("FooBar", "foo_bar", "foo", &styles);
 
         // Exact matches should be handled by the regular logic, not compound logic
         assert_eq!(matches.len(), 0);
@@ -202,7 +195,7 @@ mod tests {
     #[test]
     fn test_no_match_returns_empty() {
         let styles = vec![Style::Pascal];
-        let matches = find_compound_variants("SomethingElse", "preview_format", "preview", &styles);
+        let matches = find_compound_variants("SomethingElse", "foo_bar", "foo", &styles);
 
         assert_eq!(matches.len(), 0);
     }

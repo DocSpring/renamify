@@ -12,16 +12,16 @@ fn test_compound_replacement_at_start() {
     std::fs::write(
         &test_file,
         r#"// Snake case
-let preview_format_arg = 1;
-let preview_format_option = 2;
+let foo_bar_arg = 1;
+let foo_bar_option = 2;
 
 // Camel case  
-let previewFormatArg = 3;
-let previewFormatOption = 4;
+let fooBarArg = 3;
+let fooBarOption = 4;
 
 // Pascal case
-type PreviewFormatArg = String;
-type PreviewFormatOption = i32;"#,
+type FooBarArg = String;
+type FooBarOption = i32;"#,
     )
     .unwrap();
 
@@ -43,7 +43,7 @@ type PreviewFormatOption = i32;"#,
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound at Start Test ===");
     for hunk in &plan.matches {
@@ -51,12 +51,12 @@ type PreviewFormatOption = i32;"#,
     }
 
     // Should replace:
-    // preview_format_arg -> preview_arg
-    // preview_format_option -> preview_option
-    // previewFormatArg -> previewArg
-    // previewFormatOption -> previewOption
-    // PreviewFormatArg -> PreviewArg
-    // PreviewFormatOption -> PreviewOption
+    // foo_bar_arg -> foo_arg
+    // foo_bar_option -> foo_option
+    // fooBarArg -> fooArg
+    // fooBarOption -> fooOption
+    // FooBarArg -> FooArg
+    // FooBarOption -> FooOption
 
     assert_eq!(
         plan.stats.total_matches, 6,
@@ -65,12 +65,12 @@ type PreviewFormatOption = i32;"#,
 
     // Verify replacements
     let expected = vec![
-        ("preview_format_arg", "preview_arg"),
-        ("preview_format_option", "preview_option"),
-        ("previewFormatArg", "previewArg"),
-        ("previewFormatOption", "previewOption"),
-        ("PreviewFormatArg", "PreviewArg"),
-        ("PreviewFormatOption", "PreviewOption"),
+        ("foo_bar_arg", "foo_arg"),
+        ("foo_bar_option", "foo_option"),
+        ("fooBarArg", "fooArg"),
+        ("fooBarOption", "fooOption"),
+        ("FooBarArg", "FooArg"),
+        ("FooBarOption", "FooOption"),
     ];
 
     for (from, to) in expected {
@@ -92,16 +92,16 @@ fn test_compound_replacement_in_middle() {
     std::fs::write(
         &test_file,
         r#"// Snake case
-let should_preview_format_please = 1;
-let get_preview_format_option = 2;
+let should_foo_bar_please = 1;
+let get_foo_bar_option = 2;
 
 // Camel case  
-let shouldPreviewFormatPlease = 3;
-let getPreviewFormatOption = 4;
+let shouldFooBarPlease = 3;
+let getFooBarOption = 4;
 
 // Pascal case
-type ShouldPreviewFormatPlease = String;
-type GetPreviewFormatOption = i32;"#,
+type ShouldFooBarPlease = String;
+type GetFooBarOption = i32;"#,
     )
     .unwrap();
 
@@ -123,7 +123,7 @@ type GetPreviewFormatOption = i32;"#,
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound in Middle Test ===");
     for hunk in &plan.matches {
@@ -131,12 +131,12 @@ type GetPreviewFormatOption = i32;"#,
     }
 
     // Should replace:
-    // should_preview_format_please -> should_preview_please
-    // get_preview_format_option -> get_preview_option
-    // shouldPreviewFormatPlease -> shouldPreviewPlease
-    // getPreviewFormatOption -> getPreviewOption
-    // ShouldPreviewFormatPlease -> ShouldPreviewPlease
-    // GetPreviewFormatOption -> GetPreviewOption
+    // should_foo_bar_please -> should_foo_please
+    // get_foo_bar_option -> get_foo_option
+    // shouldFooBarPlease -> shouldFooPlease
+    // getFooBarOption -> getFooOption
+    // ShouldFooBarPlease -> ShouldFooPlease
+    // GetFooBarOption -> GetFooOption
 
     assert_eq!(
         plan.stats.total_matches, 6,
@@ -145,12 +145,12 @@ type GetPreviewFormatOption = i32;"#,
 
     // Verify replacements preserve prefix and suffix
     let expected = vec![
-        ("should_preview_format_please", "should_preview_please"),
-        ("get_preview_format_option", "get_preview_option"),
-        ("shouldPreviewFormatPlease", "shouldPreviewPlease"),
-        ("getPreviewFormatOption", "getPreviewOption"),
-        ("ShouldPreviewFormatPlease", "ShouldPreviewPlease"),
-        ("GetPreviewFormatOption", "GetPreviewOption"),
+        ("should_foo_bar_please", "should_foo_please"),
+        ("get_foo_bar_option", "get_foo_option"),
+        ("shouldFooBarPlease", "shouldFooPlease"),
+        ("getFooBarOption", "getFooOption"),
+        ("ShouldFooBarPlease", "ShouldFooPlease"),
+        ("GetFooBarOption", "GetFooOption"),
     ];
 
     for (from, to) in expected {
@@ -172,16 +172,16 @@ fn test_compound_replacement_at_end() {
     std::fs::write(
         &test_file,
         r#"// Snake case
-let get_preview_format = 1;
-let load_preview_format = 2;
+let get_foo_bar = 1;
+let load_foo_bar = 2;
 
 // Camel case  
-let getPreviewFormat = 3;
-let loadPreviewFormat = 4;
+let getFooBar = 3;
+let loadFooBar = 4;
 
 // Pascal case
-type GetPreviewFormat = String;
-type LoadPreviewFormat = i32;"#,
+type GetFooBar = String;
+type LoadFooBar = i32;"#,
     )
     .unwrap();
 
@@ -203,7 +203,7 @@ type LoadPreviewFormat = i32;"#,
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound at End Test ===");
     for hunk in &plan.matches {
@@ -211,12 +211,12 @@ type LoadPreviewFormat = i32;"#,
     }
 
     // Should replace:
-    // get_preview_format -> get_preview
-    // load_preview_format -> load_preview
-    // getPreviewFormat -> getPreview
-    // loadPreviewFormat -> loadPreview
-    // GetPreviewFormat -> GetPreview
-    // LoadPreviewFormat -> LoadPreview
+    // get_foo_bar -> get_foo
+    // load_foo_bar -> load_foo
+    // getFooBar -> getFoo
+    // loadFooBar -> loadFoo
+    // GetFooBar -> GetFoo
+    // LoadFooBar -> LoadFoo
 
     assert_eq!(
         plan.stats.total_matches, 6,
@@ -225,12 +225,12 @@ type LoadPreviewFormat = i32;"#,
 
     // Verify replacements preserve prefix
     let expected = vec![
-        ("get_preview_format", "get_preview"),
-        ("load_preview_format", "load_preview"),
-        ("getPreviewFormat", "getPreview"),
-        ("loadPreviewFormat", "loadPreview"),
-        ("GetPreviewFormat", "GetPreview"),
-        ("LoadPreviewFormat", "LoadPreview"),
+        ("get_foo_bar", "get_foo"),
+        ("load_foo_bar", "load_foo"),
+        ("getFooBar", "getFoo"),
+        ("loadFooBar", "loadFoo"),
+        ("GetFooBar", "GetFoo"),
+        ("LoadFooBar", "LoadFoo"),
     ];
 
     for (from, to) in expected {
@@ -251,9 +251,9 @@ fn test_exact_match_not_compound() {
     let test_file = root.join("test.rs");
     std::fs::write(
         &test_file,
-        r#"let preview_format = get_preview_format();
-let PreviewFormat = PreviewFormat::new();
-let previewFormat = getPreviewFormat();"#,
+        r#"let foo_bar = get_foo_bar();
+let FooBar = FooBar::new();
+let fooBar = getFooBar();"#,
     )
     .unwrap();
 
@@ -275,7 +275,7 @@ let previewFormat = getPreviewFormat();"#,
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Exact Match Test ===");
     for hunk in &plan.matches {
@@ -283,9 +283,9 @@ let previewFormat = getPreviewFormat();"#,
     }
 
     // Should find both exact matches AND compounds
-    // Line 1: preview_format (exact), get_preview_format (compound)
-    // Line 2: PreviewFormat twice (exact)
-    // Line 3: previewFormat (exact), getPreviewFormat (compound)
+    // Line 1: foo_bar (exact), get_foo_bar (compound)
+    // Line 2: FooBar twice (exact)
+    // Line 3: fooBar (exact), getFooBar (compound)
 
     assert_eq!(
         plan.stats.total_matches, 6,

@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use refaktor_core::{
-    apply_plan, format_history, get_status, redo_refactoring, scan_repository, undo_refactoring,
-    write_plan, write_preview, ApplyOptions, History, LockFile, Plan, PlanOptions, PreviewFormat,
-    Style,
+    apply_plan, format_history, get_status, redo_refactoring, scan_repository_multi,
+    undo_refactoring, write_plan, write_preview, ApplyOptions, History, LockFile, Plan,
+    PlanOptions, PreviewFormat, Style,
 };
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
@@ -667,17 +667,20 @@ fn handle_plan(
         exclude_match,
     };
 
-    // Scan the repository
-    // For now, use the first search path as the root.
-    // TODO: Implement proper multi-path support in the core library
-    let scan_root = if search_paths[0].is_absolute() {
-        search_paths[0].clone()
-    } else {
-        current_dir.join(&search_paths[0])
-    };
+    // Resolve all search paths to absolute paths
+    let resolved_paths: Vec<PathBuf> = search_paths
+        .iter()
+        .map(|path| {
+            if path.is_absolute() {
+                path.clone()
+            } else {
+                current_dir.join(path)
+            }
+        })
+        .collect();
 
-    let plan =
-        scan_repository(&scan_root, old, new, &options).context("Failed to scan repository")?;
+    let plan = scan_repository_multi(&resolved_paths, old, new, &options)
+        .context("Failed to scan repository")?;
 
     // Show preview
     write_preview(&plan, preview_format, Some(use_color)).context("Failed to write preview")?;

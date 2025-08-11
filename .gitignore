@@ -35,3 +35,5 @@ coverage/
 # Fuzzing artifacts
 /fuzz/artifacts/
 /fuzz/corpus/
+
+*snapshot.snap.new

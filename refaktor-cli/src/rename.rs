@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use refaktor_core::{
-    apply_plan, scan_repository, ApplyOptions, History, LockFile, Plan, PlanOptions,
+    apply_plan, scan_repository_multi, ApplyOptions, History, LockFile, Plan, PlanOptions,
 };
 use std::collections::HashMap;
 use std::fs;
@@ -98,23 +98,30 @@ pub fn handle_rename(
         exclude_match,
     };
 
-    // For now, use the first search path as the root.
-    // TODO: Implement proper multi-path support in the core library
-    let scan_root = if search_paths[0].is_absolute() {
-        search_paths[0].clone()
-    } else {
-        current_dir.join(&search_paths[0])
-    };
+    // Resolve all search paths to absolute paths
+    let resolved_paths: Vec<PathBuf> = search_paths
+        .iter()
+        .map(|path| {
+            if path.is_absolute() {
+                path.clone()
+            } else {
+                current_dir.join(path)
+            }
+        })
+        .collect();
 
-    let mut plan = scan_repository(&scan_root, old, new, &options)
+    let mut plan = scan_repository_multi(&resolved_paths, old, new, &options)
         .with_context(|| format!("Failed to scan repository for '{}' -> '{}'", old, new))?;
 
     // Separate root directory renames from other renames
+    // For multi-path, check if a rename matches any of the resolved paths
     let (root_renames, other_renames): (Vec<_>, Vec<_>) =
         plan.renames.into_iter().partition(|rename| {
-            rename.from.parent().is_none()
-                || rename.from.canonicalize().unwrap_or(rename.from.clone())
-                    == scan_root.canonicalize().unwrap_or(scan_root.clone())
+            resolved_paths.iter().any(|root_path| {
+                rename.from.parent().is_none()
+                    || rename.from.canonicalize().unwrap_or(rename.from.clone())
+                        == root_path.canonicalize().unwrap_or(root_path.clone())
+            })
         });
 
     // Update plan with filtered renames (excluding root by default)

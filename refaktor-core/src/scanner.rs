@@ -119,7 +119,18 @@ pub struct Plan {
     pub version: String,
 }
 
+/// Backward-compatible single-path scan (for tests)
 pub fn scan_repository(root: &Path, old: &str, new: &str, options: &PlanOptions) -> Result<Plan> {
+    scan_repository_multi(&[root.to_path_buf()], old, new, options)
+}
+
+/// Multi-path repository scan
+pub fn scan_repository_multi(
+    roots: &[PathBuf],
+    old: &str,
+    new: &str,
+    options: &PlanOptions,
+) -> Result<Plan> {
     let variant_map = generate_variant_map(old, new, options.styles.as_deref());
     let variants: Vec<String> = variant_map.keys().cloned().collect();
     let pattern = build_pattern(&variants)?;
@@ -136,7 +147,7 @@ pub fn scan_repository(root: &Path, old: &str, new: &str, options: &PlanOptions)
     };
 
     // Use shared walker configuration
-    let walker = crate::configure_walker(root, options).build();
+    let walker = crate::configure_walker(roots, options).build();
 
     for entry in walker {
         let entry = match entry {
@@ -152,7 +163,11 @@ pub fn scan_repository(root: &Path, old: &str, new: &str, options: &PlanOptions)
         let path = entry.path();
 
         // Apply include/exclude filters (use relative path for matching)
-        let relative_path = path.strip_prefix(root).unwrap_or(path);
+        // For multi-path, find the root that this path belongs to
+        let relative_path = roots
+            .iter()
+            .find_map(|root| path.strip_prefix(root).ok())
+            .unwrap_or(path);
 
         if let Some(ref includes) = include_globs {
             if !includes.is_match(relative_path) {
@@ -212,7 +227,12 @@ pub fn scan_repository(root: &Path, old: &str, new: &str, options: &PlanOptions)
     }
 
     let renames = if options.rename_files || options.rename_dirs {
-        plan_renames(root, &variant_map, options)?
+        let mut all_renames = Vec::new();
+        for root in roots {
+            let mut root_renames = plan_renames(root, &variant_map, options)?;
+            all_renames.append(&mut root_renames);
+        }
+        all_renames
     } else {
         vec![]
     };
