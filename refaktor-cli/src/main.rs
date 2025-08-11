@@ -19,6 +19,13 @@ struct Cli {
     /// Disable colored output
     #[arg(long, global = true, env = "NO_COLOR")]
     no_color: bool,
+    
+    /// Reduce the level of "smart" filtering. Can be repeated up to 3 times.
+    /// -u: Don't respect .gitignore files
+    /// -uu: Don't respect any ignore files, show hidden files  
+    /// -uuu: Same as -uu, plus treat binary files as text
+    #[arg(short = 'u', long = "unrestricted", global = true, action = clap::ArgAction::Count)]
+    unrestricted: u8,
 }
 
 #[derive(Subcommand, Debug)]
@@ -225,6 +232,7 @@ fn main() {
             include,
             exclude,
             respect_gitignore,
+            cli.unrestricted,
             !no_rename_files,
             !no_rename_dirs,
             styles,
@@ -250,6 +258,7 @@ fn main() {
             include,
             exclude,
             respect_gitignore,
+            cli.unrestricted,
             !no_rename_files,
             !no_rename_dirs,
             styles,
@@ -315,6 +324,7 @@ fn handle_plan(
     include: Vec<String>,
     exclude: Vec<String>,
     respect_gitignore: bool,
+    unrestricted: u8,
     rename_files: bool,
     rename_dirs: bool,
     styles: Vec<StyleArg>,
@@ -335,6 +345,7 @@ fn handle_plan(
         includes: include,
         excludes: exclude,
         respect_gitignore,
+        unrestricted_level: unrestricted.min(3),  // Cap at 3 for safety
         styles,
         rename_files,
         rename_dirs,

@@ -88,18 +88,29 @@ pub fn plan_renames_with_conflicts(
     let mut collected_renames = Vec::new();
     let case_insensitive_fs = detect_case_insensitive_fs(root);
 
+    // Use shared walker configuration
+    let walker = crate::configure_walker(root, options).build();
+
     // Collect all potential renames
-    for entry in walkdir::WalkDir::new(root)
-        .into_iter()
-        .filter_map(|e| e.ok())
-    {
+    for entry in walker {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        
         let path = entry.path();
         
+        // Get file type from entry metadata
+        let file_type = match entry.file_type() {
+            Some(ft) => ft,
+            None => continue,
+        };
+        
         // Skip if not renaming files/dirs based on options
-        if path.is_dir() && !options.rename_dirs {
+        if file_type.is_dir() && !options.rename_dirs {
             continue;
         }
-        if path.is_file() && !options.rename_files {
+        if file_type.is_file() && !options.rename_files {
             continue;
         }
 
@@ -112,7 +123,7 @@ pub fn plan_renames_with_conflicts(
                     let new_name = file_name_str.replace(old, new);
                     let new_path = path.with_file_name(&new_name);
                     
-                    let kind = if path.is_dir() {
+                    let kind = if file_type.is_dir() {
                         RenameKind::Dir
                     } else {
                         RenameKind::File
@@ -386,5 +397,81 @@ mod tests {
         // Should only rename the file, not the directory
         assert_eq!(plan.renames.len(), 1);
         assert!(plan.renames[0].from.to_string_lossy().contains("old_file"));
+    }
+
+    #[test]
+    fn test_respect_gitignore() {
+        let temp_dir = TempDir::new().unwrap();
+        
+        // Initialize as a git repository so .gitignore works
+        std::process::Command::new("git")
+            .args(["init"])
+            .current_dir(temp_dir.path())
+            .output()
+            .expect("Failed to init git repo");
+        
+        // Create a .gitignore file
+        std::fs::write(temp_dir.path().join(".gitignore"), "target/\n*.tmp\nbuild/\n").unwrap();
+        
+        // Create directories and files
+        let target_dir = temp_dir.path().join("target");
+        std::fs::create_dir(&target_dir).unwrap();
+        std::fs::write(target_dir.join("old_name.txt"), "ignored").unwrap();
+        
+        let build_dir = temp_dir.path().join("build");
+        std::fs::create_dir(&build_dir).unwrap();
+        std::fs::write(build_dir.join("old_name.exe"), "ignored").unwrap();
+        
+        // Files that should be ignored by pattern
+        std::fs::write(temp_dir.path().join("old_name.tmp"), "ignored").unwrap();
+        
+        // Files that should NOT be ignored
+        std::fs::write(temp_dir.path().join("old_name.txt"), "not ignored").unwrap();
+        std::fs::write(temp_dir.path().join("old_name.rs"), "not ignored").unwrap();
+        
+        let src_dir = temp_dir.path().join("src");
+        std::fs::create_dir(&src_dir).unwrap();
+        std::fs::write(src_dir.join("old_name.rs"), "not ignored").unwrap();
+        
+        let mut mapping = BTreeMap::new();
+        mapping.insert("old_name".to_string(), "new_name".to_string());
+        
+        let mut opts = PlanOptions::default();
+        opts.unrestricted_level = 0;  // Default: respect all ignore files
+        
+        let plan = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
+        
+        // Should only include non-ignored files
+        let rename_paths: Vec<String> = plan.renames.iter()
+            .map(|r| r.from.strip_prefix(temp_dir.path()).unwrap().to_string_lossy().to_string())
+            .collect();
+        
+        println!("Paths with gitignore enabled: {:?}", rename_paths);
+        
+        // Should NOT rename files in target/ or build/ directories
+        assert!(!rename_paths.iter().any(|p| p.contains("target/")), "Should NOT find target/ files when gitignore is enabled");
+        assert!(!rename_paths.iter().any(|p| p.contains("build/")), "Should NOT find build/ files when gitignore is enabled");
+        // Should NOT rename .tmp files
+        assert!(!rename_paths.iter().any(|p| p.ends_with(".tmp")), "Should NOT find .tmp files when gitignore is enabled");
+        
+        // SHOULD rename these files
+        assert!(rename_paths.iter().any(|p| p == "old_name.txt"));
+        assert!(rename_paths.iter().any(|p| p == "old_name.rs"));
+        assert!(rename_paths.iter().any(|p| p == "src/old_name.rs"));
+        
+        // When gitignore is disabled with -uu, should include all files
+        opts.unrestricted_level = 2;  // -uu: show all files including hidden
+        let plan_no_ignore = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
+        
+        let all_paths: Vec<String> = plan_no_ignore.renames.iter()
+            .map(|r| r.from.strip_prefix(temp_dir.path()).unwrap().to_string_lossy().to_string())
+            .collect();
+        
+        println!("All paths with gitignore disabled: {:?}", all_paths);
+        
+        // Should include ignored files when respect_gitignore is false
+        assert!(all_paths.iter().any(|p| p.contains("target/")), "Should find target/ files");
+        assert!(all_paths.iter().any(|p| p.contains("build/")), "Should find build/ files");
+        assert!(all_paths.iter().any(|p| p.ends_with(".tmp")), "Should find .tmp files");
     }
 }

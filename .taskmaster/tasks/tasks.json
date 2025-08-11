@@ -993,11 +993,92 @@
             "testStrategy": "Review the documentation for clarity, accuracy, and completeness. Ensure that all examples are up-to-date and function as described. Validate that all links are working and that the formatting is consistent across all documents. Seek feedback from team members or external users to identify any areas for improvement."
           }
         ]
+      },
+      {
+        "id": 16,
+        "title": "Fix gitignore handling for rename operations",
+        "description": "Rename operations must match ripgrep's unrestricted behavior using ignore::WalkBuilder wiring. We already use the correct primitives; the task is to configure them properly across scanner and rename so that -u/-uu/-uuu behave exactly like ripgrep: default respects all ignore files and skips hidden; -u disables .gitignore only; -uu disables all ignore files and shows hidden; -uuu also treats binary as text.",
+        "status": "pending",
+        "dependencies": [
+          7
+        ],
+        "priority": "high",
+        "details": "Background: Both scanner and rename modules already use ignore::WalkBuilder, but their configuration isn't wired to match ripgrep's unrestricted levels. We need a single source of truth for how PlanOptions affects WalkBuilder and, for -uuu, how binary detection is handled in the scanner.\nRequired behavior (mirror ripgrep):\n- Default (level 0): respect all ignore files (.gitignore, .ignore, .rgignore, git excludes) and skip hidden files.\n- -u (level 1): disable .gitignore only; still respect other ignore files (.ignore, .rgignore, global excludes) and skip hidden files.\n- -uu (level 2): disable all ignore files; show hidden files.\n- -uuu (level 3): same as -uu and additionally treat binary files as text in scanning.\nImplementation plan:\n1) PlanOptions: add unrestricted level 0-3 (or equivalent enum) with Default = 0. Derive a binary_as_text flag from level == 3 for scanner use. Maintain backward compatibility with any existing flags (e.g., --respect-gitignore) by mapping them to the new level as appropriate.\n2) Centralize WalkBuilder configuration: create a helper (e.g., configure_walkbuilder(root, opts)) used by both scanner and rename modules. Map levels to ignore::WalkBuilder as follows:\n   - Level 0: git_ignore(true), ignore(true), parents(true), hidden(true)\n   - Level 1: git_ignore(false), ignore(true), parents(true), hidden(true)\n   - Level 2: git_ignore(false), ignore(false), parents(false), hidden(false)\n   - Level 3: same as Level 2; scanner additionally sets binary_as_text = true to avoid binary short-circuiting\n   Notes:\n   - parents(true) ensures parent .gitignore files are respected when enabled.\n   - \"hidden(true)\" means skip hidden files; \"hidden(false)\" shows them.\n3) Apply the same configuration in rename planning and scanning so the set of candidate files/dirs is identical across modules.\n4) CLI: support ripgrep-style -u flag that can be repeated up to three times (-u/-uu/-uuu) to set the unrestricted level. Keep existing options working; precedence: explicit -u level overrides legacy flags. Update help text accordingly.\n5) Documentation: DOCUMENTATION.md has been created and must describe unrestricted levels and examples. Ensure code comments reference it and keep it in sync with the implemented behavior.\n6) Tests: add comprehensive tests covering default, -u, -uu, -uuu for both scanner and rename. Include cases for .gitignore vs .ignore/.rgignore, hidden files, and binary content handling in scanner at -uuu.\nNotes:\n- Rename operations are path-based; binary_as_text only affects scanner/content reading. The traversal set must still match between modules at each level.\n- Do not change dependencies; build atop CLI from Task 7 by adding the -u flag mapping.",
+        "testStrategy": "- Unit tests for WalkBuilder wiring using a fixture tree:\n  - Create temp repos with: .gitignore ignoring a subdir; .ignore ignoring a file; .rgignore ignoring a pattern; hidden files/dirs; a binary file. For each level (0..3), list collected paths from configure_walkbuilder and assert:\n    - Level 0: .gitignore/.ignore/.rgignore respected; hidden skipped.\n    - Level 1: .gitignore NOT respected; .ignore/.rgignore respected; hidden skipped.\n    - Level 2: all ignore files disabled; hidden shown.\n    - Level 3: same paths as Level 2.\n- Scanner binary behavior tests:\n  - With a binary file containing the search bytes, assert:\n    - Level 0/1/2: scanner treats it as binary (no content match if we short-circuit on binary).\n    - Level 3: scanner treats binary as text; match is found.\n- Rename planning integration tests:\n  - For each level, generate a plan and assert included/excluded paths match expectations from the unit tests above.\n  - Ensure consistency: for each level, the set of paths considered by scanner equals the set considered by rename planner.\n- CLI integration tests (assert_cmd/assert_fs):\n  - refaktor plan with -u/-uu/-uuu produces the expected plan paths; default behaves as level 0.\n  - Help text documents -u flag (repeatable up to three times) without regressing existing flags.\n- Documentation tests:\n  - Validate that DOCUMENTATION.md examples are in sync: run a doc example (if applicable) or snapshot test key snippets describing levels.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Author DOCUMENTATION.md for unrestricted levels (-u/-uu/-uuu) and traversal rules",
+            "description": "Comprehensive documentation for ignore handling, unrestricted levels, and their effects on scanner/rename.",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Extend PlanOptions with unrestricted level (0-3) and derived binary_as_text flag",
+            "description": "Add field and defaults; map legacy flags to a level; expose getter for binary_as_text when level == 3.",
+            "status": "in progress",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement shared WalkBuilder configuration helper and use it in scanner and rename",
+            "description": "Create configure_walkbuilder(root, opts) mapping levels to git_ignore/ignore/parents/hidden; replace ad-hoc configs.",
+            "status": "in progress",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Wire binary-as-text behavior into scanner for -uuu",
+            "description": "Ensure scanner does not short-circuit on binary files when unrestricted level is 3.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add CLI -u flag (repeatable up to three times) and map to PlanOptions",
+            "description": "Update CLI parsing and help; precedence rules: explicit -u overrides any legacy ignore flags.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add comprehensive tests for traversal, rename planning, and scanner across levels 0..3",
+            "description": "Unit and integration tests covering .gitignore vs .ignore/.rgignore, hidden files, and binary behavior at -uuu.",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Create Astro Starlight documentation website",
+        "description": "Build a proper documentation website using Astro Starlight with introduction, detailed options reference, examples, and integration guides.",
+        "details": "Create a comprehensive documentation website that:\n- Uses Astro Starlight for a modern, searchable docs experience\n- Includes proper navigation structure\n- Has sections for: Getting Started, Commands Reference, Configuration, Examples, Integration Guides, API Reference (for library usage)\n- Supports dark/light mode\n- Has good SEO and social sharing metadata\n- Can be deployed to GitHub Pages or Vercel\n- Includes search functionality\n- Has proper syntax highlighting for code examples",
+        "testStrategy": "- Verify all links work (no 404s)\n- Check that search indexes all content\n- Validate that examples in docs match actual CLI behavior\n- Test responsive design on mobile/tablet/desktop\n- Ensure dark/light mode works properly\n- Validate SEO metadata and OpenGraph tags",
+        "status": "pending",
+        "dependencies": [
+          15
+        ],
+        "priority": "low",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-08-11T03:43:57.398Z",
-      "updated": "2025-08-11T05:07:04.131Z",
+      "updated": "2025-08-11T05:30:37.623Z",
       "description": "Tasks for master context"
     }
   }

@@ -19,11 +19,19 @@ use std::time::SystemTime;
 pub struct PlanOptions {
     pub includes: Vec<String>,
     pub excludes: Vec<String>,
-    pub respect_gitignore: bool,
+    pub respect_gitignore: bool,  // Deprecated, use unrestricted_level instead
+    pub unrestricted_level: u8,   // 0=default, 1=-u, 2=-uu, 3=-uuu
     pub styles: Option<Vec<Style>>,
     pub rename_files: bool,
     pub rename_dirs: bool,
     pub plan_out: PathBuf,
+}
+
+impl PlanOptions {
+    /// Returns true if binary files should be treated as text (level 3/-uuu)
+    pub fn binary_as_text(&self) -> bool {
+        self.unrestricted_level >= 3
+    }
 }
 
 impl Default for PlanOptions {
@@ -31,7 +39,8 @@ impl Default for PlanOptions {
         Self {
             includes: vec![],
             excludes: vec![],
-            respect_gitignore: true,
+            respect_gitignore: true,  // For backward compatibility
+            unrestricted_level: 0,    // Default: respect all ignore files
             styles: None,
             rename_files: true,
             rename_dirs: true,
@@ -110,14 +119,8 @@ pub fn scan_repository(
         files_with_matches: 0,
     };
 
-    // Use non-parallel walker for simplicity and reliability
-    let walker = WalkBuilder::new(root)
-        .git_ignore(options.respect_gitignore)
-        .git_global(options.respect_gitignore)
-        .git_exclude(options.respect_gitignore)
-        .hidden(false)
-        .parents(false)
-        .build();
+    // Use shared walker configuration
+    let walker = crate::configure_walker(root, options).build();
 
     for entry in walker {
         let entry = match entry {
@@ -150,7 +153,8 @@ pub fn scan_repository(
         if let Ok(content) = read_file_content(path) {
             stats.files_scanned += 1;
             
-            if is_binary(&content) {
+            // Skip binary files unless we're in -uuu mode
+            if !options.binary_as_text() && is_binary(&content) {
                 continue;
             }
 
