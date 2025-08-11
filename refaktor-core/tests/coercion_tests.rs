@@ -1,0 +1,360 @@
+use refaktor_core::{
+    coercion::{apply_coercion, detect_style, Style},
+    scanner::{CoercionMode, PlanOptions, RenameKind},
+    scan_repository,
+};
+use std::fs;
+use tempfile::TempDir;
+
+#[test]
+fn test_coercion_refaktor_core_to_smart_search_and_replace_core() {
+    // This is the critical test case from the user's feedback
+    let result = apply_coercion(
+        "refaktor-core",
+        "refaktor", 
+        "smart_search_and_replace"
+    );
+    
+    assert!(result.is_some());
+    let (coerced, reason) = result.unwrap();
+    assert_eq!(coerced, "smart-search-and-replace-core");
+    assert!(reason.contains("Kebab"));
+}
+
+#[test]
+fn test_coercion_various_container_styles() {
+    // Test kebab-case container
+    let result = apply_coercion("refaktor-lib", "refaktor", "smart_search_and_replace");
+    assert!(result.is_some());
+    let (coerced, _) = result.unwrap();
+    assert_eq!(coerced, "smart-search-and-replace-lib");
+
+    // Test snake_case container  
+    let result = apply_coercion("refaktor_core", "refaktor", "smart_search_and_replace");
+    assert!(result.is_some());
+    let (coerced, _) = result.unwrap();
+    assert_eq!(coerced, "smart_search_and_replace_core");
+
+    // Test PascalCase container
+    let result = apply_coercion("RefaktorCore", "Refaktor", "SmartSearchAndReplace");
+    assert!(result.is_some());
+    let (coerced, _) = result.unwrap();
+    assert_eq!(coerced, "SmartSearchAndReplaceCore");
+
+    // Test camelCase container
+    let result = apply_coercion("refaktorCore", "refaktor", "smartSearchAndReplace");
+    assert!(result.is_some());
+    let (coerced, _) = result.unwrap();
+    assert_eq!(coerced, "smartSearchAndReplaceCore");
+
+    // Test SCREAMING_SNAKE_CASE container
+    let result = apply_coercion("REFAKTOR_CORE", "REFAKTOR", "SMART_SEARCH_AND_REPLACE");
+    assert!(result.is_some());
+    let (coerced, _) = result.unwrap();
+    assert_eq!(coerced, "SMART_SEARCH_AND_REPLACE_CORE");
+
+    // Test dot.case container (should only work when enabled)
+    let result = apply_coercion("refaktor.core", "refaktor", "smart_search_and_replace");
+    // For now this should be None since dot-case is risky
+    assert!(result.is_none());
+}
+
+#[test]
+fn test_coercion_partial_matches() {
+    // Test when old pattern is part of a larger identifier
+    let result = apply_coercion("my-refaktor-lib", "refaktor", "smart_search_and_replace");
+    assert!(result.is_some());
+    let (coerced, _) = result.unwrap();
+    assert_eq!(coerced, "my-smart-search-and-replace-lib");
+
+    // Test with multiple occurrences
+    let result = apply_coercion("refaktor-to-refaktor", "refaktor", "tool");
+    assert!(result.is_some());
+    let (coerced, _) = result.unwrap();
+    assert_eq!(coerced, "tool-to-tool");
+}
+
+#[test]
+fn test_coercion_no_container_style() {
+    // Test when there's no clear container style (should not coerce)
+    let result = apply_coercion("refaktor", "refaktor", "smart_search_and_replace");
+    assert!(result.is_none());
+
+    // Test mixed style containers (should not coerce)
+    let result = apply_coercion("refaktor-core_lib", "refaktor", "smart_search_and_replace");
+    assert!(result.is_none());
+}
+
+#[test]
+fn test_end_to_end_coercion_with_files() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create test files with various naming patterns
+    fs::write(temp_dir.path().join("refaktor-core.rs"), 
+        "use refaktor_lib::RefaktorEngine;\nfn refaktor_main() {}").unwrap();
+    
+    fs::write(temp_dir.path().join("refaktor_utils.py"), 
+        "def refaktor_helper(): pass").unwrap();
+        
+    fs::write(temp_dir.path().join("RefaktorService.java"), 
+        "class RefaktorService {}").unwrap();
+
+    // Create directories 
+    fs::create_dir(temp_dir.path().join("refaktor-plugins")).unwrap();
+    fs::create_dir(temp_dir.path().join("refaktor_tests")).unwrap();
+
+    let options = PlanOptions {
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None,
+        rename_files: true,
+        rename_dirs: true,
+        plan_out: temp_dir.path().join("plan.json"),
+        coerce_separators: CoercionMode::Auto, // Enable coercion
+    };
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "refaktor",
+        "smart_search_and_replace",
+        &options,
+    ).unwrap();
+
+    // Check file renames are coerced properly
+    let file_renames: Vec<_> = plan.renames.iter()
+        .filter(|r| r.kind == RenameKind::File)
+        .collect();
+    
+    
+    // refaktor-core.rs should become smart-search-and-replace-core.rs (kebab style)
+    assert!(file_renames.iter().any(|r| 
+        r.from.file_name().unwrap() == "refaktor-core.rs" &&
+        r.to.file_name().unwrap() == "smart-search-and-replace-core.rs"
+    ), "kebab-case file should be coerced to kebab-case");
+
+    // refaktor_utils.py should become smart_search_and_replace_utils.py (snake style)  
+    assert!(file_renames.iter().any(|r|
+        r.from.file_name().unwrap() == "refaktor_utils.py" &&
+        r.to.file_name().unwrap() == "smart_search_and_replace_utils.py"
+    ), "snake_case file should be coerced to snake_case");
+
+    // RefaktorService.java should become SmartSearchAndReplaceService.java (pascal style)
+    assert!(file_renames.iter().any(|r|
+        r.from.file_name().unwrap() == "RefaktorService.java" &&  
+        r.to.file_name().unwrap() == "SmartSearchAndReplaceService.java"
+    ), "PascalCase file should be coerced to PascalCase");
+
+    // Check directory renames are coerced properly
+    let dir_renames: Vec<_> = plan.renames.iter()
+        .filter(|r| r.kind == RenameKind::Dir)
+        .collect();
+
+    // refaktor-plugins should become smart-search-and-replace-plugins
+    assert!(dir_renames.iter().any(|r|
+        r.from.file_name().unwrap() == "refaktor-plugins" &&
+        r.to.file_name().unwrap() == "smart-search-and-replace-plugins"
+    ), "kebab-case directory should be coerced to kebab-case");
+
+    // refaktor_tests should become smart_search_and_replace_tests  
+    assert!(dir_renames.iter().any(|r|
+        r.from.file_name().unwrap() == "refaktor_tests" &&
+        r.to.file_name().unwrap() == "smart_search_and_replace_tests"
+    ), "snake_case directory should be coerced to snake_case");
+
+    // Check that coercion_applied field is set for coerced renames
+    let coerced_renames = plan.renames.iter()
+        .filter(|r| r.coercion_applied.is_some())
+        .count();
+    assert!(coerced_renames > 0, "Some renames should have coercion applied");
+}
+
+#[test]  
+fn test_coercion_disabled() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    fs::write(temp_dir.path().join("refaktor-core.rs"), "test").unwrap();
+
+    let options = PlanOptions {
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0, 
+        styles: None,
+        rename_files: true,
+        rename_dirs: true,
+        plan_out: temp_dir.path().join("plan.json"),
+        coerce_separators: CoercionMode::Off, // Disable coercion
+    };
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "refaktor", 
+        "smart_search_and_replace",
+        &options,
+    ).unwrap();
+
+    // Without coercion, should get smart_search_and_replace-core.rs (mixed style)
+    let file_renames: Vec<_> = plan.renames.iter()
+        .filter(|r| r.kind == RenameKind::File)
+        .collect();
+    
+    assert!(file_renames.iter().any(|r|
+        r.from.file_name().unwrap() == "refaktor-core.rs" &&
+        r.to.file_name().unwrap() == "smart_search_and_replace-core.rs" // Mixed style without coercion
+    ), "Without coercion should produce mixed style");
+
+    // No coercion_applied should be set
+    let coerced_renames = plan.renames.iter()
+        .filter(|r| r.coercion_applied.is_some())
+        .count();
+    assert_eq!(coerced_renames, 0, "No coercion should be applied when disabled");
+}
+
+#[test]
+fn test_coercion_in_content_matches() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create a file with various identifiers that should be coerced
+    fs::write(temp_dir.path().join("code.rs"), r#"
+use refaktor_core::RefaktorEngine;
+use my_refaktor_lib::utils;  
+let refaktor-service = RefaktorService::new();
+let config = refaktor.config.load();
+"#).unwrap();
+
+    let options = PlanOptions {
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None, 
+        rename_files: false, // Focus on content matches only
+        rename_dirs: false,
+        plan_out: temp_dir.path().join("plan.json"),
+        coerce_separators: CoercionMode::Auto,
+    };
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "refaktor",
+        "smart_search_and_replace", 
+        &options,
+    ).unwrap();
+
+    // Check that content matches are coerced based on their container context
+    let content_matches = &plan.matches;
+    assert!(!content_matches.is_empty());
+
+    // Find matches that should have been coerced
+    let coerced_matches = content_matches.iter()
+        .filter(|m| m.coercion_applied.is_some())
+        .count();
+    
+    // We expect some matches to be coerced based on their context  
+    // (like refaktor_core should use snake_case for the replacement)
+    assert!(coerced_matches > 0, "Some content matches should have coercion applied");
+
+    // Check specific coercions
+    let snake_case_match = content_matches.iter()
+        .find(|m| m.before.contains("refaktor_core") && m.coercion_applied.is_some());
+    if let Some(m) = snake_case_match {
+        assert!(m.after.contains("smart_search_and_replace_core"), 
+            "snake_case context should produce snake_case replacement");
+    }
+}
+
+#[test]
+fn test_language_specific_defaults() {
+    // Test Rust file defaults (should prefer snake_case for modules)
+    let _result = apply_coercion("refaktor.rs", "refaktor", "smart_search_and_replace");
+    // For now this should be None since we need to implement language-specific logic
+    // When implemented, this should prefer snake_case
+    
+    // Test JavaScript/TypeScript defaults (should prefer kebab-case)  
+    let _result = apply_coercion("refaktor.js", "refaktor", "smart_search_and_replace");
+    // When implemented, should prefer kebab-case
+
+    // Test Python defaults (should prefer snake_case)
+    let _result = apply_coercion("refaktor.py", "refaktor", "smart_search_and_replace");  
+    // When implemented, should prefer snake_case
+
+    // Test Java defaults (should prefer PascalCase for classes)
+    let _result = apply_coercion("Refaktor.java", "Refaktor", "SmartSearchAndReplace");
+    // When implemented, should prefer PascalCase
+}
+
+#[test]
+fn test_cargo_toml_crate_name_coercion() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create Cargo.toml with hyphenated crate name
+    fs::write(temp_dir.path().join("Cargo.toml"), r#"
+[package]
+name = "refaktor-core"
+version = "0.1.0"
+
+[dependencies]
+refaktor = { path = "../refaktor" }
+"#).unwrap();
+
+    let options = PlanOptions {
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None,
+        rename_files: false,
+        rename_dirs: false, 
+        plan_out: temp_dir.path().join("plan.json"),
+        coerce_separators: CoercionMode::Auto,
+    };
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "refaktor",
+        "smart_search_and_replace",
+        &options,
+    ).unwrap();
+
+    // In Cargo.toml, crate names should use hyphens
+    let toml_matches: Vec<_> = plan.matches.iter()
+        .filter(|m| m.file.file_name().unwrap() == "Cargo.toml")
+        .collect();
+    
+    assert!(!toml_matches.is_empty());
+    
+    // The "refaktor-core" name should become "smart-search-and-replace-core" 
+    let name_match = toml_matches.iter()
+        .find(|m| m.before.contains("refaktor-core"));
+    if let Some(m) = name_match {
+        assert!(m.after.contains("smart-search-and-replace-core"),
+            "Cargo.toml crate names should use hyphen style");
+    }
+}
+
+#[test]
+fn test_mixed_separators_no_coercion() {
+    // Test files/identifiers with mixed separators (should not be coerced)
+    let result = apply_coercion("refaktor-core_lib.rs", "refaktor", "smart_search_and_replace");
+    assert!(result.is_none(), "Mixed separator containers should not be coerced");
+
+    let result = apply_coercion("refaktor_core-service", "refaktor", "smart_search_and_replace");  
+    assert!(result.is_none(), "Mixed separator containers should not be coerced");
+}
+
+#[test]
+fn test_style_memory_consistency() {
+    // This test is for future functionality where we remember style choices
+    // and apply them consistently across the same basename
+    
+    // When we rename "refaktor.rs" -> "smart_search_and_replace.rs" (snake_case)
+    // Then other references to "refaktor.rs" should also use snake_case style
+    
+    // For now, just test that the basic style detection is consistent
+    assert_eq!(detect_style("refaktor_core.rs"), Style::Snake);
+    assert_eq!(detect_style("refaktor-core.js"), Style::Kebab);
+    assert_eq!(detect_style("RefaktorCore.java"), Style::Pascal);
+    assert_eq!(detect_style("refaktorCore.ts"), Style::Camel);
+}

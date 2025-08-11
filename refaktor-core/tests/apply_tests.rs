@@ -43,6 +43,7 @@ fn test_apply_content_edits() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
+        coercion_applied: None,
     });
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
@@ -53,6 +54,7 @@ fn test_apply_content_edits() {
         after: "new_name".to_string(),
         start: 30,
         end: 38,
+        coercion_applied: None,
     });
     
     // Apply the plan
@@ -93,11 +95,13 @@ fn test_apply_renames() {
         from: old_file.clone(),
         to: temp_dir.path().join("new_name.txt"),
         kind: RenameKind::File,
+        coercion_applied: None,
     });
     plan.renames.push(Rename {
         from: old_dir.clone(),
         to: temp_dir.path().join("new_name_dir"),
         kind: RenameKind::Dir,
+        coercion_applied: None,
     });
     
     // Apply the plan
@@ -140,6 +144,7 @@ fn test_rollback_on_error() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
+        coercion_applied: None,
     });
     
     // Apply should fail
@@ -170,6 +175,7 @@ fn test_case_only_rename() {
         from: lower_file.clone(),
         to: temp_dir.path().join("OldName.txt"),
         kind: RenameKind::File,
+        coercion_applied: None,
     });
     
     let options = ApplyOptions {
@@ -209,6 +215,7 @@ fn test_atomic_operations() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
+        coercion_applied: None,
     });
     
     // Second edit will fail (wrong content)
@@ -221,6 +228,7 @@ fn test_atomic_operations() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
+        coercion_applied: None,
     });
     
     let options = ApplyOptions {
@@ -256,6 +264,7 @@ fn test_skip_symlinks() {
             from: symlink_path.clone(),
             to: temp_dir.path().join("new_link.txt"),
             kind: RenameKind::File,
+            coercion_applied: None,
         });
         
         let options = ApplyOptions {
@@ -321,6 +330,7 @@ fn test_apply_with_git_commit() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
+        coercion_applied: None,
     });
     
     // Apply with commit

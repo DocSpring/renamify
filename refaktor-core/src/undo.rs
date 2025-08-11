@@ -181,6 +181,7 @@ fn history_entry_to_plan(entry: &crate::history::HistoryEntry) -> Result<Plan> {
             from: from.clone(),
             to: to.clone(),
             kind,
+            coercion_applied: None,
         });
     }
     

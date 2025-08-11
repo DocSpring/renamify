@@ -301,6 +301,7 @@ mod tests {
                     after: "let new_name = 42;".to_string(),
                     start: 4,
                     end: 12,
+                    coercion_applied: None,
                 },
                 MatchHunk {
                     file: PathBuf::from("src/main.rs"),
@@ -311,6 +312,7 @@ mod tests {
                     after: "fn newName() {}".to_string(),
                     start: 3,
                     end: 10,
+                    coercion_applied: None,
                 },
             ],
             renames: vec![
@@ -318,6 +320,7 @@ mod tests {
                     from: PathBuf::from("old_name.txt"),
                     to: PathBuf::from("new_name.txt"),
                     kind: RenameKind::File,
+                    coercion_applied: None,
                 },
             ],
             stats: Stats {

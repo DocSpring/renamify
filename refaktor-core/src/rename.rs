@@ -120,7 +120,17 @@ pub fn plan_renames_with_conflicts(
             // Check each variant mapping
             for (old, new) in mapping {
                 if file_name_str.contains(old) {
-                    let new_name = file_name_str.replace(old, new);
+                    let mut new_name = file_name_str.replace(old, new);
+                    let mut coercion_applied = None;
+                    
+                    // Apply coercion if enabled
+                    if let crate::scanner::CoercionMode::Auto = options.coerce_separators {
+                        if let Some((coerced, reason)) = crate::coercion::apply_coercion(&file_name_str, old, new) {
+                            new_name = coerced;
+                            coercion_applied = Some(reason);
+                        }
+                    }
+                    
                     let new_path = path.with_file_name(&new_name);
                     
                     let kind = if file_type.is_dir() {
@@ -133,6 +143,7 @@ pub fn plan_renames_with_conflicts(
                         from: path.to_path_buf(),
                         to: new_path,
                         kind,
+                        coercion_applied,
                     });
                     break; // Only apply first matching variant
                 }
@@ -298,21 +309,25 @@ mod tests {
                 from: PathBuf::from("/a/b/c/file.txt"),
                 to: PathBuf::from("/a/b/c/new.txt"),
                 kind: RenameKind::File,
+                coercion_applied: None,
             },
             Rename {
                 from: PathBuf::from("/a/dir"),
                 to: PathBuf::from("/a/newdir"),
                 kind: RenameKind::Dir,
+                coercion_applied: None,
             },
             Rename {
                 from: PathBuf::from("/a/b/deep_dir"),
                 to: PathBuf::from("/a/b/new_deep"),
                 kind: RenameKind::Dir,
+                coercion_applied: None,
             },
             Rename {
                 from: PathBuf::from("/file.txt"),
                 to: PathBuf::from("/new.txt"),
                 kind: RenameKind::File,
+                coercion_applied: None,
             },
         ];
 

@@ -398,6 +398,7 @@ fn handle_plan(
         rename_files,
         rename_dirs,
         plan_out: plan_out.clone(),
+        coerce_separators: refaktor_core::scanner::CoercionMode::Auto,  // TODO: make configurable
     };
 
     // Scan the repository

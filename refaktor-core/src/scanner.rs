@@ -25,6 +25,14 @@ pub struct PlanOptions {
     pub rename_files: bool,
     pub rename_dirs: bool,
     pub plan_out: PathBuf,
+    pub coerce_separators: CoercionMode,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum CoercionMode {
+    Auto,     // Default: automatically detect and apply
+    Off,      // Disable coercion
+    Force(crate::coercion::Style),  // Force a specific style
 }
 
 impl PlanOptions {
@@ -45,6 +53,7 @@ impl Default for PlanOptions {
             rename_files: true,
             rename_dirs: true,
             plan_out: PathBuf::from(".refaktor/plan.json"),
+            coerce_separators: CoercionMode::Auto,
         }
     }
 }
@@ -59,6 +68,8 @@ pub struct MatchHunk {
     pub after: String,
     pub start: usize,
     pub end: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub coercion_applied: Option<String>,  // Details about coercion if applied
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,6 +77,8 @@ pub struct Rename {
     pub from: PathBuf,
     pub to: PathBuf,
     pub kind: RenameKind,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub coercion_applied: Option<String>,  // Details about coercion if applied
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -161,7 +174,7 @@ pub fn scan_repository(
             let file_matches = find_matches(&pattern, &content, path.to_str().unwrap_or(""));
             
             if !file_matches.is_empty() {
-                let hunks = generate_hunks(&file_matches, &content, &variant_map, path);
+                let hunks = generate_hunks(&file_matches, &content, &variant_map, path, options);
                 
                 stats.files_with_matches += 1;
                 stats.total_matches += hunks.len();
@@ -252,6 +265,7 @@ fn generate_hunks(
     content: &[u8],
     variant_map: &BTreeMap<String, String>,
     path: &Path,
+    options: &PlanOptions,
 ) -> Vec<MatchHunk> {
     let lines: Vec<&[u8]> = content.lines_with_terminator().collect();
     let mut hunks = Vec::new();
@@ -266,7 +280,16 @@ fn generate_hunks(
         let before = String::from_utf8_lossy(line).to_string();
         
         let new_variant = variant_map.get(&m.variant).unwrap_or(&m.variant);
-        let after = before.replace(&m.variant, new_variant);
+        let mut after = before.replace(&m.variant, new_variant);
+        let mut coercion_applied = None;
+
+        // Apply coercion if enabled
+        if let CoercionMode::Auto = options.coerce_separators {
+            if let Some((coerced, reason)) = crate::coercion::apply_coercion(&before, &m.variant, new_variant) {
+                after = coerced;
+                coercion_applied = Some(reason);
+            }
+        }
 
         hunks.push(MatchHunk {
             file: path.to_path_buf(),
@@ -277,6 +300,7 @@ fn generate_hunks(
             after: after.trim_end().to_string(),
             start: m.start,
             end: m.end,
+            coercion_applied,
         });
     }
 
@@ -405,7 +429,8 @@ mod tests {
             },
         ];
         
-        let hunks = generate_hunks(&matches, content, &variant_map, Path::new("test.txt"));
+        let opts = PlanOptions::default();
+        let hunks = generate_hunks(&matches, content, &variant_map, Path::new("test.txt"), &opts);
         
         assert_eq!(hunks.len(), 2);
         assert_eq!(hunks[0].variant, "old_name");
@@ -473,16 +498,19 @@ mod tests {
                 from: PathBuf::from("/a/b/file.txt"),
                 to: PathBuf::from("/a/b/new.txt"),
                 kind: RenameKind::File,
+                coercion_applied: None,
             },
             Rename {
                 from: PathBuf::from("/a/dir"),
                 to: PathBuf::from("/a/new_dir"),
                 kind: RenameKind::Dir,
+                coercion_applied: None,
             },
             Rename {
                 from: PathBuf::from("/a/b/c/deep.txt"),
                 to: PathBuf::from("/a/b/c/new_deep.txt"),
                 kind: RenameKind::File,
+                coercion_applied: None,
             },
         ];
         

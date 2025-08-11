@@ -35,6 +35,7 @@ fn create_sample_plan() -> Plan {
                 after: "    let customer_name = String::new();".to_string(),
                 start: 11,
                 end: 20,
+        coercion_applied: None,
             },
             MatchHunk {
                 file: PathBuf::from("src/models/user.rs"),
@@ -45,6 +46,7 @@ fn create_sample_plan() -> Plan {
                 after: "    pub customerName: String,".to_string(),
                 start: 7,
                 end: 15,
+        coercion_applied: None,
             },
             MatchHunk {
                 file: PathBuf::from("src/api/handlers.rs"),
@@ -55,6 +57,7 @@ fn create_sample_plan() -> Plan {
                 after: "struct CustomerName {".to_string(),
                 start: 7,
                 end: 15,
+        coercion_applied: None,
             },
             MatchHunk {
                 file: PathBuf::from("src/api/handlers.rs"),
@@ -65,6 +68,7 @@ fn create_sample_plan() -> Plan {
                 after: "    fn get_customer_name(&self) -> &str {".to_string(),
                 start: 11,
                 end: 20,
+        coercion_applied: None,
             },
         ],
         renames: vec![
@@ -72,11 +76,13 @@ fn create_sample_plan() -> Plan {
                 from: PathBuf::from("src/models/user_name.rs"),
                 to: PathBuf::from("src/models/customer_name.rs"),
                 kind: RenameKind::File,
+                coercion_applied: None,
             },
             Rename {
                 from: PathBuf::from("tests/user_name_tests"),
                 to: PathBuf::from("tests/customer_name_tests"),
                 kind: RenameKind::Dir,
+                coercion_applied: None,
             },
         ],
         stats: Stats {

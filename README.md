@@ -2,7 +2,20 @@
 
 Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
 
-## Demo: Refaktor Refactoring Itself! 🤯
+- CLI tool
+- Extension for VS Code and Cursor _(coming soon)_
+- MCP server for AI integrations _(coming soon)_
+
+## Features
+
+- Case-aware transformations (snake_case, kebab-case, camelCase, PascalCase, UPPER_SNAKE_CASE)
+- File and directory renaming
+- Plan / apply workflow for safety during large refactorings
+- Built-in undo/redo with history tracking (separate to git history)
+  - Perform a large refactor safely without needing to commit anything first
+- Cross-platform support (Linux, macOS, Windows)
+
+## Demo
 
 Watch Refaktor rename itself to `smart_search_and_replace`, then use the renamed binary to change it back:
 
@@ -30,16 +43,7 @@ cargo build --release
 ./target/release/refaktor --help
 ```
 
-This demonstrates Refaktor's power: it can rename entire projects including all code references, file names, directory names, and even the binary itself - all while maintaining perfect consistency across different naming conventions!
-
-## Features
-
-- Case-aware transformations (snake_case, kebab-case, camelCase, PascalCase, UPPER_SNAKE_CASE)
-- File and directory renaming
-- Built-in undo/redo with history tracking
-- Cross-platform support (Linux, macOS, Windows)
-- VS Code extension
-- MCP server for AI integrations
+This demonstrates Refaktor's power: it can rename entire projects including all code references, file names, and directory names - all while maintaining perfect consistency across different naming conventions.
 
 ## Build Status
 
