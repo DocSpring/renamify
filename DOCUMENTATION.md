@@ -88,6 +88,7 @@ refaktor plan <OLD> <NEW> [OPTIONS]
 - `--exclude-styles <STYLES>` - Exclude specific case styles from the default set (comma-separated: snake,kebab,camel,pascal,screaming-snake)
 - `--include-styles <STYLES>` - Add additional case styles to the active set (comma-separated: title,train,dot)
 - `--only-styles <STYLES>` - Use only these case styles, ignoring defaults (comma-separated: any combination)
+- `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
 - `--preview-format <FORMAT>` - Output format: table (default), diff, json
 - `--plan-out <PATH>` - Where to save the plan (default: .refaktor/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
@@ -160,6 +161,7 @@ refaktor rename <OLD> <NEW> [OPTIONS]
 - `--exclude-styles <STYLES>` - Exclude specific case styles from the default set (comma-separated)
 - `--include-styles <STYLES>` - Add additional case styles to the active set (comma-separated)
 - `--only-styles <STYLES>` - Use only these case styles, ignoring defaults (comma-separated)
+- `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
 - `--preview <FORMAT>` - Show preview before confirmation (table, diff, json)
 - `--commit` - Create a git commit after applying changes
 - `--large` - Acknowledge large changes (>500 files or >100 renames)
@@ -457,6 +459,18 @@ refaktor rename old_name new_name --preview table
 refaktor rename getUserName fetchUserProfile --commit --preview diff
 ```
 
+### Excluding Specific Matches
+
+Use `--exclude-match` to skip specific compound words or identifiers:
+
+```bash
+# Skip specific compound words that shouldn't be changed
+refaktor plan foo bar --exclude-match bazFooQux,FooService
+
+# Useful when a pattern accidentally matches unintended identifiers
+refaktor rename config settings --exclude-match ConfigurationManager
+```
+
 ### Root Directory Projects
 
 ```bash
@@ -550,6 +564,19 @@ Refaktor works with any text file. Binary files are automatically detected and s
 - Uses memory-mapped files for large file reading
 - Parallel directory traversal for scanning
 - Atomic writes may be slower but ensure safety
+
+### Concurrent Process Protection
+
+Refaktor uses a lock file mechanism to prevent concurrent operations:
+
+- Lock file is created in `.refaktor/refaktor.lock` during plan/apply/rename operations
+- Contains process ID and timestamp for tracking
+- Automatically cleaned up when operations complete
+- Stale locks (older than 5 minutes) are automatically removed
+- If a lock exists from a crashed process, it can be manually removed:
+  ```bash
+  rm .refaktor/refaktor.lock
+  ```
 
 ### Limitations
 
