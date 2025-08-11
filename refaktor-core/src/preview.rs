@@ -122,12 +122,8 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
         }
     }
     
-    // Separate root directory renames from regular renames
-    let (root_renames, regular_renames): (Vec<_>, Vec<_>) = plan.renames.iter()
-        .partition(|rename| is_root_directory_rename(rename));
-    
-    // Add regular rename rows (excluding root directory renames)
-    for rename in &regular_renames {
+    // Add rename rows (root directory renames should not be in plans unless explicitly requested)
+    for rename in &plan.renames {
         let from_str = rename.from.display().to_string();
         let to_str = rename.to.display().to_string();
         let kind_str = match rename.kind {
@@ -152,10 +148,10 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
         }
     }
     
-    // Add footer with totals (exclude root directory renames from regular totals)
+    // Add footer with totals
     let total_matches = plan.stats.total_matches;
     let total_files = plan.stats.files_with_matches;
-    let total_renames = regular_renames.len();
+    let total_renames = plan.renames.len();
     
     if use_color {
         table.add_row(vec![
@@ -185,23 +181,7 @@ fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
         ]);
     }
     
-    let mut result = table.to_string();
-    
-    // Add "Next Steps" section for root directory renames
-    if !root_renames.is_empty() {
-        result.push_str("\n\nNext Steps:\n");
-        for rename in &root_renames {
-            let from_str = rename.from.display().to_string();
-            let to_str = rename.to.display().to_string();
-            result.push_str(&format!("  • Root directory rename: {} → {}\n", from_str, to_str));
-            result.push_str("    After applying this refactoring:\n");
-            result.push_str(&format!("    1. cd {}\n", to_str));
-            result.push_str("    2. Rebuild/reload project in your IDE\n");
-            result.push_str("    3. Update any scripts that reference the old directory name\n");
-        }
-    }
-    
-    Ok(result)
+    Ok(table.to_string())
 }
 
 /// Render plan as unified diffs

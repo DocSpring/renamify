@@ -111,6 +111,7 @@ fn test_end_to_end_coercion_with_files() {
         styles: None,
         rename_files: true,
         rename_dirs: true,
+        rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto, // Enable coercion
     };
@@ -184,6 +185,7 @@ fn test_coercion_disabled() {
         styles: None,
         rename_files: true,
         rename_dirs: true,
+        rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Off, // Disable coercion
     };
@@ -232,6 +234,7 @@ let config = refaktor.config.load();
         styles: None, 
         rename_files: false, // Focus on content matches only
         rename_dirs: false,
+        rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
     };
@@ -309,6 +312,7 @@ let regex_pattern = r"refaktor[_-](\w+)";
         styles: None,
         rename_files: false,
         rename_dirs: false,
+        rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
     };
@@ -381,6 +385,7 @@ let nested = refaktor::core::pattern::Match;
         styles: None,
         rename_files: false,
         rename_dirs: false,
+        rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
     };
@@ -425,6 +430,7 @@ let snake_case_var = refaktor_core; let camelVar = refaktorService;
         styles: None,
         rename_files: false,
         rename_dirs: false,
+        rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
     };
@@ -486,7 +492,8 @@ refaktor = { path = "../refaktor" }
         unrestricted_level: 0,
         styles: None,
         rename_files: false,
-        rename_dirs: false, 
+        rename_dirs: false,
+        rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
     };

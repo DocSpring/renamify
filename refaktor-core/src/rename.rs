@@ -151,6 +151,19 @@ pub fn plan_renames_with_conflicts(
         }
     }
 
+    // Filter out root directory renames unless explicitly allowed
+    if !options.rename_root {
+        collected_renames.retain(|rename| {
+            // Check if this rename is for the root directory (current working directory)
+            if let Ok(current_dir) = std::env::current_dir() {
+                rename.from != current_dir
+            } else {
+                // If we can't get current dir, keep the rename (safe default)
+                true
+            }
+        });
+    }
+
     // Sort renames: directories by depth (deepest first), then files
     collected_renames.sort_by(|a, b| {
         let a_is_dir = matches!(a.kind, RenameKind::Dir);

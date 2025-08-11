@@ -24,6 +24,7 @@ pub struct PlanOptions {
     pub styles: Option<Vec<Style>>,
     pub rename_files: bool,
     pub rename_dirs: bool,
+    pub rename_root: bool,        // Allow renaming the root directory
     pub plan_out: PathBuf,
     pub coerce_separators: CoercionMode,
 }
@@ -52,6 +53,7 @@ impl Default for PlanOptions {
             styles: None,
             rename_files: true,
             rename_dirs: true,
+            rename_root: false,       // Default: do not rename root directory
             plan_out: PathBuf::from(".refaktor/plan.json"),
             coerce_separators: CoercionMode::Auto,
         }

@@ -491,6 +491,7 @@ fn handle_plan(
         styles,
         rename_files,
         rename_dirs,
+        rename_root: false,  // Default: do not allow root directory renames in plan
         plan_out: plan_out.clone(),
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,  // TODO: make configurable
     };

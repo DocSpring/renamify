@@ -44,6 +44,7 @@ pub fn handle_rename(
         styles,
         rename_files,
         rename_dirs,
+        rename_root: false,  // Default: do not allow root directory renames
         plan_out: PathBuf::from(".refaktor/temp_plan.json"), // temporary, will be stored in history
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
