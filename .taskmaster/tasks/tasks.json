@@ -1,0 +1,1004 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Bootstrap Rust workspace, CI, and coverage gating",
+        "description": "Initialize a Rust cargo workspace with refaktor-core and refaktor-cli crates, set up linting, formatting, GitHub Actions CI, and 100% coverage gating for the core library.",
+        "details": "Tech stack and versions:\n- Rust toolchain: stable 1.80.x (pin via rust-toolchain.toml)\n- Crates (add but keep unused allow in initial commit): anyhow=1, thiserror=1, clap=4.5 with derive + cargo-completion, serde=1, serde_json=1, regex=1.11, bstr=1, ignore=0.4, globset=0.4, walkdir=2.5, content_inspector=0.2, memmap2=0.9, rayon=1.10, similar=2.5, comfy-table=7, nu-ansi-term=0.50, tempfile=3, sha2=0.10\n- Dev/test: proptest=1.4, insta=1.39, assert_cmd=2, predicates=3, assert_fs=1, cargo-llvm-cov (tool), cargo-fuzz (tool), criterion=0.5\nRepo layout:\n- /refaktor-core: pure library with case model, regex gen, scanner, planner, apply engine, history\n- /refaktor-cli: binary crate using clap, thin shim over core\n- /.refaktor/ reserved in runtime (ignored by VCS via .gitignore)\nCI (GitHub Actions):\n- Matrix: ubuntu-latest, macos-latest, windows-latest; rust: stable\n- Steps: checkout, rust-cache, toolchain install, fmt --check, clippy -D warnings, tests, cargo-llvm-cov for core with 100% threshold\n- Artifact: code coverage HTML uploaded for PRs\nCode quality:\n- rustfmt.toml aligned with 2024+ style, clippy pedantic/ nursery where practical\n- LICENSING placeholder pending PRD decision (MIT/Apache-2.0)\n",
+        "testStrategy": "- CI builds on all 3 OSes.\n- Verify cargo fmt/clippy pass.\n- Add a trivial unit test in core to exercise coverage and ensure cargo-llvm-cov reports 100% for refaktor-core.\n- Ensure workflows fail if coverage < 100% for refaktor-core.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Rust Cargo Workspace with refaktor-core and refaktor-cli Crates",
+            "description": "Set up a Rust workspace containing the refaktor-core library crate and the refaktor-cli binary crate.",
+            "dependencies": [],
+            "details": "Create a new directory for the workspace and add a Cargo.toml file with a [workspace] section listing 'refaktor-core' and 'refaktor-cli' as members. Within this directory, create the 'refaktor-core' library crate and the 'refaktor-cli' binary crate.",
+            "status": "pending",
+            "testStrategy": "Verify that running 'cargo build' from the workspace root compiles both crates successfully, and that the target directory is shared among them."
+          },
+          {
+            "id": 2,
+            "title": "Configure Rust Toolchain and Add Dependencies",
+            "description": "Specify the Rust toolchain version and add the required dependencies to the project.",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Create a 'rust-toolchain.toml' file in the workspace root to pin the Rust toolchain to stable version 1.80.x. In the Cargo.toml files of both crates, add the specified dependencies, allowing unused dependencies in the initial commit.",
+            "status": "pending",
+            "testStrategy": "Run 'cargo check' to ensure that the project compiles without errors and that all dependencies are correctly recognized."
+          },
+          {
+            "id": 3,
+            "title": "Set Up Code Formatting and Linting",
+            "description": "Configure rustfmt and clippy for code formatting and linting, respectively.",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Create a 'rustfmt.toml' file aligned with 2024+ style guidelines. Configure clippy to use pedantic and nursery lints where practical.",
+            "status": "pending",
+            "testStrategy": "Run 'cargo fmt --check' and 'cargo clippy -- -D warnings' to ensure code adheres to formatting and linting standards."
+          },
+          {
+            "id": 4,
+            "title": "Implement GitHub Actions Continuous Integration (CI) Workflow",
+            "description": "Set up a GitHub Actions workflow to automate building, testing, and linting across multiple operating systems.",
+            "dependencies": [
+              "1.1",
+              "1.2",
+              "1.3"
+            ],
+            "details": "Create a '.github/workflows/ci.yml' file defining a matrix build for 'ubuntu-latest', 'macos-latest', and 'windows-latest' runners. Include steps for checking out the code, setting up the Rust toolchain, caching dependencies, running 'cargo fmt --check', 'cargo clippy -D warnings', and 'cargo test'.",
+            "status": "pending",
+            "testStrategy": "Push a commit to trigger the workflow and verify that all steps complete successfully on all specified operating systems."
+          },
+          {
+            "id": 5,
+            "title": "Integrate Code Coverage Analysis with 100% Threshold for refaktor-core",
+            "description": "Set up code coverage analysis for the refaktor-core library with a requirement of 100% coverage.",
+            "dependencies": [
+              "1.1",
+              "1.4"
+            ],
+            "details": "Add 'cargo-llvm-cov' as a development tool. Modify the GitHub Actions workflow to include steps for installing 'cargo-llvm-cov', running coverage analysis on refaktor-core, and uploading the coverage report as an artifact. Configure the workflow to fail if coverage is below 100%.",
+            "status": "pending",
+            "testStrategy": "Add a trivial unit test in refaktor-core to exercise coverage. Push a commit to trigger the workflow and verify that it fails if coverage is below 100% and passes when coverage meets the threshold."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Case token model and cross-style converters",
+        "description": "Implement a uniform token model to parse identifiers into word tokens and convert between supported styles; generate old_variant->new_variant mapping table.",
+        "details": "Supported styles: snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Title Case, Train-Case, dot.case.\nAPI (refaktor-core):\n- enum Style { Snake, Kebab, Camel, Pascal, ScreamingSnake, Title, Train, Dot }\n- struct Token { text: String }\n- struct TokenModel { tokens: Vec<Token> }\n- fn detect_style(s:&str)->Option<Style>\n- fn parse_to_tokens(s:&str)->TokenModel // Heuristics: split on [_\\-\\. ], camel boundaries (lower->Upper, digit transitions), keep acronyms as single token when followed by lowercase (\"XMLHttp\" -> [\"XML\", \"Http\"]).\n- fn to_style(model:&TokenModel, style:Style)->String\n- fn generate_variant_map(old:&str, new:&str, styles:Option<&[Style]>) -> BTreeMap<String,String>\nImplementation notes:\n- Use bstr for byte-wise ops; restrict to ASCII letters, digits, and allowed separators by default; Title/Train should space/hyphen separate words and capitalize first letters.\n- Preserve acronym casing heuristics: tokens that are all-caps remain all-caps in SCREAMING_SNAKE; in Camel/Pascal, keep all-caps for sequences length<=2 else transform to Pascal-ish (configurable later).\n- Provide deterministic ordering of variants to ensure stable regex alternation.\n- Expose serialize for debugging.\nPseudo-code (split camel):\nfn split_camel(s: &str) -> Vec<&str> {\n  let mut out = vec![]; let mut start=0; let bytes=s.as_bytes();\n  for i in 1..bytes.len() {\n    if is_lower(bytes[i-1]) && is_upper(bytes[i]) || is_alpha(bytes[i-1]) && is_digit(bytes[i]) || is_digit(bytes[i-1]) && is_alpha(bytes[i]) || (is_upper(bytes[i-1]) && is_upper(bytes[i]) && i+1<bytes.len() && is_lower(bytes[i+1])) { out.push(&s[start..i]); start=i; }\n  }\n  out.push(&s[start..]); out\n}\n",
+        "testStrategy": "- Property tests with proptest: for random tokens and styles, to_style(parse_to_tokens(x), detect_style(x).unwrap_or(default)) should equal normalized x for already-in-style inputs.\n- Round-trip tests: for (old,new), generate_variant_map covers all listed styles with expected outputs on a golden set.\n- Edge cases: acronyms (HTTPServer->HttpServer/HTTP_SERVER), digits (User2FA), single-word tokens, non-ASCII rejection/handling.\n- 100% coverage for this module.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Implement Token Parsing Mechanism",
+            "description": "Develop a function to parse identifiers into a sequence of tokens based on defined heuristics, including splitting on delimiters and camel case boundaries.",
+            "dependencies": [],
+            "details": "Create the `parse_to_tokens` function that splits identifiers into tokens by recognizing delimiters (e.g., '_', '-', '.', ' ') and camel case transitions (e.g., lowercase to uppercase, digit transitions). Ensure acronyms are treated as single tokens when followed by lowercase letters (e.g., 'XMLHttp' -> ['XML', 'Http']).",
+            "status": "pending",
+            "testStrategy": "Implement unit tests to verify correct tokenization of various identifier formats, including edge cases like consecutive delimiters and mixed-case acronyms."
+          },
+          {
+            "id": 2,
+            "title": "Implement Style Detection Functionality",
+            "description": "Create a function to detect the naming style of a given identifier string.",
+            "dependencies": [],
+            "details": "Develop the `detect_style` function that analyzes an identifier to determine its naming convention (e.g., snake_case, camelCase). This function should return an appropriate `Style` enum variant or `None` if the style is unrecognized.",
+            "status": "pending",
+            "testStrategy": "Design tests with a variety of identifiers to ensure accurate style detection, including ambiguous cases and mixed styles."
+          },
+          {
+            "id": 3,
+            "title": "Develop Conversion Function Between Styles",
+            "description": "Create a function to convert a tokenized identifier into a specified naming style.",
+            "dependencies": [],
+            "details": "Implement the `to_style` function that takes a `TokenModel` and a target `Style` enum variant, producing a string representation of the identifier in the desired style. Ensure proper handling of acronyms and capitalization rules as per the implementation notes.",
+            "status": "pending",
+            "testStrategy": "Write tests to confirm correct conversion between all supported styles, including cases with acronyms and special characters."
+          },
+          {
+            "id": 4,
+            "title": "Generate Variant Mapping Table",
+            "description": "Implement functionality to generate a mapping table between old and new identifier variants across different styles.",
+            "dependencies": [],
+            "details": "Develop the `generate_variant_map` function that, given an old and new identifier, produces a `BTreeMap` mapping each style's variant of the old identifier to the corresponding variant of the new identifier. Ensure deterministic ordering for stable regex alternation.",
+            "status": "pending",
+            "testStrategy": "Create tests to verify the correctness and stability of the generated mapping table across various identifier inputs and styles."
+          },
+          {
+            "id": 5,
+            "title": "Integrate and Expose API Functions",
+            "description": "Integrate all components and expose the API functions as specified, ensuring adherence to implementation notes and efficient performance.",
+            "dependencies": [],
+            "details": "Assemble the `refaktor-core` API by integrating the `parse_to_tokens`, `detect_style`, `to_style`, and `generate_variant_map` functions. Ensure the use of `bstr` for byte-wise operations, restrict processing to ASCII letters, digits, and allowed separators by default, and provide serialization for debugging purposes.",
+            "status": "pending",
+            "testStrategy": "Conduct comprehensive integration tests to validate the API's functionality, performance benchmarks to ensure efficiency, and serialization tests to confirm correct debugging output."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Regex generation and boundary heuristics",
+        "description": "Build a single compiled regex (or RegexSet) that matches all old variants with safe token boundary handling without lookbehind; include fuzzing to avoid catastrophic backtracking.",
+        "details": "API (refaktor-core):\n- struct MatchPattern { regex: Regex, variants: Vec<String> }\n- fn build_pattern(variants:&[String]) -> MatchPattern\nBoundary strategy:\n- Avoid \\b which fails on kebab/dot; instead treat boundaries as transitions where the byte before/after is not [A-Za-z0-9] or is start/end of string; we post-filter matches.\n- Compile a single alternation: ^? not needed: use (?:v1|v2|v3) with (?u) for Unicode but we operate on bytes; keep ASCII classes for speed.\n- Use regex::bytes::Regex for byte-oriented search; capture which variant via capturing groups or map via regex.find and then slice compare using Aho-Corasick for identification.\nPerformance:\n- Prefer regex crate 1.11 (DFA/NFA hybrid) with no backtracking risk; build once per plan.\n- For very large variant sets, consider Aho-Corasick 1.1 with byte classes and manual boundary checking; start with regex to keep direct implementation.\nPseudo-code:\nfn build_pattern(vars:&[String])->Regex {\n  let escaped: Vec<String> = vars.iter().map(regex::escape).collect();\n  let body = escaped.join(\"|\");\n  let pat = format!(\"(?:{})\", body);\n  Regex::new(&pat).unwrap()\n}\nfn is_boundary(bytes:&[u8], start:usize, end:usize)->bool { let lb = start==0 || !is_alnum(bytes[start-1]); let rb = end==bytes.len() || !is_alnum(bytes[end]); lb && rb }\n",
+        "testStrategy": "- Unit tests: boundary acceptance/rejection across styles embedded in longer tokens.\n- Fuzz with cargo-fuzz on random variant sets to ensure no panics and acceptable compile time and search time.\n- Snapshot tests: given variants, render pattern; invariant: all variants must match themselves and not match superstrings.\n- Performance microbenchmarks using criterion to ensure compile+scan is within acceptable bounds.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop Regex Compilation Function",
+            "description": "Implement the `build_pattern` function to compile a single regex that matches all provided variants, ensuring safe token boundary handling without using lookbehind assertions.",
+            "dependencies": [],
+            "details": "Create a function that escapes each variant, joins them with alternation, and compiles them into a single regex. Ensure the regex operates on bytes for performance and avoids lookbehind assertions.",
+            "status": "pending",
+            "testStrategy": "Unit tests to verify that the compiled regex matches all provided variants and handles boundaries correctly."
+          },
+          {
+            "id": 2,
+            "title": "Implement Boundary Detection Function",
+            "description": "Create the `is_boundary` function to determine if a match is at a valid token boundary, avoiding the use of `\\b` due to its limitations with certain token styles.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Develop a function that checks if the bytes before and after a match are non-alphanumeric or at the start/end of the string, ensuring accurate boundary detection.",
+            "status": "pending",
+            "testStrategy": "Unit tests to confirm that the function correctly identifies valid and invalid boundaries across various token styles."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Aho-Corasick for Variant Identification",
+            "description": "Utilize the Aho-Corasick algorithm to efficiently identify which variant matched, complementing the regex search.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "After a regex match, use Aho-Corasick to map the match to the specific variant, enabling precise identification without relying on capturing groups.",
+            "status": "pending",
+            "testStrategy": "Unit tests to ensure that the correct variant is identified for each match."
+          },
+          {
+            "id": 4,
+            "title": "Optimize Performance with Hybrid DFA/NFA Approach",
+            "description": "Leverage the regex crate's hybrid DFA/NFA engine to minimize backtracking risks and enhance performance.",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Configure the regex engine to use a hybrid DFA/NFA approach, reducing the likelihood of catastrophic backtracking and improving search efficiency.",
+            "status": "pending",
+            "testStrategy": "Benchmark tests to compare performance with and without the hybrid approach, ensuring no backtracking issues occur."
+          },
+          {
+            "id": 5,
+            "title": "Implement Fuzz Testing for Robustness",
+            "description": "Set up fuzz testing to identify potential issues such as catastrophic backtracking and ensure the system handles various inputs gracefully.",
+            "dependencies": [
+              "3.1",
+              "3.2",
+              "3.3",
+              "3.4"
+            ],
+            "details": "Use tools like `cargo-fuzz` to generate random inputs and test the regex compilation and matching functions, aiming to uncover edge cases and vulnerabilities.",
+            "status": "pending",
+            "testStrategy": "Continuous integration with fuzz tests running on a schedule, monitoring for crashes or performance degradation."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Repo scan and streaming plan.json generator",
+        "description": "Implement fast one-pass repository scan that respects .gitignore and user globs, excludes binaries by default, and streams matches and hunks into .refaktor/plan.json.",
+        "details": "APIs:\n- struct PlanOptions { includes: Vec<String>, excludes: Vec<String>, respect_gitignore: bool, styles: Option<Vec<Style>>, rename_files: bool, rename_dirs: bool, plan_out: PathBuf }\n- struct MatchHunk { file: PathBuf, line: u64, col: u32, before: String, after: String }\n- struct Plan { id: String, created_at: String, old: String, new: String, styles: Vec<Style>, includes: Vec<String>, excludes: Vec<String>, matches: Vec<MatchHunk>, renames: Vec<Rename>, stats: Stats, version: \"1.0.0\" }\nImplementation:\n- Use ignore::WalkBuilder with .gitignore honoring (respect_gitignore default true), add includes/excludes via globset.\n- Parallel scanning: WalkBuilder::build_parallel; for each file:\n  - Use content_inspector to skip binaries unless explicitly included.\n  - Read via memmap2 where possible; otherwise buffered read.\n  - Use pattern from Task 3 to find positions; compute before/after by applying mapping for that match only; produce hunks with minimal context.\n- Stream JSON: use serde_json::Serializer with pretty disabled; write header, then matches/renames arrays incrementally to avoid high memory; maintain stats counters per variant and per file.\n- Generate unique id via SHA256 of (old,new,options,timestamp) or ULID; store .refaktor/plan.json default path.\n- Performance target: ~ripgrep speed on SSD; leverage rayon for file worker pool; keep allocations pooled (e.g., typed-arena or bumpalo optional later if needed).\n",
+        "testStrategy": "- Integration tests on synthetic repo (50k+ small files) to validate performance within 1.5x of ripgrep (approximate): time the scan and assert upper bound.\n- Respect .gitignore: create ignored files and ensure no matches when respect_gitignore=true.\n- Includes/excludes correctness on glob edge cases (\"src/**\", \"**/*.tsx\").\n- Binary exclusion: place matches inside a binary file and ensure skipped by default; flag to include verifies inclusion.\n- Snapshot tests for generated plan.json structure and fields.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Repository Scanning with .gitignore and Glob Support",
+            "description": "Develop a fast, one-pass repository scanner that respects .gitignore files and user-defined globs, excluding binaries by default.",
+            "dependencies": [],
+            "details": "Utilize the ignore crate's WalkBuilder to create a recursive directory iterator that honors .gitignore files and user-specified include/exclude globs. Ensure the scanner skips binary files unless explicitly included.",
+            "status": "pending",
+            "testStrategy": "Create test repositories with various .gitignore configurations and glob patterns. Verify that the scanner correctly includes and excludes files as specified."
+          },
+          {
+            "id": 2,
+            "title": "Implement Parallel File Scanning",
+            "description": "Enhance the repository scanner to perform parallel file scanning for improved performance.",
+            "dependencies": [],
+            "details": "Use WalkBuilder's build_parallel method to enable parallel directory traversal. Implement a worker pool using the rayon crate to process files concurrently.",
+            "status": "pending",
+            "testStrategy": "Benchmark the parallel scanner against a large repository to ensure performance improvements. Verify that the parallel processing does not introduce race conditions or data inconsistencies."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Binary File Detection and Content Reading",
+            "description": "Incorporate binary file detection and efficient content reading into the scanner.",
+            "dependencies": [],
+            "details": "Use the content_inspector crate to detect binary files and skip them unless explicitly included. For content reading, utilize the memmap2 crate for memory-mapped file access where possible, falling back to buffered reading when necessary.",
+            "status": "pending",
+            "testStrategy": "Test the scanner with repositories containing both text and binary files. Ensure that binary files are correctly identified and skipped unless specified otherwise. Verify that content reading is efficient and accurate."
+          },
+          {
+            "id": 4,
+            "title": "Implement Pattern Matching and Hunk Generation",
+            "description": "Develop functionality to find pattern matches and generate minimal context hunks.",
+            "dependencies": [],
+            "details": "Apply patterns from Task 3 to identify match positions within files. Compute 'before' and 'after' contexts by applying mappings for each match, producing hunks with minimal context.",
+            "status": "pending",
+            "testStrategy": "Create test cases with known patterns and expected hunk outputs. Verify that the generated hunks accurately represent the matches with the correct context."
+          },
+          {
+            "id": 5,
+            "title": "Stream Matches and Hunks to plan.json",
+            "description": "Implement streaming of matches and hunks into the .refaktor/plan.json file.",
+            "dependencies": [],
+            "details": "Use serde_json::Serializer with pretty printing disabled to stream JSON data. Write the header, then incrementally add matches and renames arrays to avoid high memory usage. Maintain statistics counters per variant and per file.",
+            "status": "pending",
+            "testStrategy": "Test the streaming functionality with large datasets to ensure that memory usage remains bounded. Verify that the plan.json file is correctly formatted and contains all expected data."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "File and directory rename planning with depth ordering and collision detection",
+        "description": "Compute renames[] for files and directories based on variant mapping, with depth-sorted ordering and collision/case-insensitivity handling.",
+        "details": "APIs:\n- struct Rename { from: PathBuf, to: PathBuf, kind: \"file\"|\"dir\" }\n- fn plan_renames(root:&Path, mapping:&BTreeMap<String,String>, opts:&PlanOptions)->Vec<Rename>\nImplementation:\n- Walk the tree (ignore::Walk) collecting pathnames where filename contains any old_variant; replace occurrences with corresponding new_variant.\n- Sort: directories by depth descending, then files; stable order for determinism.\n- Collision detection:\n  - Build a HashMap<from->to>; if two different sources map to same \"to\" path, mark conflict entry in plan (renames not applied unless resolved).\n  - Detect case-only changes on case-insensitive FS via probe (create temp file \"A\" then stat \"a\"); set a flag in plan to use staged renames.\n- Windows reserved names (CON, NUL, etc.) guard; fail plan if produced.\nPseudo-code:\nfor each entry { let name = file_name(entry); for (old,new) in mapping { if name.contains(old) { to_name = name.replace(old, new); push Rename { from, to: parent.join(to_name) } } } }\n",
+        "testStrategy": "- Unit tests: path depth sort correctness; mapping with multiple variants in same filename.\n- Collision tests: two files mapping to same target; assert plan marks conflict.\n- Case-insensitive test: simulate FS flag and ensure staged rename requirement is recorded.\n- Symlink presence: ensure symlink entries are skipped or noted according to safety policy.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Traverse Directory Tree and Collect Pathnames",
+            "description": "Implement functionality to recursively traverse the directory tree starting from the root path, collecting all file and directory pathnames.",
+            "dependencies": [],
+            "details": "Utilize the 'walkdir' crate to perform efficient recursive directory traversal, ensuring all pathnames are collected for subsequent processing.",
+            "status": "pending",
+            "testStrategy": "Verify that all files and directories are correctly listed, including handling of symbolic links and hidden files as per requirements."
+          },
+          {
+            "id": 2,
+            "title": "Generate Rename Mappings Based on Variant Mapping",
+            "description": "For each collected pathname, identify occurrences of old variants in the filename and generate corresponding new variants based on the provided mapping.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Parse each filename to detect and replace old variants with new variants as specified in the mapping, preparing a list of proposed renames.",
+            "status": "pending",
+            "testStrategy": "Ensure that filenames are correctly transformed according to the mapping, including cases with multiple occurrences of old variants."
+          },
+          {
+            "id": 3,
+            "title": "Sort Renames by Depth and Type",
+            "description": "Sort the list of proposed renames, ordering directories by descending depth followed by files, to ensure correct rename application order.",
+            "dependencies": [
+              "5.2"
+            ],
+            "details": "Implement sorting logic that prioritizes deeper directories first, followed by files, maintaining a stable order for determinism.",
+            "status": "pending",
+            "testStrategy": "Validate that the sorting order is correct, ensuring directories are processed before their contents and that the order is stable across runs."
+          },
+          {
+            "id": 4,
+            "title": "Detect and Handle Naming Collisions",
+            "description": "Identify potential naming conflicts where multiple sources map to the same target path and mark these conflicts in the plan.",
+            "dependencies": [
+              "5.3"
+            ],
+            "details": "Build a mapping of source to target paths and detect cases where different sources result in the same target, flagging these as conflicts.",
+            "status": "pending",
+            "testStrategy": "Test scenarios where different files or directories map to the same target name, ensuring conflicts are correctly identified and reported."
+          },
+          {
+            "id": 5,
+            "title": "Implement Case-Insensitivity and Reserved Name Handling",
+            "description": "Detect case-only changes on case-insensitive file systems and handle reserved names to prevent conflicts and errors during renaming.",
+            "dependencies": [
+              "5.4"
+            ],
+            "details": "Probe the file system to determine case sensitivity and check for reserved names like 'CON' or 'NUL' on Windows, setting flags or failing the plan as appropriate.",
+            "status": "pending",
+            "testStrategy": "Simulate case-insensitive file systems and reserved name scenarios to ensure the system correctly identifies and handles these cases."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Terminal preview: table and unified diff formatting",
+        "description": "Render preview of plan as table and diff outputs in terminal with counts by variant, file, and grouped content vs rename; stabilize JSON format.",
+        "details": "Implementation:\n- Table view using comfy-table with ANSI coloring via nu-ansi-term; columns: File, Kind(Content/Rename), Matches, Variants; footer totals.\n- Diff view using similar crate unified_diff for content changes: compute minimal hunks; add badges for renames (from->to) grouped separately.\n- JSON view simply emits plan.json path or streams JSON to stdout with --preview-format=json.\n- CLI integration point: refaktor plan ... defaults to table; --preview-format diff|table|json.\n- Snapshot fixtures under tests/snapshots/ using insta for both table and diff outputs.\n",
+        "testStrategy": "- Snapshot tests: given a small repo, compare the table and diff renderings to saved snapshots across platforms (normalize path separators).\n- Verify counts match stats in plan.json.\n- Golden tests for ANSI off mode (detect non-TTY) to avoid escape codes in CI.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Table View Rendering",
+            "description": "Develop a table view for the plan using the comfy-table crate with ANSI coloring via nu-ansi-term. The table should include columns for File, Kind (Content/Rename), Matches, and Variants, along with footer totals.",
+            "dependencies": [],
+            "details": "Utilize the comfy-table crate to create a structured table output. Apply ANSI coloring using nu-ansi-term to enhance readability. Ensure the table displays the specified columns and includes footer totals for comprehensive data representation.",
+            "status": "pending",
+            "testStrategy": "Create snapshot tests using the insta crate to verify the table rendering. Ensure the output matches expected snapshots across different platforms, normalizing path separators as needed."
+          },
+          {
+            "id": 2,
+            "title": "Develop Unified Diff View",
+            "description": "Create a unified diff view for content changes using the similar crate's unified_diff module. Compute minimal hunks and add badges for renames, grouping them separately.",
+            "dependencies": [],
+            "details": "Leverage the similar crate's unified_diff module to generate unified diffs. Implement logic to compute minimal hunks for efficient diff representation. Introduce badges to indicate renames, ensuring they are grouped separately for clarity.",
+            "status": "pending",
+            "testStrategy": "Implement snapshot tests with the insta crate to validate the diff output. Compare the generated diffs against saved snapshots to ensure consistency and correctness."
+          },
+          {
+            "id": 3,
+            "title": "Implement JSON View Output",
+            "description": "Develop functionality to emit the plan.json path or stream JSON to stdout when the --preview-format=json option is used.",
+            "dependencies": [],
+            "details": "Ensure the application can output the plan in JSON format. When the --preview-format=json option is specified, either display the path to the plan.json file or stream the JSON content directly to stdout.",
+            "status": "pending",
+            "testStrategy": "Create tests to verify the correct JSON output is produced when the --preview-format=json option is used. Ensure the output is valid JSON and matches expected structures."
+          },
+          {
+            "id": 4,
+            "title": "Integrate CLI Options for Preview Formats",
+            "description": "Add CLI integration to allow users to select the preview format (table, diff, or JSON) using the --preview-format option, with the default set to table.",
+            "dependencies": [],
+            "details": "Modify the CLI to include a --preview-format option that accepts 'table', 'diff', or 'json' as arguments. Set the default behavior to display the table view if no option is specified.",
+            "status": "pending",
+            "testStrategy": "Implement tests to ensure the CLI correctly parses the --preview-format option and displays the appropriate output format. Verify that the default behavior is to show the table view."
+          },
+          {
+            "id": 5,
+            "title": "Set Up Snapshot Testing for Outputs",
+            "description": "Establish snapshot fixtures under tests/snapshots/ using the insta crate for both table and diff outputs.",
+            "dependencies": [
+              "6.1",
+              "6.2"
+            ],
+            "details": "Create a directory structure under tests/snapshots/ to store snapshot files. Utilize the insta crate to capture and manage snapshots of the table and diff outputs for testing purposes.",
+            "status": "pending",
+            "testStrategy": "Develop tests that generate the table and diff outputs and compare them against the stored snapshots. Ensure that any changes to the output are intentional and reviewed."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "CLI command layer and argument parsing",
+        "description": "Implement refaktor CLI with commands plan, apply, undo, redo, status, history, and dry-run alias; wire flags and exit codes per PRD.",
+        "details": "Tech: clap 4.5 with derive; anyhow for errors; color choice via NO_COLOR.\nCommands and flags:\n- refaktor plan <old> <new> [--include ...] [--exclude ...] [--respect-gitignore=true] [--rename-files] [--rename-dirs] [--styles=a,b,c] [--preview-format table|diff|json] [--plan-out path]\n- refaktor apply [--plan path | --id <history id>] [--atomic true] [--commit] [--force-with-conflicts]\n- refaktor undo <id>\n- refaktor redo <id>\n- refaktor status\n- refaktor history [--limit N]\n- refaktor dry-run (alias of plan with preview only)\nExit codes: 0 success, 1 conflicts, 2 invalid input, 3 internal error.\nImplementation:\n- Define ArgEnums for styles and preview formats; parse comma lists.\n- Use clap complete to generate shell completions later.\n- Graceful SIGINT handling: abort scan and remove partial plan file.\n- All heavy lifting calls into refaktor-core modules from prior tasks.\n",
+        "testStrategy": "- CLI integration tests with assert_cmd and assert_fs: validate flag parsing, exit codes, stdout content for each command.\n- Invalid input returns code 2; simulated internal error returns 3.\n- Dry-run does not write changes.\n- Golden tests ensure help text contains required options.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define CLI Commands and Arguments",
+            "description": "Utilize clap 4.5 with derive to define the CLI commands (plan, apply, undo, redo, status, history, dry-run) and their respective arguments and flags as specified in the PRD.",
+            "dependencies": [],
+            "details": "Implement the CLI structure using clap's derive macros to parse commands and arguments. Ensure each command is accurately represented with its required and optional parameters.",
+            "status": "pending",
+            "testStrategy": "Develop unit tests to verify that each command and its arguments are parsed correctly, ensuring that the CLI responds appropriately to valid and invalid inputs."
+          },
+          {
+            "id": 2,
+            "title": "Implement Argument Enums and Parsing",
+            "description": "Create ArgEnums for styles and preview formats, and implement parsing for comma-separated lists.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Define enumerations for styles and preview formats to facilitate argument parsing. Implement functionality to parse and validate comma-separated lists for these arguments.",
+            "status": "pending",
+            "testStrategy": "Write tests to confirm that the enumerations are correctly defined and that the parsing logic accurately processes comma-separated lists into the appropriate enum variants."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Error Handling with anyhow",
+            "description": "Incorporate the anyhow crate to manage and propagate errors throughout the CLI application.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Utilize anyhow to handle errors in a consistent and informative manner, ensuring that all potential error cases are addressed and reported appropriately.",
+            "status": "pending",
+            "testStrategy": "Create scenarios that trigger various error conditions and verify that the application handles them gracefully, providing clear and actionable error messages."
+          },
+          {
+            "id": 4,
+            "title": "Implement Shell Completion Generation",
+            "description": "Use clap's completion feature to generate shell completion scripts for various shells.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Leverage clap's built-in functionality to generate shell completion scripts, enhancing the user experience by providing command and argument suggestions in supported shells.",
+            "status": "pending",
+            "testStrategy": "Test the generated completion scripts in different shell environments to ensure they function correctly and provide accurate suggestions."
+          },
+          {
+            "id": 5,
+            "title": "Handle Graceful Termination Signals",
+            "description": "Implement handling for SIGINT to allow the application to abort operations and clean up resources gracefully.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Set up signal handlers to intercept SIGINT (Ctrl+C) and ensure that ongoing operations are safely aborted, and any temporary files or resources are cleaned up appropriately.",
+            "status": "pending",
+            "testStrategy": "Simulate SIGINT during various stages of operation and verify that the application terminates processes safely and cleans up resources as expected."
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Atomic apply engine with rollback and staged renames",
+        "description": "Implement transactional apply of content edits and filesystem renames with guaranteed rollback on failure and optional git commit.",
+        "details": "Algorithm:\n1) Create working set: list of files to edit and renames to perform from plan.\n2) Create backups in .refaktor/backups/<id>/ for each file to be modified or renamed (copy bytes; preserve perms; use fs::hard_link where safe to save space).\n3) Apply content edits first: load file, re-validate matches context minimally (Task 9 will expand), write to temp file in same dir, fsync, rename over original (POSIX atomic; on Windows use replace_file equivalent with backup).\n4) Perform renames depth-first:\n   - Case-insensitive safe mode: if from.lowercase() == to.lowercase() and differs, perform two-step: from -> temp (unique suffix .refaktor.tmp), then temp -> to.\n   - Detect cross-filesystem moves: fallback to copy + remove preserving metadata.\n5) On any error, rollback: restore all files from backups and revert renames.\n6) If --commit provided: run porcelain git commands: `git add -A` then `git commit -m \"refaktor: rename <old> -> <new> (#<id>)\"` via std::process::Command; never touch .git internals.\nImplementation details:\n- Use fsync on file and parent directory (unix) for durability; on Windows, use File::flush and ensure rename semantics.\n- Respect symlinks: do not edit symlink targets; treat symlink path rename per policy (default: skip).\n- Log steps to .refaktor/apply.log for debugging.\n",
+        "testStrategy": "- End-to-end tests: induce failure mid-apply (e.g., read-only file, simulated error) and assert zero partial state after rollback.\n- Case-only rename on case-insensitive FS simulation: ensure two-step rename produces correct final state.\n- Cross-device move test using temp mount (if CI supports) or simulate via mocked fs trait.\n- Verify optional git commit is created only when requested.",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop Backup Mechanism for Files to be Modified or Renamed",
+            "description": "Create a system to back up each file slated for modification or renaming, ensuring data integrity in case of failure.",
+            "dependencies": [],
+            "details": "Implement a backup process that copies each target file to a designated backup directory, preserving file permissions. Utilize hard links where feasible to conserve space.",
+            "status": "pending",
+            "testStrategy": "Verify that backups are correctly created for all targeted files, with accurate permissions and content. Test scenarios where hard links are used to ensure space efficiency."
+          },
+          {
+            "id": 2,
+            "title": "Implement Atomic Content Edits with Temporary Files",
+            "description": "Ensure content edits are applied atomically by writing changes to temporary files before replacing the originals.",
+            "dependencies": [
+              "8.1"
+            ],
+            "details": "For each file requiring content edits, load the file, minimally re-validate its context, write the changes to a temporary file in the same directory, perform an fsync operation, and then rename the temporary file over the original to achieve atomicity.",
+            "status": "pending",
+            "testStrategy": "Simulate interruptions during the editing process to confirm that partial edits do not affect the original files. Validate that the final content matches expectations after successful edits."
+          },
+          {
+            "id": 3,
+            "title": "Design and Execute Depth-First File and Directory Renaming",
+            "description": "Develop a strategy to perform renames in a depth-first manner, handling case-insensitive scenarios and cross-filesystem moves.",
+            "dependencies": [
+              "8.2"
+            ],
+            "details": "Implement a renaming process that traverses directories depth-first. For case-insensitive filesystems, handle case-only renames by performing a two-step process: rename the original file to a temporary name, then rename it to the target name. Detect cross-filesystem moves and fallback to copy-and-delete operations while preserving metadata.",
+            "status": "pending",
+            "testStrategy": "Test renaming operations on case-insensitive filesystems to ensure correct handling of case-only changes. Validate that cross-filesystem moves preserve file metadata and content integrity."
+          },
+          {
+            "id": 4,
+            "title": "Establish Rollback Mechanism for Error Handling",
+            "description": "Create a rollback system to restore original files and revert renames in case of errors during the apply process.",
+            "dependencies": [
+              "8.1",
+              "8.2",
+              "8.3"
+            ],
+            "details": "On encountering any error during the apply process, restore all files from their backups and revert any renames performed, ensuring the system returns to its original state.",
+            "status": "pending",
+            "testStrategy": "Induce errors at various stages of the apply process and verify that the rollback mechanism correctly restores all files and directories to their initial states."
+          },
+          {
+            "id": 5,
+            "title": "Integrate Optional Git Commit Functionality",
+            "description": "Add functionality to commit changes to a Git repository if the '--commit' flag is provided.",
+            "dependencies": [
+              "8.4"
+            ],
+            "details": "If the '--commit' option is specified, execute Git commands to add all changes and commit them with a message indicating the rename operation and associated ID. Ensure that the implementation uses standard Git commands and does not interact directly with Git internals.",
+            "status": "pending",
+            "testStrategy": "Test the commit functionality by applying changes with the '--commit' flag and verifying that the Git repository reflects the changes with the correct commit message. Ensure that the process does not interfere with Git internals."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Apply-time conflict detection and limited auto-resolution",
+        "description": "Re-validate hunks at apply time to detect conflicts due to intervening edits; auto-resolve format-only changes where replacement still exists in-line; otherwise mark conflicts and stop (unless forced).",
+        "details": "Conflict rules per PRD:\n- If surrounding context has changed or count of occurrences differs, mark conflict.\n- Auto-resolve if the replacement still exists in-line post-formatting change (e.g., whitespace only moved).\nImplementation approach:\n- For each planned hunk, recompute matches in the current file slice; compare expected count and positions +/- small tolerance for whitespace; if mismatch, flag.\n- Use a lightweight 3-way-like check: check if old_variant is still present at/near span; if replaced content already matches new_variant, mark as resolved and skip.\n- Collate conflicts into a report; if any conflicts and --force-with-conflicts not set, abort apply with exit code 1; write conflict details to .refaktor/conflicts/<id>.json.\nPseudo:\nfor hunk in plan.matches { let window = expand_context(file, hunk.line); if !still_applicable(window, hunk) { if already_applied(window, hunk) { continue } else { conflicts.push(hunk) } } else { apply(hunk) } }\n",
+        "testStrategy": "- Modify files between plan and apply to create: (a) whitespace-only edits; (b) inserted text shifting columns; (c) semantic change removing the token. Ensure (a) auto-resolves, (b) may still apply within tolerance, (c) flags conflict and exits 1.\n- Snapshot conflict JSON.\n- CLI returns correct exit codes with and without --force-with-conflicts.",
+        "priority": "medium",
+        "dependencies": [
+          8,
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Recompute Matches for Each Planned Hunk",
+            "description": "For each planned hunk, recompute matches in the current file slice to detect any changes since the plan was created.",
+            "dependencies": [],
+            "details": "This involves analyzing the current state of the file to identify if the planned changes are still applicable. If the surrounding context has changed or the count of occurrences differs, the hunk should be flagged as a conflict.",
+            "status": "pending",
+            "testStrategy": "Modify files between plan and apply to create scenarios where the surrounding context has changed or the count of occurrences differs. Ensure that such changes are correctly flagged as conflicts."
+          },
+          {
+            "id": 2,
+            "title": "Implement Lightweight 3-Way-Like Check",
+            "description": "Develop a mechanism to check if the old_variant is still present at or near the span and if the replaced content already matches the new_variant.",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "This check helps in determining whether the changes have already been applied or if the old content still exists, facilitating auto-resolution of format-only changes where the replacement still exists in-line.",
+            "status": "pending",
+            "testStrategy": "Create test cases where the old_variant is present near the span and where the replaced content matches the new_variant. Verify that such cases are auto-resolved correctly."
+          },
+          {
+            "id": 3,
+            "title": "Auto-Resolve Format-Only Changes",
+            "description": "Automatically resolve changes that are purely formatting (e.g., whitespace adjustments) where the replacement still exists in-line.",
+            "dependencies": [
+              "9.2"
+            ],
+            "details": "Utilize the lightweight 3-way-like check to identify and auto-resolve format-only changes, ensuring that such changes do not interrupt the apply process.",
+            "status": "pending",
+            "testStrategy": "Introduce whitespace-only edits between plan and apply stages. Confirm that these edits are auto-resolved without manual intervention."
+          },
+          {
+            "id": 4,
+            "title": "Collate and Report Conflicts",
+            "description": "Gather all identified conflicts into a comprehensive report and handle them according to the specified rules.",
+            "dependencies": [
+              "9.1",
+              "9.2"
+            ],
+            "details": "If any conflicts are detected and the --force-with-conflicts flag is not set, abort the apply process with exit code 1. Write detailed conflict information to .refaktor/conflicts/<id>.json for further analysis.",
+            "status": "pending",
+            "testStrategy": "Simulate scenarios with various types of conflicts, including semantic changes removing tokens. Ensure that conflicts are reported accurately and the apply process behaves as expected."
+          },
+          {
+            "id": 5,
+            "title": "Implement Conflict Handling Logic",
+            "description": "Develop the logic to handle conflicts based on the specified rules and user inputs.",
+            "dependencies": [
+              "9.4"
+            ],
+            "details": "This includes implementing the behavior to stop the apply process when conflicts are detected, unless the --force-with-conflicts flag is set, in which case the process continues despite conflicts.",
+            "status": "pending",
+            "testStrategy": "Test the apply process with and without the --force-with-conflicts flag in the presence of conflicts. Verify that the process stops or continues as per the flag's setting."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "History store, undo/redo, and status commands",
+        "description": "Persist applied plans in .refaktor/history.json with checksums and backup references; implement undo <id>, redo <id>, status, and history listing.",
+        "details": "Data model:\n- .refaktor/history.json: append-only list [{ id, created_at, old, new, styles, includes, excludes, affected_files, renames, checksums, backups_path, revert_of?:id }]\n- Checksums via sha2 (SHA-256) per file content after apply for verification.\nImplementation:\n- After successful apply, write entry with all metadata, list of files touched, and backup dir.\n- Undo <id>: read entry, restore all files from backups_path, reverse renames (to->from) with same staged logic; append a new history entry with revert_of=id.\n- Redo <id>: re-apply using stored plan and backups as needed; append entry linking to original.\n- status: show last plan id, pending conflicts, and whether working tree is clean per our records (no git interaction unless --commit was used earlier).\n- history --limit N: pretty-print table or JSON.\n",
+        "testStrategy": "- Unit tests for serialization/deserialization of history entries.\n- Integration: apply then undo and verify exact byte-for-byte restoration and filenames.\n- Redo after undo returns repo to post-apply state.\n- Corruption test: tamper with history.json; CLI should detect and refuse to operate with clear error.",
+        "priority": "medium",
+        "dependencies": [
+          8,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Implement History Storage Mechanism",
+            "description": "Develop a system to persist applied plans in .refaktor/history.json, ensuring each entry includes metadata such as id, creation timestamp, old and new values, styles, includes, excludes, affected files, renames, checksums, backups path, and optional revert_of id.",
+            "dependencies": [],
+            "details": "Create an append-only JSON structure to log each applied plan with comprehensive metadata. Implement SHA-256 checksums for each file to verify integrity post-application. Ensure the system can handle concurrent operations and maintains data consistency.",
+            "status": "pending",
+            "testStrategy": "Develop unit tests to validate the serialization and deserialization of history entries. Implement integration tests to ensure that after applying a plan, the history is accurately recorded with all required metadata."
+          },
+          {
+            "id": 2,
+            "title": "Implement Undo Command Functionality",
+            "description": "Create the 'undo <id>' command to revert changes associated with a specific plan ID by restoring files from backups and reversing renames.",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Develop functionality to read the specified history entry, restore all affected files from the backups_path, and reverse any renames using the same staged logic. Append a new history entry indicating the revert operation with a link to the original plan ID.",
+            "status": "pending",
+            "testStrategy": "Conduct integration tests that apply a plan and then perform an undo operation, verifying that the repository is restored to its exact previous state, including file contents and names."
+          },
+          {
+            "id": 3,
+            "title": "Implement Redo Command Functionality",
+            "description": "Develop the 'redo <id>' command to reapply changes associated with a specific plan ID using stored plans and backups as needed.",
+            "dependencies": [
+              "10.1",
+              "10.2"
+            ],
+            "details": "Create functionality to reapply the changes from a specified history entry, utilizing the stored plan and backups. Append a new history entry linking to the original plan ID to indicate the redo operation.",
+            "status": "pending",
+            "testStrategy": "Perform integration tests that apply a plan, undo it, and then redo it, ensuring the repository returns to the post-apply state accurately."
+          },
+          {
+            "id": 4,
+            "title": "Implement Status Command Functionality",
+            "description": "Create the 'status' command to display the last plan ID, pending conflicts, and the cleanliness of the working tree according to recorded history.",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Develop functionality to assess the current state of the repository by comparing it against the recorded history. Display the last applied plan ID, any pending conflicts, and indicate whether the working tree is clean. Avoid direct interaction with Git unless the --commit flag was used previously.",
+            "status": "pending",
+            "testStrategy": "Develop unit tests to verify the accuracy of the status output under various scenarios, including clean states, pending conflicts, and after applying, undoing, and redoing plans."
+          },
+          {
+            "id": 5,
+            "title": "Implement History Listing Command",
+            "description": "Develop the 'history --limit N' command to display a list of past plans in a user-friendly format.",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Create functionality to read the history.json file and present the list of past plans up to a specified limit. Implement options to display the history in a table or JSON format for user convenience.",
+            "status": "pending",
+            "testStrategy": "Conduct unit tests to ensure the history listing accurately reflects the contents of history.json and respects the specified limit and format options."
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Cross-platform filesystem safety and symlink handling",
+        "description": "Harden filesystem operations for macOS, Linux, and Windows including case-insensitive filesystems, path length limits, and safe symlink policy.",
+        "details": "Implementation:\n- Detect case sensitivity at startup by probe file test in temp dir; cache result.\n- Windows long paths: opt-in by normalizing to \\?\\-prefixed paths for long operations where needed; avoid exceeding MAX_PATH by using canonicalization.\n- Symlinks: by default, do not traverse symlinked directories outside repo root; skip editing symlink targets; allow renaming the symlink itself if its name matches; ensure no path traversal beyond repo root using same-file and canonicalization checks.\n- Permissions and locks: implement retry with exponential backoff on Windows sharing violations; surface clear error messages.\n- Reserved names filter for Windows and invalid characters; plan step should preemptively catch and flag.\n",
+        "testStrategy": "- Platform-specific tests via conditional compilation: simulate case-insensitive behavior; symlink tests ensure no traversal outside root.\n- Windows CI: create locked file (open handle) and ensure retry logic behaves; verify helpful error.\n- Path length stress test.",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Case Sensitivity Detection and Caching",
+            "description": "Develop a mechanism to detect the filesystem's case sensitivity at application startup by creating and testing a probe file in a temporary directory. Cache the result for subsequent operations to ensure consistent behavior across different platforms.",
+            "dependencies": [],
+            "details": "Create a temporary file with a specific name, then attempt to access it using a different case variation. If the access succeeds, the filesystem is case-insensitive; otherwise, it is case-sensitive. Store this result for future reference.",
+            "status": "pending",
+            "testStrategy": "Design tests that create files with varying case names and verify access behavior. Ensure the detection mechanism accurately identifies the filesystem's case sensitivity on macOS, Linux, and Windows."
+          },
+          {
+            "id": 2,
+            "title": "Handle Windows Long Path Support",
+            "description": "Implement support for long file paths on Windows by normalizing paths to use the '\\\\?\\' prefix for operations exceeding the MAX_PATH limit. Ensure that path canonicalization is used to prevent exceeding path length restrictions.",
+            "dependencies": [],
+            "details": "Modify file handling functions to prepend the '\\\\?\\' prefix to paths longer than 260 characters. Utilize canonicalization methods to manage and normalize paths, ensuring they remain within acceptable length limits.",
+            "status": "pending",
+            "testStrategy": "Create unit tests that perform file operations with paths exceeding 260 characters, verifying that the application handles them correctly without errors. Include tests for path normalization and canonicalization."
+          },
+          {
+            "id": 3,
+            "title": "Enforce Safe Symlink Policies",
+            "description": "Establish and enforce policies for handling symbolic links to enhance security. By default, prevent traversal of symlinked directories outside the repository root, skip editing symlink targets, allow renaming of symlinks if their names match, and ensure no path traversal beyond the repository root using same-file and canonicalization checks.",
+            "dependencies": [],
+            "details": "Implement checks that restrict operations on symlinks to within the repository root. Disallow modifications to the targets of symlinks and permit renaming only when the symlink's name matches specific criteria. Use same-file and canonicalization methods to prevent unauthorized path traversal.",
+            "status": "pending",
+            "testStrategy": "Develop tests that create symlinks pointing inside and outside the repository root. Verify that operations on these symlinks adhere to the established policies, ensuring security and consistency across platforms."
+          },
+          {
+            "id": 4,
+            "title": "Implement Robust Permissions and Lock Handling",
+            "description": "Develop mechanisms to handle file permissions and locks, particularly addressing Windows sharing violations. Implement retry logic with exponential backoff for operations encountering sharing violations and provide clear error messages to the user.",
+            "dependencies": [],
+            "details": "Introduce a retry mechanism that attempts file operations multiple times with increasing delays upon encountering sharing violations. Ensure that error messages are informative, guiding users to resolve permission-related issues.",
+            "status": "pending",
+            "testStrategy": "Simulate scenarios where files are locked or have restricted permissions. Verify that the retry logic functions correctly and that error messages are displayed appropriately, providing clear guidance to users."
+          },
+          {
+            "id": 5,
+            "title": "Implement Reserved Names and Invalid Character Filters",
+            "description": "Develop filters to handle reserved names and invalid characters in file and directory names, especially for Windows. Ensure that the planning step preemptively catches and flags such issues to prevent errors during filesystem operations.",
+            "dependencies": [],
+            "details": "Create a validation system that checks for reserved names (e.g., CON, NUL) and invalid characters (e.g., <, >, :, \", /, \\, |, ?, *) in file and directory names. Integrate this system into the planning phase to identify and address potential issues before they occur.",
+            "status": "pending",
+            "testStrategy": "Design tests that attempt to create files and directories with reserved names and invalid characters. Confirm that the validation system correctly identifies and flags these issues, preventing the creation of problematic files or directories."
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Performance, streaming, fuzzing, and property testing hardening",
+        "description": "Achieve performance goals and safety via streaming plan writing, multithreaded scanning, and comprehensive fuzz/property tests.",
+        "details": "Performance:\n- Ensure WalkBuilder parallelism tuned (threads = num_cpus).\n- Stream plan.json arrays to keep memory bounded; document max buffer sizes.\n- Use memmap2 for large files; fallback to buffered IO where mmap unavailable.\n- Benchmark with criterion against synthetic repos.\nTesting:\n- Property tests for tokenization/regex boundaries (proptest).\n- Fuzz tests: regex generation and boundary checker with cargo-fuzz harness; run in CI nightly schedule to save time.\n- Large-repo integration perf test gated behind env var PERF=1.\n",
+        "testStrategy": "- Criterion benchmarks checked into benches/ and run locally; ensure <1.5x ripgrep on test corpus.\n- Run cargo-fuzz locally; CI scheduled workflow runs for limited time (e.g., 10 minutes) and reports crashes.\n- Property tests must pass and contribute to 100% coverage.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Optimize WalkBuilder Parallelism",
+            "description": "Adjust the WalkBuilder's parallelism settings to utilize the number of available CPU cores, ensuring efficient multithreaded scanning.",
+            "dependencies": [],
+            "details": "Set the number of threads in WalkBuilder to match the system's CPU count to enhance performance during repository scanning.",
+            "status": "pending",
+            "testStrategy": "Benchmark the scanning process with varying thread counts to confirm optimal performance when threads equal the number of CPU cores."
+          },
+          {
+            "id": 2,
+            "title": "Implement Streaming for plan.json Arrays",
+            "description": "Modify the plan.json generation process to stream arrays, maintaining memory usage within defined buffer size limits.",
+            "dependencies": [],
+            "details": "Refactor the plan.json writer to handle large arrays by streaming data, preventing excessive memory consumption. Document the maximum buffer sizes used during this process.",
+            "status": "pending",
+            "testStrategy": "Test with large repositories to ensure that memory usage remains within acceptable limits and that the plan.json file is correctly generated."
+          },
+          {
+            "id": 3,
+            "title": "Integrate memmap2 for Large File Handling",
+            "description": "Utilize the memmap2 crate to memory-map large files, with a fallback to buffered I/O when memory mapping is unavailable.",
+            "dependencies": [],
+            "details": "Implement file handling logic that uses memmap2 for efficient access to large files, improving performance. Ensure a graceful fallback to buffered I/O on platforms where memory mapping is not supported.",
+            "status": "pending",
+            "testStrategy": "Verify functionality across different platforms, confirming that large files are processed correctly and efficiently in all scenarios."
+          },
+          {
+            "id": 4,
+            "title": "Develop Property Tests for Tokenization and Regex Boundaries",
+            "description": "Create property-based tests to validate the correctness of tokenization and regular expression boundary handling.",
+            "dependencies": [],
+            "details": "Utilize the proptest crate to generate a wide range of input cases, ensuring that tokenization and regex boundary logic are robust and handle edge cases appropriately.",
+            "status": "pending",
+            "testStrategy": "Run property tests to achieve comprehensive coverage, ensuring that all possible input variations are correctly processed without errors."
+          },
+          {
+            "id": 5,
+            "title": "Set Up Fuzz Testing with cargo-fuzz",
+            "description": "Configure fuzz tests for regex generation and boundary checking using the cargo-fuzz harness, and schedule these tests to run nightly in the CI pipeline.",
+            "dependencies": [],
+            "details": "Implement fuzz tests targeting regex generation and boundary conditions, leveraging cargo-fuzz for automated input generation. Schedule these tests to run nightly in the continuous integration pipeline to identify and address potential issues proactively.",
+            "status": "pending",
+            "testStrategy": "Monitor the nightly CI runs for any crashes or anomalies reported by the fuzz tests, and address any issues promptly to maintain code robustness."
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "VS Code extension (TypeScript) integrating with CLI",
+        "description": "Create VS Code extension that shells out to the refaktor CLI over stdio, providing Plan, Preview, Apply, and Undo commands with a diff-style preview webview.",
+        "details": "Tech choices:\n- Node 20 LTS, TypeScript 5.5, VS Code engine ^1.92.0, esbuild 0.23 or tsup 8 for bundling; ESLint 9, Prettier 3.\nImplementation:\n- Commands: \"Refaktor: Plan Rename\", \"Refaktor: Preview Plan\", \"Refaktor: Apply Plan\", \"Refaktor: Undo Last Refaktor\".\n- QuickPick/InputBox UX to capture old/new names, styles, include/exclude; persist last values per-workspace.\n- Spawn CLI via child_process.spawn; capture JSON/stdout; support cancel via AbortController and proc.kill(); display progress via window.withProgress.\n- Preview webview: render file list with badges for content/rename; show unified diffs (use a client-side diff renderer like diff2html 3.x) with lazy expand; allow checkbox to filter styles.\n- Binary management: configurable path to CLI; if not found, prompt to download platform-specific binary from GitHub Releases or use cargo install; cache under extension storage path.\n- Error surfaces: show conflicts/non-zero exit codes with actionable messages.\nPackaging:\n- package.json contributes commands, configuration (refaktor.cliPath), and activation events.\n",
+        "testStrategy": "- Use @vscode/test-electron to run integration tests on macOS/Windows sample repo.\n- Mock child process to simulate CLI outputs for deterministic tests.\n- Manual QA checklist: cancel long-running plan; preview updates; apply success; undo success.\n- VSIX build verification and smoke tests.",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize VS Code Extension Project with TypeScript",
+            "description": "Set up a new Visual Studio Code extension project using TypeScript, incorporating the specified technology stack.",
+            "dependencies": [],
+            "details": "Utilize Yeoman and the VS Code Extension Generator to scaffold the project. Ensure the project includes Node.js 20 LTS, TypeScript 5.5, and the VS Code engine version ^1.92.0. Configure the project to use esbuild 0.23 or tsup 8 for bundling, and set up ESLint 9 and Prettier 3 for code quality.",
+            "status": "pending",
+            "testStrategy": "Verify the project builds successfully and that the development environment is correctly configured with the specified tools and versions."
+          },
+          {
+            "id": 2,
+            "title": "Implement Refaktor Commands and User Input Handling",
+            "description": "Develop the core commands for the extension and implement user interfaces for capturing necessary inputs.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Create the commands 'Refaktor: Plan Rename', 'Refaktor: Preview Plan', 'Refaktor: Apply Plan', and 'Refaktor: Undo Last Refaktor'. Implement QuickPick and InputBox interfaces to capture old/new names, styles, and include/exclude options. Ensure that the last values are persisted per workspace.",
+            "status": "pending",
+            "testStrategy": "Write unit tests to validate command registration and user input handling. Perform manual testing to ensure commands execute as expected and inputs are correctly captured and persisted."
+          },
+          {
+            "id": 3,
+            "title": "Integrate with Refaktor CLI and Manage Processes",
+            "description": "Set up communication between the extension and the Refaktor CLI, handling process management and progress reporting.",
+            "dependencies": [
+              "13.1",
+              "13.2"
+            ],
+            "details": "Use 'child_process.spawn' to invoke the Refaktor CLI, capturing JSON and stdout outputs. Implement support for cancellation using 'AbortController' and 'proc.kill()'. Display progress to the user via 'window.withProgress'.",
+            "status": "pending",
+            "testStrategy": "Mock the child process to simulate CLI outputs for deterministic tests. Conduct integration tests to ensure correct process management and progress reporting."
+          },
+          {
+            "id": 4,
+            "title": "Develop Diff-Style Preview Webview",
+            "description": "Create a webview to display a diff-style preview of planned changes.",
+            "dependencies": [
+              "13.1",
+              "13.2",
+              "13.3"
+            ],
+            "details": "Implement a webview that renders a file list with badges indicating content or rename changes. Use a client-side diff renderer like 'diff2html' 3.x to show unified diffs with lazy expand functionality. Include a checkbox to filter styles.",
+            "status": "pending",
+            "testStrategy": "Write unit tests for the webview's rendering logic. Perform manual testing to ensure the webview displays diffs correctly and responds to user interactions as expected."
+          },
+          {
+            "id": 5,
+            "title": "Implement Binary Management and Error Handling",
+            "description": "Manage the Refaktor CLI binary and handle errors gracefully within the extension.",
+            "dependencies": [
+              "13.1",
+              "13.2",
+              "13.3",
+              "13.4"
+            ],
+            "details": "Provide a configurable path to the Refaktor CLI. If the binary is not found, prompt the user to download the platform-specific binary from GitHub Releases or use 'cargo install'. Cache the binary under the extension's storage path. Display actionable messages for conflicts and non-zero exit codes.",
+            "status": "pending",
+            "testStrategy": "Write unit tests to verify binary management logic and error handling. Conduct manual testing to ensure the extension prompts for binary installation when necessary and handles errors appropriately."
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "MCP server wrapper (Node/TypeScript)",
+        "description": "Implement a Node TypeScript MCP server exposing plan, apply, undo, history, and preview tools by wrapping the CLI and returning structured JSON.",
+        "details": "Tech: Node 20 LTS, TypeScript 5.5, zod 3.23 for schemas, execa 8 for process management, tsup 8 bundling.\nImplementation:\n- Define zod schemas mirroring .refaktor/plan.json and history entries.\n- Tools: plan(old,new,options), apply(planPath?|id, atomic?, commit?), undo(id), history(limit?), preview(planPath?).\n- Spawn CLI with proper args; parse stdout/stderr; map exit codes to structured error objects; return JSON suitable for Cursor or other MCP clients.\n- Cancellation: support AbortSignal to kill child process.\n- Distribution: package.json { \"name\": \"@refaktor/mcp\", \"bin\": { \"refaktor-mcp\": \"dist/index.js\" } }; publish to npm; npx-compatible.\n",
+        "testStrategy": "- Unit tests: schema validation, argument mapping, error mapping from exit codes.\n- Integration tests: use a temporary git repo and invoke plan/apply via the server; verify outputs.\n- E2E smoke with Cursor (if available in CI) or mock client that exercises each tool.",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define Zod Schemas for Plan and History",
+            "description": "Create Zod schemas that accurately represent the structure of .refaktor/plan.json and history entries to ensure data validation and integrity.",
+            "dependencies": [],
+            "details": "Utilize Zod 3.23 to define schemas that mirror the structure of .refaktor/plan.json and history entries, facilitating robust data validation.",
+            "status": "pending",
+            "testStrategy": "Develop unit tests to validate the schemas against various plan and history data samples, ensuring they correctly enforce the expected structure and constraints."
+          },
+          {
+            "id": 2,
+            "title": "Implement MCP Tools Wrapping CLI Commands",
+            "description": "Develop MCP tools (plan, apply, undo, history, preview) that wrap corresponding CLI commands, handling input/output and error mapping.",
+            "dependencies": [
+              "14.1"
+            ],
+            "details": "Create MCP tools that invoke the CLI with appropriate arguments, parse stdout/stderr, map exit codes to structured error objects, and return JSON responses suitable for MCP clients.",
+            "status": "pending",
+            "testStrategy": "Conduct unit tests for each tool to verify correct argument mapping, output parsing, and error handling. Perform integration tests by invoking the tools and validating the responses."
+          },
+          {
+            "id": 3,
+            "title": "Implement Process Management with Execa",
+            "description": "Utilize Execa 8 to manage child processes for CLI command execution, ensuring proper argument passing, output handling, and error management.",
+            "dependencies": [
+              "14.2"
+            ],
+            "details": "Use Execa 8 to spawn CLI processes with the correct arguments, capture stdout/stderr, and handle process termination and errors effectively.",
+            "status": "pending",
+            "testStrategy": "Write unit tests to verify that processes are spawned with the correct arguments and that outputs and errors are handled as expected. Include tests for process termination scenarios."
+          },
+          {
+            "id": 4,
+            "title": "Implement Cancellation Support with AbortSignal",
+            "description": "Integrate AbortSignal to allow for the cancellation of ongoing CLI processes, ensuring that child processes are terminated gracefully when needed.",
+            "dependencies": [
+              "14.3"
+            ],
+            "details": "Incorporate AbortSignal into the process management logic to enable the cancellation of child processes, ensuring that resources are released appropriately.",
+            "status": "pending",
+            "testStrategy": "Develop tests to verify that processes can be cancelled mid-execution and that they terminate gracefully without leaving orphaned processes."
+          },
+          {
+            "id": 5,
+            "title": "Prepare for Distribution and Publish to npm",
+            "description": "Configure the project for distribution by setting up package.json with the appropriate metadata and publishing the package to npm.",
+            "dependencies": [
+              "14.4"
+            ],
+            "details": "Update package.json with the name '@refaktor/mcp', define the bin entry for 'refaktor-mcp' pointing to 'dist/index.js', and ensure the package is npx-compatible. Publish the package to npm.",
+            "status": "pending",
+            "testStrategy": "Verify that the package installs correctly via npm and that the 'refaktor-mcp' command is executable. Ensure that all dependencies are correctly bundled and that the package functions as expected in a clean environment."
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Release packaging, installers, and documentation",
+        "description": "Ship cross-platform binaries, installers, and write documentation including README, examples, and CLAUDE.md notes.",
+        "details": "Packaging:\n- GitHub Actions release workflow building for macOS (x64, arm64), Linux (x64, arm64, MUSL x64), Windows (x64). Use actions-rs/cargo and zig toolchain or cross only if needed; produce archives and checksums.\n- Homebrew: create a tap formula that downloads GitHub release tarballs; update on release.\n- curl | sh installer: script that resolves OS/arch, downloads binary to ~/.local/bin or /usr/local/bin.\n- Windows: Scoop bucket manifest; optionally winget later.\n- cargo install: publish refaktor-cli crate; document feature flags and minimal deps.\nDocs:\n- README: quickstart commands, examples mirroring PRD Appendix A, performance notes, safety model.\n- CONTRIBUTING: dev setup, CI, coverage requirements, coding standards.\n- CHANGELOG using Keep a Changelog.\n- CLAUDE.md: state unreleased, no backwards compatibility, delete old code promptly, prioritize DX.\n- Examples/ folder: React component rename, Ruby model rename including expected outputs.\n- Minimum git version documented (recommend >=2.35 for robust rename/case handling on Windows).\n",
+        "testStrategy": "- Fresh machine tests in CI using containers/VMs: run installer scripts and verify `refaktor --help` works.\n- Validate Homebrew/Scoop manifests via their linters, and tap install succeeds.\n- Docs link checks; copy-paste commands from README in CI to ensure they run.\n- Release dry-run workflow that builds artifacts without publishing.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          8,
+          10,
+          13,
+          14
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up GitHub Actions for Cross-Platform Builds",
+            "description": "Configure GitHub Actions workflows to build and package binaries for macOS (x64, arm64), Linux (x64, arm64, MUSL x64), and Windows (x64). Utilize appropriate tools such as actions-rs/cargo, zig toolchain, or cross as needed to produce archives and checksums.",
+            "dependencies": [],
+            "details": "Implement GitHub Actions workflows that trigger on new releases, building binaries for specified platforms. Ensure the use of tools like actions-rs/cargo for Rust projects and cross for cross-compilation. Generate archives (e.g., tar.gz, zip) and corresponding checksum files for each platform.",
+            "status": "pending",
+            "testStrategy": "Validate the build process by running the workflows in a test environment. Ensure that the generated binaries are functional by executing them on their respective platforms. Verify the integrity of the archives using the generated checksums."
+          },
+          {
+            "id": 2,
+            "title": "Create and Maintain Homebrew Tap Formula",
+            "description": "Develop a Homebrew tap formula that downloads the GitHub release tarballs and updates on each release.",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "Establish a Homebrew tap repository following the naming convention 'homebrew-<repository>' for easy access. Create a formula that fetches the latest release tarballs from GitHub and installs the binaries. Implement automation to update the formula with each new release.",
+            "status": "pending",
+            "testStrategy": "Test the Homebrew formula by installing it on a clean macOS environment. Ensure that the installation process completes without errors and that the installed binaries function as expected. Validate the update mechanism by simulating new releases and confirming that the formula updates correctly."
+          },
+          {
+            "id": 3,
+            "title": "Develop Cross-Platform Installer Scripts",
+            "description": "Create installer scripts for various platforms: a curl | sh installer for Unix-like systems, a Scoop bucket manifest for Windows, and consider a winget manifest for future Windows support.",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "For Unix-like systems, develop a shell script that detects the operating system and architecture, downloads the appropriate binary, and installs it to ~/.local/bin or /usr/local/bin. For Windows, create a Scoop bucket manifest that points to the latest release binaries. Optionally, prepare a winget manifest for future integration.",
+            "status": "pending",
+            "testStrategy": "Test the installer scripts on fresh installations of each target platform. Verify that the scripts correctly identify the system architecture, download the appropriate binaries, and place them in the correct directories. Ensure that the installed binaries are executable and function as intended."
+          },
+          {
+            "id": 4,
+            "title": "Publish refaktor-cli Crate to crates.io",
+            "description": "Prepare and publish the refaktor-cli crate to crates.io, documenting feature flags and minimal dependencies.",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "Ensure that the refaktor-cli crate is ready for publication by verifying that all dependencies are correctly specified and that the code adheres to Rust's packaging guidelines. Document available feature flags and any minimal dependencies required for users. Publish the crate to crates.io and monitor for any issues.",
+            "status": "pending",
+            "testStrategy": "Before publishing, run cargo package to ensure that the crate packages correctly. After publishing, install the crate from crates.io on a clean environment to verify that it installs and runs without issues. Check that all documented feature flags function as described."
+          },
+          {
+            "id": 5,
+            "title": "Write and Organize Documentation",
+            "description": "Compose comprehensive documentation including README, CONTRIBUTING, CHANGELOG, CLAUDE.md, and an Examples folder with relevant use cases.",
+            "dependencies": [],
+            "details": "Draft a README that provides quickstart commands, examples mirroring PRD Appendix A, performance notes, and the safety model. Create a CONTRIBUTING guide detailing development setup, CI processes, coverage requirements, and coding standards. Maintain a CHANGELOG following the 'Keep a Changelog' format. Write a CLAUDE.md outlining the project's current state, backward compatibility notes, and developer experience priorities. Populate an Examples folder with use cases such as React component renaming and Ruby model renaming, including expected outputs.",
+            "status": "pending",
+            "testStrategy": "Review the documentation for clarity, accuracy, and completeness. Ensure that all examples are up-to-date and function as described. Validate that all links are working and that the formatting is consistent across all documents. Seek feedback from team members or external users to identify any areas for improvement."
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-11T03:43:57.398Z",
+      "updated": "2025-08-11T03:43:57.398Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
