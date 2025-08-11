@@ -99,12 +99,16 @@ fn test_apply_renames() {
         from: old_file.clone(),
         to: temp_dir.path().join("new_name.txt"),
         kind: RenameKind::File,
+        line_before: None,
+        line_after: None,
         coercion_applied: None,
     });
     plan.renames.push(Rename {
         from: old_dir.clone(),
         to: temp_dir.path().join("new_name_dir"),
         kind: RenameKind::Dir,
+        line_before: None,
+        line_after: None,
         coercion_applied: None,
     });
     
@@ -181,6 +185,8 @@ fn test_case_only_rename() {
         from: lower_file.clone(),
         to: temp_dir.path().join("OldName.txt"),
         kind: RenameKind::File,
+        line_before: None,
+        line_after: None,
         coercion_applied: None,
     });
     
@@ -274,7 +280,8 @@ fn test_skip_symlinks() {
             from: symlink_path.clone(),
             to: temp_dir.path().join("new_link.txt"),
             kind: RenameKind::File,
-            coercion_applied: None,
+        line_before: None,
+        line_after: None,            coercion_applied: None,
         });
         
         let options = ApplyOptions {

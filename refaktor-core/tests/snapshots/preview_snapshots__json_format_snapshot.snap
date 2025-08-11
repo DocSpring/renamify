@@ -1,6 +1,5 @@
 ---
 source: refaktor-core/tests/preview_snapshots.rs
-assertion_line: 130
 expression: normalize_paths(normalized)
 ---
 {
@@ -14,42 +13,50 @@ expression: normalize_paths(normalized)
   ],
   "matches": [
     {
-      "after": "    let customer_name = String::new();",
-      "before": "    let user_name = String::new();",
+      "after": "customer_name",
+      "before": "user_name",
       "col": 12,
       "end": 20,
       "file": "src/models/user.rs",
       "line": 15,
+      "line_after": "    let customer_name = String::new();",
+      "line_before": "    let user_name = String::new();",
       "start": 11,
       "variant": "user_name"
     },
     {
-      "after": "    pub customerName: String,",
-      "before": "    pub userName: String,",
+      "after": "customerName",
+      "before": "userName",
       "col": 8,
       "end": 15,
       "file": "src/models/user.rs",
       "line": 25,
+      "line_after": "    pub customerName: String,",
+      "line_before": "    pub userName: String,",
       "start": 7,
       "variant": "userName"
     },
     {
-      "after": "struct CustomerName {",
-      "before": "struct UserName {",
+      "after": "CustomerName",
+      "before": "UserName",
       "col": 16,
       "end": 15,
       "file": "src/api/handlers.rs",
       "line": 42,
+      "line_after": "struct CustomerName {",
+      "line_before": "struct UserName {",
       "start": 7,
       "variant": "UserName"
     },
     {
-      "after": "    fn get_customer_name(&self) -> &str {",
-      "before": "    fn get_user_name(&self) -> &str {",
+      "after": "customer_name",
+      "before": "user_name",
       "col": 20,
       "end": 20,
       "file": "src/api/handlers.rs",
       "line": 50,
+      "line_after": "    fn get_customer_name(&self) -> &str {",
+      "line_before": "    fn get_user_name(&self) -> &str {",
       "start": 11,
       "variant": "user_name"
     }

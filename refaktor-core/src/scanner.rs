@@ -66,10 +66,14 @@ pub struct MatchHunk {
     pub line: u64,
     pub col: u32,
     pub variant: String,
-    pub before: String,
-    pub after: String,
+    pub before: String,  // The word/variant being replaced
+    pub after: String,   // The replacement word/variant
     pub start: usize,
     pub end: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line_before: Option<String>,  // Full line context for diff preview
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line_after: Option<String>,   // Full line with replacement for diff preview
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coercion_applied: Option<String>,  // Details about coercion if applied
 }
@@ -283,7 +287,7 @@ fn generate_hunks(
         
         let new_variant = variant_map.get(&m.variant).unwrap_or(&m.variant);
         
-        // The before/after should be just the matched portion, not the entire line
+        // The before/after fields contain just the word being replaced (for apply)
         let before = m.variant.clone();
         let mut after = new_variant.clone();
         let mut coercion_applied = None;
@@ -302,14 +306,31 @@ fn generate_hunks(
                 }
             }
         }
+        
+        // For diff mode, we need the full line context
+        let line_before = line_string.trim_end().to_string();
+        
+        // Create the after line by replacing the variant in the original line
+        let line_after = if let Some(match_pos) = line_string.find(&m.variant) {
+            let mut after_line = String::new();
+            after_line.push_str(&line_string[..match_pos]);
+            after_line.push_str(&after);
+            after_line.push_str(&line_string[match_pos + m.variant.len()..]);
+            after_line.trim_end().to_string()
+        } else {
+            // Fallback to original line if we can't find the match (shouldn't happen)
+            line_before.clone()
+        };
 
         hunks.push(MatchHunk {
             file: path.to_path_buf(),
             line: m.line as u64,
             col: m.column as u32,
             variant: m.variant.clone(),
-            before: before,
-            after: after,
+            before,
+            after,
+            line_before: Some(line_before),
+            line_after: Some(line_after),
             start: m.start,
             end: m.end,
             coercion_applied,
@@ -507,11 +528,87 @@ mod tests {
         
         assert_eq!(hunks.len(), 2);
         assert_eq!(hunks[0].variant, "old_name");
+        // The before/after fields contain just the words
         assert_eq!(hunks[0].before, "old_name");
         assert_eq!(hunks[0].after, "new_name");
+        // The line context is in separate fields
+        assert_eq!(hunks[0].line_before.as_ref().unwrap(), "old_name and oldName here");
+        assert_eq!(hunks[0].line_after.as_ref().unwrap(), "new_name and oldName here");
+        
         assert_eq!(hunks[1].variant, "oldName");
         assert_eq!(hunks[1].before, "oldName");
         assert_eq!(hunks[1].after, "newName");
+        assert_eq!(hunks[1].line_before.as_ref().unwrap(), "old_name and oldName here");
+        assert_eq!(hunks[1].line_after.as_ref().unwrap(), "old_name and newName here");
+    }
+    
+    #[test]
+    fn test_generate_hunks_multiline() {
+        use crate::pattern::Match;
+        
+        let content = b"fn old_name() {\n    println!(\"oldName\");\n    old_name();\n}\n";
+        let mut variant_map = BTreeMap::new();
+        variant_map.insert("old_name".to_string(), "new_name".to_string());
+        variant_map.insert("oldName".to_string(), "newName".to_string());
+        
+        let matches = vec![
+            Match {
+                file: "test.rs".to_string(),
+                line: 1,
+                column: 4,
+                start: 3,
+                end: 11,
+                variant: "old_name".to_string(),
+                text: "old_name".to_string(),
+            },
+            Match {
+                file: "test.rs".to_string(),
+                line: 2,
+                column: 14,
+                start: 29,
+                end: 36,
+                variant: "oldName".to_string(),
+                text: "oldName".to_string(),
+            },
+            Match {
+                file: "test.rs".to_string(),
+                line: 3,
+                column: 5,
+                start: 44,
+                end: 52,
+                variant: "old_name".to_string(),
+                text: "old_name".to_string(),
+            },
+        ];
+        
+        let opts = PlanOptions::default();
+        let hunks = generate_hunks(&matches, content, &variant_map, Path::new("test.rs"), &opts);
+        
+        assert_eq!(hunks.len(), 3);
+        
+        // First line replacement
+        assert_eq!(hunks[0].variant, "old_name");
+        assert_eq!(hunks[0].line, 1);
+        assert_eq!(hunks[0].before, "old_name");
+        assert_eq!(hunks[0].after, "new_name");
+        assert_eq!(hunks[0].line_before.as_ref().unwrap(), "fn old_name() {");
+        assert_eq!(hunks[0].line_after.as_ref().unwrap(), "fn new_name() {");
+        
+        // Second line replacement
+        assert_eq!(hunks[1].variant, "oldName");
+        assert_eq!(hunks[1].line, 2);
+        assert_eq!(hunks[1].before, "oldName");
+        assert_eq!(hunks[1].after, "newName");
+        assert_eq!(hunks[1].line_before.as_ref().unwrap(), "    println!(\"oldName\");");
+        assert_eq!(hunks[1].line_after.as_ref().unwrap(), "    println!(\"newName\");");
+        
+        // Third line replacement
+        assert_eq!(hunks[2].variant, "old_name");
+        assert_eq!(hunks[2].line, 3);
+        assert_eq!(hunks[2].before, "old_name");
+        assert_eq!(hunks[2].after, "new_name");
+        assert_eq!(hunks[2].line_before.as_ref().unwrap(), "    old_name();");
+        assert_eq!(hunks[2].line_after.as_ref().unwrap(), "    new_name();");
     }
 
     #[test]

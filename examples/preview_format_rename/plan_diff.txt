@@ -1,0 +1,1129 @@
+--- /Users/ndbroadbent/code/refaktor/CLAUDE.md
++++ /Users/ndbroadbent/code/refaktor/CLAUDE.md
+@@ line 113 @@
+-  - `--preview-format table|diff|json`
++  - `--preview table|diff|json`
+
+--- /Users/ndbroadbent/code/refaktor/DOCUMENTATION.md
++++ /Users/ndbroadbent/code/refaktor/DOCUMENTATION.md
+@@ line 89 @@
+-- `--preview-format <FORMAT>` - Output format: table (default), diff, json
++- `--preview <FORMAT>` - Output format: table (default), diff, json
+
+@@ line 443 @@
+-refaktor dry-run old_name new_name --preview-format diff
++refaktor dry-run old_name new_name --preview diff
+
+--- /Users/ndbroadbent/code/refaktor/examples/preview_format_rename/plan.json
++++ /Users/ndbroadbent/code/refaktor/examples/preview_format_rename/plan.json
+@@ line 4 @@
+-  "old": "preview-format",
++  "old": "preview",
+
+@@ line 20 @@
+-      "variant": "preview-format",
++      "variant": "preview",
+
+@@ line 21 @@
+-      "before": "preview-format",
++      "before": "preview",
+
+@@ line 25 @@
+-      "line_before": "- `--preview-format <FORMAT>` - Output format: table (default), diff, json",
++      "line_before": "- `--preview <FORMAT>` - Output format: table (default), diff, json",
+
+@@ line 33 @@
+-      "variant": "preview-format",
++      "variant": "preview",
+
+@@ line 34 @@
+-      "before": "preview-format",
++      "before": "preview",
+
+@@ line 38 @@
+-      "line_before": "refaktor dry-run old_name new_name --preview-format diff",
++      "line_before": "refaktor dry-run old_name new_name --preview diff",
+
+@@ line 46 @@
+-      "variant": "preview-format",
++      "variant": "preview",
+
+@@ line 47 @@
+-      "before": "preview-format",
++      "before": "preview",
+
+@@ line 51 @@
+-      "line_before": "        .args([\"plan\", \"old_name\", \"new_name\", \"--preview-format\", \"json\", \"--dry-run\"])",
++      "line_before": "        .args([\"plan\", \"old_name\", \"new_name\", \"--preview\", \"json\", \"--dry-run\"])",
+
+@@ line 59 @@
+-      "variant": "preview-format",
++      "variant": "preview",
+
+@@ line 60 @@
+-      "before": "preview-format",
++      "before": "preview",
+
+@@ line 64 @@
+-      "line_before": "        .args([\"plan\", \"old_name\", \"new_name\", \"--preview-format\", \"diff\", \"--dry-run\"])",
++      "line_before": "        .args([\"plan\", \"old_name\", \"new_name\", \"--preview\", \"diff\", \"--dry-run\"])",
+
+@@ line 72 @@
+-      "variant": "preview-format",
++      "variant": "preview",
+
+@@ line 73 @@
+-      "before": "preview-format",
++      "before": "preview",
+
+@@ line 77 @@
+-      "line_before": "        .args([\"plan\", \"old_name\", \"new_name\", \"--preview-format\", \"table\", \"--dry-run\"])",
++      "line_before": "        .args([\"plan\", \"old_name\", \"new_name\", \"--preview\", \"table\", \"--dry-run\"])",
+
+@@ line 85 @@
+-      "variant": "preview-format",
++      "variant": "preview",
+
+@@ line 86 @@
+-      "before": "preview-format",
++      "before": "preview",
+
+@@ line 90 @@
+-      "line_before": "    cmd.args([\"plan\", \"old\", \"new\", \"--preview-format\", \"invalid\"])",
++      "line_before": "    cmd.args([\"plan\", \"old\", \"new\", \"--preview\", \"invalid\"])",
+
+@@ line 98 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 99 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 103 @@
+-      "line_before": "    let preview_format = preview.unwrap_or(PreviewFormatArg::Table);",
++      "line_before": "    let preview = preview.unwrap_or(PreviewFormatArg::Table);",
+
+@@ line 110 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 111 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 115 @@
+-      "line_before": "    if preview_format != PreviewFormatArg::None {",
++      "line_before": "    if preview != PreviewFormatArg::None {",
+
+@@ line 122 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 123 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 127 @@
+-      "line_before": "        let preview_output = refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;",
++      "line_before": "        let preview_output = refaktor_core::preview::render_plan(&plan, preview.into(), Some(use_color))?;",
+
+@@ line 134 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 135 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 139 @@
+-      "line_before": "    apply_plan, ApplyOptions, Plan, PlanOptions, PreviewFormat, scan_repository, write_plan,",
++      "line_before": "    apply_plan, ApplyOptions, Plan, PlanOptions, Preview, scan_repository, write_plan,",
+
+@@ line 146 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 147 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 151 @@
+-      "line_before": "        preview_format: PreviewFormatArg,",
++      "line_before": "        preview: PreviewFormatArg,",
+
+@@ line 159 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 160 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 164 @@
+-      "line_before": "        preview_format: PreviewFormatArg,",
++      "line_before": "        preview: PreviewFormatArg,",
+
+@@ line 172 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 173 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 177 @@
+-      "line_before": "impl From<PreviewFormatArg> for PreviewFormat {",
++      "line_before": "impl From<PreviewArg> for PreviewFormat {",
+
+@@ line 178 @@
+-      "line_after": "impl From<PreviewArg> for PreviewFormat {",
++      "line_after": "impl From<PreviewArg> for Preview {",
+
+@@ line 185 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 186 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 190 @@
+-      "line_before": "            PreviewFormatArg::Table => PreviewFormat::Table,",
++      "line_before": "            PreviewArg::Table => PreviewFormat::Table,",
+
+@@ line 191 @@
+-      "line_after": "            PreviewArg::Table => PreviewFormat::Table,",
++      "line_after": "            PreviewArg::Table => Preview::Table,",
+
+@@ line 198 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 199 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 203 @@
+-      "line_before": "            PreviewFormatArg::Diff => PreviewFormat::Diff,",
++      "line_before": "            PreviewArg::Diff => PreviewFormat::Diff,",
+
+@@ line 204 @@
+-      "line_after": "            PreviewArg::Diff => PreviewFormat::Diff,",
++      "line_after": "            PreviewArg::Diff => Preview::Diff,",
+
+@@ line 211 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 212 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 216 @@
+-      "line_before": "            PreviewFormatArg::Json => PreviewFormat::Json,",
++      "line_before": "            PreviewArg::Json => PreviewFormat::Json,",
+
+@@ line 217 @@
+-      "line_after": "            PreviewArg::Json => PreviewFormat::Json,",
++      "line_after": "            PreviewArg::Json => Preview::Json,",
+
+@@ line 224 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 225 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 229 @@
+-      "line_before": "            PreviewFormatArg::None => PreviewFormat::Table, // Default to table if None is somehow converted",
++      "line_before": "            PreviewArg::None => PreviewFormat::Table, // Default to table if None is somehow converted",
+
+@@ line 230 @@
+-      "line_after": "            PreviewArg::None => PreviewFormat::Table, // Default to table if None is somehow converted",
++      "line_after": "            PreviewArg::None => Preview::Table, // Default to table if None is somehow converted",
+
+@@ line 237 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 238 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 242 @@
+-      "line_before": "            preview_format,",
++      "line_before": "            preview,",
+
+@@ line 249 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 250 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 254 @@
+-      "line_before": "            preview_format.into(),",
++      "line_before": "            preview.into(),",
+
+@@ line 261 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 262 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 266 @@
+-      "line_before": "            preview_format,",
++      "line_before": "            preview,",
+
+@@ line 273 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 274 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 278 @@
+-      "line_before": "            preview_format.into(),",
++      "line_before": "            preview.into(),",
+
+@@ line 285 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 286 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 290 @@
+-      "line_before": "    preview_format: PreviewFormat,",
++      "line_before": "    preview: PreviewFormat,",
+
+@@ line 290 @@
+-      "line_before": "    preview_format: PreviewFormat,",
++      "line_before": "    preview_format: Preview,",
+
+@@ line 291 @@
+-      "line_after": "    preview: PreviewFormat,",
++      "line_after": "    preview: Preview,",
+
+@@ line 298 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 299 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 303 @@
+-      "line_before": "    preview_format: PreviewFormat,",
++      "line_before": "    preview: PreviewFormat,",
+
+@@ line 303 @@
+-      "line_before": "    preview_format: PreviewFormat,",
++      "line_before": "    preview_format: Preview,",
+
+@@ line 304 @@
+-      "line_after": "    preview_format: Preview,"
++      "line_after": "    preview: Preview,"
+
+@@ line 310 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 311 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 315 @@
+-      "line_before": "    write_preview(&plan, preview_format, Some(use_color))",
++      "line_before": "    write_preview(&plan, preview, Some(use_color))",
+
+@@ line 322 @@
+-      "variant": "preview_format",
++      "variant": "preview",
+
+@@ line 323 @@
+-      "before": "preview_format",
++      "before": "preview",
+
+@@ line 327 @@
+-      "line_before": "        if preview_format != PreviewFormat::Json {",
++      "line_before": "        if preview != PreviewFormat::Json {",
+
+@@ line 327 @@
+-      "line_before": "        if preview_format != PreviewFormat::Json {",
++      "line_before": "        if preview_format != Preview::Json {",
+
+@@ line 328 @@
+-      "line_after": "        if preview != PreviewFormat::Json {"
++      "line_after": "        if preview != Preview::Json {"
+
+@@ line 334 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 335 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 339 @@
+-      "line_before": "        if preview_format != PreviewFormat::Json {",
++      "line_before": "        if preview != PreviewFormat::Json {",
+
+@@ line 339 @@
+-      "line_before": "        if preview_format != PreviewFormat::Json {",
++      "line_before": "        if preview_format != Preview::Json {",
+
+@@ line 340 @@
+-      "line_after": "        if preview_format != Preview::Json {",
++      "line_after": "        if preview != Preview::Json {",
+
+@@ line 347 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 348 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 352 @@
+-      "line_before": "    preview::{render_plan, PreviewFormat},",
++      "line_before": "    preview::{render_plan, Preview},",
+
+@@ line 359 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 360 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 364 @@
+-      "line_before": "    let output = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();",
++      "line_before": "    let output = render_plan(&plan, Preview::Table, Some(false)).unwrap();",
+
+@@ line 372 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 373 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 377 @@
+-      "line_before": "    let output = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();",
++      "line_before": "    let output = render_plan(&plan, Preview::Table, Some(true)).unwrap();",
+
+@@ line 385 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 386 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 390 @@
+-      "line_before": "    let output = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();",
++      "line_before": "    let output = render_plan(&plan, Preview::Diff, Some(false)).unwrap();",
+
+@@ line 398 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 399 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 403 @@
+-      "line_before": "    let output = render_plan(&plan, PreviewFormat::Diff, Some(true)).unwrap();",
++      "line_before": "    let output = render_plan(&plan, Preview::Diff, Some(true)).unwrap();",
+
+@@ line 411 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 412 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 416 @@
+-      "line_before": "    let output = render_plan(&plan, PreviewFormat::Json, Some(false)).unwrap();",
++      "line_before": "    let output = render_plan(&plan, Preview::Json, Some(false)).unwrap();",
+
+@@ line 424 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 425 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 429 @@
+-      "line_before": "    let output = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();",
++      "line_before": "    let output = render_plan(&plan, Preview::Table, Some(false)).unwrap();",
+
+@@ line 437 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 438 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 442 @@
+-      "line_before": "    let output = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();",
++      "line_before": "    let output = render_plan(&plan, Preview::Diff, Some(false)).unwrap();",
+
+@@ line 450 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 451 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 455 @@
+-      "line_before": "    let output = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();",
++      "line_before": "    let output = render_plan(&plan, Preview::Table, Some(false)).unwrap();",
+
+@@ line 463 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 464 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 468 @@
+-      "line_before": "pub use preview::{render_plan, write_preview, PreviewFormat};",
++      "line_before": "pub use preview::{render_plan, write_preview, Preview};",
+
+@@ line 475 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 476 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 480 @@
+-      "line_before": "pub enum PreviewFormat {",
++      "line_before": "pub enum Preview {",
+
+@@ line 487 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 488 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 492 @@
+-      "line_before": "impl PreviewFormat {",
++      "line_before": "impl Preview {",
+
+@@ line 499 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 500 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 504 @@
+-      "line_before": "pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<String> {",
++      "line_before": "pub fn render_plan(plan: &Plan, format: Preview, use_color: Option<bool>) -> Result<String> {",
+
+@@ line 511 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 512 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 516 @@
+-      "line_before": "        PreviewFormat::Table => render_table(plan, use_color),",
++      "line_before": "        Preview::Table => render_table(plan, use_color),",
+
+@@ line 524 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 525 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 529 @@
+-      "line_before": "        PreviewFormat::Diff => render_diff(plan, use_color),",
++      "line_before": "        Preview::Diff => render_diff(plan, use_color),",
+
+@@ line 537 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 538 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 542 @@
+-      "line_before": "        PreviewFormat::Json => render_json(plan),",
++      "line_before": "        Preview::Json => render_json(plan),",
+
+@@ line 550 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 551 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 555 @@
+-      "line_before": "pub fn write_preview(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<()> {",
++      "line_before": "pub fn write_preview(plan: &Plan, format: Preview, use_color: Option<bool>) -> Result<()> {",
+
+@@ line 562 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 563 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 567 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"table\"), Some(PreviewFormat::Table));",
++      "line_before": "        assert_eq!(preview::from_str(\"table\"), Some(PreviewFormat::Table));",
+
+@@ line 567 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"table\"), Some(PreviewFormat::Table));",
++      "line_before": "        assert_eq!(preview::from_str(\"table\"), Some(PreviewFormat::Table));",
+
+@@ line 568 @@
+-      "line_after": "        assert_eq!(preview::from_str(\"table\"), Some(PreviewFormat::Table));",
++      "line_after": "        assert_eq!(preview::from_str(\"table\"), Some(Preview::Table));",
+
+@@ line 575 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 576 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 580 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"table\"), Some(PreviewFormat::Table));",
++      "line_before": "        assert_eq!(preview::from_str(\"table\"), Some(PreviewFormat::Table));",
+
+@@ line 580 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"table\"), Some(PreviewFormat::Table));",
++      "line_before": "        assert_eq!(preview::from_str(\"table\"), Some(PreviewFormat::Table));",
+
+@@ line 581 @@
+-      "line_after": "        assert_eq!(preview::from_str(\"table\"), Some(PreviewFormat::Table));",
++      "line_after": "        assert_eq!(preview::from_str(\"table\"), Some(Preview::Table));",
+
+@@ line 588 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 589 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 593 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"diff\"), Some(PreviewFormat::Diff));",
++      "line_before": "        assert_eq!(preview::from_str(\"diff\"), Some(PreviewFormat::Diff));",
+
+@@ line 593 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"diff\"), Some(PreviewFormat::Diff));",
++      "line_before": "        assert_eq!(preview::from_str(\"diff\"), Some(PreviewFormat::Diff));",
+
+@@ line 594 @@
+-      "line_after": "        assert_eq!(preview::from_str(\"diff\"), Some(PreviewFormat::Diff));",
++      "line_after": "        assert_eq!(preview::from_str(\"diff\"), Some(Preview::Diff));",
+
+@@ line 601 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 602 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 606 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"diff\"), Some(PreviewFormat::Diff));",
++      "line_before": "        assert_eq!(preview::from_str(\"diff\"), Some(PreviewFormat::Diff));",
+
+@@ line 606 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"diff\"), Some(PreviewFormat::Diff));",
++      "line_before": "        assert_eq!(preview::from_str(\"diff\"), Some(PreviewFormat::Diff));",
+
+@@ line 607 @@
+-      "line_after": "        assert_eq!(preview::from_str(\"diff\"), Some(PreviewFormat::Diff));",
++      "line_after": "        assert_eq!(preview::from_str(\"diff\"), Some(Preview::Diff));",
+
+@@ line 614 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 615 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 619 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"json\"), Some(PreviewFormat::Json));",
++      "line_before": "        assert_eq!(preview::from_str(\"json\"), Some(PreviewFormat::Json));",
+
+@@ line 619 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"json\"), Some(PreviewFormat::Json));",
++      "line_before": "        assert_eq!(preview::from_str(\"json\"), Some(PreviewFormat::Json));",
+
+@@ line 620 @@
+-      "line_after": "        assert_eq!(preview::from_str(\"json\"), Some(PreviewFormat::Json));",
++      "line_after": "        assert_eq!(preview::from_str(\"json\"), Some(Preview::Json));",
+
+@@ line 627 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 628 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 632 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"json\"), Some(PreviewFormat::Json));",
++      "line_before": "        assert_eq!(preview::from_str(\"json\"), Some(PreviewFormat::Json));",
+
+@@ line 632 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"json\"), Some(PreviewFormat::Json));",
++      "line_before": "        assert_eq!(preview::from_str(\"json\"), Some(PreviewFormat::Json));",
+
+@@ line 633 @@
+-      "line_after": "        assert_eq!(preview::from_str(\"json\"), Some(PreviewFormat::Json));",
++      "line_after": "        assert_eq!(preview::from_str(\"json\"), Some(Preview::Json));",
+
+@@ line 640 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 641 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 645 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
++      "line_before": "        assert_eq!(preview::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
+
+@@ line 645 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
++      "line_before": "        assert_eq!(preview::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
+
+@@ line 646 @@
+-      "line_after": "        assert_eq!(preview::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
++      "line_after": "        assert_eq!(preview::from_str(\"TABLE\"), Some(Preview::Table));",
+
+@@ line 653 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 654 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 658 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
++      "line_before": "        assert_eq!(preview::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
+
+@@ line 658 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
++      "line_before": "        assert_eq!(preview::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
+
+@@ line 659 @@
+-      "line_after": "        assert_eq!(preview::from_str(\"TABLE\"), Some(PreviewFormat::Table));",
++      "line_after": "        assert_eq!(preview::from_str(\"TABLE\"), Some(Preview::Table));",
+
+@@ line 666 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 667 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 671 @@
+-      "line_before": "        assert_eq!(PreviewFormat::from_str(\"invalid\"), None);",
++      "line_before": "        assert_eq!(preview::from_str(\"invalid\"), None);",
+
+@@ line 679 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 680 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 684 @@
+-      "line_before": "        let output = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();",
++      "line_before": "        let output = render_plan(&plan, Preview::Table, Some(true)).unwrap();",
+
+@@ line 692 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 693 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 697 @@
+-      "line_before": "        let output_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();",
++      "line_before": "        let output_no_color = render_plan(&plan, Preview::Table, Some(false)).unwrap();",
+
+@@ line 705 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 706 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 710 @@
+-      "line_before": "        let table_colored = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();",
++      "line_before": "        let table_colored = render_plan(&plan, Preview::Table, Some(true)).unwrap();",
+
+@@ line 718 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 719 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 723 @@
+-      "line_before": "        let diff_colored = render_plan(&plan, PreviewFormat::Diff, Some(true)).unwrap();",
++      "line_before": "        let diff_colored = render_plan(&plan, Preview::Diff, Some(true)).unwrap();",
+
+@@ line 731 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 732 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 736 @@
+-      "line_before": "        let table_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();",
++      "line_before": "        let table_no_color = render_plan(&plan, Preview::Table, Some(false)).unwrap();",
+
+@@ line 744 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 745 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 749 @@
+-      "line_before": "        let diff_no_color = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();",
++      "line_before": "        let diff_no_color = render_plan(&plan, Preview::Diff, Some(false)).unwrap();",
+
+@@ line 757 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 758 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 762 @@
+-      "line_before": "        let json_colored = render_plan(&plan, PreviewFormat::Json, Some(true)).unwrap();",
++      "line_before": "        let json_colored = render_plan(&plan, Preview::Json, Some(true)).unwrap();",
+
+@@ line 770 @@
+-      "variant": "PreviewFormat",
++      "variant": "Preview",
+
+@@ line 771 @@
+-      "before": "PreviewFormat",
++      "before": "Preview",
+
+@@ line 775 @@
+-      "line_before": "        let json_no_color = render_plan(&plan, PreviewFormat::Json, Some(false)).unwrap();",
++      "line_before": "        let json_no_color = render_plan(&plan, Preview::Json, Some(false)).unwrap();",
+
+@@ line 783 @@
+-      "variant": "preview-format",
++      "variant": "preview",
+
+@@ line 784 @@
+-      "before": "preview-format",
++      "before": "preview",
+
+@@ line 788 @@
+-      "line_before": "  - `--preview-format table|diff|json`",
++      "line_before": "  - `--preview table|diff|json`",
+
+@@ line 805 @@
+-      "preview-format": 7,
++      "preview": 7,
+
+@@ line 806 @@
+-      "PreviewFormat": 42,
++      "Preview": 42,
+
+@@ line 807 @@
+-      "preview_format": 12
++      "preview": 12
+
+--- /Users/ndbroadbent/code/refaktor/refaktor-cli/src/main.rs
++++ /Users/ndbroadbent/code/refaktor/refaktor-cli/src/main.rs
+@@ line 4 @@
+-    apply_plan, ApplyOptions, Plan, PlanOptions, PreviewFormat, scan_repository, write_plan,
++    apply_plan, ApplyOptions, Plan, PlanOptions, Preview, scan_repository, write_plan,
+
+@@ line 81 @@
+-        preview_format: PreviewFormatArg,
++        preview: PreviewFormatArg,
+
+@@ line 171 @@
+-        preview_format: PreviewFormatArg,
++        preview: PreviewFormatArg,
+
+@@ line 286 @@
+-impl From<PreviewFormatArg> for PreviewFormat {
++impl From<PreviewArg> for PreviewFormat {
+
+@@ line 289 @@
+-            PreviewFormatArg::Table => PreviewFormat::Table,
++            PreviewArg::Table => PreviewFormat::Table,
+
+@@ line 290 @@
+-            PreviewFormatArg::Diff => PreviewFormat::Diff,
++            PreviewArg::Diff => PreviewFormat::Diff,
+
+@@ line 291 @@
+-            PreviewFormatArg::Json => PreviewFormat::Json,
++            PreviewArg::Json => PreviewFormat::Json,
+
+@@ line 292 @@
+-            PreviewFormatArg::None => PreviewFormat::Table, // Default to table if None is somehow converted
++            PreviewArg::None => PreviewFormat::Table, // Default to table if None is somehow converted
+
+@@ line 331 @@
+-            preview_format,
++            preview,
+
+@@ line 344 @@
+-            preview_format.into(),
++            preview.into(),
+
+@@ line 359 @@
+-            preview_format,
++            preview,
+
+@@ line 370 @@
+-            preview_format.into(),
++            preview.into(),
+
+@@ line 475 @@
+-    preview_format: PreviewFormat,
++    preview: PreviewFormat,
+
+@@ line 475 @@
+-    preview_format: PreviewFormat,
++    preview_format: Preview,
+
+@@ line 506 @@
+-    write_preview(&plan, preview_format, Some(use_color))
++    write_preview(&plan, preview, Some(use_color))
+
+@@ line 514 @@
+-        if preview_format != PreviewFormat::Json {
++        if preview != PreviewFormat::Json {
+
+@@ line 514 @@
+-        if preview_format != PreviewFormat::Json {
++        if preview_format != Preview::Json {
+
+--- /Users/ndbroadbent/code/refaktor/refaktor-cli/src/rename.rs
++++ /Users/ndbroadbent/code/refaktor/refaktor-cli/src/rename.rs
+@@ line 111 @@
+-    let preview_format = preview.unwrap_or(PreviewFormatArg::Table);
++    let preview = preview.unwrap_or(PreviewFormatArg::Table);
+
+@@ line 113 @@
+-    if preview_format != PreviewFormatArg::None {
++    if preview != PreviewFormatArg::None {
+
+@@ line 114 @@
+-        let preview_output = refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;
++        let preview_output = refaktor_core::preview::render_plan(&plan, preview.into(), Some(use_color))?;
+
+--- /Users/ndbroadbent/code/refaktor/refaktor-cli/tests/cli_tests.rs
++++ /Users/ndbroadbent/code/refaktor/refaktor-cli/tests/cli_tests.rs
+@@ line 105 @@
+-        .args(["plan", "old_name", "new_name", "--preview-format", "json", "--dry-run"])
++        .args(["plan", "old_name", "new_name", "--preview", "json", "--dry-run"])
+
+@@ line 121 @@
+-        .args(["plan", "old_name", "new_name", "--preview-format", "diff", "--dry-run"])
++        .args(["plan", "old_name", "new_name", "--preview", "diff", "--dry-run"])
+
+@@ line 138 @@
+-        .args(["plan", "old_name", "new_name", "--preview-format", "table", "--dry-run"])
++        .args(["plan", "old_name", "new_name", "--preview", "table", "--dry-run"])
+
+@@ line 413 @@
+-    cmd.args(["plan", "old", "new", "--preview-format", "invalid"])
++    cmd.args(["plan", "old", "new", "--preview", "invalid"])
+
+--- /Users/ndbroadbent/code/refaktor/refaktor-core/src/lib.rs
++++ /Users/ndbroadbent/code/refaktor/refaktor-core/src/lib.rs
+@@ line 26 @@
+-pub use preview::{render_plan, write_preview, PreviewFormat};
++pub use preview::{render_plan, write_preview, Preview};
+
+--- /Users/ndbroadbent/code/refaktor/refaktor-core/src/preview.rs
++++ /Users/ndbroadbent/code/refaktor/refaktor-core/src/preview.rs
+@@ line 22 @@
+-pub enum PreviewFormat {
++pub enum Preview {
+
+@@ line 28 @@
+-impl PreviewFormat {
++impl Preview {
+
+@@ line 56 @@
+-pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<String> {
++pub fn render_plan(plan: &Plan, format: Preview, use_color: Option<bool>) -> Result<String> {
+
+@@ line 60 @@
+-        PreviewFormat::Table => render_table(plan, use_color),
++        Preview::Table => render_table(plan, use_color),
+
+@@ line 61 @@
+-        PreviewFormat::Diff => render_diff(plan, use_color),
++        Preview::Diff => render_diff(plan, use_color),
+
+@@ line 62 @@
+-        PreviewFormat::Json => render_json(plan),
++        Preview::Json => render_json(plan),
+
+@@ line 301 @@
+-pub fn write_preview(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<()> {
++pub fn write_preview(plan: &Plan, format: Preview, use_color: Option<bool>) -> Result<()> {
+
+@@ line 378 @@
+-        assert_eq!(PreviewFormat::from_str("table"), Some(PreviewFormat::Table));
++        assert_eq!(preview::from_str("table"), Some(PreviewFormat::Table));
+
+@@ line 378 @@
+-        assert_eq!(PreviewFormat::from_str("table"), Some(PreviewFormat::Table));
++        assert_eq!(preview::from_str("table"), Some(PreviewFormat::Table));
+
+@@ line 379 @@
+-        assert_eq!(PreviewFormat::from_str("diff"), Some(PreviewFormat::Diff));
++        assert_eq!(preview::from_str("diff"), Some(PreviewFormat::Diff));
+
+@@ line 379 @@
+-        assert_eq!(PreviewFormat::from_str("diff"), Some(PreviewFormat::Diff));
++        assert_eq!(preview::from_str("diff"), Some(PreviewFormat::Diff));
+
+@@ line 380 @@
+-        assert_eq!(PreviewFormat::from_str("json"), Some(PreviewFormat::Json));
++        assert_eq!(preview::from_str("json"), Some(PreviewFormat::Json));
+
+@@ line 380 @@
+-        assert_eq!(PreviewFormat::from_str("json"), Some(PreviewFormat::Json));
++        assert_eq!(preview::from_str("json"), Some(PreviewFormat::Json));
+
+@@ line 381 @@
+-        assert_eq!(PreviewFormat::from_str("TABLE"), Some(PreviewFormat::Table));
++        assert_eq!(preview::from_str("TABLE"), Some(PreviewFormat::Table));
+
+@@ line 381 @@
+-        assert_eq!(PreviewFormat::from_str("TABLE"), Some(PreviewFormat::Table));
++        assert_eq!(preview::from_str("TABLE"), Some(PreviewFormat::Table));
+
+@@ line 382 @@
+-        assert_eq!(PreviewFormat::from_str("invalid"), None);
++        assert_eq!(preview::from_str("invalid"), None);
+
+@@ line 533 @@
+-        let output = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
++        let output = render_plan(&plan, Preview::Table, Some(true)).unwrap();
+
+@@ line 537 @@
+-        let output_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
++        let output_no_color = render_plan(&plan, Preview::Table, Some(false)).unwrap();
+
+@@ line 603 @@
+-        let table_colored = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
++        let table_colored = render_plan(&plan, Preview::Table, Some(true)).unwrap();
+
+@@ line 604 @@
+-        let diff_colored = render_plan(&plan, PreviewFormat::Diff, Some(true)).unwrap();
++        let diff_colored = render_plan(&plan, Preview::Diff, Some(true)).unwrap();
+
+@@ line 608 @@
+-        let table_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
++        let table_no_color = render_plan(&plan, Preview::Table, Some(false)).unwrap();
+
+@@ line 609 @@
+-        let diff_no_color = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();
++        let diff_no_color = render_plan(&plan, Preview::Diff, Some(false)).unwrap();
+
+@@ line 630 @@
+-        let json_colored = render_plan(&plan, PreviewFormat::Json, Some(true)).unwrap();
++        let json_colored = render_plan(&plan, Preview::Json, Some(true)).unwrap();
+
+@@ line 631 @@
+-        let json_no_color = render_plan(&plan, PreviewFormat::Json, Some(false)).unwrap();
++        let json_no_color = render_plan(&plan, Preview::Json, Some(false)).unwrap();
+
+--- /Users/ndbroadbent/code/refaktor/refaktor-core/tests/preview_snapshots.rs
++++ /Users/ndbroadbent/code/refaktor/refaktor-core/tests/preview_snapshots.rs
+@@ line 2 @@
+-    preview::{render_plan, PreviewFormat},
++    preview::{render_plan, Preview},
+
+@@ line 109 @@
+-    let output = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
++    let output = render_plan(&plan, Preview::Table, Some(false)).unwrap();
+
+@@ line 117 @@
+-    let output = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
++    let output = render_plan(&plan, Preview::Table, Some(true)).unwrap();
+
+@@ line 125 @@
+-    let output = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();
++    let output = render_plan(&plan, Preview::Diff, Some(false)).unwrap();
+
+@@ line 133 @@
+-    let output = render_plan(&plan, PreviewFormat::Diff, Some(true)).unwrap();
++    let output = render_plan(&plan, Preview::Diff, Some(true)).unwrap();
+
+@@ line 140 @@
+-    let output = render_plan(&plan, PreviewFormat::Json, Some(false)).unwrap();
++    let output = render_plan(&plan, Preview::Json, Some(false)).unwrap();
+
+@@ line 168 @@
+-    let output = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
++    let output = render_plan(&plan, Preview::Table, Some(false)).unwrap();
+
+@@ line 193 @@
+-    let output = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();
++    let output = render_plan(&plan, Preview::Diff, Some(false)).unwrap();
+
+@@ line 248 @@
+-    let output = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
++    let output = render_plan(&plan, Preview::Table, Some(false)).unwrap();
+
+
+=== RENAMES ===
+dir /Users/ndbroadbent/code/refaktor/examples/preview_format_rename → /Users/ndbroadbent/code/refaktor/examples/preview_rename

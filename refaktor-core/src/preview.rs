@@ -214,7 +214,11 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
         
         // Create a unified diff from all hunks in this file
         for hunk in hunks {
-            let diff = TextDiff::from_lines(&hunk.before, &hunk.after);
+            // Use line context if available, otherwise fall back to word-only
+            let before_text = hunk.line_before.as_ref().unwrap_or(&hunk.before);
+            let after_text = hunk.line_after.as_ref().unwrap_or(&hunk.after);
+            
+            let diff = TextDiff::from_lines(before_text, after_text);
             
             if use_color {
                 output.push_str(&format!(
@@ -333,6 +337,8 @@ mod tests {
                     after: "new_name".to_string(),
                     start: 4,
                     end: 12,
+                    line_before: None,  // Not needed for these tests
+                    line_after: None,
                     coercion_applied: None,
                 },
                 MatchHunk {
@@ -344,6 +350,8 @@ mod tests {
                     after: "newName".to_string(),
                     start: 3,
                     end: 10,
+                    line_before: None,
+                    line_after: None,
                     coercion_applied: None,
                 },
             ],
@@ -398,6 +406,58 @@ mod tests {
         assert!(result.contains("+new_name"));
         assert!(result.contains("=== RENAMES ==="));
         assert!(result.contains("old_name.txt → new_name.txt"));
+    }
+    
+    #[test]
+    fn test_render_diff_shows_full_line_context() {
+        let mut matches_by_variant = HashMap::new();
+        matches_by_variant.insert("old_func".to_string(), 1);
+        
+        // Create a plan with hunks that have full line context
+        let plan = Plan {
+            id: "test_full_line".to_string(),
+            created_at: "123456789".to_string(),
+            old: "old_func".to_string(),
+            new: "new_func".to_string(),
+            styles: vec![Style::Snake],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![
+                MatchHunk {
+                    file: PathBuf::from("src/lib.rs"),
+                    line: 42,
+                    col: 12,
+                    variant: "old_func".to_string(),
+                    // Word-level replacement for apply
+                    before: "old_func".to_string(),
+                    after: "new_func".to_string(),
+                    start: 17,
+                    end: 25,
+                    // Full line context for diff preview
+                    line_before: Some("    let result = old_func(param1, param2);".to_string()),
+                    line_after: Some("    let result = new_func(param1, param2);".to_string()),
+                    coercion_applied: None,
+                },
+            ],
+            renames: vec![],
+            stats: Stats {
+                files_scanned: 1,
+                total_matches: 1,
+                matches_by_variant,
+                files_with_matches: 1,
+            },
+            version: "1.0.0".to_string(),
+        };
+        
+        let result = render_diff(&plan, false).unwrap();
+        
+        // Should show the full line, not just the word
+        assert!(result.contains("-    let result = old_func(param1, param2);"));
+        assert!(result.contains("+    let result = new_func(param1, param2);"));
+        
+        // Should NOT show just the word alone
+        assert!(!result.contains("-old_func\n"));
+        assert!(!result.contains("+new_func\n"));
     }
 
     #[test]

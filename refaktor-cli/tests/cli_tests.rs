@@ -123,8 +123,8 @@ fn test_plan_command_diff_format() {
         .success()
         .stdout(predicate::str::contains("---"))
         .stdout(predicate::str::contains("+++"))
-        .stdout(predicate::str::contains("-old_name"))
-        .stdout(predicate::str::contains("+new_name"));
+        .stdout(predicate::str::contains("-fn old_name() {}"))
+        .stdout(predicate::str::contains("+fn new_name() {}"));
 }
 
 #[test]

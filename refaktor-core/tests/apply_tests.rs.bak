@@ -43,8 +43,6 @@ fn test_apply_content_edits() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
-        line_before: None,
-        line_after: None,
         coercion_applied: None,
     });
     plan.matches.push(MatchHunk {
@@ -56,8 +54,6 @@ fn test_apply_content_edits() {
         after: "new_name".to_string(),
         start: 30,
         end: 38,
-        line_before: None,
-        line_after: None,
         coercion_applied: None,
     });
     
@@ -148,8 +144,6 @@ fn test_rollback_on_error() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
-        line_before: None,
-        line_after: None,
         coercion_applied: None,
     });
     
@@ -221,8 +215,6 @@ fn test_atomic_operations() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
-        line_before: None,
-        line_after: None,
         coercion_applied: None,
     });
     
@@ -236,8 +228,6 @@ fn test_atomic_operations() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
-        line_before: None,
-        line_after: None,
         coercion_applied: None,
     });
     
@@ -340,8 +330,6 @@ fn test_apply_with_git_commit() {
         after: "new_name".to_string(),
         start: 3,
         end: 11,
-        line_before: None,
-        line_after: None,
         coercion_applied: None,
     });
     
