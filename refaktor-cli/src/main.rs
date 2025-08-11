@@ -245,6 +245,10 @@ enum Commands {
         /// Never rename the root project directory
         #[arg(long, conflicts_with = "rename_root")]
         no_rename_root: bool,
+
+        /// Show preview only, don't apply changes
+        #[arg(long)]
+        dry_run: bool,
     },
 }
 
@@ -422,6 +426,7 @@ fn main() {
             confirm_collisions,
             rename_root,
             no_rename_root,
+            dry_run,
         } => rename::handle_rename(
             &old,
             &new,
@@ -438,6 +443,7 @@ fn main() {
             confirm_collisions,
             rename_root,
             no_rename_root,
+            dry_run,
             cli.yes,
             use_color,
         ),

@@ -25,6 +25,7 @@ pub fn handle_rename(
     _confirm_collisions: bool,  // TODO: implement collision detection
     rename_root: bool,
     no_rename_root: bool,
+    dry_run: bool,
     auto_approve: bool,
     use_color: bool,
 ) -> Result<()> {
@@ -118,6 +119,11 @@ pub fn handle_rename(
 
     // Show summary
     show_rename_summary(&plan, &include, &exclude)?;
+
+    // If dry-run, stop here without prompting or applying
+    if dry_run {
+        return Ok(());
+    }
 
     // Get confirmation unless auto-approved
     if !auto_approve {
