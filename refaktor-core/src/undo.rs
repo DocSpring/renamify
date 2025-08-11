@@ -33,29 +33,13 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
 
     eprintln!("Undoing refactoring '{}'...", id);
 
-    // Restore files from backups
-    let mut restored_files = Vec::new();
-    for (path, _checksum) in &entry.affected_files {
-        let backup_path = entry
-            .backups_path
-            .join(path.strip_prefix("/").unwrap_or(path));
-
-        if backup_path.exists() {
-            // Create parent directories if needed
-            if let Some(parent) = path.parent() {
-                fs::create_dir_all(parent)?;
-            }
-
-            // Restore the file
-            fs::copy(&backup_path, path)
-                .with_context(|| format!("Failed to restore {} from backup", path.display()))?;
-
-            restored_files.push(path.clone());
-            eprintln!("  Restored: {}", path.display());
-        }
+    // Build a map from renamed paths back to their original names
+    let mut rename_map: HashMap<&PathBuf, &PathBuf> = HashMap::new();
+    for (from, to) in &entry.renames {
+        rename_map.insert(to, from);
     }
 
-    // Reverse renames (to -> from)
+    // FIRST: Reverse renames (to -> from) - do this before restoring content
     let mut reversed_renames = Vec::new();
     for (from, to) in entry.renames.iter().rev() {
         if to.exists() {
@@ -77,6 +61,33 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
 
             reversed_renames.push((to.clone(), from.clone()));
             eprintln!("  Renamed: {} -> {}", to.display(), from.display());
+        }
+    }
+
+    // SECOND: Restore files from backups (now files are at their original locations)
+    let mut restored_files = Vec::new();
+    for (path, _checksum) in &entry.affected_files {
+        // If this file was renamed, it's now at its original location
+        let current_path = rename_map.get(&path).unwrap_or(&path);
+
+        // The backup is stored with the original name
+        let backup_path = entry
+            .backups_path
+            .join(current_path.strip_prefix("/").unwrap_or(current_path));
+
+        if backup_path.exists() {
+            // Create parent directories if needed
+            if let Some(parent) = current_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+
+            // Restore the file to its current (original) location
+            fs::copy(&backup_path, current_path).with_context(|| {
+                format!("Failed to restore {} from backup", current_path.display())
+            })?;
+
+            restored_files.push(current_path.to_path_buf());
+            eprintln!("  Restored: {}", current_path.display());
         }
     }
 
