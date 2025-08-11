@@ -30,6 +30,10 @@ struct Cli {
     #[arg(short = 'u', long = "unrestricted", global = true, action = clap::ArgAction::Count)]
     unrestricted: u8,
 
+    /// Run as if started in <path> instead of the current working directory
+    #[arg(short = 'C', global = true, value_name = "PATH")]
+    directory: Option<PathBuf>,
+
     /// Automatically initialize .refaktor ignore (repo|local|global)
     #[arg(long, global = true, value_name = "MODE")]
     auto_init: Option<String>,
@@ -52,6 +56,10 @@ enum Commands {
 
         /// New identifier to replace with
         new: String,
+
+        /// Paths to search (files or directories). Defaults to current directory
+        #[arg(help = "Search paths (files or directories)")]
+        paths: Vec<PathBuf>,
 
         /// Include glob patterns
         #[arg(long, value_delimiter = ',')]
@@ -165,6 +173,10 @@ enum Commands {
         /// New identifier to replace with
         new: String,
 
+        /// Paths to search (files or directories). Defaults to current directory
+        #[arg(help = "Search paths (files or directories)")]
+        paths: Vec<PathBuf>,
+
         /// Include glob patterns
         #[arg(long, value_delimiter = ',')]
         include: Vec<String>,
@@ -242,6 +254,10 @@ enum Commands {
 
         /// New identifier to replace with
         new: String,
+
+        /// Paths to search (files or directories). Defaults to current directory
+        #[arg(help = "Search paths (files or directories)")]
+        paths: Vec<PathBuf>,
 
         /// Include glob patterns
         #[arg(long, value_delimiter = ',')]
@@ -376,6 +392,16 @@ fn main() {
     let cli = Cli::parse();
     let use_color = !cli.no_color && io::stdout().is_terminal();
 
+    // Handle -C directory flag
+    if let Some(ref dir) = cli.directory {
+        std::env::set_current_dir(dir)
+            .with_context(|| format!("Failed to change to directory: {}", dir.display()))
+            .unwrap_or_else(|e| {
+                eprintln!("Error: {:#}", e);
+                process::exit(2);
+            });
+    }
+
     // Check if we need to auto-init before running commands that create .refaktor/
     let needs_refaktor_dir = matches!(
         cli.command,
@@ -396,6 +422,7 @@ fn main() {
         Commands::Plan {
             old,
             new,
+            paths,
             include,
             exclude,
             respect_gitignore,
@@ -411,6 +438,7 @@ fn main() {
         } => handle_plan(
             &old,
             &new,
+            paths,
             include,
             exclude,
             respect_gitignore,
@@ -430,6 +458,7 @@ fn main() {
         Commands::DryRun {
             old,
             new,
+            paths,
             include,
             exclude,
             respect_gitignore,
@@ -443,6 +472,7 @@ fn main() {
         } => handle_plan(
             &old,
             &new,
+            paths,
             include,
             exclude,
             respect_gitignore,
@@ -491,6 +521,7 @@ fn main() {
         Commands::Rename {
             old,
             new,
+            paths,
             include,
             exclude,
             no_rename_files,
@@ -510,6 +541,7 @@ fn main() {
         } => rename::handle_rename(
             &old,
             &new,
+            paths,
             include,
             exclude,
             cli.unrestricted,
@@ -554,6 +586,7 @@ fn main() {
 fn handle_plan(
     old: &str,
     new: &str,
+    paths: Vec<PathBuf>,
     include: Vec<String>,
     exclude: Vec<String>,
     respect_gitignore: bool,
@@ -569,10 +602,17 @@ fn handle_plan(
     dry_run: bool,
     use_color: bool,
 ) -> Result<()> {
-    let root = std::env::current_dir().context("Failed to get current directory")?;
+    let current_dir = std::env::current_dir().context("Failed to get current directory")?;
+
+    // Use provided paths or default to current directory
+    let search_paths = if paths.is_empty() {
+        vec![PathBuf::from(".")]
+    } else {
+        paths
+    };
 
     // Acquire lock
-    let refaktor_dir = root.join(".refaktor");
+    let refaktor_dir = current_dir.join(".refaktor");
     let _lock = LockFile::acquire(&refaktor_dir)
         .context("Failed to acquire lock for refaktor operation")?;
 
@@ -628,7 +668,16 @@ fn handle_plan(
     };
 
     // Scan the repository
-    let plan = scan_repository(&root, old, new, &options).context("Failed to scan repository")?;
+    // For now, use the first search path as the root.
+    // TODO: Implement proper multi-path support in the core library
+    let scan_root = if search_paths[0].is_absolute() {
+        search_paths[0].clone()
+    } else {
+        current_dir.join(&search_paths[0])
+    };
+
+    let plan =
+        scan_repository(&scan_root, old, new, &options).context("Failed to scan repository")?;
 
     // Show preview
     write_preview(&plan, preview_format, Some(use_color)).context("Failed to write preview")?;

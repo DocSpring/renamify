@@ -1,6 +1,6 @@
 use crate::scanner::{MatchHunk, Plan, Rename, RenameKind};
 use anyhow::Result;
-use comfy_table::{Cell, Color, ContentArrangement, Table};
+use comfy_table::{Cell, Color, ColumnConstraint, ContentArrangement, Table, Width};
 use nu_ansi_term::{Color as AnsiColor, Style};
 use similar::{ChangeTag, TextDiff};
 use std::collections::HashMap;
@@ -65,8 +65,27 @@ pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) 
 
 /// Render plan as a table
 fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
+    render_table_with_fixed_width(plan, use_color, false)
+}
+
+/// Render plan as a table with explicit width control
+fn render_table_with_fixed_width(
+    plan: &Plan,
+    use_color: bool,
+    fixed_width: bool,
+) -> Result<String> {
     let mut table = Table::new();
-    table.set_content_arrangement(ContentArrangement::Dynamic);
+
+    // Set content arrangement and constraints based on width parameter
+    if fixed_width {
+        // Set absolute column widths for consistent layout
+        table.set_constraints(vec![
+            ColumnConstraint::Absolute(Width::Fixed(75)), // File
+            ColumnConstraint::Absolute(Width::Fixed(30)), // Kind
+            ColumnConstraint::Absolute(Width::Fixed(15)), // Matches
+            ColumnConstraint::Absolute(Width::Fixed(75)), // Variants
+        ]);
+    }
 
     // Force styling even in non-TTY environments when colors are explicitly requested
     if use_color {
@@ -375,7 +394,7 @@ mod tests {
     #[test]
     fn test_render_table_no_color() {
         let plan = create_test_plan();
-        let result = render_table(&plan, false).unwrap();
+        let result = render_table_with_fixed_width(&plan, false, true).unwrap();
 
         assert!(result.contains("src/main.rs"));
         assert!(result.contains("Content"));
@@ -480,7 +499,7 @@ mod tests {
             version: "1.0.0".to_string(),
         };
 
-        let table = render_table(&plan, false).unwrap();
+        let table = render_table_with_fixed_width(&plan, false, true).unwrap();
         assert!(table.contains("TOTALS"));
         assert!(table.contains("0"));
 

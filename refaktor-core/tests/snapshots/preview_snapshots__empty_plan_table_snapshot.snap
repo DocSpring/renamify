@@ -1,6 +1,5 @@
 ---
 source: refaktor-core/tests/preview_snapshots.rs
-assertion_line: 155
 expression: output
 ---
 +-----------+--------------------+-----------+------------+

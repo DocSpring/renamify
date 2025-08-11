@@ -12,6 +12,7 @@ use crate::{PreviewFormatArg, StyleArg};
 pub fn handle_rename(
     old: &str,
     new: &str,
+    paths: Vec<PathBuf>,
     include: Vec<String>,
     exclude: Vec<String>,
     unrestricted: u8,
@@ -32,10 +33,17 @@ pub fn handle_rename(
     auto_approve: bool,
     use_color: bool,
 ) -> Result<()> {
-    let root = std::env::current_dir().context("Failed to get current directory")?;
+    let current_dir = std::env::current_dir().context("Failed to get current directory")?;
+
+    // Use provided paths or default to current directory
+    let search_paths = if paths.is_empty() {
+        vec![PathBuf::from(".")]
+    } else {
+        paths
+    };
 
     // Acquire lock
-    let refaktor_dir = root.join(".refaktor");
+    let refaktor_dir = current_dir.join(".refaktor");
     let _lock = LockFile::acquire(&refaktor_dir)
         .context("Failed to acquire lock for refaktor operation")?;
 
@@ -90,7 +98,15 @@ pub fn handle_rename(
         exclude_match,
     };
 
-    let mut plan = scan_repository(&root, old, new, &options)
+    // For now, use the first search path as the root.
+    // TODO: Implement proper multi-path support in the core library
+    let scan_root = if search_paths[0].is_absolute() {
+        search_paths[0].clone()
+    } else {
+        current_dir.join(&search_paths[0])
+    };
+
+    let mut plan = scan_repository(&scan_root, old, new, &options)
         .with_context(|| format!("Failed to scan repository for '{}' -> '{}'", old, new))?;
 
     // Separate root directory renames from other renames
@@ -98,7 +114,7 @@ pub fn handle_rename(
         plan.renames.into_iter().partition(|rename| {
             rename.from.parent().is_none()
                 || rename.from.canonicalize().unwrap_or(rename.from.clone())
-                    == root.canonicalize().unwrap_or(root.clone())
+                    == scan_root.canonicalize().unwrap_or(scan_root.clone())
         });
 
     // Update plan with filtered renames (excluding root by default)
