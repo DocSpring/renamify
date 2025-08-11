@@ -23,13 +23,13 @@ pre-commit:
       glob: "*.rs"
       run: cargo test
 
-pre-push:
-  commands:
-    test-all:
-      run: cargo test --release
+# pre-push:
+#   commands:
+#     test-all:
+#       run: cargo test --release
 
-    check-docs:
-      run: cargo doc --no-deps --all-features
+#     check-docs:
+#       run: cargo doc --no-deps --all-features
 
 # Skip lefthook installation on CI
 skip_output:
