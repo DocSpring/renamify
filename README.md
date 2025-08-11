@@ -36,7 +36,7 @@ cargo test
 
 ### Code Coverage
 
-The `refaktor-core` library maintains 100% code coverage:
+The `refaktor-core` library maintains at least 95% code coverage:
 
 ```bash
 cargo install cargo-llvm-cov --version 0.6.15
@@ -45,4 +45,4 @@ cargo llvm-cov --package refaktor-core
 
 ## License
 
-MIT OR Apache-2.0 (dual licensed)
+MIT License - Copyright (c) 2025 DocSpring

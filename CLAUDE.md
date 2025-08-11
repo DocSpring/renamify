@@ -22,7 +22,7 @@ Treat this file as if it imports Task Master rules:
 
 ## Project Creator / Maintainer
 
-The company who is sponsoring the development of this project and maintaining it is: DocSpring.com.
+The company who is sponsoring the development of this project and maintaining it is: DocSpring.
 They should be mentioned in any package files, copyright notices, etc.
 
 ## Deliverables

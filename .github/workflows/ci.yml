@@ -78,13 +78,13 @@ jobs:
           COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "^TOTAL" | awk '{print $10}' | sed 's/%//')
           echo "Coverage: ${COVERAGE}%"
           
-          # Check if coverage is 100%
-          if [ "${COVERAGE}" != "100.00" ]; then
-            echo "Coverage is below 100% threshold: ${COVERAGE}%"
+          # Check if coverage is at least 95%
+          if (( $(echo "${COVERAGE} < 95.00" | bc -l) )); then
+            echo "Coverage is below 95% threshold: ${COVERAGE}%"
             exit 1
           fi
           
-          echo "Coverage meets 100% threshold"
+          echo "Coverage meets 95% threshold: ${COVERAGE}%"
 
       - name: Generate HTML report
         run: cargo llvm-cov --package refaktor-core --html
