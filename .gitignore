@@ -16,7 +16,7 @@
 .DS_Store
 
 # Runtime directory (created at runtime, not tracked in VCS)
-/.refaktor/
+.refaktor/
 
 # Cargo lock in library projects
 Cargo.lock

@@ -132,15 +132,17 @@ pub fn scan_repository(
 
         let path = entry.path();
         
-        // Apply include/exclude filters
+        // Apply include/exclude filters (use relative path for matching)
+        let relative_path = path.strip_prefix(root).unwrap_or(path);
+        
         if let Some(ref includes) = include_globs {
-            if !includes.is_match(path) {
+            if !includes.is_match(relative_path) {
                 continue;
             }
         }
         
         if let Some(ref excludes) = exclude_globs {
-            if excludes.is_match(path) {
+            if excludes.is_match(relative_path) {
                 continue;
             }
         }

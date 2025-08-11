@@ -74,7 +74,7 @@ fn test_plan_command_with_includes() {
         .assert()
         .success()
         .stdout(predicate::str::contains("src/main.rs"))
-        .stdout(predicate::str::contains("main.rs").not().or(predicate::str::contains("tests/test.rs").not()));
+        .stdout(predicate::str::contains("tests/test.rs").not());
 }
 
 #[test]
@@ -218,57 +218,185 @@ fn test_no_rename_files_flag() {
 }
 
 #[test]
-fn test_apply_command_not_implemented() {
+fn test_apply_command_missing_plan() {
+    let temp_dir = TempDir::new().unwrap();
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.args(["apply", "--plan", "plan.json"])
+    cmd.current_dir(temp_dir.path())
+        .args(["apply", "--plan", "nonexistent.json"])
         .assert()
-        .success()
-        .stderr(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Failed to read plan"));
 }
 
 #[test]
-fn test_undo_command_not_implemented() {
+fn test_apply_command_with_plan() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create a test file with content to replace
+    temp_dir.child("test.rs").write_str("fn old_name() {}").unwrap();
+    
+    // First create a plan
+    let refaktor_dir = temp_dir.child(".refaktor");
+    refaktor_dir.create_dir_all().unwrap();
+    
+    // Create a minimal valid plan
+    let plan_json = r#"{
+        "id": "test123",
+        "created_at": "2024-01-01T00:00:00Z",
+        "old": "old_name",
+        "new": "new_name",
+        "styles": [],
+        "includes": [],
+        "excludes": [],
+        "matches": [],
+        "renames": [],
+        "stats": {
+            "files_scanned": 1,
+            "total_matches": 0,
+            "matches_by_variant": {},
+            "files_with_matches": 0
+        },
+        "version": "1.0.0"
+    }"#;
+    
+    refaktor_dir.child("plan.json").write_str(plan_json).unwrap();
+    
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.args(["undo", "abc123"])
+    cmd.current_dir(temp_dir.path())
+        .args(["apply"])
         .assert()
         .success()
-        .stderr(predicate::str::contains("not yet implemented"));
+        .stderr(predicate::str::contains("Applying plan test123"))
+        .stderr(predicate::str::contains("Plan applied successfully!"));
 }
 
 #[test]
-fn test_redo_command_not_implemented() {
+fn test_undo_command_missing_entry() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create .refaktor directory with empty history
+    temp_dir.child(".refaktor").create_dir_all().unwrap();
+    temp_dir.child(".refaktor/history.json").write_str("[]").unwrap();
+    
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.args(["redo", "abc123"])
+    cmd.current_dir(temp_dir.path())
+        .args(["undo", "nonexistent"])
         .assert()
-        .success()
-        .stderr(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("History entry 'nonexistent' not found"));
 }
 
 #[test]
-fn test_status_command_not_implemented() {
+fn test_redo_command_missing_entry() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create .refaktor directory with empty history
+    temp_dir.child(".refaktor").create_dir_all().unwrap();
+    temp_dir.child(".refaktor/history.json").write_str("[]").unwrap();
+    
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.arg("status")
+    cmd.current_dir(temp_dir.path())
+        .args(["redo", "nonexistent"])
         .assert()
-        .success()
-        .stderr(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("History entry 'nonexistent' not found"));
 }
 
 #[test]
-fn test_history_command_not_implemented() {
+fn test_status_command() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create .refaktor directory
+    temp_dir.child(".refaktor").create_dir_all().unwrap();
+    
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.arg("history")
+    cmd.current_dir(temp_dir.path())
+        .arg("status")
         .assert()
         .success()
-        .stderr(predicate::str::contains("not yet implemented"));
+        // Status shows "No plans applied yet" when empty
+        .stdout(predicate::str::contains("No plans applied yet"))
+        .stdout(predicate::str::contains("Working tree"));
 }
 
 #[test]
-fn test_history_command_with_limit() {
+fn test_history_command_empty() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create .refaktor directory with empty history
+    temp_dir.child(".refaktor").create_dir_all().unwrap();
+    temp_dir.child(".refaktor/history.json").write_str("[]").unwrap();
+    
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.args(["history", "--limit", "10"])
+    cmd.current_dir(temp_dir.path())
+        .arg("history")
         .assert()
         .success()
-        .stderr(predicate::str::contains("not yet implemented"));
+        // Empty history shows an empty table
+        .stdout(predicate::str::contains("ID"))
+        .stdout(predicate::str::contains("Date"))
+        .stdout(predicate::str::contains("Rename"));
+}
+
+#[test]
+fn test_history_command_with_entries() {
+    let temp_dir = TempDir::new().unwrap();
+    
+    // Create .refaktor directory with some history
+    temp_dir.child(".refaktor").create_dir_all().unwrap();
+    
+    let history_json = r#"[
+        {
+            "id": "test1",
+            "created_at": "2024-01-01T00:00:00Z",
+            "old": "foo",
+            "new": "bar",
+            "styles": [],
+            "includes": [],
+            "excludes": [],
+            "affected_files": {},
+            "renames": [],
+            "backups_path": ".refaktor/backups/test1",
+            "revert_of": null,
+            "redo_of": null
+        },
+        {
+            "id": "test2",
+            "created_at": "2024-01-02T00:00:00Z",
+            "old": "baz",
+            "new": "qux",
+            "styles": [],
+            "includes": [],
+            "excludes": [],
+            "affected_files": {},
+            "renames": [],
+            "backups_path": ".refaktor/backups/test2",
+            "revert_of": null,
+            "redo_of": null
+        }
+    ]"#;
+    
+    temp_dir.child(".refaktor/history.json").write_str(history_json).unwrap();
+    
+    // Test without limit - should show both entries
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .arg("history")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("test1"))
+        .stdout(predicate::str::contains("test2"))
+        .stdout(predicate::str::contains("foo → bar"))
+        .stdout(predicate::str::contains("baz → qux"));
+    
+    // Test with limit - should show only one entry
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["history", "--limit", "1"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("test2"))
+        .stdout(predicate::str::contains("test1").not());
 }
 
 #[test]
