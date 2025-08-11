@@ -8,6 +8,8 @@
 pub mod apply;
 pub mod case_model;
 pub mod coercion;
+pub mod compound_matcher;
+pub mod compound_scanner;
 pub mod history;
 pub mod pattern;
 pub mod preview;

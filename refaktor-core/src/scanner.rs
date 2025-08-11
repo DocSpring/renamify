@@ -177,9 +177,43 @@ pub fn scan_repository(
                 continue;
             }
 
-            let file_matches = find_matches(&pattern, &content, path.to_str().unwrap_or(""));
+            // First pass: Fast regex for exact matches
+            let mut file_matches = find_matches(&pattern, &content, path.to_str().unwrap_or(""));
+            
+            // Second pass: Find compound matches
+            let compound_matches = crate::compound_scanner::find_enhanced_matches(
+                &content,
+                path.to_str().unwrap_or(""),
+                old,
+                new,
+                &variant_map,
+                options.styles.as_deref().unwrap_or(&[
+                    Style::Snake,
+                    Style::Kebab,
+                    Style::Camel,
+                    Style::Pascal,
+                    Style::ScreamingSnake,
+                ]),
+            );
+            
+            // Filter compound matches to only include those not already found
+            let exact_positions: std::collections::HashSet<_> = file_matches
+                .iter()
+                .map(|m| m.start)
+                .collect();
+            
+            let unique_compound_matches: Vec<_> = compound_matches
+                .into_iter()
+                .filter(|m| !exact_positions.contains(&m.start))
+                .collect();
+            
+            // Combine both sets of matches
+            file_matches.extend(unique_compound_matches);
             
             if !file_matches.is_empty() {
+                // Sort by position to maintain order
+                file_matches.sort_by_key(|m| (m.line, m.column));
+                
                 let hunks = generate_hunks(&file_matches, &content, &variant_map, path, options);
                 
                 stats.files_with_matches += 1;
@@ -285,21 +319,26 @@ fn generate_hunks(
         let line = lines[line_idx];
         let line_string = String::from_utf8_lossy(line).to_string();
         
-        let new_variant = variant_map.get(&m.variant).unwrap_or(&m.variant);
-        
-        // The before/after fields contain just the word being replaced (for apply)
-        let before = m.variant.clone();
-        let mut after = new_variant.clone();
+        // Check if this is a compound match (text field contains replacement)
+        // or an exact match (use variant map)
+        let (before, mut after) = if variant_map.contains_key(&m.variant) {
+            // Exact match - use variant map
+            let new_variant = variant_map.get(&m.variant).unwrap();
+            (m.variant.clone(), new_variant.clone())
+        } else {
+            // Compound match - text field has the replacement
+            (m.variant.clone(), m.text.clone())
+        };
         let mut coercion_applied = None;
 
         // Apply coercion if enabled
         if let CoercionMode::Auto = options.coerce_separators {
             // Find the match position within the line and extract context
-            if let Some(match_pos) = line_string.find(&m.variant) {
-                let context = extract_immediate_context(&line_string, match_pos, match_pos + m.variant.len());
+            if let Some(match_pos) = line_string.find(&before) {
+                let context = extract_immediate_context(&line_string, match_pos, match_pos + before.len());
                 
-                if let Some((_coerced, reason)) = crate::coercion::apply_coercion(&context, &m.variant, new_variant) {
-                    if let Some(coerced_variant) = apply_coercion_to_variant(&context, &m.variant, new_variant) {
+                if let Some((_coerced, reason)) = crate::coercion::apply_coercion(&context, &before, &after) {
+                    if let Some(coerced_variant) = apply_coercion_to_variant(&context, &before, &after) {
                         after = coerced_variant;
                         coercion_applied = Some(reason);
                     }
@@ -311,11 +350,11 @@ fn generate_hunks(
         let line_before = line_string.trim_end().to_string();
         
         // Create the after line by replacing the variant in the original line
-        let line_after = if let Some(match_pos) = line_string.find(&m.variant) {
+        let line_after = if let Some(match_pos) = line_string.find(&before) {
             let mut after_line = String::new();
             after_line.push_str(&line_string[..match_pos]);
             after_line.push_str(&after);
-            after_line.push_str(&line_string[match_pos + m.variant.len()..]);
+            after_line.push_str(&line_string[match_pos + before.len()..]);
             after_line.trim_end().to_string()
         } else {
             // Fallback to original line if we can't find the match (shouldn't happen)
