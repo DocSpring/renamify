@@ -50,6 +50,7 @@ pub fn handle_rename(
         if only_styles.is_empty() {
             // Start with the default styles
             let default_styles = vec![
+                StyleArg::Original,
                 StyleArg::Snake,
                 StyleArg::Kebab,
                 StyleArg::Camel,

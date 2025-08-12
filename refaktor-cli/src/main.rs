@@ -346,6 +346,7 @@ enum StyleArg {
     Title,
     Train,
     Dot,
+    Original,
 }
 
 impl From<StyleArg> for Style {
@@ -359,6 +360,7 @@ impl From<StyleArg> for Style {
             StyleArg::Title => Self::Title,
             StyleArg::Train => Self::Train,
             StyleArg::Dot => Self::Dot,
+            StyleArg::Original => Self::Original,
         }
     }
 }
@@ -661,6 +663,7 @@ fn handle_plan(
         if only_styles.is_empty() {
             // Start with the default styles
             let default_styles = vec![
+                StyleArg::Original,
                 StyleArg::Snake,
                 StyleArg::Kebab,
                 StyleArg::Camel,

@@ -124,6 +124,18 @@ pub fn find_compound_variants(
                     pattern_end: 0,   // Not meaningful when we have multiple replacements
                 });
             }
+        } else {
+            // No style detected (mixed or unknown style), but we still made replacements
+            // Do a simple string replacement to preserve the original structure
+            let replacement = identifier.replace(old_pattern, new_pattern);
+
+            matches.push(CompoundMatch {
+                full_identifier: identifier.to_string(),
+                replacement,
+                style: Style::Original, // Use Original to indicate no style transformation
+                pattern_start: 0,
+                pattern_end: 0,
+            });
         }
     }
 

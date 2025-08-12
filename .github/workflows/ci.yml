@@ -153,6 +153,12 @@ jobs:
           fi
         shell: bash
 
+      # For these tests, we want ripgrep to ignore the same files as refaktor
+      - name: Setup .rgignore
+        run: |
+          cp .rfignore .rgignore
+          echo .rgignore >> .git/info/exclude
+
       - name: Build refaktor
         run: |
           cargo build --release
@@ -163,7 +169,7 @@ jobs:
           echo "=== Testing refaktor rename to smart_search_and_replace ==="
 
           # Use refaktor to rename itself using plan/apply
-          ./target/release/refaktor --auto-init=repo plan refaktor smart_search_and_replace --preview-format table
+          ./target/release/refaktor plan refaktor smart_search_and_replace --preview-format table
           ./target/release/refaktor apply
 
           # Verify the rename worked by checking key files
@@ -178,7 +184,7 @@ jobs:
 
           # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
           echo "Checking for remaining instances of 'refaktor'..."
-          if rg -i "refaktor" --type-not binary; then
+          if rg -i refaktor; then
             echo "ERROR: Found remaining instances of 'refaktor' in the codebase!"
             exit 1
           fi
@@ -218,7 +224,7 @@ jobs:
 
           # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
           echo "Checking for remaining instances of 'refaktor'..."
-          if rg -i "refaktor" --type-not binary; then
+          if rg -i "refaktor"; then
             echo "ERROR: Found remaining instances of 'refaktor' in the codebase!"
             exit 1
           fi
@@ -250,7 +256,7 @@ jobs:
 
           # Verify no instances of "smart_search_and_replace" or "smart-search-and-replace" remain
           echo "Checking for remaining instances of 'smart_search_and_replace' or 'smart-search-and-replace'..."
-          if rg "(smart_search_and_replace|smart-search-and-replace|smartsearchandreplace)" --type-not binary; then
+          if rg "(smart_search_and_replace|smart-search-and-replace|smartsearchandreplace)"; then
             echo "ERROR: Found remaining instances of 'smart_search_and_replace' in the codebase!"
             exit 1
           fi

@@ -8,18 +8,75 @@ use regex::bytes::Regex;
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 
+/// Check if an identifier has camelCase/PascalCase around dots (like obj.method)
+fn has_camel_case_around_dot(identifier: &str) -> bool {
+    let parts: Vec<&str> = identifier.split('.').collect();
+    if parts.len() < 2 {
+        return false;
+    }
+
+    // Check if any part looks like camelCase or PascalCase
+    for part in &parts {
+        if is_camel_or_pascal_case(part) {
+            return true;
+        }
+    }
+
+    false
+}
+
+/// Check if a string looks like camelCase or PascalCase
+fn is_camel_or_pascal_case(s: &str) -> bool {
+    if s.is_empty() {
+        return false;
+    }
+
+    // Must have at least one lowercase and one uppercase letter
+    let has_lower = s.bytes().any(|b| b.is_ascii_lowercase());
+    let has_upper = s.bytes().any(|b| b.is_ascii_uppercase());
+
+    // Must not contain underscores, hyphens, or spaces (pure camel/pascal)
+    let is_pure = !s.contains(['_', '-', ' ']);
+
+    has_lower && has_upper && is_pure
+}
+
 /// Find all potential identifiers in the content using a broad regex pattern
 fn find_all_identifiers(content: &[u8]) -> Vec<(usize, usize, String)> {
     let mut identifiers = Vec::new();
 
-    // Pattern to match any identifier-like string
-    // This matches snake_case, camelCase, PascalCase, kebab-case, etc.
-    let pattern = r"\b[a-zA-Z_][a-zA-Z0-9_\-]*\b";
+    // Pattern to match identifier-like strings, including dots in some contexts
+    // This is tricky: we want to split on dots for things like obj.prop but keep
+    // dots for mixed-style identifiers like config.max_value
+    let pattern = r"\b[a-zA-Z_][a-zA-Z0-9_\-\.]*\b";
     let regex = Regex::new(pattern).unwrap();
 
     for m in regex.find_iter(content) {
         let identifier = String::from_utf8_lossy(m.as_bytes()).to_string();
-        identifiers.push((m.start(), m.end(), identifier));
+
+        // Heuristic: if the identifier contains camelCase/PascalCase around a dot,
+        // it's likely obj.method or obj.property, so split it
+        if identifier.contains('.') && has_camel_case_around_dot(&identifier) {
+            // Split on dots for things like obj.method or this.property
+            let parts: Vec<&str> = identifier.split('.').collect();
+            let mut current_pos = m.start();
+
+            for (i, part) in parts.iter().enumerate() {
+                if !part.is_empty() {
+                    identifiers.push((current_pos, current_pos + part.len(), part.to_string()));
+                }
+                current_pos += part.len() + 1; // +1 for the dot
+
+                // If there are more parts, we've consumed a dot
+                if i < parts.len() - 1 && current_pos <= m.end() {
+                    // The dot is at current_pos - 1, move past it
+                    // current_pos is already at the right position for the next part
+                }
+            }
+        } else {
+            // Keep as single identifier (including dots for mixed-style names)
+            identifiers.push((m.start(), m.end(), identifier));
+        }
     }
 
     identifiers
@@ -35,7 +92,7 @@ pub fn find_enhanced_matches(
     styles: &[Style],
 ) -> Vec<Match> {
     let mut all_matches = Vec::new();
-    let mut processed_positions = HashSet::new();
+    let mut processed_ranges = Vec::new(); // Track (start, end) ranges that were exactly matched
 
     // First, find exact matches using the existing pattern approach
     let variants: Vec<String> = variant_map.keys().cloned().collect();
@@ -61,8 +118,8 @@ pub fn find_enhanced_matches(
 
             let column = m.start() - line_start;
 
-            // Mark this position as processed
-            processed_positions.insert(m.start());
+            // Mark this range as processed
+            processed_ranges.push((m.start(), m.end()));
 
             all_matches.push(Match {
                 file: file.to_string(),
@@ -80,8 +137,12 @@ pub fn find_enhanced_matches(
     let identifiers = find_all_identifiers(content);
 
     for (start, end, identifier) in identifiers {
-        // Skip if we already matched this position exactly
-        if processed_positions.contains(&start) {
+        // Skip if this entire identifier was already matched exactly
+        let fully_processed = processed_ranges
+            .iter()
+            .any(|(proc_start, proc_end)| *proc_start == start && *proc_end == end);
+
+        if fully_processed {
             continue;
         }
 

@@ -198,7 +198,10 @@ function setFooBarType(fooBarType) {
     println!("\n=== Compound Camel Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
     for hunk in &plan.matches {
-        println!("Line {}: '{}' -> '{}'", hunk.line, hunk.before, hunk.after);
+        println!(
+            "Line {}, Col {}: '{}' -> '{}'",
+            hunk.line, hunk.col, hunk.before, hunk.after
+        );
     }
 
     // Should find and replace:
