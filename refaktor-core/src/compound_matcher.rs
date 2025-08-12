@@ -169,8 +169,14 @@ pub fn find_compound_variants(
             }
 
             // No style detected (mixed or unknown style), but Original style is enabled
-            // Do a simple string replacement to preserve the original structure
-            let replacement = identifier.replace(old_pattern, new_pattern);
+            // Special handling for hyphenated identifiers
+            let replacement = if identifier.contains('-') {
+                // Handle hyphenated identifiers by replacing each part independently
+                replace_in_hyphenated(identifier, old_pattern, new_pattern)
+            } else {
+                // Simple case-insensitive replacement for other patterns
+                case_insensitive_replace(identifier, old_pattern, new_pattern)
+            };
 
             matches.push(CompoundMatch {
                 full_identifier: identifier.to_string(),
@@ -193,6 +199,82 @@ pub fn find_compound_variants(
     }
 
     matches
+}
+
+/// Replace pattern in a hyphenated identifier, handling each part independently
+fn replace_in_hyphenated(identifier: &str, old_pattern: &str, new_pattern: &str) -> String {
+    let parts: Vec<&str> = identifier.split('-').collect();
+    let mut replaced_parts = Vec::new();
+
+    for part in parts {
+        // Check if this part matches the pattern exactly (case-insensitive)
+        if part.to_lowercase() == old_pattern.to_lowercase() {
+            // Exact match - detect the style of this part and apply appropriate replacement
+            if let Some(style) = crate::case_model::detect_style(part) {
+                // Convert new pattern to match the style of this part
+                let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
+                let replacement = crate::case_model::to_style(&new_tokens, style);
+                replaced_parts.push(replacement);
+            } else if part.chars().next().map_or(false, |c| c.is_uppercase()) {
+                // Part starts with uppercase, likely Pascal case
+                // Convert new pattern to Pascal case
+                let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
+                let replacement = crate::case_model::to_style(&new_tokens, Style::Pascal);
+                replaced_parts.push(replacement);
+            } else {
+                // Default: keep the same case style as the original
+                replaced_parts.push(new_pattern.to_string());
+            }
+        } else if part.to_lowercase().contains(&old_pattern.to_lowercase()) {
+            // Part contains the pattern but not an exact match
+            // Do a case-preserving replacement within this part
+            replaced_parts.push(case_insensitive_replace(part, old_pattern, new_pattern));
+        } else {
+            // Part doesn't contain the pattern at all, keep it as-is
+            replaced_parts.push(part.to_string());
+        }
+    }
+
+    replaced_parts.join("-")
+}
+
+/// Case-insensitive replacement for non-hyphenated patterns
+fn case_insensitive_replace(identifier: &str, old_pattern: &str, new_pattern: &str) -> String {
+    // Try to detect if the identifier contains the pattern with different casing
+    let lower_id = identifier.to_lowercase();
+    let lower_pattern = old_pattern.to_lowercase();
+
+    if let Some(pos) = lower_id.find(&lower_pattern) {
+        // Found the pattern, extract the actual cased version
+        let actual_pattern = &identifier[pos..pos + old_pattern.len()];
+
+        // Detect the style of the actual pattern and apply to new pattern
+        if let Some(style) = crate::case_model::detect_style(actual_pattern) {
+            let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
+            let replacement = crate::case_model::to_style(&new_tokens, style);
+            identifier.replace(actual_pattern, &replacement)
+        } else {
+            // No clear style, just do a simple replacement preserving the case of the first letter
+            let replacement = if actual_pattern
+                .chars()
+                .next()
+                .map_or(false, |c| c.is_uppercase())
+            {
+                // Capitalize the new pattern
+                let mut chars = new_pattern.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            } else {
+                new_pattern.to_string()
+            };
+            identifier.replace(actual_pattern, &replacement)
+        }
+    } else {
+        // Pattern not found, return as-is
+        identifier.to_string()
+    }
 }
 
 /// Generate all compound variants for a given pattern
