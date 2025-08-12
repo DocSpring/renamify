@@ -64,7 +64,17 @@ export default defineConfig({
         },
         {
           label: "Commands",
-          autogenerate: { directory: "commands" },
+          items: [
+            { label: "init", slug: "commands/init" },
+            { label: "rename", slug: "commands/rename" },
+            { label: "plan", slug: "commands/plan" },
+            { label: "apply", slug: "commands/apply" },
+            { label: "dry-run", slug: "commands/dry-run" },
+            { label: "status", slug: "commands/status" },
+            { label: "history", slug: "commands/history" },
+            { label: "undo", slug: "commands/undo" },
+            { label: "redo", slug: "commands/redo" },
+          ],
         },
         {
           label: "Examples",
@@ -76,9 +86,7 @@ export default defineConfig({
         },
         {
           label: "VS Code Extension",
-          items: [
-            { label: "Overview", slug: "vscode/overview" },
-          ],
+          items: [{ label: "Overview", slug: "vscode/overview" }],
         },
         {
           label: "Reference",
