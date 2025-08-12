@@ -5,14 +5,44 @@ set -e
 # https://github.com/DocSpring/refaktor
 
 REPO="DocSpring/refaktor"
-INSTALL_DIR="/usr/local/bin"
 BINARY_NAME="refaktor"
+
+# Default to user-local installation
+DEFAULT_INSTALL_DIR="$HOME/.local/bin"
+INSTALL_DIR="$DEFAULT_INSTALL_DIR"
+INSTALL_MODE="local"
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --system)
+            INSTALL_DIR="/usr/local/bin"
+            INSTALL_MODE="system"
+            shift
+            ;;
+        --prefix)
+            INSTALL_DIR="$2"
+            INSTALL_MODE="custom"
+            shift 2
+            ;;
+        --uninstall)
+            UNINSTALL=true
+            shift
+            ;;
+        *)
+            echo -e "${RED}Unknown option: $1${NC}"
+            echo "Usage: $0 [--system | --prefix <dir> | --uninstall]"
+            exit 1
+            ;;
+    esac
+done
 
 # Detect OS and architecture
 detect_platform() {
@@ -50,23 +80,115 @@ detect_platform() {
     ASSET_NAME="refaktor-${PLATFORM}-${ARCH}.tar.gz"
 }
 
-# Check if running with sudo when needed
-check_permissions() {
-    if [ ! -w "$INSTALL_DIR" ]; then
-        if [ "$EUID" -ne 0 ]; then
-            echo -e "${YELLOW}Permission denied. Please run with sudo:${NC}"
-            echo "  curl -fsSL https://docspring.github.io/refaktor/install.sh | sudo bash"
-            exit 1
+# Uninstall function
+uninstall_refaktor() {
+    echo "🗑️  Uninstalling Refaktor..."
+    
+    # Check common locations
+    LOCATIONS=("$HOME/.local/bin/refaktor" "/usr/local/bin/refaktor" "$HOME/bin/refaktor")
+    FOUND=false
+    
+    for loc in "${LOCATIONS[@]}"; do
+        if [ -f "$loc" ]; then
+            echo "Found refaktor at: $loc"
+            if [ -w "$loc" ]; then
+                rm "$loc"
+            else
+                sudo rm "$loc"
+            fi
+            echo -e "${GREEN}✓ Removed $loc${NC}"
+            FOUND=true
         fi
+    done
+    
+    if [ "$FOUND" = false ]; then
+        echo "Refaktor not found in standard locations."
+        echo "If installed elsewhere, please remove manually."
+    fi
+    
+    exit 0
+}
+
+# Check for Homebrew on macOS
+check_homebrew() {
+    if [ "$PLATFORM" = "macos" ] && command -v brew &> /dev/null; then
+        echo -e "${BLUE}ℹ️  Homebrew detected${NC}"
+        echo ""
+        echo "For macOS, we recommend installing via Homebrew (when available):"
+        echo -e "  ${GREEN}brew install refaktor${NC}  # Coming soon"
+        echo ""
+        echo "Continuing with manual installation to $INSTALL_DIR..."
+        echo ""
+    fi
+}
+
+# Detect user's shell
+detect_shell() {
+    if [ -n "$SHELL" ]; then
+        case "$SHELL" in
+            */bash)
+                USER_SHELL="bash"
+                SHELL_RC="$HOME/.bashrc"
+                # On macOS, .bash_profile is often used instead
+                if [ "$PLATFORM" = "macos" ] && [ -f "$HOME/.bash_profile" ]; then
+                    SHELL_RC="$HOME/.bash_profile"
+                fi
+                ;;
+            */zsh)
+                USER_SHELL="zsh"
+                # Use .zshrc for interactive shells
+                SHELL_RC="$HOME/.zshrc"
+                ;;
+            */fish)
+                USER_SHELL="fish"
+                SHELL_RC="$HOME/.config/fish/config.fish"
+                ;;
+            *)
+                USER_SHELL="unknown"
+                SHELL_RC=""
+                ;;
+        esac
+    else
+        USER_SHELL="unknown"
+        SHELL_RC=""
+    fi
+}
+
+# Check if directory is in PATH
+check_path() {
+    local dir="$1"
+    if [[ ":$PATH:" == *":$dir:"* ]]; then
+        return 0
+    else
+        return 1
     fi
 }
 
 # Download and install
 install_refaktor() {
-    echo "Installing Refaktor..."
+    echo "📦 Installing Refaktor..."
     echo "  Platform: $PLATFORM"
     echo "  Architecture: $ARCH"
+    echo "  Destination: $INSTALL_DIR"
     echo ""
+    
+    # Create install directory if needed
+    if [ ! -d "$INSTALL_DIR" ]; then
+        echo "Creating directory: $INSTALL_DIR"
+        mkdir -p "$INSTALL_DIR"
+    fi
+    
+    # Check write permissions
+    if [ ! -w "$INSTALL_DIR" ]; then
+        if [ "$INSTALL_MODE" = "system" ]; then
+            echo -e "${YELLOW}System installation requires sudo${NC}"
+            NEED_SUDO=true
+        else
+            echo -e "${RED}Error: Cannot write to $INSTALL_DIR${NC}"
+            echo "Please check permissions or choose a different directory."
+            exit 1
+        fi
+    fi
     
     # Get the latest release URL
     DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET_NAME}"
@@ -89,21 +211,26 @@ install_refaktor() {
     fi
     
     # Move binary to install directory
-    if [ -w "$INSTALL_DIR" ]; then
-        mv "$TEMP_DIR/refaktor" "$INSTALL_DIR/"
-        chmod 755 "$INSTALL_DIR/refaktor"
-    else
+    if [ "$NEED_SUDO" = true ]; then
         sudo mv "$TEMP_DIR/refaktor" "$INSTALL_DIR/"
         sudo chmod 755 "$INSTALL_DIR/refaktor"
+    else
+        mv "$TEMP_DIR/refaktor" "$INSTALL_DIR/"
+        chmod 755 "$INSTALL_DIR/refaktor"
     fi
     
     echo -e "${GREEN}✓ Refaktor installed successfully!${NC}"
+    echo -e "  Installed to: ${BLUE}$INSTALL_DIR/refaktor${NC}"
     echo ""
-    
-    # Verify installation
+}
+
+# Check installation and PATH
+verify_installation() {
+    # Check if refaktor is accessible
     if command -v refaktor &> /dev/null; then
         VERSION=$(refaktor --version 2>&1 | head -n1)
-        echo "Installed: $VERSION"
+        echo -e "${GREEN}✓ Installation verified${NC}"
+        echo "  Version: $VERSION"
         echo ""
         echo "Get started with:"
         echo "  refaktor --help"
@@ -111,28 +238,49 @@ install_refaktor() {
         echo "Quick example:"
         echo "  refaktor rename old_name new_name"
     else
-        echo -e "${YELLOW}Warning: refaktor was installed but is not in your PATH.${NC}"
-        echo "Add $INSTALL_DIR to your PATH:"
-        echo "  export PATH=\"\$PATH:$INSTALL_DIR\""
-    fi
-}
-
-# Alternative installation directory
-use_local_install() {
-    echo "Installing to ~/.local/bin (no sudo required)..."
-    INSTALL_DIR="$HOME/.local/bin"
-    mkdir -p "$INSTALL_DIR"
-    install_refaktor
-    
-    # Check if ~/.local/bin is in PATH
-    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-        echo ""
-        echo -e "${YELLOW}Note: ~/.local/bin is not in your PATH.${NC}"
-        echo "Add this to your shell configuration file (.bashrc, .zshrc, etc.):"
-        echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
-        echo ""
-        echo "Then reload your shell or run:"
-        echo "  source ~/.bashrc  # or ~/.zshrc"
+        # Check if the binary exists but PATH needs updating
+        if [ -f "$INSTALL_DIR/refaktor" ]; then
+            echo -e "${YELLOW}⚠️  Refaktor installed but not in PATH${NC}"
+            echo ""
+            
+            if ! check_path "$INSTALL_DIR"; then
+                detect_shell
+                echo "Add $INSTALL_DIR to your PATH:"
+                echo ""
+                
+                case "$USER_SHELL" in
+                    bash)
+                        echo "Run this command:"
+                        echo -e "  ${GREEN}echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> $SHELL_RC${NC}"
+                        echo ""
+                        echo "Then reload your shell:"
+                        echo -e "  ${GREEN}source $SHELL_RC${NC}"
+                        ;;
+                    zsh)
+                        echo "Run this command:"
+                        echo -e "  ${GREEN}echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> $SHELL_RC${NC}"
+                        echo ""
+                        echo "Then reload your shell:"
+                        echo -e "  ${GREEN}source $SHELL_RC${NC}"
+                        ;;
+                    fish)
+                        echo "Run this command:"
+                        echo -e "  ${GREEN}fish_add_path \$HOME/.local/bin${NC}"
+                        echo ""
+                        echo "Or manually:"
+                        echo -e "  ${GREEN}set -U fish_user_paths \$HOME/.local/bin \$fish_user_paths${NC}"
+                        ;;
+                    *)
+                        echo "Add this line to your shell configuration:"
+                        echo -e "  ${GREEN}export PATH=\"\$HOME/.local/bin:\$PATH\"${NC}"
+                        ;;
+                esac
+            fi
+        else
+            echo -e "${RED}Error: Installation may have failed${NC}"
+            echo "Binary not found at: $INSTALL_DIR/refaktor"
+            exit 1
+        fi
     fi
 }
 
@@ -142,16 +290,21 @@ main() {
     echo "===================="
     echo ""
     
+    # Handle uninstall
+    if [ "$UNINSTALL" = true ]; then
+        uninstall_refaktor
+    fi
+    
     detect_platform
     
-    # Check if user wants local installation
-    if [ "$1" = "--local" ] || [ "$1" = "-l" ]; then
-        use_local_install
-    else
-        check_permissions
-        install_refaktor
+    # Check for Homebrew on macOS (but continue with install)
+    if [ "$PLATFORM" = "macos" ] && [ "$INSTALL_MODE" = "local" ]; then
+        check_homebrew
     fi
+    
+    install_refaktor
+    verify_installation
 }
 
 # Run main function
-main "$@"
+main

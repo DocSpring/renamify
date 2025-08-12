@@ -3,11 +3,11 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g., v1.0.0)'
+        description: "Tag to release (e.g., v1.0.0)"
         required: true
         type: string
 
@@ -25,7 +25,7 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             name: refaktor-macos-arm64
-          
+
           # Linux builds
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -100,10 +100,10 @@ jobs:
           TAG="${{ steps.tag.outputs.tag }}"
           echo "## What's Changed" > changelog.md
           echo "" >> changelog.md
-          
+
           # Get the previous tag
           PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "")
-          
+
           if [ -n "$PREV_TAG" ]; then
             echo "### Commits since $PREV_TAG" >> changelog.md
             git log --pretty=format:"- %s (%h)" $PREV_TAG..$TAG >> changelog.md
@@ -111,7 +111,7 @@ jobs:
             echo "### Initial Release" >> changelog.md
             echo "- First release of Refaktor" >> changelog.md
           fi
-          
+
           echo "" >> changelog.md
           echo "## Installation" >> changelog.md
           echo "" >> changelog.md
@@ -156,7 +156,7 @@ jobs:
     name: Publish MCP Server to npm
     needs: release
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -164,8 +164,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install pnpm
         run: npm install -g pnpm
