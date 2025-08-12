@@ -96,3 +96,11 @@ cargo llvm-cov --package refaktor-core
 ## License
 
 MIT License - Copyright (c) 2025 DocSpring
+
+---
+
+<div align="center">
+  <strong>Refaktor is supported by <a href="https://docspring.com">DocSpring</a></strong>
+  <br>
+  <sub>DocSpring is a powerful API for filling out and generating PDFs</sub>
+</div>
