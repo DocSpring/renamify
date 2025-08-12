@@ -35,22 +35,6 @@ The MCP server is published to npm as `@docspring/refaktor-mcp` as part of the m
    - **Secret:** Paste your npm token
 5. Click **Add secret**
 
-#### Step 3: Verify Organization and Package Name
-
-Ensure the @docspring organization exists on npm:
-
-1. Check if the organization exists: https://www.npmjs.com/org/docspring
-2. If not, create it:
-   - Go to npmjs.com
-   - Click **+** → **Add Organization**
-   - Name it `docspring`
-
-Verify the package name is available:
-```bash
-npm view @docspring/refaktor-mcp
-# Should return 404 if available
-```
-
 ### First-Time Manual Publishing (Optional)
 
 If you want to publish manually before setting up automation:
@@ -90,6 +74,7 @@ git push origin v0.1.0
 ```
 
 The GitHub Actions workflow will:
+
 1. Build Refaktor binaries for all platforms
 2. Create a GitHub release
 3. **Automatically publish the MCP server to npm**
@@ -175,6 +160,7 @@ npm pack --dry-run
 ## Support
 
 For issues with:
+
 - **NPM Publishing**: Check npm documentation or contact npm support
 - **GitHub Actions**: Check the workflow logs in the Actions tab
 - **MCP Server Code**: Open an issue on GitHub

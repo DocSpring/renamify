@@ -107,7 +107,7 @@ async function main() {
   const tools = new RefaktorTools(refaktorService);
 
   // Register tool handlers
-  server.setRequestHandler('tools/list', async () => ({
+  server.setRequestHandler('tools/list' as any, async () => ({
     tools: [
       {
         name: 'refaktor_plan',
@@ -256,7 +256,7 @@ async function main() {
     ],
   }));
 
-  server.setRequestHandler('tools/call', async (request) => {
+  server.setRequestHandler('tools/call' as any, async (request: any) => {
     const { name, arguments: args } = request.params;
 
     try {

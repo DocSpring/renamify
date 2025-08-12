@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "refaktor-mcp": "./dist/index.js"
+    "refaktor-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -50,7 +50,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/DocSpring/refaktor.git",
+    "url": "git+https://github.com/DocSpring/refaktor.git",
     "directory": "refaktor-mcp"
   },
   "bugs": {
