@@ -64,9 +64,16 @@ jobs:
           ./target/release/refaktor plan refaktor smart_search_and_replace --preview-format table
           ./target/release/refaktor apply
 
-          # Verify the rename worked by checking key files
-          if [ -f "refaktor-core/Cargo.toml" ]; then
-            echo "ERROR: refaktor-core/Cargo.toml still exists!"
+          # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
+          echo "Checking for remaining instances of 'refaktor'..."
+          if rg -i refaktor; then
+            echo "ERROR: Found remaining instances of 'refaktor' in the codebase!"
+            exit 1
+          fi
+
+          # Verify the rename worked by checking key dirs / files
+          if [ -d "refaktor-core" ]; then
+            echo "ERROR: refaktor-core directory still exists!"
             exit 1
           fi
           if [ ! -f "smart-search-and-replace-core/Cargo.toml" ]; then
@@ -74,12 +81,6 @@ jobs:
             exit 1
           fi
 
-          # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
-          echo "Checking for remaining instances of 'refaktor'..."
-          if rg -i refaktor; then
-            echo "ERROR: Found remaining instances of 'refaktor' in the codebase!"
-            exit 1
-          fi
           echo "✓ No instances of 'refaktor' found"
         shell: bash
 
