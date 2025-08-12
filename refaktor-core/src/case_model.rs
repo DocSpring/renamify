@@ -255,6 +255,7 @@ pub fn generate_variant_map(
         Style::Camel,
         Style::Pascal,
         Style::ScreamingSnake,
+        Style::Train, // Include Train-Case for patterns like Refaktor-Core-Engine
     ];
     let styles = styles.unwrap_or(&default_styles);
 

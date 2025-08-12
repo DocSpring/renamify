@@ -1,4 +1,4 @@
-use refaktor_core::{scan_repository, PlanOptions, Style};
+use refaktor_core::{scan_repository, PlanOptions};
 use std::path::PathBuf;
 use tempfile::TempDir;
 
@@ -132,13 +132,7 @@ fn test_train_case_replacement() {
         excludes: vec![],
         respect_gitignore: false,
         unrestricted_level: 0,
-        styles: Some(vec![
-            Style::Snake,
-            Style::Kebab,
-            Style::Camel,
-            Style::Pascal,
-            Style::Train, // Enable Train-Case
-        ]),
+        styles: None, // Use default styles (which now includes Train-Case)
         rename_files: false,
         rename_dirs: false,
         rename_root: false,

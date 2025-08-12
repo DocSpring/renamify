@@ -202,6 +202,7 @@ pub fn scan_repository_multi(
                     Style::Camel,
                     Style::Pascal,
                     Style::ScreamingSnake,
+                    Style::Train, // Include Train-Case in default styles
                 ]),
             );
 
