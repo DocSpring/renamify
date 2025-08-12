@@ -84,6 +84,7 @@ pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> Wa
                 .ignore(true)
                 .parents(true)
                 .hidden(true)  // true = skip hidden files
+                .add_custom_ignore_filename(".gitignore")  // Also treat .gitignore as custom ignore file
                 .add_custom_ignore_filename(".rgignore")
                 .add_custom_ignore_filename(".rfignore");
         },

@@ -180,12 +180,12 @@ fn test_rfignore_combined_with_gitignore() {
     let opts = PlanOptions::default();
     let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
-    // Note: .gitignore only works within a git repository
-    // Since this test runs in a temp directory without git initialization,
-    // .gitignore won't be respected, but .rfignore will be
-    // So we expect matches in test.txt and git_ignored.txt
-    assert_eq!(plan.stats.files_scanned, 2);
-    assert_eq!(plan.matches.len(), 2);
+    // Now .gitignore works even outside git repositories (we treat it as a custom ignore file)
+    // So both .gitignore and .rfignore should be respected
+    // Only test.txt should be scanned (git_ignored.txt is in .gitignore,
+    // rf_ignored.txt is in .rfignore, both_ignored.txt is in .rfignore)
+    assert_eq!(plan.stats.files_scanned, 1);
+    assert_eq!(plan.matches.len(), 1);
 
     let file_paths: Vec<String> = plan
         .matches
@@ -194,6 +194,5 @@ fn test_rfignore_combined_with_gitignore() {
         .collect();
 
     assert!(file_paths.iter().any(|p| p.contains("test.txt")));
-    assert!(file_paths.iter().any(|p| p.contains("git_ignored.txt")));
-    // rf_ignored.txt and both_ignored.txt should not have matches (due to .rfignore)
+    // All other files should be ignored
 }
