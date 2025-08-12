@@ -61,7 +61,7 @@ pub fn find_compound_variants(
     }
 
     // Find ALL occurrences of the pattern and replace them all
-    let mut replacement_tokens = identifier_tokens.tokens.clone();
+    let mut replacement_tokens = identifier_tokens.tokens;
     let mut replacements_made = 0;
     let mut pos = 0;
 
@@ -79,7 +79,7 @@ pub fn find_compound_variants(
                         .text
                         .chars()
                         .next()
-                        .map_or(false, |c| c.is_uppercase())
+                        .is_some_and(char::is_uppercase)
                 {
                     // Original token started with uppercase, preserve it
                     let mut adjusted_token = Token::new(new_token.text.clone());
@@ -136,8 +136,6 @@ pub fn generate_compound_variants(
     new: &str,
     styles: &[Style],
 ) -> BTreeMap<String, String> {
-    let mut map = BTreeMap::new();
-
     // For each style, generate compound examples
     // This is used during pattern building to create regex patterns
     // that can match compound words
@@ -146,7 +144,7 @@ pub fn generate_compound_variants(
     // scan the actual codebase to find real compound words, or use
     // a more sophisticated pattern matching approach.
 
-    map
+    BTreeMap::new()
 }
 
 #[cfg(test)]

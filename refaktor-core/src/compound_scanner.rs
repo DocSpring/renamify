@@ -56,8 +56,7 @@ pub fn find_enhanced_matches(
             let line_start = content[..m.start()]
                 .iter()
                 .rposition(|&b| b == b'\n')
-                .map(|p| p + 1)
-                .unwrap_or(0);
+                .map_or(0, |p| p + 1);
 
             let column = m.start() - line_start;
 
@@ -97,8 +96,7 @@ pub fn find_enhanced_matches(
             let line_start = content[..start]
                 .iter()
                 .rposition(|&b| b == b'\n')
-                .map(|p| p + 1)
-                .unwrap_or(0);
+                .map_or(0, |p| p + 1);
 
             let column = start - line_start;
 
@@ -121,7 +119,7 @@ pub fn find_enhanced_matches(
     all_matches
 }
 
-/// Convert enhanced matches to MatchHunks with proper line context
+/// Convert enhanced matches to `MatchHunks` with proper line context
 pub fn enhanced_matches_to_hunks(
     matches: &[Match],
     content: &[u8],

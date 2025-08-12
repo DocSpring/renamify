@@ -18,7 +18,7 @@ fn is_root_directory_rename(rename: &Rename) -> bool {
         .unwrap_or(false)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PreviewFormat {
     Table,
     Diff,
@@ -128,7 +128,7 @@ fn render_table_with_fixed_width(
     }
 
     // Sort files for deterministic output
-    let mut sorted_files: Vec<_> = file_stats.keys().cloned().collect();
+    let mut sorted_files: Vec<_> = file_stats.keys().copied().collect();
     sorted_files.sort();
 
     // Add content rows
@@ -188,7 +188,7 @@ fn render_table_with_fixed_width(
                 Cell::new(&from_str),
                 Cell::new(kind_str).fg(Color::Blue),
                 Cell::new(""),
-                Cell::new(&format!("→ {}", to_str)).fg(Color::Magenta),
+                Cell::new(format!("→ {}", to_str)).fg(Color::Magenta),
             ]);
         } else {
             table.add_row(vec![&from_str, kind_str, "", &format!("→ {}", to_str)]);
@@ -237,7 +237,7 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
     }
 
     // Sort files for deterministic output
-    let mut sorted_files: Vec<_> = file_hunks.keys().cloned().collect();
+    let mut sorted_files: Vec<_> = file_hunks.keys().copied().collect();
     sorted_files.sort();
 
     // Generate diffs for each file
@@ -263,8 +263,8 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
         }
 
         // Sort lines for deterministic output
-        let mut sorted_lines: Vec<_> = line_hunks.keys().cloned().collect();
-        sorted_lines.sort();
+        let mut sorted_lines: Vec<_> = line_hunks.keys().copied().collect();
+        sorted_lines.sort_unstable();
 
         // Create a unified diff from all hunks in this file
         for line_num in sorted_lines {

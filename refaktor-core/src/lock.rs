@@ -83,7 +83,7 @@ impl LockFile {
         file.write_all(lock_content.as_bytes())
             .context("Failed to write lock file")?;
 
-        Ok(LockFile {
+        Ok(Self {
             path: lock_path,
             pid,
             timestamp,

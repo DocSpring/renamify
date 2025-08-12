@@ -20,7 +20,7 @@ pub struct RenameConflict {
     pub kind: ConflictKind,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConflictKind {
     /// Multiple sources map to the same target
     MultipleToOne,
@@ -140,7 +140,7 @@ pub fn plan_renames_with_conflicts(
                     let mut coercion_applied = None;
 
                     // Apply coercion if enabled
-                    if let crate::scanner::CoercionMode::Auto = options.coerce_separators {
+                    if options.coerce_separators == crate::scanner::CoercionMode::Auto {
                         if let Some((coerced, reason)) =
                             crate::coercion::apply_coercion(&file_name_str, old, new)
                         {

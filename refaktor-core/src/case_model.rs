@@ -76,9 +76,9 @@ pub fn detect_style(s: &str) -> Option<Style> {
             }
         },
         (false, false, false, false, true, true) => {
-            if s.bytes().next().map_or(false, |b| b.is_ascii_uppercase()) {
+            if s.bytes().next().is_some_and(|b| b.is_ascii_uppercase()) {
                 Some(Style::Pascal)
-            } else if s.bytes().next().map_or(false, |b| b.is_ascii_lowercase()) {
+            } else if s.bytes().next().is_some_and(|b| b.is_ascii_lowercase()) {
                 Some(Style::Camel)
             } else {
                 None
@@ -90,22 +90,16 @@ pub fn detect_style(s: &str) -> Option<Style> {
 
 fn is_train_case(s: &str) -> bool {
     s.split('-').all(|word| {
-        word.len() > 0
-            && word
-                .bytes()
-                .next()
-                .map_or(false, |b| b.is_ascii_uppercase())
+        !word.is_empty()
+            && word.bytes().next().is_some_and(|b| b.is_ascii_uppercase())
             && word.bytes().skip(1).all(|b| b.is_ascii_lowercase())
     })
 }
 
 fn is_title_case(s: &str) -> bool {
     s.split(' ').all(|word| {
-        word.len() > 0
-            && word
-                .bytes()
-                .next()
-                .map_or(false, |b| b.is_ascii_uppercase())
+        !word.is_empty()
+            && word.bytes().next().is_some_and(|b| b.is_ascii_uppercase())
             && word.bytes().skip(1).all(|b| b.is_ascii_lowercase())
     })
 }
@@ -194,8 +188,7 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
             .tokens
             .iter()
             .map(|t| capitalize_first(&t.text))
-            .collect::<Vec<_>>()
-            .join(""),
+            .collect::<String>(),
 
         Style::ScreamingSnake => model
             .tokens
@@ -268,7 +261,7 @@ pub fn generate_variant_map(
     // Check if the original pattern should be included
     let include_original = if let Some(orig_style) = original_style {
         // If we have explicit styles, only include original if its style is in the list
-        styles.iter().any(|&s| s == orig_style)
+        styles.contains(&orig_style)
     } else {
         // If original style can't be detected, include it anyway (backwards compat)
         true

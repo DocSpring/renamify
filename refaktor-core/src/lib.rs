@@ -48,7 +48,7 @@ pub use undo::{redo_refactoring, undo_refactoring};
 use ignore::WalkBuilder;
 use std::path::{Path, PathBuf};
 
-/// Configure a WalkBuilder based on the unrestricted level in PlanOptions.
+/// Configure a `WalkBuilder` based on the unrestricted level in `PlanOptions`.
 ///
 /// This matches ripgrep's behavior:
 /// - Level 0 (default): Respect all ignore files, skip hidden files

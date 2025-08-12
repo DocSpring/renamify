@@ -30,7 +30,7 @@ pub struct PlanOptions {
     pub exclude_match: Vec<String>, // Specific matches to exclude
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CoercionMode {
     Auto,                          // Default: automatically detect and apply
     Off,                           // Disable coercion
@@ -89,7 +89,7 @@ pub struct Rename {
     pub coercion_applied: Option<String>, // Details about coercion if applied
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum RenameKind {
     File,
@@ -156,7 +156,7 @@ pub fn scan_repository_multi(
         };
 
         // Skip non-files
-        if !entry.file_type().map_or(false, |t| t.is_file()) {
+        if !entry.file_type().is_some_and(|t| t.is_file()) {
             continue;
         }
 
@@ -350,7 +350,7 @@ fn generate_hunks(
         let mut coercion_applied = None;
 
         // Apply coercion if enabled (but skip for compound matches - they're already correct)
-        if let CoercionMode::Auto = options.coerce_separators {
+        if options.coerce_separators == CoercionMode::Auto {
             if !is_compound_match {
                 // Find the match position within the line and extract context
                 if let Some(match_pos) = line_string.find(&before) {

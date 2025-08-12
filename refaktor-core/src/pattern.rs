@@ -30,7 +30,7 @@ pub fn build_pattern(variants: &[String]) -> Result<MatchPattern, regex::Error> 
     let escaped: Vec<String> = variants.iter().map(|v| regex::escape(v)).collect();
 
     let longest_first = {
-        let mut sorted = escaped.clone();
+        let mut sorted = escaped;
         sorted.sort_by_key(|s| std::cmp::Reverse(s.len()));
         sorted
     };
@@ -94,8 +94,7 @@ pub fn find_matches(pattern: &MatchPattern, content: &[u8], file: &str) -> Vec<M
         let line_start = content[..m.start()]
             .iter()
             .rposition(|&b| b == b'\n')
-            .map(|p| p + 1)
-            .unwrap_or(0);
+            .map_or(0, |p| p + 1);
         let column = m.start() - line_start + 1;
 
         matches.push(Match {

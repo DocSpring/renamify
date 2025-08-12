@@ -66,7 +66,7 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
 
     // SECOND: Apply diffs to restore original content (now files are at their original locations)
     let mut restored_files = Vec::new();
-    for (path, _checksum) in &entry.affected_files {
+    for path in entry.affected_files.keys() {
         // If this file was renamed, it's now at its original location
         let current_path = rename_map.get(&path).unwrap_or(&path);
 
@@ -111,7 +111,7 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
                 ));
             }
 
-            restored_files.push(current_path.to_path_buf());
+            restored_files.push((*current_path).clone());
             eprintln!("  Restored: {}", current_path.display());
         }
     }

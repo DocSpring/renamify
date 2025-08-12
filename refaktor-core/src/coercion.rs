@@ -4,15 +4,15 @@ use std::collections::HashMap;
 /// Detected style of an identifier or path segment
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Style {
-    /// snake_case
+    /// `snake_case`
     Snake,
     /// kebab-case
     Kebab,
     /// camelCase
     Camel,
-    /// PascalCase
+    /// `PascalCase`
     Pascal,
-    /// SCREAMING_SNAKE_CASE
+    /// `SCREAMING_SNAKE_CASE`
     ScreamingSnake,
     /// dot.separated
     Dot,
@@ -37,7 +37,7 @@ pub fn detect_style(s: &str) -> Style {
             let extension = &s[dot_pos + 1..];
             // Common file extensions (not exhaustive, but covers most cases)
             let is_file_extension = extension.len() <= 6
-                && extension.chars().all(|c| c.is_alphanumeric())
+                && extension.chars().all(char::is_alphanumeric)
                 && matches!(
                     extension,
                     "rs" | "js"
@@ -141,7 +141,7 @@ pub fn detect_style(s: &str) -> Style {
         // No separators, check case pattern
         if case_transitions > 0 {
             // Check if it starts with uppercase
-            if basename.chars().next().map_or(false, |c| c.is_uppercase()) {
+            if basename.chars().next().is_some_and(char::is_uppercase) {
                 Style::Pascal
             } else {
                 Style::Camel
@@ -170,7 +170,7 @@ pub fn tokenize(s: &str) -> Vec<Token> {
                 // Separator - flush current word
                 if !current_word.is_empty() {
                     let is_acronym =
-                        current_word.chars().all(|c| c.is_uppercase()) && current_word.len() > 1;
+                        current_word.chars().all(char::is_uppercase) && current_word.len() > 1;
                     tokens.push(Token {
                         word: current_word.to_lowercase(),
                         is_acronym,
@@ -232,7 +232,7 @@ pub fn tokenize(s: &str) -> Vec<Token> {
                 // Other character - treat as separator
                 if !current_word.is_empty() {
                     let is_acronym =
-                        current_word.chars().all(|c| c.is_uppercase()) && current_word.len() > 1;
+                        current_word.chars().all(char::is_uppercase) && current_word.len() > 1;
                     tokens.push(Token {
                         word: current_word.to_lowercase(),
                         is_acronym,
@@ -248,7 +248,7 @@ pub fn tokenize(s: &str) -> Vec<Token> {
 
     // Flush remaining word
     if !current_word.is_empty() {
-        let is_acronym = current_word.chars().all(|c| c.is_uppercase()) && current_word.len() > 1;
+        let is_acronym = current_word.chars().all(char::is_uppercase) && current_word.len() > 1;
         tokens.push(Token {
             word: current_word.to_lowercase(),
             is_acronym,
@@ -289,8 +289,7 @@ pub fn render_tokens(tokens: &[Token], style: Style) -> String {
         Style::Pascal => tokens
             .iter()
             .map(|t| capitalize(&t.word))
-            .collect::<Vec<_>>()
-            .join(""),
+            .collect::<String>(),
         Style::ScreamingSnake => tokens
             .iter()
             .map(|t| t.word.to_uppercase())

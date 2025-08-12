@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
     pub defaults: DefaultsConfig,
@@ -30,14 +30,6 @@ pub struct DefaultsConfig {
     /// Whether to use color output by default (None = auto-detect)
     #[serde(default)]
     pub use_color: Option<bool>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            defaults: DefaultsConfig::default(),
-        }
-    }
 }
 
 impl Default for DefaultsConfig {
@@ -77,7 +69,7 @@ impl Config {
     /// Load config from a specific path
     pub fn load_from_path(path: &Path) -> Result<Self> {
         let content = fs::read_to_string(path)?;
-        let config: Config = toml::from_str(&content)?;
+        let config: Self = toml::from_str(&content)?;
         Ok(config)
     }
 
