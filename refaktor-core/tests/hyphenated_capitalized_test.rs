@@ -4,7 +4,7 @@ use tempfile::TempDir;
 
 #[test]
 fn test_hyphenated_capitalized_replacement() {
-    // Test that "Refaktor-specific" becomes "SmartSearchAndReplace-specific"
+    // Test that "Refaktor-specific" becomes "RenamedRefactoringTool-specific"
     // when capitalized word appears in hyphenated context
 
     let temp_dir = TempDir::new().unwrap();
@@ -39,7 +39,7 @@ fn test_hyphenated_capitalized_replacement() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "smart_search_and_replace", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== All matches found ===");
@@ -48,11 +48,11 @@ fn test_hyphenated_capitalized_replacement() {
     }
 
     // Should find and replace:
-    // - "Refaktor-specific" -> "SmartSearchAndReplace-specific" (appears once in line 2)
-    // - "Refaktor-compatible" -> "SmartSearchAndReplace-compatible"
-    // - "Refaktor-engine" -> "SmartSearchAndReplace-engine"
-    // - "refaktor-specific" -> "smart-search-and-replace-specific"
-    // - "Refaktor-CLI" -> "SmartSearchAndReplace-CLI"
+    // - "Refaktor-specific" -> "RenamedRefactoringTool-specific" (appears once in line 2)
+    // - "Refaktor-compatible" -> "RenamedRefactoringTool-compatible"
+    // - "Refaktor-engine" -> "RenamedRefactoringTool-engine"
+    // - "refaktor-specific" -> "renamed-refactoring-tool-specific"
+    // - "Refaktor-CLI" -> "RenamedRefactoringTool-CLI"
 
     assert!(
         plan.matches.len() >= 5,
@@ -64,51 +64,51 @@ fn test_hyphenated_capitalized_replacement() {
     let has_pascal_specific = plan
         .matches
         .iter()
-        .any(|m| m.before == "Refaktor-specific" && m.after == "SmartSearchAndReplace-specific");
+        .any(|m| m.before == "Refaktor-specific" && m.after == "RenamedRefactoringTool-specific");
     assert!(
         has_pascal_specific,
-        "Should replace 'Refaktor-specific' with 'SmartSearchAndReplace-specific'"
+        "Should replace 'Refaktor-specific' with 'RenamedRefactoringTool-specific'"
     );
 
     let has_pascal_compatible = plan.matches.iter().any(|m| {
-        m.before == "Refaktor-compatible" && m.after == "SmartSearchAndReplace-compatible"
+        m.before == "Refaktor-compatible" && m.after == "RenamedRefactoringTool-compatible"
     });
     assert!(
         has_pascal_compatible,
-        "Should replace 'Refaktor-compatible' with 'SmartSearchAndReplace-compatible'"
+        "Should replace 'Refaktor-compatible' with 'RenamedRefactoringTool-compatible'"
     );
 
     let has_pascal_engine = plan
         .matches
         .iter()
-        .any(|m| m.before == "Refaktor-engine" && m.after == "SmartSearchAndReplace-engine");
+        .any(|m| m.before == "Refaktor-engine" && m.after == "RenamedRefactoringTool-engine");
     assert!(
         has_pascal_engine,
-        "Should replace 'Refaktor-engine' with 'SmartSearchAndReplace-engine'"
+        "Should replace 'Refaktor-engine' with 'RenamedRefactoringTool-engine'"
     );
 
     let has_kebab_specific = plan
         .matches
         .iter()
-        .any(|m| m.before == "refaktor-specific" && m.after == "smart-search-and-replace-specific");
+        .any(|m| m.before == "refaktor-specific" && m.after == "renamed-refactoring-tool-specific");
     assert!(
         has_kebab_specific,
-        "Should replace 'refaktor-specific' with 'smart-search-and-replace-specific'"
+        "Should replace 'refaktor-specific' with 'renamed-refactoring-tool-specific'"
     );
 
     let has_pascal_cli = plan
         .matches
         .iter()
-        .any(|m| m.before == "Refaktor-CLI" && m.after == "SmartSearchAndReplace-CLI");
+        .any(|m| m.before == "Refaktor-CLI" && m.after == "RenamedRefactoringTool-CLI");
     assert!(
         has_pascal_cli,
-        "Should replace 'Refaktor-CLI' with 'SmartSearchAndReplace-CLI'"
+        "Should replace 'Refaktor-CLI' with 'RenamedRefactoringTool-CLI'"
     );
 }
 
 #[test]
 fn test_train_case_replacement() {
-    // Test that Train-Case style enables "Smart-Search-And-Replace-Specific" replacements
+    // Test that Train-Case style enables "Renamed-Refactoring-Tool-Specific" replacements
 
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
@@ -140,7 +140,7 @@ fn test_train_case_replacement() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "smart_search_and_replace", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== Train-Case matches found ===");
@@ -149,34 +149,34 @@ fn test_train_case_replacement() {
     }
 
     // With Train-Case enabled, should replace:
-    // - "Refaktor-Specific-Settings" -> "Smart-Search-And-Replace-Specific-Settings"
-    // - "Refaktor-Core-Engine" -> "Smart-Search-And-Replace-Core-Engine"
-    // - "Refaktor-Based-Solution" -> "Smart-Search-And-Replace-Based-Solution"
+    // - "Refaktor-Specific-Settings" -> "Renamed-Refactoring-Tool-Specific-Settings"
+    // - "Refaktor-Core-Engine" -> "Renamed-Refactoring-Tool-Core-Engine"
+    // - "Refaktor-Based-Solution" -> "Renamed-Refactoring-Tool-Based-Solution"
 
     let has_train_specific = plan.matches.iter().any(|m| {
         m.before == "Refaktor-Specific-Settings"
-            && m.after == "Smart-Search-And-Replace-Specific-Settings"
+            && m.after == "Renamed-Refactoring-Tool-Specific-Settings"
     });
     assert!(
         has_train_specific,
-        "Should replace 'Refaktor-Specific-Settings' with 'Smart-Search-And-Replace-Specific-Settings'"
+        "Should replace 'Refaktor-Specific-Settings' with 'Renamed-Refactoring-Tool-Specific-Settings'"
     );
 
     let has_train_core = plan.matches.iter().any(|m| {
-        m.before == "Refaktor-Core-Engine" && m.after == "Smart-Search-And-Replace-Core-Engine"
+        m.before == "Refaktor-Core-Engine" && m.after == "Renamed-Refactoring-Tool-Core-Engine"
     });
     assert!(
         has_train_core,
-        "Should replace 'Refaktor-Core-Engine' with 'Smart-Search-And-Replace-Core-Engine'"
+        "Should replace 'Refaktor-Core-Engine' with 'Renamed-Refactoring-Tool-Core-Engine'"
     );
 
     let has_train_based = plan.matches.iter().any(|m| {
         m.before == "Refaktor-Based-Solution"
-            && m.after == "Smart-Search-And-Replace-Based-Solution"
+            && m.after == "Renamed-Refactoring-Tool-Based-Solution"
     });
     assert!(
         has_train_based,
-        "Should replace 'Refaktor-Based-Solution' with 'Smart-Search-And-Replace-Based-Solution'"
+        "Should replace 'Refaktor-Based-Solution' with 'Renamed-Refactoring-Tool-Based-Solution'"
     );
 }
 
@@ -215,7 +215,7 @@ fn test_mixed_hyphenated_patterns() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "smart_search_and_replace", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== Mixed hyphenated matches found ===");
