@@ -64,7 +64,7 @@ Arguments: {
 ### Response Example
 
 ```
-Created plan: rf_20240115_123456
+Created plan: a3b7c9d4e8f2a6b1
 
 Summary:
   Files to modify: 12
@@ -106,7 +106,7 @@ Arguments: {
 ### Response Example
 
 ```
-Successfully applied plan rf_20240115_123456
+Successfully applied plan a3b7c9d4e8f2a6b1
   ✓ Modified 12 files
   ✓ Applied 47 replacements
   ✓ Renamed 3 files
@@ -141,14 +141,14 @@ Reverts a previously applied refactoring operation.
 ```
 Tool: refaktor_undo
 Arguments: {
-  "id": "rf_20240115_123456"
+  "id": "a3b7c9d4e8f2a6b1"
 }
 ```
 
 ### Response Example
 
 ```
-Successfully undone refactoring rf_20240115_123456
+Successfully undone refactoring a3b7c9d4e8f2a6b1
   ✓ Reverted 47 replacements in 12 files
   ✓ Restored 3 renamed files
   
@@ -170,14 +170,14 @@ Re-applies a previously undone refactoring.
 ```
 Tool: refaktor_redo
 Arguments: {
-  "id": "rf_20240115_123456"
+  "id": "a3b7c9d4e8f2a6b1"
 }
 ```
 
 ### Response Example
 
 ```
-Successfully redone refactoring rf_20240115_123456
+Successfully redone refactoring a3b7c9d4e8f2a6b1
   ✓ Re-applied 47 replacements in 12 files
   ✓ Re-renamed 3 files
   
@@ -208,18 +208,18 @@ Arguments: {
 ```
 Refactoring History (last 5 operations):
 
-1. rf_20240115_143022 [APPLIED]
+1. 4e8f2a6b1d3c7a9b [APPLIED]
    getUserData → fetchUserData
    12 files, 38 replacements
    Applied: 2024-01-15 14:30:22
 
-2. rf_20240115_123456 [UNDONE]
+2. a3b7c9d4e8f2a6b1 [UNDONE]
    UserAccount → CustomerAccount
    12 files, 47 replacements
    Applied: 2024-01-15 12:34:56
    Undone: 2024-01-15 14:15:30
 
-3. rf_20240114_095123 [APPLIED]
+3. 6b1d3a7c9e4f8a2b [APPLIED]
    snake_case → camelCase (config migration)
    8 files, 156 replacements
    Applied: 2024-01-14 09:51:23
@@ -250,13 +250,13 @@ Git Branch: feature/refactoring
 Git Status: Clean (no uncommitted changes)
 
 Pending Plans:
-  rf_20240115_150234 - oldFunction → newFunction
+  1d3a7c9e4f8b2a6c - oldFunction → newFunction
     Created: 5 minutes ago
     Status: Not applied
     Files: 8, Replacements: 23
 
 Last Applied:
-  rf_20240115_143022 - getUserData → fetchUserData
+  4e8f2a6b1d3c7a9b - getUserData → fetchUserData
     Applied: 1 hour ago
     Status: Success
 
