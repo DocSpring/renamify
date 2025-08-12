@@ -124,7 +124,7 @@ pub fn rename_operation(
     }
 
     // Apply the changes
-    let result = apply_rename_changes(&plan, commit, force_with_conflicts)?;
+    let result = apply_rename_changes(&mut plan, commit, force_with_conflicts)?;
 
     // Show completion message and handle root renames
     let mut output = result;
@@ -289,7 +289,7 @@ fn get_user_confirmation() -> Result<bool> {
     Ok(input == "y" || input == "yes")
 }
 
-fn apply_rename_changes(plan: &Plan, commit: bool, force_with_conflicts: bool) -> Result<String> {
+fn apply_rename_changes(plan: &mut Plan, commit: bool, force_with_conflicts: bool) -> Result<String> {
     // Create the refaktor directory if it doesn't exist
     let refaktor_dir = PathBuf::from(".refaktor");
     fs::create_dir_all(&refaktor_dir)?;

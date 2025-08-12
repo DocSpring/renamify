@@ -21,6 +21,7 @@ fn create_test_plan(id: &str, old: &str, new: &str) -> Plan {
             files_with_matches: 0,
         },
         version: "1.0.0".to_string(),
+        created_directories: None,
     }
 }
 
@@ -50,6 +51,9 @@ fn test_apply_content_edits() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
@@ -63,6 +67,9 @@ fn test_apply_content_edits() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply the plan
@@ -72,7 +79,7 @@ fn test_apply_content_edits() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &options).unwrap();
+    apply_plan(&mut plan, &options).unwrap();
 
     // Verify the changes
     let content = fs::read_to_string(&test_file).unwrap();
@@ -118,7 +125,7 @@ fn test_apply_renames() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &options).unwrap();
+    apply_plan(&mut plan, &options).unwrap();
 
     // Verify renames
     assert!(!old_file.exists());
@@ -159,6 +166,9 @@ fn test_rollback_on_error() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply should fail
@@ -168,7 +178,7 @@ fn test_rollback_on_error() {
         ..Default::default()
     };
 
-    let result = apply_plan(&plan, &options);
+    let result = apply_plan(&mut plan, &options);
     assert!(result.is_err());
 
     // Verify file was not modified
@@ -197,7 +207,7 @@ fn test_case_only_rename() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &options).unwrap();
+    apply_plan(&mut plan, &options).unwrap();
 
     // On case-insensitive filesystems, both paths may resolve to the same file
     // Just verify that a file with the new name exists
@@ -232,6 +242,9 @@ fn test_atomic_operations() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Second edit will fail (wrong content)
@@ -247,6 +260,9 @@ fn test_atomic_operations() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     let options = ApplyOptions {
@@ -255,7 +271,7 @@ fn test_atomic_operations() {
         ..Default::default()
     };
 
-    let result = apply_plan(&plan, &options);
+    let result = apply_plan(&mut plan, &options);
     assert!(result.is_err());
 
     // With the diff-based system, content changes are not rolled back during failed apply
@@ -284,7 +300,7 @@ fn test_skip_symlinks() {
             to: temp_dir.path().join("new_link.txt"),
             kind: RenameKind::File,
             coercion_applied: None,
-        });
+    });
 
         let options = ApplyOptions {
             backup_dir: temp_dir.path().join(".backups"),
@@ -293,7 +309,7 @@ fn test_skip_symlinks() {
         };
 
         // Applying should handle symlinks based on policy
-        let _ = apply_plan(&plan, &options);
+        let _ = apply_plan(&mut plan, &options);
     }
 }
 
@@ -359,6 +375,9 @@ fn test_apply_with_git_commit() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply with commit
@@ -372,7 +391,7 @@ fn test_apply_with_git_commit() {
     let original_dir = std::env::current_dir().unwrap();
     std::env::set_current_dir(temp_dir.path()).unwrap();
 
-    let result = apply_plan(&plan, &options);
+    let result = apply_plan(&mut plan, &options);
 
     // Restore original directory
     std::env::set_current_dir(original_dir).unwrap();
@@ -483,6 +502,9 @@ fn test_apply_with_both_renames_and_content_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     plan.matches.push(MatchHunk {
@@ -497,6 +519,9 @@ fn test_apply_with_both_renames_and_content_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Add content changes for the stable file (not renamed)
@@ -515,6 +540,9 @@ fn test_apply_with_both_renames_and_content_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     plan.matches.push(MatchHunk {
@@ -529,6 +557,9 @@ fn test_apply_with_both_renames_and_content_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Add content changes for the file inside the directory that will be renamed
@@ -544,6 +575,9 @@ fn test_apply_with_both_renames_and_content_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     plan.matches.push(MatchHunk {
@@ -558,6 +592,9 @@ fn test_apply_with_both_renames_and_content_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Case 5: Add content changes for the file that gets renamed inside a renamed directory
@@ -574,6 +611,9 @@ fn test_apply_with_both_renames_and_content_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply the plan
@@ -584,7 +624,7 @@ fn test_apply_with_both_renames_and_content_changes() {
         ..Default::default()
     };
 
-    let result = apply_plan(&plan, &options);
+    let result = apply_plan(&mut plan, &options);
 
     // The apply should succeed
     assert!(result.is_ok(), "Apply failed: {:?}", result);

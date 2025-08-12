@@ -554,7 +554,9 @@ mod tests {
                     line_before: Some("let old_name = 42;".to_string()),
                     line_after: Some("let new_name = 42;".to_string()),
                     coercion_applied: None,
-                },
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,                },
                 MatchHunk {
                     file: PathBuf::from("src/main.rs"),
                     line: 20,
@@ -567,7 +569,9 @@ mod tests {
                     line_before: Some("return oldName;".to_string()),
                     line_after: Some("return newName;".to_string()),
                     coercion_applied: None,
-                },
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,                },
             ],
             renames: vec![Rename {
                 from: PathBuf::from("old_name.txt"),
@@ -582,7 +586,7 @@ mod tests {
                 files_with_matches: 1,
             },
             version: "1.0.0".to_string(),
-        }
+            created_directories: None,        }
     }
 
     #[test]
@@ -635,7 +639,7 @@ mod tests {
         matches_by_variant.insert("old_func".to_string(), 1);
 
         // Create a plan with hunks that have full line context
-        let plan = Plan {
+        let mut plan = Plan {
             id: "test_full_line".to_string(),
             created_at: "123456789".to_string(),
             old: "old_func".to_string(),
@@ -657,6 +661,9 @@ mod tests {
                 line_before: Some("    let result = old_func(param1, param2);".to_string()),
                 line_after: Some("    let result = new_func(param1, param2);".to_string()),
                 coercion_applied: None,
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,
             }],
             renames: vec![],
             stats: Stats {
@@ -666,7 +673,7 @@ mod tests {
                 files_with_matches: 1,
             },
             version: "1.0.0".to_string(),
-        };
+            created_directories: None,        };
 
         let result = render_diff(&plan, false);
 
@@ -714,7 +721,7 @@ mod tests {
 
     #[test]
     fn test_empty_plan() {
-        let plan = Plan {
+        let mut plan = Plan {
             id: "empty".to_string(),
             created_at: "0".to_string(),
             old: "old".to_string(),
@@ -731,7 +738,7 @@ mod tests {
                 files_with_matches: 0,
             },
             version: "1.0.0".to_string(),
-        };
+            created_directories: None,        };
 
         let table = render_table(&plan, false, true);
         assert!(table.contains("TOTALS"));

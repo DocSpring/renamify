@@ -38,7 +38,9 @@ fn create_sample_plan() -> Plan {
                 line_before: Some("    let user_name = String::new();".to_string()),
                 line_after: Some("    let customer_name = String::new();".to_string()),
                 coercion_applied: None,
-            },
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,            },
             MatchHunk {
                 file: PathBuf::from("src/models/user.rs"),
                 line: 25,
@@ -51,7 +53,9 @@ fn create_sample_plan() -> Plan {
                 line_before: Some("    pub userName: String,".to_string()),
                 line_after: Some("    pub customerName: String,".to_string()),
                 coercion_applied: None,
-            },
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,            },
             MatchHunk {
                 file: PathBuf::from("src/api/handlers.rs"),
                 line: 42,
@@ -64,7 +68,9 @@ fn create_sample_plan() -> Plan {
                 line_before: Some("struct UserName {".to_string()),
                 line_after: Some("struct CustomerName {".to_string()),
                 coercion_applied: None,
-            },
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,            },
             MatchHunk {
                 file: PathBuf::from("src/api/handlers.rs"),
                 line: 50,
@@ -77,7 +83,9 @@ fn create_sample_plan() -> Plan {
                 line_before: Some("    fn get_user_name(&self) -> &str {".to_string()),
                 line_after: Some("    fn get_customer_name(&self) -> &str {".to_string()),
                 coercion_applied: None,
-            },
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,            },
         ],
         renames: vec![
             Rename {
@@ -100,6 +108,7 @@ fn create_sample_plan() -> Plan {
             files_with_matches: 2,
         },
         version: "1.0.0".to_string(),
+        created_directories: None,
     }
 }
 
@@ -154,7 +163,7 @@ fn test_summary_format_snapshot() {
 
 #[test]
 fn test_empty_plan_table_snapshot() {
-    let plan = Plan {
+    let mut plan = Plan {
         id: "empty".to_string(),
         created_at: "0".to_string(),
         old: "old".to_string(),
@@ -171,6 +180,7 @@ fn test_empty_plan_table_snapshot() {
             files_with_matches: 0,
         },
         version: "1.0.0".to_string(),
+        created_directories: None,
     };
 
     let output = render_plan_with_fixed_width(&plan, Preview::Table, Some(false), true);
@@ -179,7 +189,7 @@ fn test_empty_plan_table_snapshot() {
 
 #[test]
 fn test_empty_plan_diff_snapshot() {
-    let plan = Plan {
+    let mut plan = Plan {
         id: "empty".to_string(),
         created_at: "0".to_string(),
         old: "old".to_string(),
@@ -196,6 +206,7 @@ fn test_empty_plan_diff_snapshot() {
             files_with_matches: 0,
         },
         version: "1.0.0".to_string(),
+        created_directories: None,
     };
 
     let output = render_plan_with_fixed_width(&plan, Preview::Diff, Some(false), true);
@@ -211,7 +222,7 @@ fn test_root_directory_rename_handling() {
 
     // Note: In a real scenario, the scanner would filter out root directory renames
     // For this test, we're only including the non-root rename to match actual behavior
-    let plan = Plan {
+    let mut plan = Plan {
         id: "root-test".to_string(),
         created_at: "1234567890".to_string(),
         old: "refaktor".to_string(),
@@ -231,7 +242,9 @@ fn test_root_directory_rename_handling() {
             line_before: Some("# Refaktor".to_string()),
             line_after: Some("# Smart Search And Replace".to_string()),
             coercion_applied: None,
-        }],
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,        }],
         renames: vec![
             // Only regular directory rename - root directory rename is filtered out
             Rename {
@@ -249,6 +262,7 @@ fn test_root_directory_rename_handling() {
             files_with_matches: 1,
         },
         version: "1.0.0".to_string(),
+        created_directories: None,
     };
 
     let output = render_plan_with_fixed_width(&plan, Preview::Table, Some(false), true);

@@ -14,7 +14,7 @@ fn test_rfignore_respected_by_default() {
     fs::write(temp_dir.path().join(".rfignore"), "ignored.txt").unwrap();
 
     let opts = PlanOptions::default();
-    let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+    let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
     // Should only find matches in test.txt, not in ignored.txt
     assert_eq!(plan.stats.files_scanned, 1);
@@ -46,7 +46,7 @@ fn test_rfignore_with_patterns() {
     fs::write(temp_dir.path().join(".rfignore"), "build/\n*.log").unwrap();
 
     let opts = PlanOptions::default();
-    let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+    let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
     // Should find matches in src/main.rs and test.txt but not in build/
     assert_eq!(plan.stats.files_scanned, 2);
@@ -79,7 +79,7 @@ fn test_rfignore_with_unrestricted_level() {
         unrestricted_level: 0,
         ..Default::default()
     };
-    let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+    let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
     assert_eq!(plan.stats.files_scanned, 1);
 
     // Test with unrestricted level 1 (still respects .rfignore)
@@ -87,7 +87,7 @@ fn test_rfignore_with_unrestricted_level() {
         unrestricted_level: 1,
         ..Default::default()
     };
-    let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+    let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
     assert_eq!(plan.stats.files_scanned, 1);
 
     // Test with unrestricted level 2 (ignores all ignore files including .rfignore)
@@ -95,7 +95,7 @@ fn test_rfignore_with_unrestricted_level() {
         unrestricted_level: 2,
         ..Default::default()
     };
-    let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+    let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
     // Should scan test.txt, ignored.txt, and .rfignore itself
     assert_eq!(plan.stats.files_scanned, 3);
 }
@@ -124,7 +124,7 @@ fn test_rfignore_in_subdirectory() {
     fs::write(temp_dir.path().join("subdir/.rfignore"), "ignored.txt").unwrap();
 
     let opts = PlanOptions::default();
-    let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+    let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
     // Should find matches in root.txt and subdir/test.txt but not subdir/ignored.txt
     assert_eq!(plan.stats.files_scanned, 2);
@@ -178,7 +178,7 @@ fn test_rfignore_combined_with_gitignore() {
     .unwrap();
 
     let opts = PlanOptions::default();
-    let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+    let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
     // Now .gitignore works even outside git repositories (we treat it as a custom ignore file)
     // So both .gitignore and .rfignore should be respected

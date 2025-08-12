@@ -23,6 +23,7 @@ fn create_test_plan(id: &str, old: &str, new: &str) -> Plan {
             files_with_matches: 0,
         },
         version: "1.0.0".to_string(),
+        created_directories: None,
     }
 }
 
@@ -49,6 +50,9 @@ fn test_apply_undo_content_changes_only() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
@@ -62,6 +66,9 @@ fn test_apply_undo_content_changes_only() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply the plan
@@ -71,7 +78,7 @@ fn test_apply_undo_content_changes_only() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &apply_options).unwrap();
+    apply_plan(&mut plan, &apply_options).unwrap();
 
     // Verify changes were applied
     let content = fs::read_to_string(&test_file).unwrap();
@@ -113,7 +120,7 @@ fn test_apply_undo_file_rename_only() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &apply_options).unwrap();
+    apply_plan(&mut plan, &apply_options).unwrap();
 
     // Verify rename happened
     assert!(!old_file.exists());
@@ -158,7 +165,7 @@ fn test_apply_undo_dir_rename_only() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &apply_options).unwrap();
+    apply_plan(&mut plan, &apply_options).unwrap();
 
     // Verify rename happened
     assert!(!old_dir.exists());
@@ -214,6 +221,9 @@ fn test_apply_undo_content_and_file_rename() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
     plan.matches.push(MatchHunk {
         file: old_file.clone(),
@@ -227,6 +237,9 @@ fn test_apply_undo_content_and_file_rename() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply the plan
@@ -236,7 +249,7 @@ fn test_apply_undo_content_and_file_rename() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &apply_options).unwrap();
+    apply_plan(&mut plan, &apply_options).unwrap();
 
     // Verify changes
     assert!(!old_file.exists());
@@ -291,6 +304,9 @@ fn test_apply_undo_content_and_dir_rename() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
@@ -304,6 +320,9 @@ fn test_apply_undo_content_and_dir_rename() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply the plan
@@ -313,7 +332,7 @@ fn test_apply_undo_content_and_dir_rename() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &apply_options).unwrap();
+    apply_plan(&mut plan, &apply_options).unwrap();
 
     // Verify changes
     assert!(!old_dir.exists());
@@ -373,7 +392,7 @@ fn test_apply_undo_file_and_dir_rename() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &apply_options).unwrap();
+    apply_plan(&mut plan, &apply_options).unwrap();
 
     // Verify changes
     assert!(!old_dir.exists());
@@ -441,6 +460,9 @@ fn test_apply_undo_all_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
     plan.matches.push(MatchHunk {
         file: old_file.clone(),
@@ -454,6 +476,9 @@ fn test_apply_undo_all_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Content changes in stable file
@@ -469,6 +494,9 @@ fn test_apply_undo_all_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
     plan.matches.push(MatchHunk {
         file: stable_file.clone(),
@@ -482,6 +510,9 @@ fn test_apply_undo_all_changes() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply the plan
@@ -491,7 +522,7 @@ fn test_apply_undo_all_changes() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &apply_options).unwrap();
+    apply_plan(&mut plan, &apply_options).unwrap();
 
     // Verify all changes
     assert!(!old_dir.exists());
@@ -563,6 +594,9 @@ fn test_apply_undo_multiple_files_in_renamed_dir() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Content changes in file2
@@ -578,6 +612,9 @@ fn test_apply_undo_multiple_files_in_renamed_dir() {
         line_before: None,
         line_after: None,
         coercion_applied: None,
+        original_file: None,
+        renamed_file: None,
+        patch_hash: None,
     });
 
     // Apply
@@ -587,7 +624,7 @@ fn test_apply_undo_multiple_files_in_renamed_dir() {
         ..Default::default()
     };
 
-    apply_plan(&plan, &apply_options).unwrap();
+    apply_plan(&mut plan, &apply_options).unwrap();
 
     // Verify
     let new_dir = temp_dir.path().join("new_name_lib");

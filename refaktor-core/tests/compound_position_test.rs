@@ -43,7 +43,7 @@ type FooBarOption = i32;",
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound at Start Test ===");
     for hunk in &plan.matches {
@@ -123,7 +123,7 @@ type GetFooBarOption = i32;",
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound in Middle Test ===");
     for hunk in &plan.matches {
@@ -203,7 +203,7 @@ type LoadFooBar = i32;",
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound at End Test ===");
     for hunk in &plan.matches {
@@ -275,7 +275,7 @@ let fooBar = getFooBar();",
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Exact Match Test ===");
     for hunk in &plan.matches {

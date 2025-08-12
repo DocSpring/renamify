@@ -39,7 +39,7 @@ fn test_hyphenated_capitalized_replacement() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== All matches found ===");
@@ -140,7 +140,7 @@ fn test_train_case_replacement() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== Train-Case matches found ===");
@@ -215,7 +215,7 @@ fn test_mixed_hyphenated_patterns() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== Mixed hyphenated matches found ===");

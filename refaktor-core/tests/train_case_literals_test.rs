@@ -59,7 +59,7 @@ pub fn process() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== All Train-Case literal matches found ===");
@@ -171,7 +171,7 @@ fn test_train_case_exact_patterns() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Count how many times each Train-Case pattern appears
     let specific_settings_count = plan

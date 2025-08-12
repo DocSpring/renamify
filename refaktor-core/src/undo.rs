@@ -2,117 +2,31 @@ use crate::apply::{apply_plan, calculate_checksum, ApplyOptions};
 use crate::history::{create_history_entry, History};
 use crate::scanner::Plan;
 use anyhow::{anyhow, Context, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
+use sha2::{Sha256, Digest};
 
-/// Extract individual file patches from a comprehensive patch
-/// Returns Vec<(original_path, modified_path, patch_content)>
-fn extract_individual_patches(
-    comprehensive_patch: &str,
-) -> Result<Vec<(PathBuf, PathBuf, String)>> {
-    let mut patches = Vec::new();
-    let mut current_patch = String::new();
-    let mut current_original: Option<PathBuf> = None;
-    let mut current_modified: Option<PathBuf> = None;
-    let mut in_patch_section = false;
-
-    for line in comprehensive_patch.lines() {
-        // Skip comment lines
-        if line.starts_with("#") {
-            continue;
-        }
-
-        // Start of a new file patch
-        if line.starts_with("--- ") {
-            // Save previous patch if we have one
-            if let (Some(orig), Some(modif)) = (current_original.take(), current_modified.take()) {
-                if !current_patch.is_empty() {
-                    // Strip exactly 2 trailing newlines (the separator between patches)
-                    let mut trimmed_patch = current_patch.clone();
-                    if trimmed_patch.ends_with("\n\n") {
-                        trimmed_patch.truncate(trimmed_patch.len() - 2);
-                    }
-                    patches.push((orig, modif, trimmed_patch));
-                }
-            }
-
-            // Start new patch
-            current_patch.clear();
-            current_patch.push_str(line);
-            current_patch.push('\n');
-
-            let path_str = line.strip_prefix("--- ").unwrap_or("");
-            current_original = Some(PathBuf::from(path_str));
-            in_patch_section = true;
-            continue;
-        }
-
-        if line.starts_with("+++ ") {
-            current_patch.push_str(line);
-            current_patch.push('\n');
-
-            let path_str = line.strip_prefix("+++ ").unwrap_or("");
-            current_modified = Some(PathBuf::from(path_str));
-            continue;
-        }
-
-        // Skip rename metadata lines - these are not part of the content patch
-        if line.starts_with("diff --git")
-            || line.starts_with("rename from")
-            || line.starts_with("rename to")
-        {
-            continue;
-        }
-
-        // Include patch content lines
-        if in_patch_section {
-            current_patch.push_str(line);
-            current_patch.push('\n');
-        }
-    }
-
-    // Don't forget the last patch
-    if let (Some(orig), Some(modif)) = (current_original, current_modified) {
-        if !current_patch.is_empty() {
-            // Strip trailing newlines from the last patch too (there might be separator content after it)
-            let mut trimmed_patch = current_patch.clone();
-            if trimmed_patch.ends_with("\n\n") {
-                trimmed_patch.truncate(trimmed_patch.len() - 2);
-            }
-            patches.push((orig, modif, trimmed_patch));
-        }
-    }
-
-    Ok(patches)
-}
-
-/// Apply a single patch to a specific file using diffy
+/// Apply a single patch to a file
 fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     // Read the current file content
     let current_content = fs::read_to_string(file_path)
         .with_context(|| format!("Failed to read file: {}", file_path.display()))?;
 
-    // Parse the patch using diffy
+    // Parse and apply the patch using diffy
     let patch = diffy::Patch::from_str(patch_content)
         .map_err(|e| anyhow!("Failed to parse patch: {}", e))?;
 
-    // The patch is ALREADY a reverse patch (new -> old) from our generation
-    // So we can apply it directly
-    let restored = diffy::apply(&current_content, &patch)
+    let result = diffy::apply(&current_content, &patch)
         .map_err(|e| anyhow!("Failed to apply patch: {}", e))?;
 
-    // Write the restored content
-    fs::write(file_path, restored).with_context(|| {
-        format!(
-            "Failed to write restored content to {}",
-            file_path.display()
-        )
-    })?;
+    // Write the result back to the file
+    fs::write(file_path, result)
+        .with_context(|| format!("Failed to write file: {}", file_path.display()))?;
 
     Ok(())
 }
+
 
 /// Undo a previously applied refactoring
 pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
@@ -139,246 +53,127 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         return Err(anyhow!("Entry '{}' has already been reverted", id));
     }
 
-    // Look for reverse patch file
-    let patch_path = entry.backups_path.join("reverse.patch");
+    // Load the plan to get patch information
+    let plan_path = refaktor_dir.join("plans").join(format!("{}.json", id));
+    if !plan_path.exists() {
+        return Err(anyhow!("Plan file not found for entry '{}'. Cannot undo without plan.", id));
+    }
+    let plan_json = fs::read_to_string(&plan_path)?;
+    let plan: Plan = serde_json::from_str(&plan_json)?;
 
-    if patch_path.exists() {
-        // Use the comprehensive patch for undo
+    // Check for individual reverse patches directory
+    let reverse_patches_dir = entry.backups_path.join("reverse_patches");
+    if !reverse_patches_dir.exists() {
+        return Err(anyhow!("No reverse patches found for entry '{}'. Cannot undo.", id));
+    }
+    // STEP 1: Reverse renames first (new locations back to old)
+    // Process renames in reverse order, deepest paths first
+    let mut sorted_renames = entry.renames.clone();
+    sorted_renames.sort_by(|a, b| {
+        let a_depth = a.1.components().count();
+        let b_depth = b.1.components().count();
+        b_depth.cmp(&a_depth)
+    });
 
-        // STEP 1: Reverse renames first (new locations back to old)
-        // Important: We need to identify which renames are directories and which files are inside those directories
-        // to avoid trying to rename files that will be moved when their parent directory is renamed
+    for (from, to) in sorted_renames.iter() {
+        if to.exists() {
+            // Handle case-only renames on case-insensitive filesystems
+            let case_only = from.to_string_lossy().to_lowercase()
+                == to.to_string_lossy().to_lowercase()
+                && from != to;
 
-        // First, identify directory renames
-        let dir_renames: Vec<_> = entry
-            .renames
-            .iter()
-            .filter(|(from, to)| {
-                // Check if this is likely a directory
-                // Check if 'to' exists and is a directory, or if the path itself ends with a directory-like name
-                to.is_dir()
-                    || (from.file_name().map_or(false, |n| {
-                        let name = n.to_string_lossy();
-                        name.ends_with("_dir") || name.ends_with("_lib")
-                    }))
-            })
-            .collect();
-
-        // Process directory renames first (in reverse order)
-        for (from, to) in dir_renames.iter().rev() {
-            if to.exists() {
-                // Handle case-only renames on case-insensitive filesystems
-                let case_only = from.to_string_lossy().to_lowercase()
-                    == to.to_string_lossy().to_lowercase()
-                    && from != to;
-
-                if case_only
-                    && crate::rename::detect_case_insensitive_fs(
-                        to.parent().unwrap_or_else(|| Path::new(".")),
-                    )
-                {
-                    // Two-step rename for case-only changes
-                    let temp_name =
-                        to.with_extension(format!("{}.refaktor.tmp", std::process::id()));
-                    fs::rename(to, &temp_name)?;
-                    fs::rename(&temp_name, from)?;
-                } else {
-                    fs::rename(to, from)?;
-                }
-            }
-        }
-
-        // Now process file renames (in reverse order)
-        // Adjust paths for files that are inside renamed directories
-        for (from, to) in entry.renames.iter().rev() {
-            // Skip if this was already handled as a directory
-            if dir_renames.iter().any(|(df, dt)| df == from && dt == to) {
-                continue;
-            }
-
-            // Check if this file is inside a directory that was renamed
-            // If so, adjust the paths to account for the directory rename
-            let mut actual_from = from.clone();
-            let mut actual_to = to.clone();
-
-            for (dir_from, dir_to) in &dir_renames {
-                // Check if the file paths are inside the directory that was renamed
-                if let (Ok(rel_from), Ok(rel_to)) =
-                    (from.strip_prefix(dir_from), to.strip_prefix(dir_to))
-                {
-                    // The directory has already been renamed back from dir_to to dir_from
-                    // So the file is now at dir_from/rel_to and needs to go to dir_from/rel_from
-                    actual_from = dir_from.join(rel_from);
-                    actual_to = dir_from.join(rel_to);
-                    break;
-                }
-            }
-
-            if actual_to.exists() {
-                // Handle case-only renames on case-insensitive filesystems
-                let case_only = actual_from.to_string_lossy().to_lowercase()
-                    == actual_to.to_string_lossy().to_lowercase()
-                    && actual_from != actual_to;
-
-                if case_only
-                    && crate::rename::detect_case_insensitive_fs(
-                        actual_to.parent().unwrap_or_else(|| Path::new(".")),
-                    )
-                {
-                    // Two-step rename for case-only changes
-                    let temp_name =
-                        actual_to.with_extension(format!("{}.refaktor.tmp", std::process::id()));
-                    fs::rename(&actual_to, &temp_name)?;
-                    fs::rename(&temp_name, &actual_from)?;
-                } else {
-                    fs::rename(&actual_to, &actual_from)?;
-                }
-            }
-        }
-
-        // STEP 2: Apply content changes from the patch
-        let patch_content = fs::read_to_string(&patch_path)
-            .with_context(|| format!("Failed to read patch from {}", patch_path.display()))?;
-
-        // Extract individual file patches
-        let individual_patches = extract_individual_patches(&patch_content)?;
-
-        let total_patches = individual_patches.len();
-        let mut files_processed = 0;
-        let mut failed_patches = Vec::new();
-
-        for (original_path, modified_path, patch_content) in individual_patches {
-            // The modified_path (from +++ line) tells us where the file should be after applying this reverse patch
-            // Since renames have already been reversed, the file should be at the modified_path location
-            let current_path = &modified_path;
-
-            // Apply patch to the current path (where the file actually is now)
-            if let Err(e) = apply_single_patch(current_path, &patch_content) {
-                eprintln!(
-                    "  ERROR: Failed to apply patch to {}: {}",
-                    current_path.display(),
-                    e
-                );
-
-                // Save the failed patch as a .rej file for debugging
-                let rej_path = current_path.with_extension(format!(
-                    "{}.rej",
-                    current_path
-                        .extension()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("")
-                ));
-                if let Err(write_err) = fs::write(&rej_path, &patch_content) {
-                    eprintln!(
-                        "    WARNING: Could not write reject file {}: {}",
-                        rej_path.display(),
-                        write_err
-                    );
-                } else {
-                    eprintln!("    Saved failed patch to: {}", rej_path.display());
-                }
-
-                failed_patches.push(format!("{}: {}", current_path.display(), e));
+            if case_only
+                && crate::rename::detect_case_insensitive_fs(
+                    to.parent().unwrap_or_else(|| Path::new(".")),
+                )
+            {
+                // Two-step rename for case-only changes
+                let temp_name =
+                    to.with_extension(format!("{}.refaktor.tmp", std::process::id()));
+                fs::rename(to, &temp_name)?;
+                fs::rename(&temp_name, from)?;
             } else {
-                files_processed += 1;
+                fs::rename(to, from)?;
             }
         }
+    }
 
-        // If any patches failed, return an error
-        if !failed_patches.is_empty() {
-            return Err(anyhow!(
-                "Failed to apply {} out of {} patches",
-                failed_patches.len(),
-                total_patches
-            ));
-        }
-    } else {
-        // Fallback to old method for backward compatibility
-
-        // Build a map from renamed paths back to their original names
-        let mut rename_map: HashMap<&PathBuf, &PathBuf> = HashMap::new();
-        for (from, to) in &entry.renames {
-            rename_map.insert(to, from);
-        }
-
-        // FIRST: Reverse renames (to -> from) - do this before restoring content
-        let mut reversed_renames = Vec::new();
-        for (from, to) in entry.renames.iter().rev() {
-            if to.exists() {
-                // Handle case-only renames on case-insensitive filesystems
-                let case_only = from.to_string_lossy().to_lowercase()
-                    == to.to_string_lossy().to_lowercase()
-                    && from != to;
-
-                if case_only
-                    && crate::rename::detect_case_insensitive_fs(
-                        to.parent().unwrap_or_else(|| Path::new(".")),
-                    )
-                {
-                    // Two-step rename for case-only changes
-                    let temp_name =
-                        to.with_extension(format!("{}.refaktor.tmp", std::process::id()));
-                    fs::rename(to, &temp_name)?;
-                    fs::rename(&temp_name, from)?;
-                } else {
-                    fs::rename(to, from)?;
-                }
-
-                reversed_renames.push((to.clone(), from.clone()));
+    // STEP 2: Apply individual reverse patches
+    // Group matches by file to apply patches
+    let mut patches_by_file: HashMap<PathBuf, String> = HashMap::new();
+    for hunk in &plan.matches {
+        if let Some(hash) = &hunk.patch_hash {
+            let patch_file = reverse_patches_dir.join(format!("{}.patch", hash));
+            if patch_file.exists() {
+                let patch_content = fs::read_to_string(&patch_file)?;
+                // Use the original_file if it exists, otherwise use the current file path
+                let target_file = hunk.original_file.as_ref().unwrap_or(&hunk.file);
+                patches_by_file.insert(target_file.clone(), patch_content);
             }
         }
+    }
 
-        // SECOND: Apply diffs to restore original content (now files are at their original locations)
-        let mut restored_files = Vec::new();
-        for path in entry.affected_files.keys() {
-            // If this file was renamed, it's now at its original location
-            let current_path = rename_map.get(&path).unwrap_or(&path);
-
-            // The diff is stored at backups_path/filename.diff
-            let diff_filename = format!(
-                "{}.diff",
-                current_path
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy()
+    // Apply all patches
+    let mut failed_patches = Vec::new();
+    for (file_path, patch_content) in patches_by_file {
+        if let Err(e) = apply_single_patch(&file_path, &patch_content) {
+            eprintln!(
+                "  ERROR: Failed to apply patch to {}: {}",
+                file_path.display(),
+                e
             );
-            let diff_path = entry.backups_path.join(diff_filename);
 
-            if diff_path.exists() {
-                // Read the diff
-                let diff_content = fs::read_to_string(&diff_path)
-                    .with_context(|| format!("Failed to read diff from {}", diff_path.display()))?;
+            // Save the failed patch as a .rej file for debugging
+            let rej_path = file_path.with_extension(format!(
+                "{}.rej",
+                file_path
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("")
+            ));
+            if let Err(write_err) = fs::write(&rej_path, &patch_content) {
+                eprintln!(
+                    "    WARNING: Could not write reject file {}: {}",
+                    rej_path.display(),
+                    write_err
+                );
+            } else {
+                eprintln!("    Saved failed patch to: {}", rej_path.display());
+            }
 
-                // Apply the diff using patch command (reverse it to undo)
-                // Use --fuzz=3 for lenient matching, allowing context to be off by several lines
-                let output = std::process::Command::new("patch")
-                    .args(["-R", "-p0", "--fuzz=3"])  // -R for reverse, -p0 for no path stripping, --fuzz=3 for lenient matching
-                    .arg(current_path.to_str().unwrap())
-                    .stdin(std::process::Stdio::piped())
-                    .stdout(std::process::Stdio::piped())
-                    .stderr(std::process::Stdio::piped())
-                    .spawn()
-                    .and_then(|mut child| {
-                        use std::io::Write;
-                        if let Some(mut stdin) = child.stdin.take() {
-                            stdin.write_all(diff_content.as_bytes())?;
-                        }
-                        child.wait_with_output()
-                    })
-                    .context("Failed to apply diff")?;
+            failed_patches.push(format!("{}: {}", file_path.display(), e));
+        }
+    }
 
-                if !output.status.success() {
-                    return Err(anyhow!(
-                        "Failed to apply diff for {}: stderr: {}, stdout: {}",
-                        current_path.display(),
-                        String::from_utf8_lossy(&output.stderr),
-                        String::from_utf8_lossy(&output.stdout)
-                    ));
+    // STEP 3: Delete any directories that were created during apply
+    if let Some(created_dirs) = &plan.created_directories {
+        // Sort by depth (deepest first) to remove nested directories before parents
+        let mut sorted_dirs = created_dirs.clone();
+        sorted_dirs.sort_by(|a, b| {
+            let a_depth = a.components().count();
+            let b_depth = b.components().count();
+            b_depth.cmp(&a_depth)
+        });
+        
+        for dir in sorted_dirs.iter() {
+            // Only remove if directory exists, is a directory, and is empty
+            if dir.exists() && dir.is_dir() {
+                if let Ok(mut entries) = fs::read_dir(dir) {
+                    if entries.next().is_none() {
+                        // Directory is empty, safe to remove
+                        let _ = fs::remove_dir(dir);
+                    }
                 }
-
-                restored_files.push((*current_path).clone());
             }
         }
+    }
+
+    // If any patches failed, return an error
+    if !failed_patches.is_empty() {
+        return Err(anyhow!(
+            "Failed to apply {} patches",
+            failed_patches.len()
+        ));
     }
 
     // Calculate checksums of affected files and collect reversed renames
@@ -469,7 +264,7 @@ pub fn redo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         ..Default::default()
     };
 
-    apply_plan(&plan, &options)?;
+    apply_plan(&mut plan, &options)?;
 
     eprintln!("Successfully redid refactoring '{}'", id);
     Ok(())
@@ -790,178 +585,6 @@ mod tests {
         // Verify old content was restored without newline
         let content = fs::read(&test_file).unwrap();
         assert_eq!(content, b"old content");
-    }
-
-    #[test]
-    fn test_extract_individual_patches() {
-        let comprehensive_patch = r#"# Refaktor reverse patch for plan test123
-# Created: 2024-01-01T00:00:00Z
-# New: bar -> Old: foo (for undo)
-
---- /path/to/file1.rs
-+++ /path/to/file1.rs
-@@ -1 +1 @@
--fn bar() {}
-\ No newline at end of file
-+fn foo() {}
-\ No newline at end of file
-
---- /path/to/file2.rs
-+++ /path/to/file2.rs
-@@ -1,2 +1,2 @@
--let x = bar();
--println!("bar");
-+let x = foo();
-+println!("foo");
-"#;
-
-        let patches = extract_individual_patches(comprehensive_patch).unwrap();
-        assert_eq!(patches.len(), 2);
-
-        let (orig1, mod1, content1) = &patches[0];
-        assert_eq!(orig1, &PathBuf::from("/path/to/file1.rs"));
-        assert_eq!(mod1, &PathBuf::from("/path/to/file1.rs"));
-        assert!(content1.contains("@@ -1 +1 @@"));
-        assert!(content1.contains("-fn bar() {}"));
-        assert!(content1.contains("+fn foo() {}"));
-        assert!(
-            content1.contains("\\ No newline at end of file"),
-            "Should preserve no newline markers"
-        );
-
-        let (orig2, mod2, content2) = &patches[1];
-        assert_eq!(orig2, &PathBuf::from("/path/to/file2.rs"));
-        assert_eq!(mod2, &PathBuf::from("/path/to/file2.rs"));
-        assert!(content2.contains("@@ -1,2 +1,2 @@"));
-        assert!(content2.contains("-let x = bar();"));
-        assert!(content2.contains("+let x = foo();"));
-    }
-
-    #[test]
-    fn test_extract_individual_patches_with_comments() {
-        let comprehensive_patch = r#"# This is a comment
-# Another comment line
-diff --git a/file.rs b/file.rs
-rename from old_file.rs
-rename to new_file.rs
---- /path/to/file.rs
-+++ /path/to/file.rs
-@@ -1 +1 @@
--old content
-+new content
-"#;
-
-        let patches = extract_individual_patches(comprehensive_patch).unwrap();
-        assert_eq!(patches.len(), 1);
-
-        let (orig, modif, content) = &patches[0];
-        assert_eq!(orig, &PathBuf::from("/path/to/file.rs"));
-        assert_eq!(modif, &PathBuf::from("/path/to/file.rs"));
-
-        // Should not contain comments or rename metadata
-        assert!(!content.contains("# This is a comment"));
-        assert!(!content.contains("diff --git"));
-        assert!(!content.contains("rename from"));
-        assert!(!content.contains("rename to"));
-
-        // Should contain patch content
-        assert!(content.contains("--- /path/to/file.rs"));
-        assert!(content.contains("+++ /path/to/file.rs"));
-        assert!(content.contains("@@ -1 +1 @@"));
-        assert!(content.contains("-old content"));
-        assert!(content.contains("+new content"));
-    }
-
-    #[test]
-    fn test_extract_individual_patches_no_newline_markers() {
-        let comprehensive_patch = r#"--- /test/file.txt
-+++ /test/file.txt
-@@ -1 +1 @@
--old text
-\ No newline at end of file
-+new text
-\ No newline at end of file
-"#;
-
-        let patches = extract_individual_patches(comprehensive_patch).unwrap();
-        assert_eq!(patches.len(), 1);
-
-        let (_orig, _modif, content) = &patches[0];
-
-        // CRITICAL: Must preserve the backslash lines
-        let backslash_count = content.matches("\\ No newline at end of file").count();
-        assert_eq!(
-            backslash_count, 2,
-            "Should preserve both 'No newline at end of file' markers: {}",
-            content
-        );
-
-        // Should contain the full patch
-        assert!(content.contains("-old text"));
-        assert!(content.contains("+new text"));
-    }
-
-    #[test]
-    fn test_multiple_patches_extraction_no_extra_newlines() {
-        use std::path::PathBuf;
-
-        // Create a comprehensive patch that mimics what we generate with separators
-        let comprehensive_patch = "# Refaktor reverse patch for plan test
-# Created: 2025-01-01T00:00:00Z
-
---- /path/to/file1.rs
-+++ /path/to/file1.rs
-@@ -1,3 +1,3 @@
--fn new_name() {
--    println!(\"new_name\");
-+fn old_name() {
-+    println!(\"old_name\");
- }
-\\ No newline at end of file
-
---- /path/to/stable.rs
-+++ /path/to/stable.rs
-@@ -1,2 +1,2 @@
--use new_name;
--fn main() { new_name(); }
-\\ No newline at end of file
-+use old_name;
-+fn main() { old_name(); }
-\\ No newline at end of file
-
-diff --git a/some/dir b/other/dir
-rename from some/dir
-rename to other/dir
-";
-
-        let patches = extract_individual_patches(comprehensive_patch).unwrap();
-        assert_eq!(patches.len(), 2, "Should extract exactly 2 patches");
-
-        let (orig1, _mod1, content1) = &patches[0];
-        assert_eq!(orig1, &PathBuf::from("/path/to/file1.rs"));
-
-        // The first patch should NOT have extra newlines at the end
-        assert!(
-            !content1.ends_with("\n\n"),
-            "First patch should not end with double newlines"
-        );
-        assert!(
-            content1.ends_with("\\ No newline at end of file"),
-            "First patch should end with no newline marker"
-        );
-
-        let (orig2, _mod2, content2) = &patches[1];
-        assert_eq!(orig2, &PathBuf::from("/path/to/stable.rs"));
-
-        // The second patch should also NOT have extra newlines at the end
-        assert!(
-            !content2.ends_with("\n\n"),
-            "Second patch should not end with double newlines"
-        );
-        assert!(
-            content2.ends_with("\\ No newline at end of file"),
-            "Second patch should end with no newline marker"
-        );
     }
 
     #[test]

@@ -29,7 +29,7 @@ fn test_multiple_matches_per_line() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "old_name", "new_name", &options).unwrap();
+    let mut plan = scan_repository(&root, "old_name", "new_name", &options).unwrap();
 
     // Should find all 4 occurrences on the same line
     assert_eq!(
@@ -83,7 +83,7 @@ fn test_module_path_replacement() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor_core", "smart_search_core", &options).unwrap();
+    let mut plan = scan_repository(&root, "refaktor_core", "smart_search_core", &options).unwrap();
 
     // Should find all 3 module path references
     assert_eq!(
@@ -128,7 +128,7 @@ fn test_dot_path_replacement() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "smart_search", &options).unwrap();
+    let mut plan = scan_repository(&root, "refaktor", "smart_search", &options).unwrap();
 
     // Should find all occurrences including dot-prefixed
     assert!(
@@ -172,7 +172,7 @@ fn test_consecutive_occurrences() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "old_name", "new_name", &options).unwrap();
+    let mut plan = scan_repository(&root, "old_name", "new_name", &options).unwrap();
 
     // Should find the compound identifier and replace ALL occurrences within it
     println!("Found {} matches", plan.stats.total_matches);
@@ -223,7 +223,7 @@ fn test_camel_case_variant_multiple_per_line() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "user_name", "customer_name", &options).unwrap();
+    let mut plan = scan_repository(&root, "user_name", "customer_name", &options).unwrap();
 
     // Should find getUserName (compound), userName (twice), UserName (twice)
     // getUserName IS matched because it's a compound word containing userName
@@ -265,7 +265,7 @@ fn test_mixed_separators_on_same_line() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "user_name", "customer_name", &options).unwrap();
+    let mut plan = scan_repository(&root, "user_name", "customer_name", &options).unwrap();
 
     // Should find all 4 variants
     assert_eq!(
@@ -316,7 +316,7 @@ fn test_markdown_code_blocks() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "smart_search", &options).unwrap();
+    let mut plan = scan_repository(&root, "refaktor", "smart_search", &options).unwrap();
 
     // Should find all 4 occurrences in markdown
     assert_eq!(

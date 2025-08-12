@@ -43,7 +43,7 @@ fn getFooBarOption() -> FooBarOption { }",
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound Pascal Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -126,7 +126,7 @@ match foo_bar_type {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound Snake Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -193,7 +193,7 @@ function setFooBarType(fooBarType) {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound Camel Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -276,7 +276,7 @@ fn getFooBarOption() -> FooBarOption { }",
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Compound Pascal + Camel Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -341,7 +341,7 @@ fn test_multiple_compounds_same_line() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
 
     println!("\n=== Multiple Compounds Same Line Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
@@ -391,7 +391,7 @@ fn test_compound_case_preservation_bug() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "foo_bar", "bazaar_quxicle", &options).unwrap();
+    let mut plan = scan_repository(&root, "foo_bar", "bazaar_quxicle", &options).unwrap();
 
     println!("\n=== Case Preservation Test ===");
     for hunk in &plan.matches {

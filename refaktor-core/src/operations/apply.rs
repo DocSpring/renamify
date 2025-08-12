@@ -15,7 +15,7 @@ pub fn apply_operation(
     let refaktor_dir = current_dir.join(".refaktor");
 
     // Load the plan and track if using default plan file
-    let (plan, used_default_plan_file) =
+    let (mut plan, used_default_plan_file) =
         load_plan_from_source_with_tracking(plan_path, plan_id, &refaktor_dir)?;
 
     // Apply the plan
@@ -29,7 +29,7 @@ pub fn apply_operation(
         log_file: Some(refaktor_dir.join("logs").join(format!("{}.log", plan.id))),
     };
 
-    apply_plan(&plan, &apply_options)?;
+    apply_plan(&mut plan, &apply_options)?;
 
     // Write success message to stderr
     eprintln!("Plan applied successfully!");

@@ -25,7 +25,7 @@ let mixed = refaktor_someCAMEL-case;
 
     // Scan and generate plan
     let opts = PlanOptions::default();
-    let plan = scan_repository(
+    let mut plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "smart_search_and_replace",
@@ -45,7 +45,7 @@ let mixed = refaktor_someCAMEL-case;
         log_file: None,
     };
 
-    apply_plan(&plan, &apply_opts).unwrap();
+    apply_plan(&mut plan, &apply_opts).unwrap();
 
     // Read the modified content
     let modified_content = fs::read_to_string(&test_file).unwrap();
@@ -122,7 +122,7 @@ let env = std::env::var("REFAKTOR_ENABLED").unwrap_or_default();
 
     // Scan and apply
     let opts = PlanOptions::default();
-    let plan = scan_repository(
+    let mut plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "smart_search_and_replace",
@@ -141,7 +141,7 @@ let env = std::env::var("REFAKTOR_ENABLED").unwrap_or_default();
         log_file: None,
     };
 
-    apply_plan(&plan, &apply_opts).unwrap();
+    apply_plan(&mut plan, &apply_opts).unwrap();
 
     let modified_content = fs::read_to_string(&test_file).unwrap();
 

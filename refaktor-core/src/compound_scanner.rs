@@ -384,6 +384,9 @@ pub fn enhanced_matches_to_hunks(
             line_before,
             line_after,
             coercion_applied: None,
+            original_file: None,
+            renamed_file: None,
+            patch_hash: None,
         });
     }
 

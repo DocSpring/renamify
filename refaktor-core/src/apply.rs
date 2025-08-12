@@ -95,39 +95,22 @@ impl ApplyState {
     }
 }
 
-/// Generate a comprehensive patch that includes all changes using diffy
-fn generate_comprehensive_patch(
-    plan: &Plan,
+/// Generate individual reverse patch files for each changed file
+fn generate_reverse_patches(
+    plan: &mut Plan,
     options: &ApplyOptions,
     state: &ApplyState,
     original_contents: &HashMap<PathBuf, String>,
-) -> Result<PathBuf> {
-    // Create backup directory structure
+) -> Result<()> {
+    // Create backup directory structure including reverse_patches subdirectory
     let backup_base = options.backup_dir.join(&plan.id);
-    fs::create_dir_all(&backup_base)?;
+    let reverse_patches_dir = backup_base.join("reverse_patches");
+    fs::create_dir_all(&reverse_patches_dir)?;
 
-    // Generate BOTH forward and reverse patches for debugging and clarity
-    let forward_patch_path = backup_base.join("forward.patch");
-    let reverse_patch_path = backup_base.join("reverse.patch");
-
-    let mut forward_patch_content = String::new();
-    let mut reverse_patch_content = String::new();
-
-    // Add headers to both patches
-    let timestamp = chrono::Local::now().to_rfc3339();
-
-    // Forward patch header (old -> new)
-    forward_patch_content.push_str(&format!("# Refaktor forward patch for plan {}", plan.id));
-    forward_patch_content.push_str(&format!("\n# Created: {}\n", timestamp));
-    forward_patch_content.push_str(&format!("# Old: {} -> New: {}\n\n", plan.old, plan.new));
-
-    // Reverse patch header (new -> old)
-    reverse_patch_content.push_str(&format!("# Refaktor reverse patch for plan {}", plan.id));
-    reverse_patch_content.push_str(&format!("\n# Created: {}\n", timestamp));
-    reverse_patch_content.push_str(&format!(
-        "# New: {} -> Old: {} (for undo)\n\n",
-        plan.new, plan.old
-    ));
+    use sha2::{Sha256, Digest};
+    
+    // Track created directories
+    let mut created_dirs = Vec::new();
 
     // Process each file that had content changes
     for (original_path, original_content) in original_contents {
@@ -158,66 +141,67 @@ fn generate_comprehensive_patch(
             )
         })?;
 
-        // Generate FORWARD diff (old -> new) using diffy
-        let forward_patch =
-            diffy::create_patch(original_content.as_str(), current_content.as_str());
-        let forward_diff_str = forward_patch.to_string();
-
-        // Generate REVERSE diff (new -> old) using diffy
+        // Generate REVERSE diff (new -> old) for undo using diffy
         let reverse_patch =
             diffy::create_patch(current_content.as_str(), original_content.as_str());
         let reverse_diff_str = reverse_patch.to_string();
 
-        // If there are actual differences, add to both patches
-        if !forward_diff_str.is_empty() && forward_diff_str != "--- original\n+++ modified\n" {
+        // If there are actual differences, save the reverse patch
+        if !reverse_diff_str.is_empty() && reverse_diff_str != "--- original\n+++ modified\n" {
             // Replace diffy's generic headers with actual file paths
-            let forward_with_paths =
-                replace_patch_headers(&forward_diff_str, original_path, &current_path);
-            let reverse_with_paths =
+            // For reverse patch: current_path -> original_path
+            let patch_with_paths =
                 replace_patch_headers(&reverse_diff_str, &current_path, original_path);
-
-            forward_patch_content.push_str(&forward_with_paths);
-            reverse_patch_content.push_str(&reverse_with_paths);
-
-            // Add newline to separate different file patches
-            forward_patch_content.push('\n');
-            reverse_patch_content.push('\n');
+            
+            // Generate hash for this file's patch
+            let relative_path = make_path_relative(original_path);
+            let mut hasher = Sha256::new();
+            hasher.update(relative_path.to_string_lossy().as_bytes());
+            let hash = format!("{:x}", hasher.finalize());
+            
+            // Save the individual patch
+            let patch_filename = format!("{}.patch", hash);
+            let patch_path = reverse_patches_dir.join(&patch_filename);
+            fs::write(&patch_path, &patch_with_paths)?;
+            
+            // Update the match entries with the patch hash and file paths
+            for match_hunk in &mut plan.matches {
+                if match_hunk.file == *original_path {
+                    match_hunk.original_file = Some(original_path.clone());
+                    match_hunk.renamed_file = if current_path != *original_path {
+                        Some(current_path.clone())
+                    } else {
+                        None
+                    };
+                    match_hunk.patch_hash = Some(hash.clone());
+                }
+            }
+        }
+        
+        // Track any new directories created by renames
+        if current_path != *original_path {
+            if let Some(parent) = current_path.parent() {
+                let mut dir = parent.to_path_buf();
+                while !dir.exists() || !created_dirs.contains(&dir) {
+                    if !dir.exists() {
+                        created_dirs.push(dir.clone());
+                    }
+                    if let Some(parent) = dir.parent() {
+                        dir = parent.to_path_buf();
+                    } else {
+                        break;
+                    }
+                }
+            }
         }
     }
-
-    // Add rename-only operations (files/dirs renamed without content changes)
-    for (from, to) in &state.renames_performed {
-        // Skip if this file already had content changes (already in patch)
-        if original_contents.contains_key(from) {
-            continue;
-        }
-
-        // Add rename-only entry to forward patch
-        forward_patch_content.push_str(&format!(
-            "diff --git a/{} b/{}\n",
-            from.display(),
-            to.display()
-        ));
-        forward_patch_content.push_str(&format!("rename from {}\n", from.display()));
-        forward_patch_content.push_str(&format!("rename to {}\n", to.display()));
-        forward_patch_content.push_str("\n");
-
-        // Add rename-only entry to reverse patch (reversed)
-        reverse_patch_content.push_str(&format!(
-            "diff --git a/{} b/{}\n",
-            to.display(),
-            from.display()
-        ));
-        reverse_patch_content.push_str(&format!("rename from {}\n", to.display()));
-        reverse_patch_content.push_str(&format!("rename to {}\n", from.display()));
-        reverse_patch_content.push_str("\n");
+    
+    // Store created directories in the plan
+    if !created_dirs.is_empty() {
+        plan.created_directories = Some(created_dirs);
     }
 
-    // Write both patches
-    fs::write(&forward_patch_path, &forward_patch_content)?;
-    fs::write(&reverse_patch_path, &reverse_patch_content)?;
-
-    Ok(reverse_patch_path)
+    Ok(())
 }
 
 /// Convert an absolute path to a relative path from the current working directory
@@ -481,7 +465,7 @@ fn rollback(state: &mut ApplyState) -> Result<()> {
 }
 
 /// Apply a refactoring plan
-pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
+pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
     let mut state = ApplyState::new(plan.id.clone(), options.log_file.clone())?;
 
     state.log(&format!("Starting apply for plan {}", plan.id))?;
@@ -674,8 +658,8 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
     if options.create_backups {
         state.log("Creating comprehensive patch backup")?;
 
-        // Generate a single comprehensive patch file
-        if let Err(e) = generate_comprehensive_patch(plan, options, &state, &original_contents) {
+        // Generate individual reverse patch files
+        if let Err(e) = generate_reverse_patches(plan, options, &state, &original_contents) {
             state.log(&format!("Failed to create comprehensive patch: {}", e))?;
             if !options.force {
                 return Err(e);
@@ -811,6 +795,7 @@ mod tests {
                 files_with_matches: 0,
             },
             version: "1.0.0".to_string(),
+            created_directories: None,
         }
     }
 
@@ -822,7 +807,7 @@ mod tests {
         let test_file = temp_dir.path().join("test.rs");
         fs::write(&test_file, "fn old_name() {}").unwrap();
 
-        let plan = Plan {
+        let mut plan = Plan {
             id: "test_plan_456".to_string(),
             created_at: "2024-01-01".to_string(),
             old: "old_name".to_string(),
@@ -842,6 +827,9 @@ mod tests {
                 line_before: Some("fn old_name() {}".to_string()),
                 line_after: Some("fn new_name() {}".to_string()),
                 coercion_applied: None,
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,
             }],
             renames: vec![],
             stats: Stats {
@@ -851,7 +839,7 @@ mod tests {
                 files_with_matches: 1,
             },
             version: "1.0.0".to_string(),
-        };
+            created_directories: None,        };
 
         let options = ApplyOptions {
             backup_dir: temp_dir.path().join(".refaktor/backups"),
@@ -860,7 +848,7 @@ mod tests {
         };
 
         // Apply the plan
-        apply_plan(&plan, &options).unwrap();
+        apply_plan(&mut plan, &options).unwrap();
 
         // Check the file was modified
         let content = fs::read_to_string(&test_file).unwrap();
@@ -942,7 +930,7 @@ mod tests {
         let test_file = temp_dir.path().join("test.rs");
         fs::write(&test_file, "fn old() {}").unwrap();
 
-        let plan = Plan {
+        let mut plan = Plan {
             id: "test_affected".to_string(),
             created_at: "2024-01-01".to_string(),
             old: "old".to_string(),
@@ -962,7 +950,9 @@ mod tests {
                 line_before: Some("fn old() {}".to_string()),
                 line_after: Some("fn new() {}".to_string()),
                 coercion_applied: None,
-            }],
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,            }],
             renames: vec![],
             stats: Stats {
                 files_scanned: 1,
@@ -971,7 +961,7 @@ mod tests {
                 files_with_matches: 1,
             },
             version: "1.0.0".to_string(),
-        };
+            created_directories: None,        };
 
         let options = ApplyOptions {
             backup_dir: temp_dir.path().join(".refaktor/backups"),
@@ -980,7 +970,7 @@ mod tests {
         };
 
         // Apply should work
-        apply_plan(&plan, &options).unwrap();
+        apply_plan(&mut plan, &options).unwrap();
 
         // Load history and verify affected_files is populated
         let history = History::load(temp_dir.path().join(".refaktor").as_path()).unwrap();

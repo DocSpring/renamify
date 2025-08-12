@@ -78,6 +78,12 @@ pub struct MatchHunk {
     pub line_after: Option<String>, // Full line with replacement for diff preview
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coercion_applied: Option<String>, // Details about coercion if applied
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub original_file: Option<PathBuf>, // Original file path before any renames
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub renamed_file: Option<PathBuf>, // File path after renames (if different)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub patch_hash: Option<String>, // SHA256 hash of the patch file for this change
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -117,6 +123,8 @@ pub struct Plan {
     pub renames: Vec<Rename>,
     pub stats: Stats,
     pub version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_directories: Option<Vec<PathBuf>>, // Directories created during apply that should be removed on undo
 }
 
 /// Backward-compatible single-path scan (for tests)
@@ -273,6 +281,7 @@ pub fn scan_repository_multi(
         renames,
         stats,
         version: "1.0.0".to_string(),
+        created_directories: None,
     })
 }
 
@@ -432,6 +441,9 @@ fn generate_hunks(
             start: m.start,
             end: m.end,
             coercion_applied,
+            original_file: None,
+            renamed_file: None,
+            patch_hash: None,
         });
     }
 
@@ -663,7 +675,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let opts = PlanOptions::default();
 
-        let plan = scan_repository(temp_dir.path(), "old", "new", &opts).unwrap();
+        let mut plan = scan_repository(temp_dir.path(), "old", "new", &opts).unwrap();
 
         assert_eq!(plan.old, "old");
         assert_eq!(plan.new, "new");
@@ -857,7 +869,7 @@ mod tests {
             ..Default::default()
         };
 
-        let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+        let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
         // We expect 2 matches: "old_name" and "oldName"
         assert_eq!(
@@ -916,7 +928,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let plan_path = temp_dir.path().join(".refaktor/plan.json");
 
-        let plan = Plan {
+        let mut plan = Plan {
             id: "test123".to_string(),
             created_at: "123456789".to_string(),
             old: "old".to_string(),
@@ -933,6 +945,7 @@ mod tests {
                 files_with_matches: 0,
             },
             version: "1.0.0".to_string(),
+            created_directories: None,
         };
 
         write_plan(&plan, &plan_path).unwrap();
