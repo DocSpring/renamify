@@ -13,16 +13,41 @@ brew install refaktor
 
 ## Download Binary
 
-*Coming soon*
+### Linux
 
-Download pre-built binaries from the [releases page](https://github.com/DocSpring/refaktor/releases):
+#### x86_64 / amd64
+```bash
+curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-amd64.tar.gz | tar xz
+sudo mv refaktor /usr/local/bin/refaktor
+sudo chmod 755 /usr/local/bin/refaktor
+```
 
-- **Linux (x86_64)**: `refaktor-linux-x86_64.tar.gz`
-- **macOS (Intel)**: `refaktor-macos-x86_64.tar.gz` 
-- **macOS (Apple Silicon)**: `refaktor-macos-arm64.tar.gz`
-- **Windows**: `refaktor-windows-x86_64.zip`
+#### arm64
+```bash
+curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-arm64.tar.gz | tar xz
+sudo mv refaktor /usr/local/bin/refaktor
+sudo chmod 755 /usr/local/bin/refaktor
+```
 
-Extract and add to your PATH.
+### macOS
+
+#### Intel (x86_64)
+```bash
+curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-amd64.tar.gz | tar xz
+sudo mv refaktor /usr/local/bin/refaktor
+sudo chmod 755 /usr/local/bin/refaktor
+```
+
+#### Apple Silicon (arm64)
+```bash
+curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-arm64.tar.gz | tar xz
+sudo mv refaktor /usr/local/bin/refaktor
+sudo chmod 755 /usr/local/bin/refaktor
+```
+
+### Windows
+
+*Coming soon - Windows builds will be available in a future release*
 
 ## Install Script
 

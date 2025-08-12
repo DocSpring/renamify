@@ -22,52 +22,50 @@ Required to run the MCP Server (check with `node --version`)
 ## Step 1: Install Refaktor CLI
 
 <Tabs>
-  <TabItem label="macOS/Linux">
-    ### Option A: Install from GitHub Releases (Recommended)
+  <TabItem label="Linux">
+    ### x86_64 / amd64
     ```bash
-    # Download the latest release for your platform
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-$(uname -s)-$(uname -m).tar.gz | tar xz
-    
-    # Move to a directory in your PATH
-    sudo mv refaktor /usr/local/bin/
-    
-    # Verify installation
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-amd64.tar.gz | tar xz
+    sudo mv refaktor /usr/local/bin/refaktor
+    sudo chmod 755 /usr/local/bin/refaktor
     refaktor --version
     ```
     
-    ### Option B: Build from Source with Cargo
+    ### arm64
     ```bash
-    # Install Rust if you haven't already
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-arm64.tar.gz | tar xz
+    sudo mv refaktor /usr/local/bin/refaktor
+    sudo chmod 755 /usr/local/bin/refaktor
+    refaktor --version
+    ```
+  </TabItem>
+  
+  <TabItem label="macOS">
+    ### Intel (x86_64)
+    ```bash
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-amd64.tar.gz | tar xz
+    sudo mv refaktor /usr/local/bin/refaktor
+    sudo chmod 755 /usr/local/bin/refaktor
+    refaktor --version
+    ```
     
-    # Install Refaktor
-    cargo install refaktor
-    
-    # Verify installation
+    ### Apple Silicon (arm64)
+    ```bash
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-arm64.tar.gz | tar xz
+    sudo mv refaktor /usr/local/bin/refaktor
+    sudo chmod 755 /usr/local/bin/refaktor
     refaktor --version
     ```
   </TabItem>
   
   <TabItem label="Windows">
-    ### Option A: Install from GitHub Releases (Recommended)
+    *Coming soon - Windows builds will be available in a future release*
     
-    1. Download the latest Windows release from [GitHub Releases](https://github.com/DocSpring/refaktor/releases)
-    2. Extract the archive to a folder (e.g., `C:\Program Files\refaktor`)
-    3. Add the folder to your PATH environment variable
-    4. Open a new terminal and verify:
+    ### Build from Source (Alternative)
     ```powershell
-    refaktor --version
-    ```
-    
-    ### Option B: Build from Source with Cargo
-    ```powershell
-    # Install Rust for Windows
-    # Download and run: https://win.rustup.rs/
-    
-    # Install Refaktor
+    # Install Rust for Windows from https://win.rustup.rs/
+    # Then install Refaktor
     cargo install refaktor
-    
-    # Verify installation
     refaktor --version
     ```
   </TabItem>
