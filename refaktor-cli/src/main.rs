@@ -820,6 +820,19 @@ fn handle_apply(
 
     eprintln!("Plan applied successfully!");
 
+    // Delete the plan.json file after successful apply (only if using default path)
+    if plan_path == PathBuf::from(".refaktor/plan.json") {
+        if let Err(e) = std::fs::remove_file(&plan_path) {
+            eprintln!(
+                "Warning: Failed to delete plan file {}: {}",
+                plan_path.display(),
+                e
+            );
+        } else {
+            eprintln!("Deleted plan file: {}", plan_path.display());
+        }
+    }
+
     if commit {
         eprintln!("Changes committed to git");
     }

@@ -366,6 +366,110 @@ fn test_apply_command_with_plan() {
 }
 
 #[test]
+fn test_apply_command_deletes_plan_file() {
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create a test file with content to replace
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
+    // Create .refaktor directory with plan
+    let refaktor_dir = temp_dir.child(".refaktor");
+    refaktor_dir.create_dir_all().unwrap();
+
+    // Create a minimal valid plan
+    let plan_json = r#"{
+        "id": "test456",
+        "created_at": "2024-01-01T00:00:00Z",
+        "old": "old_name",
+        "new": "new_name",
+        "styles": [],
+        "includes": [],
+        "excludes": [],
+        "matches": [],
+        "renames": [],
+        "stats": {
+            "files_scanned": 1,
+            "total_matches": 0,
+            "matches_by_variant": {},
+            "files_with_matches": 0
+        },
+        "version": "1.0.0"
+    }"#;
+
+    let plan_file = refaktor_dir.child("plan.json");
+    plan_file.write_str(plan_json).unwrap();
+
+    // Verify plan file exists before apply
+    assert!(plan_file.exists());
+
+    // Apply the plan (uses default .refaktor/plan.json path)
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["apply"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("Plan applied successfully!"))
+        .stderr(predicate::str::contains("Deleted plan file"));
+
+    // Verify plan file was deleted after successful apply
+    assert!(!plan_file.exists());
+}
+
+#[test]
+fn test_apply_command_with_custom_plan_path_keeps_file() {
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create a test file with content to replace
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() {}")
+        .unwrap();
+
+    // Create custom plan file outside .refaktor directory
+    let custom_plan_file = temp_dir.child("custom_plan.json");
+    let plan_json = r#"{
+        "id": "test789",
+        "created_at": "2024-01-01T00:00:00Z",
+        "old": "old_name",
+        "new": "new_name",
+        "styles": [],
+        "includes": [],
+        "excludes": [],
+        "matches": [],
+        "renames": [],
+        "stats": {
+            "files_scanned": 1,
+            "total_matches": 0,
+            "matches_by_variant": {},
+            "files_with_matches": 0
+        },
+        "version": "1.0.0"
+    }"#;
+
+    custom_plan_file.write_str(plan_json).unwrap();
+
+    // Create .refaktor directory (needed for apply)
+    temp_dir.child(".refaktor").create_dir_all().unwrap();
+
+    // Verify custom plan file exists before apply
+    assert!(custom_plan_file.exists());
+
+    // Apply the plan using custom path
+    let mut cmd = Command::cargo_bin("refaktor").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["apply", "--plan", "custom_plan.json"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("Plan applied successfully!"));
+
+    // Verify custom plan file still exists (should NOT be deleted)
+    assert!(custom_plan_file.exists());
+}
+
+#[test]
 fn test_undo_command_missing_entry() {
     let temp_dir = TempDir::new().unwrap();
 
