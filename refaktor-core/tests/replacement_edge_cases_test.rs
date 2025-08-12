@@ -69,52 +69,40 @@ let mixed = refaktor_someCAMEL-case;
         println!("  '{}' -> '{}'", old, new);
     }
 
-    // KNOWN ISSUES - These tests document current behavior vs expected behavior
+    // Verify ALL patterns are replaced correctly (these should all pass when bugs are fixed)
 
-    // ✅ These replacements work correctly:
+    // These work correctly:
     assert!(
         modified_content.contains("SMART_SEARCH_AND_REPLACE_CONFIG"),
-        "✓ Environment variable 'REFAKTOR_CONFIG' correctly replaced"
+        "Environment variable 'REFAKTOR_CONFIG' should be replaced with 'SMART_SEARCH_AND_REPLACE_CONFIG'"
     );
 
     assert!(
         modified_content.contains("smart_search_and_replace_someCAMEL-case"),
-        "✓ Mixed case 'refaktor_someCAMEL-case' correctly replaced"
+        "Mixed case 'refaktor_someCAMEL-case' should be replaced with 'smart_search_and_replace_someCAMEL-case'"
     );
 
-    // ❌ These are known issues that need to be fixed:
+    // These currently fail but should be fixed:
+    assert!(
+        modified_content.contains("smart_search_and_replace_{}.tmp"),
+        "Format string 'refaktor_{{}}.tmp' should be replaced with 'smart_search_and_replace_{{}}.tmp'"
+    );
 
-    // Issue 1: Format strings with {} are not detected as matches
-    if modified_content.contains("smart_search_and_replace_{}.tmp") {
-        println!("✓ Format string refaktor_{{}}.tmp was replaced correctly");
-    } else {
-        println!("❌ KNOWN ISSUE: Format string refaktor_{{}}.tmp not replaced");
-        assert!(
-            modified_content.contains("refaktor_{}.tmp"),
-            "Original format string should still be present"
-        );
-    }
+    assert!(
+        modified_content.contains("smart_search_and_replace_{}.log"),
+        "Format string 'refaktor_{{}}.log' should be replaced with 'smart_search_and_replace_{{}}.log'"
+    );
 
-    if modified_content.contains("smart_search_and_replace_{}.log") {
-        println!("✓ Format string refaktor_{{}}.log was replaced correctly");
-    } else {
-        println!("❌ KNOWN ISSUE: Format string refaktor_{{}}.log not replaced");
-        assert!(
-            modified_content.contains("refaktor_{}.log"),
-            "Original format string should still be present"
-        );
-    }
+    assert!(
+        modified_content.contains("SMART_SEARCH_AND_REPLACE_DEBUG"),
+        "Environment variable 'REFAKTOR_DEBUG' should be replaced with 'SMART_SEARCH_AND_REPLACE_DEBUG'"
+    );
 
-    // Issue 2: REFAKTOR_DEBUG found but not replaced correctly (compound matching bug)
-    if modified_content.contains("SMART_SEARCH_AND_REPLACE_DEBUG") {
-        println!("✓ Environment variable REFAKTOR_DEBUG was replaced correctly");
-    } else {
-        println!("❌ KNOWN ISSUE: REFAKTOR_DEBUG found but replacement failed");
-        assert!(
-            modified_content.contains("REFAKTOR_DEBUG"),
-            "Original env var should still be present"
-        );
-    }
+    // Verify no instances of 'refaktor' remain
+    assert!(
+        !modified_content.to_lowercase().contains("refaktor"),
+        "No instances of 'refaktor' should remain in the modified content"
+    );
 }
 
 #[test]
