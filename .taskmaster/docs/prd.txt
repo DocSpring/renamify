@@ -72,7 +72,7 @@ Non-goals for v1.0.0
     - --include, --exclude, --respect-gitignore (default true)
     - --rename-files, --rename-dirs (both default true)
     - --styles=<comma list> to restrict styles
-    - --preview-format table|diff|json (default table)
+    - --preview table|diff|json (default table)
     - --plan-out path (default .refaktor/plan.json)
   - refaktor apply [--plan path or --id <history id>] [--atomic true] [--commit]
     - --commit optionally creates a git commit with a generated message
@@ -267,7 +267,7 @@ Acceptance criteria:
 Appendix A - CLI examples
 
 1) Basic plan and apply
-refaktor plan UserCard AccountCard --include "src/**" --preview-format table
+refaktor plan UserCard AccountCard --include "src/**" --preview table
 refaktor apply --commit
 
 2) Restrict styles and dry run

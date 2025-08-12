@@ -4,7 +4,7 @@ use std::fs;
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 
-use crate::{get_default_styles, PreviewFormatArg, StyleArg};
+use crate::{get_default_styles, PreviewArg, StyleArg};
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_rename(
@@ -20,7 +20,7 @@ pub fn handle_rename(
     include_styles: Vec<StyleArg>,
     only_styles: Vec<StyleArg>,
     exclude_match: Vec<String>,
-    preview: Option<PreviewFormatArg>,
+    preview: Option<PreviewArg>,
     commit: bool,
     large: bool,
     force_with_conflicts: bool,
@@ -173,10 +173,10 @@ pub fn handle_rename(
 
     // Show preview unless explicitly set to none
     // The preview parameter already has the config default applied if not specified
-    if let Some(preview_format) = preview {
-        if preview_format != PreviewFormatArg::None {
+    if let Some(preview) = preview {
+        if preview != PreviewArg::None {
             let preview_output =
-                refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color));
+                refaktor_core::preview::render_plan(&plan, preview.into(), Some(use_color));
             println!("{preview_output}");
             println!(); // Add spacing before summary
         }

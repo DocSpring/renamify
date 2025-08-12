@@ -251,7 +251,7 @@ For very large refactoring operations:
 ### Typical Workflow
 ```bash
 # 1. Plan the changes
-refaktor plan old_name new_name --preview-format table
+refaktor plan old_name new_name --preview table
 
 # 2. Review the plan
 cat .refaktor/plan.json | jq '.stats'

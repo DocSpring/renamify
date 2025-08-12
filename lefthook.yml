@@ -26,12 +26,12 @@ pre-commit:
     mcp-biome:
       root: refaktor-mcp/
       glob: "*.{ts,js,json}"
-      run: cd refaktor-mcp && pnpm run check
+      run: pnpm run check
 
     mcp-test:
       root: refaktor-mcp/
       glob: "*.ts"
-      run: cd refaktor-mcp && pnpm run test
+      run: pnpm run test
 
 # pre-push:
 #   commands:

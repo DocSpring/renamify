@@ -27,7 +27,7 @@ Arguments: {
   "includes": ["src/**/*.tsx", "src/**/*.ts", "src/**/*.jsx", "src/**/*.js"],
   "excludes": ["node_modules/**", "dist/**"],
   "styles": ["pascal", "camel"],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 
 Result:
@@ -80,7 +80,7 @@ Arguments: {
   ],
   "styles": ["snake", "camel", "pascal"],
   "renameFiles": false,
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 
 Result:
@@ -119,7 +119,7 @@ Arguments: {
     "docs/**/*.md"
   ],
   "styles": ["kebab", "camel", "snake"],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 
 Result:
@@ -157,7 +157,7 @@ Summary:
      "new": "modernFunction",
      "includes": ["src/**/*.js"],
      "dryRun": true,
-     "previewFormat": "diff"
+     "preview": "diff"
    }
    ```
 
@@ -211,7 +211,7 @@ Arguments: {
     "backend/models/**/*.js",
     "backend/migrations/**/*.sql"
   ],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 
 Result: Created plan with 45 replacements in 8 files
@@ -226,7 +226,7 @@ Arguments: {
     "backend/routes/**/*.js",
     "backend/controllers/**/*.js"
   ],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 
 Result: Created plan with 67 replacements in 12 files
@@ -248,7 +248,7 @@ Arguments: {
   "old": "calculatePrice",
   "new": "computeCost",
   "includes": ["src/**/*.js", "tests/**/*.test.js"],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 
 Result:
@@ -284,7 +284,7 @@ Arguments: {
   "includes": ["**/*.py"],
   "excludes": ["venv/**", "__pycache__/**"],
   "styles": ["pascal", "snake"],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 ```
 
@@ -297,7 +297,7 @@ Arguments: {
   "new": "customerservice",
   "includes": ["**/*.go", "go.mod"],
   "styles": ["camel", "pascal", "snake"],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 ```
 
@@ -311,7 +311,7 @@ Arguments: {
   "includes": ["src/**/*.ts", "src/**/*.tsx"],
   "excludes": ["**/*.d.ts"],
   "styles": ["pascal"],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 ```
 
@@ -357,7 +357,7 @@ Arguments: {
   "old": "User",
   "new": "Customer",
   "includes": ["src/**/*.js"],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 
 Result: Created new plan: 8f2a6b1d3a7c9e4f

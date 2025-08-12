@@ -20,7 +20,7 @@ refaktor plan <OLD> <NEW> [PATHS]... [OPTIONS]
 ## Options
 
 ### Output Control
-- `--preview-format <FORMAT>` - Output format: table (default), diff, json
+- `--preview <FORMAT>` - Output format: table (default), diff, json
 - `--plan-out <PATH>` - Where to save the plan (default: .refaktor/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
 
@@ -73,7 +73,7 @@ Files to rename: 3
 
 ### Diff Format
 ```bash
-refaktor plan getUserName fetchUserProfile --preview-format diff
+refaktor plan getUserName fetchUserProfile --preview diff
 ```
 
 Shows changes in diff format:
@@ -90,7 +90,7 @@ Shows changes in diff format:
 
 ### JSON Format
 ```bash
-refaktor plan getUserName fetchUserProfile --preview-format json
+refaktor plan getUserName fetchUserProfile --preview json
 ```
 
 Outputs structured JSON for programmatic use:

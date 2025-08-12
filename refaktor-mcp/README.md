@@ -69,7 +69,7 @@ Create a refactoring plan to replace identifiers across a codebase with case-awa
 - `includes`: Array of glob patterns for files to include
 - `excludes`: Array of glob patterns for files to exclude
 - `styles`: Array of case styles to detect (snake, camel, pascal, kebab, etc.)
-- `previewFormat`: Output format - `table`, `diff`, `json`, or `summary` (default: summary)
+- `preview`: Output format - `table`, `diff`, `json`, or `summary` (default: summary)
 - `dryRun`: If true, only preview without creating plan file
 - `renameFiles`: Whether to rename files (default: true)
 - `renameDirs`: Whether to rename directories (default: true)
@@ -83,7 +83,7 @@ Arguments: {
   "includes": ["src/**/*.ts"],
   "excludes": ["node_modules/**"],
   "styles": ["snake", "camel", "pascal"],
-  "previewFormat": "summary"
+  "preview": "summary"
 }
 ```
 
@@ -183,7 +183,7 @@ For comprehensive documentation, visit: https://docspring.github.io/refaktor/mcp
      "old": "oldName",
      "new": "newName",
      "dryRun": true,
-     "previewFormat": "summary"
+     "preview": "summary"
    }
    ```
 

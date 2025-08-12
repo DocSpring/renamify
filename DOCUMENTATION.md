@@ -89,7 +89,7 @@ refaktor plan <OLD> <NEW> [OPTIONS]
 - `--include-styles <STYLES>` - Add additional case styles to the active set (comma-separated: title,train,dot)
 - `--only-styles <STYLES>` - Use only these case styles, ignoring defaults (comma-separated: any combination)
 - `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
-- `--preview-format <FORMAT>` - Output format: table (default), diff, json
+- `--preview <FORMAT>` - Output format: table (default), diff, json
 - `--plan-out <PATH>` - Where to save the plan (default: .refaktor/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
 
@@ -446,7 +446,7 @@ refaktor plan old_name new_name --exclude "**/*test*,**/*spec*"
 refaktor dry-run old_name new_name
 
 # With diff output
-refaktor dry-run old_name new_name --preview-format diff
+refaktor dry-run old_name new_name --preview diff
 ```
 
 ### Fast Interactive Renaming

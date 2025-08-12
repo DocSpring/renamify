@@ -224,7 +224,7 @@ refaktor dry-run old_name new_name | grep -c "│"
 ### Parallel Workflow
 ```bash
 # Create plan and review while system is idle
-refaktor plan large_change huge_change --preview-format json > plan.json
+refaktor plan large_change huge_change --preview json > plan.json
 
 # Apply later when ready  
 refaktor apply --plan plan.json

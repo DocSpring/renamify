@@ -22,7 +22,7 @@ const PlanToolSchema = z.object({
     .array(z.string())
     .optional()
     .describe('Case styles to detect and transform'),
-  previewFormat: z
+  preview: z
     .enum(['table', 'diff', 'json', 'summary'])
     .optional()
     .default('summary')
@@ -107,7 +107,7 @@ async function main() {
   const tools = new RefaktorTools(refaktorService);
 
   // Register tool handlers
-  server.setRequestHandler('tools/list' as any, async () => ({
+  server.setRequestHandler('tools/list', async () => ({
     tools: [
       {
         name: 'refaktor_plan',
@@ -140,7 +140,7 @@ async function main() {
               description:
                 'Case styles to detect (snake, camel, pascal, kebab, etc.)',
             },
-            previewFormat: {
+            preview: {
               type: 'string',
               enum: ['table', 'diff', 'json', 'summary'],
               default: 'summary',
@@ -256,58 +256,61 @@ async function main() {
     ],
   }));
 
-  server.setRequestHandler('tools/call' as any, async (request: any) => {
-    const { name, arguments: args } = request.params;
+  server.setRequestHandler(
+    'tools/call',
+    async (request: { params: { name: string; arguments: unknown } }) => {
+      const { name, arguments: args } = request.params;
 
-    try {
-      switch (name) {
-        case 'refaktor_plan': {
-          const params = PlanToolSchema.parse(args);
-          const result = await tools.plan(params);
-          return { content: [{ type: 'text', text: result }] };
+      try {
+        switch (name) {
+          case 'refaktor_plan': {
+            const params = PlanToolSchema.parse(args);
+            const result = await tools.plan(params);
+            return { content: [{ type: 'text', text: result }] };
+          }
+          case 'refaktor_apply': {
+            const params = ApplyToolSchema.parse(args);
+            const result = await tools.apply(params);
+            return { content: [{ type: 'text', text: result }] };
+          }
+          case 'refaktor_undo': {
+            const params = UndoToolSchema.parse(args);
+            const result = await tools.undo(params);
+            return { content: [{ type: 'text', text: result }] };
+          }
+          case 'refaktor_redo': {
+            const params = RedoToolSchema.parse(args);
+            const result = await tools.redo(params);
+            return { content: [{ type: 'text', text: result }] };
+          }
+          case 'refaktor_history': {
+            const params = HistoryToolSchema.parse(args);
+            const result = await tools.history(params);
+            return { content: [{ type: 'text', text: result }] };
+          }
+          case 'refaktor_status': {
+            const params = StatusToolSchema.parse(args);
+            const result = await tools.status(params);
+            return { content: [{ type: 'text', text: result }] };
+          }
+          case 'refaktor_preview': {
+            const params = PreviewToolSchema.parse(args);
+            const result = await tools.preview(params);
+            return { content: [{ type: 'text', text: result }] };
+          }
+          default:
+            throw new Error(`Unknown tool: ${name}`);
         }
-        case 'refaktor_apply': {
-          const params = ApplyToolSchema.parse(args);
-          const result = await tools.apply(params);
-          return { content: [{ type: 'text', text: result }] };
-        }
-        case 'refaktor_undo': {
-          const params = UndoToolSchema.parse(args);
-          const result = await tools.undo(params);
-          return { content: [{ type: 'text', text: result }] };
-        }
-        case 'refaktor_redo': {
-          const params = RedoToolSchema.parse(args);
-          const result = await tools.redo(params);
-          return { content: [{ type: 'text', text: result }] };
-        }
-        case 'refaktor_history': {
-          const params = HistoryToolSchema.parse(args);
-          const result = await tools.history(params);
-          return { content: [{ type: 'text', text: result }] };
-        }
-        case 'refaktor_status': {
-          const params = StatusToolSchema.parse(args);
-          const result = await tools.status(params);
-          return { content: [{ type: 'text', text: result }] };
-        }
-        case 'refaktor_preview': {
-          const params = PreviewToolSchema.parse(args);
-          const result = await tools.preview(params);
-          return { content: [{ type: 'text', text: result }] };
-        }
-        default:
-          throw new Error(`Unknown tool: ${name}`);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: 'text', text: `Error: ${errorMessage}` }],
+          isError: true,
+        };
       }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      return {
-        content: [{ type: 'text', text: `Error: ${errorMessage}` }],
-        isError: true,
-      };
     }
-  });
+  );
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

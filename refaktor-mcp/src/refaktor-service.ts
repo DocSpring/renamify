@@ -8,7 +8,7 @@ export interface PlanOptions {
   includes?: string[];
   excludes?: string[];
   styles?: string[];
-  previewFormat?: 'table' | 'diff' | 'json' | 'summary';
+  preview?: 'table' | 'diff' | 'json' | 'summary';
   dryRun?: boolean;
   renameFiles?: boolean;
   renameDirs?: boolean;
@@ -52,41 +52,74 @@ export class RefaktorService {
    * Create a refactoring plan
    */
   async plan(options: PlanOptions): Promise<string> {
+    const args = this.buildPlanArgs(options);
+    return await this.executeCommand(args, 'plan');
+  }
+
+  private buildPlanArgs(options: PlanOptions): string[] {
     const args = ['plan', options.old, options.new];
 
-    // Add optional arguments
-    if (options.includes && options.includes.length > 0) {
-      for (const pattern of options.includes) {
+    this.addIncludeArgs(args, options.includes);
+    this.addExcludeArgs(args, options.excludes);
+    this.addStylesArg(args, options.styles);
+    this.addPreviewArg(args, options.preview);
+    this.addDryRunArg(args, options.dryRun);
+    this.addRenameArgs(args, options.renameFiles, options.renameDirs);
+
+    return args;
+  }
+
+  private addIncludeArgs(args: string[], includes?: string[]): void {
+    if (includes && includes.length > 0) {
+      for (const pattern of includes) {
         args.push('--include', pattern);
       }
     }
+  }
 
-    if (options.excludes && options.excludes.length > 0) {
-      for (const pattern of options.excludes) {
+  private addExcludeArgs(args: string[], excludes?: string[]): void {
+    if (excludes && excludes.length > 0) {
+      for (const pattern of excludes) {
         args.push('--exclude', pattern);
       }
     }
+  }
 
-    if (options.styles && options.styles.length > 0) {
-      args.push('--styles', options.styles.join(','));
+  private addStylesArg(args: string[], styles?: string[]): void {
+    if (styles && styles.length > 0) {
+      args.push('--styles', styles.join(','));
     }
+  }
 
-    if (options.previewFormat) {
-      args.push('--preview-format', options.previewFormat);
+  private addPreviewArg(args: string[], preview?: string): void {
+    if (preview) {
+      args.push('--preview', preview);
     }
+  }
 
-    if (options.dryRun) {
+  private addDryRunArg(args: string[], dryRun?: boolean): void {
+    if (dryRun) {
       args.push('--dry-run');
     }
+  }
 
-    if (options.renameFiles === false) {
+  private addRenameArgs(
+    args: string[],
+    renameFiles?: boolean,
+    renameDirs?: boolean
+  ): void {
+    if (renameFiles === false) {
       args.push('--no-rename-files');
     }
-
-    if (options.renameDirs === false) {
+    if (renameDirs === false) {
       args.push('--no-rename-dirs');
     }
+  }
 
+  private async executeCommand(
+    args: string[],
+    operation: string
+  ): Promise<string> {
     try {
       const result = await execa(this.refaktorPath, args);
       return result.stdout;
@@ -94,7 +127,7 @@ export class RefaktorService {
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
         throw new Error(
-          `Refaktor plan failed: ${execaError.stderr || execaError.message}`
+          `Refaktor ${operation} failed: ${execaError.stderr || execaError.message}`
         );
       }
       throw error;
@@ -105,6 +138,11 @@ export class RefaktorService {
    * Apply a refactoring plan
    */
   async apply(options: ApplyOptions): Promise<string> {
+    const args = this.buildApplyArgs(options);
+    return await this.executeCommand(args, 'apply');
+  }
+
+  private buildApplyArgs(options: ApplyOptions): string[] {
     const args = ['apply'];
 
     if (options.planPath) {
@@ -121,54 +159,21 @@ export class RefaktorService {
       args.push('--commit');
     }
 
-    try {
-      const result = await execa(this.refaktorPath, args);
-      return result.stdout;
-    } catch (error) {
-      if (error instanceof Error && 'stderr' in error) {
-        const execaError = error as ExecaError;
-        throw new Error(
-          `Refaktor apply failed: ${execaError.stderr || execaError.message}`
-        );
-      }
-      throw error;
-    }
+    return args;
   }
 
   /**
    * Undo a refactoring
    */
   async undo(id: string): Promise<string> {
-    try {
-      const result = await execa(this.refaktorPath, ['undo', id]);
-      return result.stdout;
-    } catch (error) {
-      if (error instanceof Error && 'stderr' in error) {
-        const execaError = error as ExecaError;
-        throw new Error(
-          `Refaktor undo failed: ${execaError.stderr || execaError.message}`
-        );
-      }
-      throw error;
-    }
+    return await this.executeCommand(['undo', id], 'undo');
   }
 
   /**
    * Redo a refactoring
    */
   async redo(id: string): Promise<string> {
-    try {
-      const result = await execa(this.refaktorPath, ['redo', id]);
-      return result.stdout;
-    } catch (error) {
-      if (error instanceof Error && 'stderr' in error) {
-        const execaError = error as ExecaError;
-        throw new Error(
-          `Refaktor redo failed: ${execaError.stderr || execaError.message}`
-        );
-      }
-      throw error;
-    }
+    return await this.executeCommand(['redo', id], 'redo');
   }
 
   /**
@@ -179,86 +184,77 @@ export class RefaktorService {
     if (limit !== undefined) {
       args.push('--limit', limit.toString());
     }
-
-    try {
-      const result = await execa(this.refaktorPath, args);
-      return result.stdout;
-    } catch (error) {
-      if (error instanceof Error && 'stderr' in error) {
-        const execaError = error as ExecaError;
-        throw new Error(
-          `Refaktor history failed: ${execaError.stderr || execaError.message}`
-        );
-      }
-      throw error;
-    }
+    return await this.executeCommand(args, 'history');
   }
 
   /**
    * Get refaktor status
    */
   async status(): Promise<string> {
-    try {
-      const result = await execa(this.refaktorPath, ['status']);
-      return result.stdout;
-    } catch (error) {
-      if (error instanceof Error && 'stderr' in error) {
-        const execaError = error as ExecaError;
-        throw new Error(
-          `Refaktor status failed: ${execaError.stderr || execaError.message}`
-        );
-      }
-      throw error;
-    }
+    return await this.executeCommand(['status'], 'status');
   }
 
   /**
    * Preview a plan without applying it
    */
   async preview(options: PreviewOptions): Promise<string> {
-    // Read the plan file and format it according to the requested format
-    let planPath: string;
+    const planPath = this.resolvePlanPath(options);
+    return await this.executePreview(planPath, options);
+  }
 
+  private resolvePlanPath(options: PreviewOptions): string {
     if (options.planPath) {
-      planPath = options.planPath;
-    } else if (options.planId) {
-      // Construct path from ID (assuming default .refaktor directory)
-      planPath = join('.refaktor', 'plans', `${options.planId}.json`);
-    } else {
-      // Use the latest plan
-      planPath = join('.refaktor', 'plan.json');
+      return options.planPath;
     }
+    if (options.planId) {
+      return join('.refaktor', 'plans', `${options.planId}.json`);
+    }
+    return join('.refaktor', 'plan.json');
+  }
 
+  private async executePreview(
+    planPath: string,
+    options: PreviewOptions
+  ): Promise<string> {
     try {
-      // Check if plan file exists
       await access(planPath);
-
-      // Use refaktor CLI to preview the plan with the specified format
-      const args = ['plan', '--preview-only'];
-
-      if (options.planPath || options.planId) {
-        args.push('--plan', planPath);
-      }
-
-      if (options.format) {
-        args.push('--preview-format', options.format);
-      }
-
+      const args = this.buildPreviewArgs(planPath, options);
       const result = await execa(this.refaktorPath, args);
       return result.stdout;
     } catch (error) {
-      if (error instanceof Error) {
-        if ('code' in error && error.code === 'ENOENT') {
-          throw new Error(`Plan file not found: ${planPath}`);
-        }
-        if ('stderr' in error) {
-          const execaError = error as ExecaError;
-          throw new Error(
-            `Refaktor preview failed: ${execaError.stderr || execaError.message}`
-          );
-        }
-      }
-      throw error;
+      return this.handlePreviewError(error, planPath);
     }
+  }
+
+  private buildPreviewArgs(
+    planPath: string,
+    options: PreviewOptions
+  ): string[] {
+    const args = ['plan', '--preview-only'];
+
+    if (options.planPath || options.planId) {
+      args.push('--plan', planPath);
+    }
+
+    if (options.format) {
+      args.push('--preview', options.format);
+    }
+
+    return args;
+  }
+
+  private handlePreviewError(error: unknown, planPath: string): never {
+    if (error instanceof Error) {
+      if ('code' in error && error.code === 'ENOENT') {
+        throw new Error(`Plan file not found: ${planPath}`);
+      }
+      if ('stderr' in error) {
+        const execaError = error as ExecaError;
+        throw new Error(
+          `Refaktor preview failed: ${execaError.stderr || execaError.message}`
+        );
+      }
+    }
+    throw error;
   }
 }

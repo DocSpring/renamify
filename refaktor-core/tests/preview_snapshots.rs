@@ -1,5 +1,5 @@
 use refaktor_core::{
-    preview::{render_plan_with_fixed_width, PreviewFormat},
+    preview::{render_plan_with_fixed_width, Preview},
     scanner::{MatchHunk, Plan, Rename, RenameKind, Stats},
     Style,
 };
@@ -106,7 +106,7 @@ fn create_sample_plan() -> Plan {
 #[test]
 fn test_table_format_snapshot() {
     let plan = create_sample_plan();
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Table, Some(false), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Table, Some(false), true);
     let normalized = normalize_paths(&output);
     insta::assert_snapshot!(normalized);
 }
@@ -114,7 +114,7 @@ fn test_table_format_snapshot() {
 #[test]
 fn test_table_format_with_color_snapshot() {
     let plan = create_sample_plan();
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Table, Some(true), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Table, Some(true), true);
     // For colored output, we'll snapshot it but CI tests will use non-colored
     insta::assert_snapshot!(output);
 }
@@ -122,7 +122,7 @@ fn test_table_format_with_color_snapshot() {
 #[test]
 fn test_diff_format_snapshot() {
     let plan = create_sample_plan();
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Diff, Some(false), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Diff, Some(false), true);
     let normalized = normalize_paths(&output);
     insta::assert_snapshot!(normalized);
 }
@@ -130,14 +130,14 @@ fn test_diff_format_snapshot() {
 #[test]
 fn test_diff_format_with_color_snapshot() {
     let plan = create_sample_plan();
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Diff, Some(true), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Diff, Some(true), true);
     insta::assert_snapshot!(output);
 }
 
 #[test]
 fn test_json_format_snapshot() {
     let plan = create_sample_plan();
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Json, Some(false), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Json, Some(false), true);
     // Parse and re-serialize to ensure consistent formatting
     let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
     let normalized = serde_json::to_string_pretty(&parsed).unwrap();
@@ -147,7 +147,7 @@ fn test_json_format_snapshot() {
 #[test]
 fn test_summary_format_snapshot() {
     let plan = create_sample_plan();
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Summary, Some(false), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Summary, Some(false), true);
     let normalized = normalize_paths(&output);
     insta::assert_snapshot!(normalized);
 }
@@ -173,7 +173,7 @@ fn test_empty_plan_table_snapshot() {
         version: "1.0.0".to_string(),
     };
 
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Table, Some(false), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Table, Some(false), true);
     insta::assert_snapshot!(output);
 }
 
@@ -198,7 +198,7 @@ fn test_empty_plan_diff_snapshot() {
         version: "1.0.0".to_string(),
     };
 
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Diff, Some(false), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Diff, Some(false), true);
     insta::assert_snapshot!(output);
 }
 
@@ -251,7 +251,7 @@ fn test_root_directory_rename_handling() {
         version: "1.0.0".to_string(),
     };
 
-    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Table, Some(false), true);
+    let output = render_plan_with_fixed_width(&plan, Preview::Table, Some(false), true);
     let normalized = normalize_paths(&output);
 
     // Verify that the subdirectory rename is in the table

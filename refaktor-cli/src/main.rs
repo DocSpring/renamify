@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use refaktor_core::{
     apply_plan, format_history, get_status, redo_refactoring, scan_repository_multi,
     undo_refactoring, write_plan, write_preview, ApplyOptions, Config, History, LockFile, Plan,
-    PlanOptions, PreviewFormat, Style,
+    PlanOptions, Preview, Style,
 };
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
@@ -124,7 +124,7 @@ enum Commands {
 
         /// Preview output format (defaults from config if not specified)
         #[arg(long, value_enum)]
-        preview_format: Option<PreviewFormatArg>,
+        preview: Option<PreviewArg>,
 
         /// Output path for the plan
         #[arg(long, default_value = ".refaktor/plan.json")]
@@ -240,7 +240,7 @@ enum Commands {
 
         /// Preview output format (defaults from config if not specified)
         #[arg(long, value_enum)]
-        preview_format: Option<PreviewFormatArg>,
+        preview: Option<PreviewArg>,
     },
 
     /// Initialize refaktor in the current repository
@@ -318,7 +318,7 @@ enum Commands {
 
         /// Show preview before confirmation prompt
         #[arg(long, value_enum)]
-        preview: Option<PreviewFormatArg>,
+        preview: Option<PreviewArg>,
 
         /// Commit changes to git after applying
         #[arg(long)]
@@ -382,7 +382,7 @@ impl From<StyleArg> for Style {
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
-enum PreviewFormatArg {
+enum PreviewArg {
     Table,
     Diff,
     Json,
@@ -390,7 +390,7 @@ enum PreviewFormatArg {
     None,
 }
 
-impl PreviewFormatArg {
+impl PreviewArg {
     fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "table" => Some(Self::Table),
@@ -403,14 +403,14 @@ impl PreviewFormatArg {
     }
 }
 
-impl From<PreviewFormatArg> for PreviewFormat {
-    fn from(arg: PreviewFormatArg) -> Self {
+impl From<PreviewArg> for Preview {
+    fn from(arg: PreviewArg) -> Self {
         match arg {
-            PreviewFormatArg::Table => Self::Table,
-            PreviewFormatArg::Diff => Self::Diff,
-            PreviewFormatArg::Json => Self::Json,
-            PreviewFormatArg::Summary => Self::Summary,
-            PreviewFormatArg::None => Self::Table, // Default to table if None is somehow converted
+            PreviewArg::Table => Self::Table,
+            PreviewArg::Diff => Self::Diff,
+            PreviewArg::Json => Self::Json,
+            PreviewArg::Summary => Self::Summary,
+            PreviewArg::None => Self::Table, // Default to table if None is somehow converted
         }
     }
 }
@@ -469,17 +469,14 @@ fn main() {
             include_styles,
             only_styles,
             exclude_match,
-            preview_format,
+            preview,
             plan_out,
             dry_run,
         } => {
             // Use preview format from CLI arg or config default
-            let format = preview_format
-                .map(std::convert::Into::into)
-                .unwrap_or_else(|| {
-                    PreviewFormat::from_str(&config.defaults.preview_format)
-                        .unwrap_or(PreviewFormat::Diff)
-                });
+            let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
+                Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
+            });
 
             handle_plan(
                 &old,
@@ -515,15 +512,12 @@ fn main() {
             include_styles,
             only_styles,
             exclude_match,
-            preview_format,
+            preview,
         } => {
             // Use preview format from CLI arg or config default
-            let format = preview_format
-                .map(std::convert::Into::into)
-                .unwrap_or_else(|| {
-                    PreviewFormat::from_str(&config.defaults.preview_format)
-                        .unwrap_or(PreviewFormat::Diff)
-                });
+            let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
+                Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
+            });
 
             handle_plan(
                 &old,
@@ -594,8 +588,7 @@ fn main() {
             dry_run,
         } => {
             // Use preview format from CLI arg or config default
-            let format =
-                preview.or_else(|| PreviewFormatArg::from_str(&config.defaults.preview_format));
+            let format = preview.or_else(|| PreviewArg::from_str(&config.defaults.preview_format));
 
             rename::handle_rename(
                 &old,
@@ -658,7 +651,7 @@ fn handle_plan(
     include_styles: Vec<StyleArg>,
     only_styles: Vec<StyleArg>,
     exclude_match: Vec<String>,
-    preview_format: PreviewFormat,
+    preview: Preview,
     plan_out: PathBuf,
     dry_run: bool,
     use_color: bool,
@@ -740,13 +733,13 @@ fn handle_plan(
         .context("Failed to scan repository")?;
 
     // Show preview
-    write_preview(&plan, preview_format, Some(use_color)).context("Failed to write preview")?;
+    write_preview(&plan, preview, Some(use_color)).context("Failed to write preview")?;
 
     // Write plan unless dry-run
     if !dry_run {
         write_plan(&plan, &plan_out).context("Failed to write plan")?;
 
-        if preview_format != PreviewFormat::Json {
+        if preview != Preview::Json {
             eprintln!("\nPlan written to: {}", plan_out.display());
         }
     }

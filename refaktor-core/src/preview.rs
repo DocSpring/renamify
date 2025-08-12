@@ -19,14 +19,14 @@ fn is_root_directory_rename(rename: &Rename) -> bool {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PreviewFormat {
+pub enum Preview {
     Table,
     Diff,
     Json,
     Summary,
 }
 
-impl std::str::FromStr for PreviewFormat {
+impl std::str::FromStr for Preview {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -57,24 +57,24 @@ pub fn should_use_color(use_color: Option<bool>) -> bool {
 }
 
 /// Render the plan in the specified format
-pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> String {
+pub fn render_plan(plan: &Plan, format: Preview, use_color: Option<bool>) -> String {
     render_plan_with_fixed_width(plan, format, use_color, false)
 }
 
 // Mainly for tests without a tty
 pub fn render_plan_with_fixed_width(
     plan: &Plan,
-    format: PreviewFormat,
+    format: Preview,
     use_color: Option<bool>,
     fixed_width: bool,
 ) -> String {
     let use_color = should_use_color(use_color);
 
     match format {
-        PreviewFormat::Table => render_table_with_fixed_width(plan, use_color, fixed_width),
-        PreviewFormat::Diff => render_diff(plan, use_color),
-        PreviewFormat::Json => render_json(plan),
-        PreviewFormat::Summary => render_summary(plan),
+        Preview::Table => render_table_with_fixed_width(plan, use_color, fixed_width),
+        Preview::Diff => render_diff(plan, use_color),
+        Preview::Json => render_json(plan),
+        Preview::Summary => render_summary(plan),
     }
 }
 
@@ -503,7 +503,7 @@ fn render_summary(plan: &Plan) -> String {
 }
 
 /// Write plan preview to stdout
-pub fn write_preview(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<()> {
+pub fn write_preview(plan: &Plan, format: Preview, use_color: Option<bool>) -> Result<()> {
     let output = render_plan(plan, format, use_color);
     let mut stdout = io::stdout();
     write!(stdout, "{}", output)?;
@@ -577,22 +577,16 @@ mod tests {
     }
 
     #[test]
-    fn test_preview_format_from_str() {
+    fn test_preview_from_str() {
         use std::str::FromStr;
 
-        assert_eq!(PreviewFormat::from_str("table"), Ok(PreviewFormat::Table));
-        assert_eq!(PreviewFormat::from_str("diff"), Ok(PreviewFormat::Diff));
-        assert_eq!(PreviewFormat::from_str("json"), Ok(PreviewFormat::Json));
-        assert_eq!(
-            PreviewFormat::from_str("summary"),
-            Ok(PreviewFormat::Summary)
-        );
-        assert_eq!(PreviewFormat::from_str("TABLE"), Ok(PreviewFormat::Table));
-        assert_eq!(
-            PreviewFormat::from_str("SUMMARY"),
-            Ok(PreviewFormat::Summary)
-        );
-        assert!(PreviewFormat::from_str("invalid").is_err());
+        assert_eq!(Preview::from_str("table"), Ok(Preview::Table));
+        assert_eq!(Preview::from_str("diff"), Ok(Preview::Diff));
+        assert_eq!(Preview::from_str("json"), Ok(Preview::Json));
+        assert_eq!(Preview::from_str("summary"), Ok(Preview::Summary));
+        assert_eq!(Preview::from_str("TABLE"), Ok(Preview::Table));
+        assert_eq!(Preview::from_str("SUMMARY"), Ok(Preview::Summary));
+        assert!(Preview::from_str("invalid").is_err());
     }
 
     #[test]
@@ -766,11 +760,11 @@ mod tests {
         std::env::remove_var("NO_COLOR");
 
         // Explicit true should produce colors even in non-terminal environment
-        let output = render_plan(&plan, PreviewFormat::Table, Some(true));
+        let output = render_plan(&plan, Preview::Table, Some(true));
 
         // Test with NO_COLOR set
         std::env::set_var("NO_COLOR", "1");
-        let output_no_color = render_plan(&plan, PreviewFormat::Table, Some(false));
+        let output_no_color = render_plan(&plan, Preview::Table, Some(false));
 
         // Restore original NO_COLOR state
         match original_no_color {
@@ -854,13 +848,13 @@ mod tests {
         std::env::remove_var("NO_COLOR");
 
         // All formats should respect explicit color settings consistently
-        let table_colored = render_plan(&plan, PreviewFormat::Table, Some(true));
-        let diff_colored = render_plan(&plan, PreviewFormat::Diff, Some(true));
+        let table_colored = render_plan(&plan, Preview::Table, Some(true));
+        let diff_colored = render_plan(&plan, Preview::Diff, Some(true));
 
         // Set NO_COLOR for disabled test
         std::env::set_var("NO_COLOR", "1");
-        let table_no_color = render_plan(&plan, PreviewFormat::Table, Some(false));
-        let diff_no_color = render_plan(&plan, PreviewFormat::Diff, Some(false));
+        let table_no_color = render_plan(&plan, Preview::Table, Some(false));
+        let diff_no_color = render_plan(&plan, Preview::Diff, Some(false));
 
         // Restore original NO_COLOR state
         match original_no_color {
@@ -890,8 +884,8 @@ mod tests {
         );
 
         // JSON format should never have colors regardless of setting
-        let json_colored = render_plan(&plan, PreviewFormat::Json, Some(true));
-        let json_no_color = render_plan(&plan, PreviewFormat::Json, Some(false));
+        let json_colored = render_plan(&plan, Preview::Json, Some(true));
+        let json_no_color = render_plan(&plan, Preview::Json, Some(false));
 
         assert!(
             !json_colored.contains("\u{1b}["),

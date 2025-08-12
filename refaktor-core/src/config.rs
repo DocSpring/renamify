@@ -11,8 +11,8 @@ pub struct Config {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefaultsConfig {
-    /// Default preview format: "table", "diff", or "json"
-    #[serde(default = "default_preview_format")]
+    /// Default preview format: "table", "diff", "json", or "summary"
+    #[serde(default = "default_preview")]
     pub preview_format: String,
 
     /// Whether to rename files by default
@@ -35,7 +35,7 @@ pub struct DefaultsConfig {
 impl Default for DefaultsConfig {
     fn default() -> Self {
         Self {
-            preview_format: default_preview_format(),
+            preview_format: default_preview(),
             rename_files: true,
             rename_dirs: true,
             unrestricted_level: 0,
@@ -44,7 +44,7 @@ impl Default for DefaultsConfig {
     }
 }
 
-fn default_preview_format() -> String {
+fn default_preview() -> String {
     "diff".to_string()
 }
 

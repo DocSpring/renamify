@@ -1,5 +1,5 @@
 ---
-title: Refactoring --preview-format
+title: Refactoring --preview
 description: A case study showing how to rename a command-line argument across a codebase
 ---
 
@@ -75,9 +75,44 @@ I ran the tests and they all passed.
 
 ## Step 2: Renaming the CLI Argument
 
-Now I was able to rename the CLI argument with worrying about these test cases.
+Now I was able to rename the CLI argument:
 
 ```bash
-./target/release/refaktor rename preview_format foo_bar \
-    refaktor-core/src/cli.rs
+./target/release/refaktor rename preview-format preview
 ```
+
+Some of the changes:
+
+```diff
+-impl From<PreviewFormatArg> for PreviewFormat {
+-    fn from(arg: PreviewFormatArg) -> Self {
++impl From<PreviewArg> for Preview {
++    fn from(arg: PreviewArg) -> Self {
+         match arg {
+-            PreviewFormatArg::Table => Self::Table,
+-            PreviewFormatArg::Diff => Self::Diff,
+-            PreviewFormatArg::Json => Self::Json,
+-            PreviewFormatArg::Summary => Self::Summary,
+-            PreviewFormatArg::None => Self::Table, // Default to table if None is somehow converted
++            PreviewArg::Table => Self::Table,
++            PreviewArg::Diff => Self::Diff,
++            PreviewArg::Json => Self::Json,
++            PreviewArg::Summary => Self::Summary,
++            PreviewArg::None => Self::Table, // Default to table if None is somehow converted
+         }
+     }
+ 
+ ...
+
+ @@ -658,7 +658,7 @@ fn handle_plan(
+     include_styles: Vec<StyleArg>,
+     only_styles: Vec<StyleArg>,
+     exclude_match: Vec<String>,
+-    preview_format: PreviewFormat,
++    preview: Preview,
+     plan_out: PathBuf,
+     dry_run: bool,
+     use_color: bool,
+```
+
+A few minor issues to tidy up, then everything was done and all the tests were passing.

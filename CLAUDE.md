@@ -110,7 +110,7 @@ Commands:
   - `--include` `--exclude` `--respect-gitignore` (default true, respects all ignore files)
   - `--rename-files` `--rename-dirs` (default true)
   - `--styles=<list>`
-  - `--preview-format table|diff|json`
+  - `--preview table|diff|json`
   - `--plan-out`
   - `-u/-uu/-uuu` (unrestricted levels to control ignore file handling)
 - `refaktor apply [--plan PATH | --id ID] [--atomic true] [--commit]`

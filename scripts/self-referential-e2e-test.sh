@@ -1,49 +1,13 @@
-name: E2E Tests
+#!/usr/bin/env bash
+set -euo pipefail
 
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+rm -rf /tmp/refaktor-e2e-test
+mkdir -p /tmp/refaktor-e2e-test
+cd /tmp/refaktor-e2e-test
 
-env:
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
+git clone https://github.com/refaktor/refaktor.git
+cd refaktor
 
-jobs:
-  self-referential-demo:
-    name: Self-Referential Demo
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          # - windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install ripgrep
-        run: |
-          if ! command -v rg &> /dev/null; then
-            echo "Installing ripgrep..."
-            if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-              sudo apt-get update && sudo apt-get install -y ripgrep
-            elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-              brew install ripgrep
-            else  # windows
-              choco install ripgrep
-            fi
-          fi
-        shell: bash
 
       # For these tests, we want ripgrep to ignore the same files as refaktor
       - name: Setup .rgignore

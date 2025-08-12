@@ -159,7 +159,7 @@ fn test_plan_command_json_format() {
             "plan",
             "old_name",
             "new_name",
-            "--preview-format",
+            "--preview",
             "json",
             "--dry-run",
         ])
@@ -182,7 +182,7 @@ fn test_plan_command_diff_format() {
             "plan",
             "old_name",
             "new_name",
-            "--preview-format",
+            "--preview",
             "diff",
             "--dry-run",
         ])
@@ -206,7 +206,7 @@ fn test_plan_command_table_format() {
             "plan",
             "old_name",
             "new_name",
-            "--preview-format",
+            "--preview",
             "table",
             "--dry-run",
         ])
@@ -623,9 +623,9 @@ fn test_invalid_style_arg() {
 }
 
 #[test]
-fn test_invalid_preview_format() {
+fn test_invalid_preview() {
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.args(["plan", "old", "new", "--preview-format", "invalid"])
+    cmd.args(["plan", "old", "new", "--preview", "invalid"])
         .assert()
         .failure();
 }

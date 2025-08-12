@@ -37,7 +37,7 @@ fn test_diff_merging_same_line() {
     // Render as diff
     let diff_output = refaktor_core::preview::render_plan(
         &plan,
-        refaktor_core::preview::PreviewFormat::Diff,
+        refaktor_core::preview::Preview::Diff,
         Some(false), // No color for easier testing
     );
 

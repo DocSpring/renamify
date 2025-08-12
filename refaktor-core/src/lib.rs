@@ -34,7 +34,7 @@ pub use history::{
 };
 pub use lock::LockFile;
 pub use pattern::{build_pattern, find_matches, is_boundary, Match, MatchPattern};
-pub use preview::{render_plan, write_preview, PreviewFormat};
+pub use preview::{render_plan, write_preview, Preview};
 pub use rename::{
     detect_case_insensitive_fs, plan_renames_with_conflicts, ConflictKind, RenameConflict,
     RenamePlan,

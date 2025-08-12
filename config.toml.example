@@ -2,7 +2,7 @@
 # Copy this file to .refaktor/config.toml to customize defaults
 
 [defaults]
-# Default preview format: "table", "diff", or "json"
+# Default preview format: "table", "diff", "json", or "summary"
 preview_format = "diff"
 
 # Whether to rename files by default

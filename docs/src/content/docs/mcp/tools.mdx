@@ -20,7 +20,7 @@ Creates a comprehensive refactoring plan that identifies all case variations of 
 | `includes` | string[] | No | All files | Glob patterns to include |
 | `excludes` | string[] | No | None | Glob patterns to exclude |
 | `styles` | string[] | No | All styles | Case styles to detect |
-| `previewFormat` | string | No | `summary` | Output format |
+| `preview` | string | No | `summary` | Output format |
 | `dryRun` | boolean | No | `false` | Preview without saving |
 | `renameFiles` | boolean | No | `true` | Rename matching files |
 | `renameDirs` | boolean | No | `true` | Rename matching directories |
@@ -54,7 +54,7 @@ Arguments: {
   "includes": ["src/**/*.ts", "tests/**/*.ts"],
   "excludes": ["node_modules/**", "dist/**"],
   "styles": ["camel", "pascal", "snake"],
-  "previewFormat": "summary",
+  "preview": "summary",
   "dryRun": false
 }
 ```
