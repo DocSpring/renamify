@@ -116,13 +116,11 @@ fn render_table_with_fixed_width(plan: &Plan, use_color: bool, fixed_width: bool
     }
 
     // Group matches by file
-    let mut file_stats: HashMap<&Path, (usize, Vec<&str>)> = HashMap::new();
+    let mut file_stats: HashMap<&Path, (usize, HashMap<String, usize>)> = HashMap::new();
     for hunk in &plan.matches {
-        let entry = file_stats.entry(&hunk.file).or_insert((0, Vec::new()));
+        let entry = file_stats.entry(&hunk.file).or_insert((0, HashMap::new()));
         entry.0 += 1;
-        if !entry.1.contains(&hunk.variant.as_str()) {
-            entry.1.push(&hunk.variant);
-        }
+        *entry.1.entry(hunk.variant.clone()).or_insert(0) += 1;
     }
 
     // Sort files for deterministic output
@@ -131,7 +129,7 @@ fn render_table_with_fixed_width(plan: &Plan, use_color: bool, fixed_width: bool
 
     // Add content rows
     for file in sorted_files {
-        let (count, variants) = &file_stats[&file];
+        let (count, variant_counts) = &file_stats[&file];
         // Make path relative to current directory for cleaner display
         let file_str = match std::env::current_dir()
             .ok()
@@ -140,7 +138,14 @@ fn render_table_with_fixed_width(plan: &Plan, use_color: bool, fixed_width: bool
             Some(relative_path) => relative_path.display().to_string(),
             None => file.display().to_string(),
         };
-        let variants_str = variants.join(", ");
+        // Show variants with their per-file counts in parentheses
+        let mut variants_with_counts: Vec<String> = variant_counts
+            .iter()
+            .map(|(variant, count)| format!("{} ({})", variant, count))
+            .collect();
+        // Sort for deterministic output
+        variants_with_counts.sort();
+        let variants_str = variants_with_counts.join(", ");
 
         if use_color {
             table.add_row(vec![
