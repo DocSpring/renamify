@@ -13,14 +13,11 @@ This guide will help you install and configure the Refaktor MCP Server for use w
 
 Before installing the MCP Server, you need:
 
-<CardGrid>
-  <Card title="Refaktor CLI" icon="terminal">
-    The core Refaktor command-line tool must be installed and accessible
-  </Card>
-  <Card title="Node.js 18+" icon="node">
-    Required to run the MCP Server (check with `node --version`)
-  </Card>
-</CardGrid>
+### Refaktor CLI
+The core Refaktor command-line tool must be installed and accessible
+
+### Node.js 18+
+Required to run the MCP Server (check with `node --version`)
 
 ## Step 1: Install Refaktor CLI
 
@@ -76,29 +73,26 @@ Before installing the MCP Server, you need:
   </TabItem>
 </Tabs>
 
-## Step 2: Install the MCP Server
+## Step 2: Configure the MCP Server
 
-You have two options for installing the MCP Server:
+### Recommended: Use with npx (No Installation Required)
 
-### Option A: Global Installation (Recommended)
+The simplest way to use the MCP Server is with npx, which requires no installation:
+
+```bash
+# This command will be used in your MCP configuration
+npx @refaktor/mcp-server
+```
+
+This approach ensures you always use the latest version and avoids global package management issues.
+
+### Alternative: Global Installation
+
+If you prefer a global installation:
 
 ```bash
 # Install globally with npm
 npm install -g @refaktor/mcp-server
-
-# Or with pnpm
-pnpm add -g @refaktor/mcp-server
-
-# Or with yarn
-yarn global add @refaktor/mcp-server
-```
-
-### Option B: Use with npx (No Installation)
-
-You can use the MCP Server directly with npx without installing:
-```bash
-# This will be used in your MCP configuration
-npx @refaktor/mcp-server
 ```
 
 ## Step 3: Configure Your AI Assistant
@@ -117,17 +111,6 @@ npx @refaktor/mcp-server
         "refaktor": {
           "command": "npx",
           "args": ["-y", "@refaktor/mcp-server"]
-        }
-      }
-    }
-    ```
-    
-    Or if you installed globally:
-    ```json
-    {
-      "mcpServers": {
-        "refaktor": {
-          "command": "refaktor-mcp"
         }
       }
     }
@@ -311,16 +294,8 @@ mv refaktor ~/.local/bin/
 
 ## Next Steps
 
-Now that you have the MCP Server installed, learn how to use it:
+Now that you have the MCP Server configured:
 
-<CardGrid>
-  <Card title="Configuration" icon="setting" href="/refaktor/mcp/configuration">
-    Customize the MCP Server settings
-  </Card>
-  <Card title="Tools Reference" icon="document" href="/refaktor/mcp/tools">
-    Learn about each available tool
-  </Card>
-  <Card title="Usage Examples" icon="rocket" href="/refaktor/mcp/examples">
-    See real-world refactoring examples
-  </Card>
-</CardGrid>
+- [**Configuration**](/refaktor/mcp/configuration) - Customize the MCP Server settings
+- [**Tools Reference**](/refaktor/mcp/tools) - Learn about each available tool
+- [**Usage Examples**](/refaktor/mcp/examples) - See real-world refactoring examples

@@ -3,11 +3,30 @@ title: MCP Server Overview
 description: Use Refaktor with AI assistants through the Model Context Protocol
 ---
 
-import { Card, CardGrid, LinkCard, Steps } from '@astrojs/starlight/components';
+import { LinkCard, Steps, Aside } from '@astrojs/starlight/components';
 
 # MCP Server Overview
 
-The Refaktor MCP Server enables AI assistants like Claude, Cursor, and other MCP-compatible tools to perform intelligent, case-aware refactoring operations on your codebase.
+The Refaktor MCP Server enables AI assistants to perform intelligent, case-aware refactoring operations on your codebase.
+
+## Quick Start
+
+```bash
+npx @refaktor/mcp-server
+```
+
+Add this to your AI assistant's MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "refaktor": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"]
+    }
+  }
+}
+```
 
 ## What is MCP?
 
@@ -20,20 +39,17 @@ The **Model Context Protocol (MCP)** is an open standard that enables AI assista
 
 ## Why Use the MCP Server?
 
-<CardGrid>
-  <Card title="AI-Native Integration" icon="robot">
-    Purpose-built for AI agents with structured outputs and clear feedback
-  </Card>
-  <Card title="Safe by Default" icon="shield">
-    Plan-first workflow ensures you review changes before applying
-  </Card>
-  <Card title="Case Intelligence" icon="brain">
-    Automatically handles all naming conventions in a single operation
-  </Card>
-  <Card title="Atomic Operations" icon="atom">
-    All changes succeed together or roll back completely
-  </Card>
-</CardGrid>
+### AI-Native Integration
+Purpose-built for AI agents with structured outputs and clear feedback
+
+### Safe by Default
+Plan-first workflow ensures you review changes before applying
+
+### Case Intelligence
+Automatically handles all naming conventions in a single operation
+
+### Atomic Operations
+All changes succeed together or roll back completely
 
 ## Key Features
 
@@ -71,31 +87,15 @@ Every refactoring operation includes multiple safety layers:
 
 The MCP Server provides 7 specialized tools:
 
-<CardGrid>
-  <Card title="refaktor_plan">
-    Create a refactoring plan with case-aware transformations
-  </Card>
-  <Card title="refaktor_apply">
-    Execute a plan to make the actual changes
-  </Card>
-  <Card title="refaktor_undo">
-    Revert a previously applied refactoring
-  </Card>
-  <Card title="refaktor_redo">
-    Re-apply an undone refactoring
-  </Card>
-  <Card title="refaktor_history">
-    View past refactoring operations
-  </Card>
-  <Card title="refaktor_status">
-    Check current state and pending plans
-  </Card>
-  <Card title="refaktor_preview">
-    Review a plan in different formats
-  </Card>
-</CardGrid>
+- **refaktor_plan** - Create a refactoring plan with case-aware transformations
+- **refaktor_apply** - Execute a plan to make the actual changes
+- **refaktor_undo** - Revert a previously applied refactoring
+- **refaktor_redo** - Re-apply an undone refactoring
+- **refaktor_history** - View past refactoring operations
+- **refaktor_status** - Check current state and pending plans
+- **refaktor_preview** - Review a plan in different formats
 
-## Quick Start
+## Installation Steps
 
 <Steps>
 1. **Install the Refaktor CLI**
@@ -104,25 +104,20 @@ The MCP Server provides 7 specialized tools:
    # or download from GitHub releases
    ```
 
-2. **Install the MCP Server**
-   ```bash
-   npm install -g @refaktor/mcp-server
-   ```
-
-3. **Configure your AI assistant**
-   Add to your MCP configuration (e.g., Claude Desktop or Cursor):
+2. **Configure your AI assistant**
+   Add the Refaktor MCP server using npx (no installation needed):
    ```json
    {
      "mcpServers": {
        "refaktor": {
          "command": "npx",
-         "args": ["@refaktor/mcp-server"]
+         "args": ["-y", "@refaktor/mcp-server"]
        }
      }
    }
    ```
 
-4. **Start refactoring!**
+3. **Start refactoring!**
    Ask your AI assistant to use Refaktor for renaming operations
 </Steps>
 
