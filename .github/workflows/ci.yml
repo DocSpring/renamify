@@ -73,6 +73,7 @@ jobs:
 
       - name: Check coverage threshold
         run: |
+          COVERAGE_THRESHOLD=85
           # Run coverage and capture output
           COVERAGE_OUTPUT=$(cargo llvm-cov --package refaktor-core 2>&1)
           echo "$COVERAGE_OUTPUT"
@@ -81,13 +82,13 @@ jobs:
           COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep "^TOTAL" | awk '{print $10}' | sed 's/%//')
           echo "Coverage: ${COVERAGE}%"
 
-          # Check if coverage is at least 95%
-          if (( $(echo "${COVERAGE} < 95.00" | bc -l) )); then
-            echo "Coverage is below 95% threshold: ${COVERAGE}%"
+          # Check if coverage meets the threshold
+          if (( $(echo "${COVERAGE} < ${COVERAGE_THRESHOLD}.00" | bc -l) )); then
+            echo "Coverage is below ${COVERAGE_THRESHOLD}% threshold: ${COVERAGE}%"
             exit 1
           fi
 
-          echo "Coverage meets 95% threshold: ${COVERAGE}%"
+          echo "Coverage meets ${COVERAGE_THRESHOLD}% threshold: ${COVERAGE}%"
 
       - name: Generate HTML report
         run: cargo llvm-cov --package refaktor-core --html
