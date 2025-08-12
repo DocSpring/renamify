@@ -11,15 +11,17 @@ This directory contains the Refaktor documentation website built with [Starlight
 
 ## 🛠️ Development
 
+We use [pnpm](https://pnpm.io/) to manage dependencies.
+
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 ```
 
 The documentation is automatically built and deployed from the `main` branch.
