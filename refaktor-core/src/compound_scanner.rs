@@ -51,6 +51,7 @@ pub fn find_enhanced_matches(
                 .unwrap_or_default()
                 .to_string();
 
+            #[allow(clippy::naive_bytecount)]
             let line_number = content[..m.start()].iter().filter(|&&b| b == b'\n').count() + 1;
 
             let line_start = content[..m.start()]
@@ -91,6 +92,7 @@ pub fn find_enhanced_matches(
             // We found a compound match!
             let compound = &compound_matches[0]; // Take the first match
 
+            #[allow(clippy::naive_bytecount)]
             let line_number = content[..start].iter().filter(|&&b| b == b'\n').count() + 1;
 
             let line_start = content[..start]
@@ -165,7 +167,7 @@ pub fn enhanced_matches_to_hunks(
         hunks.push(MatchHunk {
             file: path.to_path_buf(),
             line: m.line as u64,
-            col: m.column as u32,
+            col: u32::try_from(m.column).unwrap_or(u32::MAX),
             variant: before.clone(),
             before,
             after,

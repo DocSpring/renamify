@@ -59,7 +59,7 @@ temp_dir.child(".refaktor").create_dir_all().unwrap();
             h.before == "refaktor"
                 && h.line_before
                     .as_ref()
-                    .map_or(false, |l| l.contains(".refaktor"))
+                    .is_some_and(|l| l.contains(".refaktor"))
         })
         .collect();
     assert_eq!(
@@ -72,7 +72,7 @@ temp_dir.child(".refaktor").create_dir_all().unwrap();
         assert!(
             hunk.line_after
                 .as_ref()
-                .map_or(false, |l| l.contains(".renamed_refactoring_tool")),
+                .is_some_and(|l| l.contains(".renamed_refactoring_tool")),
             "Should replace .refaktor with .renamed_refactoring_tool"
         );
     }
@@ -86,13 +86,13 @@ fn test_import_statement_replacement() {
     // Create test file with import statements like in the actual code
     let test_file = root.join("main.rs");
     std::fs::write(&test_file,
-        r#"use refaktor_core::{
+        r"use refaktor_core::{
     apply_plan, ApplyOptions, Plan, PlanOptions, scan_repository, write_plan, 
     write_preview, Style, History, format_history, get_status, undo_refactoring, redo_refactoring,
 };
 let preview_output = refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;
 coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
-"#
+"
     ).unwrap();
 
     let options = PlanOptions {
@@ -147,7 +147,7 @@ fn test_binary_name_in_markdown() {
     let test_file = root.join("README.md");
     std::fs::write(
         &test_file,
-        r#"## CLI contract
+        r"## CLI contract
 
 Binary: `refaktor`
 
@@ -159,7 +159,7 @@ Commands:
 - `refaktor redo <id>`
 - `refaktor history [--limit N]`
 - `refaktor status`
-"#,
+",
     )
     .unwrap();
 
@@ -204,8 +204,8 @@ fn test_multiple_variants_same_line() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        r#"        preview_format: PreviewFormatArg,
-impl From<PreviewFormatArg> for PreviewFormat {"#,
+        r"        preview_format: PreviewFormatArg,
+impl From<PreviewFormatArg> for PreviewFormat {",
     )
     .unwrap();
 

@@ -46,10 +46,7 @@ pub fn handle_rename(
 
     // Build the list of styles to use based on exclude, include, and only options
     let styles = {
-        if !only_styles.is_empty() {
-            // If --only-styles is specified, use only those styles
-            Some(only_styles.into_iter().map(Into::into).collect())
-        } else {
+        if only_styles.is_empty() {
             // Start with the default styles
             let default_styles = vec![
                 StyleArg::Snake,
@@ -77,6 +74,9 @@ pub fn handle_rename(
             } else {
                 Some(active_styles.into_iter().map(Into::into).collect())
             }
+        } else {
+            // If --only-styles is specified, use only those styles
+            Some(only_styles.into_iter().map(Into::into).collect())
         }
     };
 
@@ -110,7 +110,7 @@ pub fn handle_rename(
         .collect();
 
     let mut plan = scan_repository_multi(&resolved_paths, old, new, &options)
-        .with_context(|| format!("Failed to scan repository for '{}' -> '{}'", old, new))?;
+        .with_context(|| format!("Failed to scan repository for '{old}' -> '{new}'"))?;
 
     // Separate root directory renames from other renames
     // For multi-path, check if a rename matches any of the resolved paths
@@ -181,8 +181,8 @@ pub fn handle_rename(
     if let Some(preview_format) = preview {
         if preview_format != PreviewFormatArg::None {
             let preview_output =
-                refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;
-            println!("{}", preview_output);
+                refaktor_core::preview::render_plan(&plan, preview_format.into(), Some(use_color));
+            println!("{preview_output}");
             println!(); // Add spacing before summary
         }
     }
@@ -231,11 +231,7 @@ pub fn handle_rename(
         commit,
         force: force_with_conflicts,
         skip_symlinks: false,
-        log_file: Some(
-            refaktor_dir
-                .join("logs")
-                .join(format!("{}.log", history_id)),
-        ),
+        log_file: Some(refaktor_dir.join("logs").join(format!("{history_id}.log"))),
     };
 
     apply_plan(&plan, &apply_options).context("Failed to apply refactoring plan")?;
@@ -251,7 +247,7 @@ pub fn handle_rename(
     if commit {
         println!("✓ Changes committed to git");
     }
-    println!("Undo with: refaktor undo {}", history_id);
+    println!("Undo with: refaktor undo {history_id}");
 
     // If there were root renames that we didn't perform, show the next step snippet
     if !root_renames.is_empty() && !rename_root && !no_rename_root {
@@ -335,13 +331,12 @@ fn print_root_rename_snippet(root_renames: &[refaktor_core::scanner::Rename]) ->
     {
         println!("# POSIX shell:");
         println!("cd ..");
-        println!("mv \"{}\" \"{}\"", old_name, new_name);
-        println!("cd \"{}\"", new_name);
+        println!("mv \"{old_name}\" \"{new_name}\"");
+        println!("cd \"{new_name}\"");
         println!();
         println!("# Robust variant:");
         println!(
-            "parent=\"$(dirname \"$PWD\")\"; old=\"$(basename \"$PWD\")\"; new=\"{}\"",
-            new_name
+            "parent=\"$(dirname \"$PWD\")\"; old=\"$(basename \"$PWD\")\"; new=\"{new_name}\""
         );
         println!("cd \"$parent\" && mv \"$old\" \"$new\" && cd \"$new\"");
     }

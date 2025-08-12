@@ -41,9 +41,8 @@ pub struct RenamePlan {
 /// Check if the filesystem at the given path is case-insensitive
 pub fn detect_case_insensitive_fs(path: &Path) -> bool {
     // Try to create a temporary directory in the target location
-    let temp_dir = match TempDir::new_in(path) {
-        Ok(dir) => dir,
-        Err(_) => return false, // Assume case-sensitive if we can't test
+    let Ok(temp_dir) = TempDir::new_in(path) else {
+        return false; // Assume case-sensitive if we can't test
     };
 
     let test_file_lower = temp_dir.path().join("test_case_a");
@@ -94,9 +93,8 @@ pub fn plan_renames_with_conflicts(
 
     // Collect all potential renames
     for entry in walker {
-        let entry = match entry {
-            Ok(e) => e,
-            Err(_) => continue,
+        let Ok(entry) = entry else {
+            continue;
         };
 
         let path = entry.path();
@@ -117,9 +115,8 @@ pub fn plan_renames_with_conflicts(
         }
 
         // Get file type from entry metadata
-        let file_type = match entry.file_type() {
-            Some(ft) => ft,
-            None => continue,
+        let Some(file_type) = entry.file_type() else {
+            continue;
         };
 
         // Skip if not renaming files/dirs based on options
@@ -284,7 +281,7 @@ pub fn plan_renames(
         let conflict_msg = plan
             .conflicts
             .iter()
-            .map(|c| format!("{:?}: {:?} -> {:?}", c.kind, c.sources, c.target))
+            .map(|c| format!("{:?}: {:?} -> {}", c.kind, c.sources, c.target.display()))
             .collect::<Vec<_>>()
             .join("\n");
 
@@ -362,7 +359,7 @@ mod tests {
             },
         ];
 
-        let mut sorted = renames.clone();
+        let mut sorted = renames;
         sorted.sort_by(|a, b| {
             let a_is_dir = matches!(a.kind, RenameKind::Dir);
             let b_is_dir = matches!(b.kind, RenameKind::Dir);
@@ -436,9 +433,11 @@ mod tests {
         let mut mapping = BTreeMap::new();
         mapping.insert("old".to_string(), "new".to_string());
 
-        let mut opts = PlanOptions::default();
-        opts.rename_files = true;
-        opts.rename_dirs = false;
+        let opts = PlanOptions {
+            rename_files: true,
+            rename_dirs: false,
+            ..Default::default()
+        };
 
         let plan = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
 
@@ -488,8 +487,10 @@ mod tests {
         let mut mapping = BTreeMap::new();
         mapping.insert("old_name".to_string(), "new_name".to_string());
 
-        let mut opts = PlanOptions::default();
-        opts.unrestricted_level = 0; // Default: respect all ignore files
+        let opts = PlanOptions {
+            unrestricted_level: 0, // Default: respect all ignore files
+            ..Default::default()
+        };
 
         let plan = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
 
@@ -519,7 +520,11 @@ mod tests {
         );
         // Should NOT rename .tmp files
         assert!(
-            !rename_paths.iter().any(|p| p.ends_with(".tmp")),
+            !rename_paths.iter().any(|p| {
+                std::path::Path::new(p)
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("tmp"))
+            }),
             "Should NOT find .tmp files when gitignore is enabled"
         );
 
@@ -529,8 +534,12 @@ mod tests {
         assert!(rename_paths.iter().any(|p| p == "src/old_name.rs"));
 
         // When gitignore is disabled with -uu, should include all files
-        opts.unrestricted_level = 2; // -uu: show all files including hidden
-        let plan_no_ignore = plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts).unwrap();
+        let opts2 = PlanOptions {
+            unrestricted_level: 2, // -uu: show all files including hidden
+            ..Default::default()
+        };
+        let plan_no_ignore =
+            plan_renames_with_conflicts(temp_dir.path(), &mapping, &opts2).unwrap();
 
         let all_paths: Vec<String> = plan_no_ignore
             .renames
@@ -556,7 +565,11 @@ mod tests {
             "Should find build/ files"
         );
         assert!(
-            all_paths.iter().any(|p| p.ends_with(".tmp")),
+            all_paths.iter().any(|p| {
+                std::path::Path::new(p)
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("tmp"))
+            }),
             "Should find .tmp files"
         );
     }

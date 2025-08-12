@@ -11,7 +11,7 @@ fn test_compound_replacement_at_start() {
     let test_file = root.join("test.rs");
     std::fs::write(
         &test_file,
-        r#"// Snake case
+        r"// Snake case
 let foo_bar_arg = 1;
 let foo_bar_option = 2;
 
@@ -21,7 +21,7 @@ let fooBarOption = 4;
 
 // Pascal case
 type FooBarArg = String;
-type FooBarOption = i32;"#,
+type FooBarOption = i32;",
     )
     .unwrap();
 
@@ -78,7 +78,7 @@ type FooBarOption = i32;"#,
             .matches
             .iter()
             .any(|h| h.before == from && h.after == to);
-        assert!(found, "Should replace {} with {}", from, to);
+        assert!(found, "Should replace {from} with {to}");
     }
 }
 
@@ -91,7 +91,7 @@ fn test_compound_replacement_in_middle() {
     let test_file = root.join("test.rs");
     std::fs::write(
         &test_file,
-        r#"// Snake case
+        r"// Snake case
 let should_foo_bar_please = 1;
 let get_foo_bar_option = 2;
 
@@ -101,7 +101,7 @@ let getFooBarOption = 4;
 
 // Pascal case
 type ShouldFooBarPlease = String;
-type GetFooBarOption = i32;"#,
+type GetFooBarOption = i32;",
     )
     .unwrap();
 
@@ -158,7 +158,7 @@ type GetFooBarOption = i32;"#,
             .matches
             .iter()
             .any(|h| h.before == from && h.after == to);
-        assert!(found, "Should replace {} with {}", from, to);
+        assert!(found, "Should replace {from} with {to}");
     }
 }
 
@@ -171,7 +171,7 @@ fn test_compound_replacement_at_end() {
     let test_file = root.join("test.rs");
     std::fs::write(
         &test_file,
-        r#"// Snake case
+        r"// Snake case
 let get_foo_bar = 1;
 let load_foo_bar = 2;
 
@@ -181,7 +181,7 @@ let loadFooBar = 4;
 
 // Pascal case
 type GetFooBar = String;
-type LoadFooBar = i32;"#,
+type LoadFooBar = i32;",
     )
     .unwrap();
 
@@ -238,7 +238,7 @@ type LoadFooBar = i32;"#,
             .matches
             .iter()
             .any(|h| h.before == from && h.after == to);
-        assert!(found, "Should replace {} with {}", from, to);
+        assert!(found, "Should replace {from} with {to}");
     }
 }
 
@@ -251,9 +251,9 @@ fn test_exact_match_not_compound() {
     let test_file = root.join("test.rs");
     std::fs::write(
         &test_file,
-        r#"let foo_bar = get_foo_bar();
+        r"let foo_bar = get_foo_bar();
 let FooBar = FooBar::new();
-let fooBar = getFooBar();"#,
+let fooBar = getFooBar();",
     )
     .unwrap();
 

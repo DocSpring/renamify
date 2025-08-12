@@ -415,7 +415,7 @@ mod tests {
         let tokens = tokenize("HTTPSConnection");
         assert_eq!(tokens.len(), 2);
         assert_eq!(tokens[0].word, "https");
-        assert_eq!(tokens[0].is_acronym, true);
+        assert!(tokens[0].is_acronym);
         assert_eq!(tokens[1].word, "connection");
     }
 

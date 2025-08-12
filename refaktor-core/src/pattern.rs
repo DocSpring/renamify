@@ -89,6 +89,7 @@ pub fn find_matches(pattern: &MatchPattern, content: &[u8], file: &str) -> Vec<M
             .unwrap_or_default()
             .to_string();
 
+        #[allow(clippy::naive_bytecount)]
         let line_number = content[..m.start()].iter().filter(|&&b| b == b'\n').count() + 1;
 
         let line_start = content[..m.start()]

@@ -49,7 +49,9 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
                 && from != to;
 
             if case_only
-                && crate::rename::detect_case_insensitive_fs(to.parent().unwrap_or(Path::new(".")))
+                && crate::rename::detect_case_insensitive_fs(
+                    to.parent().unwrap_or_else(|| Path::new(".")),
+                )
             {
                 // Two-step rename for case-only changes
                 let temp_name = to.with_extension(format!("{}.refaktor.tmp", std::process::id()));
@@ -242,7 +244,7 @@ mod tests {
             excludes: vec![],
             affected_files,
             renames: vec![(temp_dir.path().join("old_name.txt"), new_file.clone())],
-            backups_path: backup_dir.clone(),
+            backups_path: backup_dir,
             revert_of: None,
             redo_of: None,
         };
@@ -251,7 +253,7 @@ mod tests {
         let history_path = refaktor_dir.join("history.json");
         fs::write(&history_path, "[]").unwrap();
         let mut history = History::load(&refaktor_dir).unwrap();
-        history.add_entry(entry.clone()).unwrap();
+        history.add_entry(entry).unwrap();
         history.save().unwrap();
 
         // Perform undo
@@ -439,8 +441,8 @@ mod tests {
         // We're mainly testing the redo logic, not the full apply
         let result = redo_refactoring("test123", &refaktor_dir);
         // The redo might fail due to missing files, but it should at least find the entry
-        if result.is_err() {
-            let err_msg = result.unwrap_err().to_string();
+        if let Err(err) = result {
+            let err_msg = err.to_string();
             assert!(
                 !err_msg.contains("not been reverted"),
                 "Should find revert entry"
@@ -517,7 +519,7 @@ mod tests {
             excludes: vec![],
             affected_files,
             renames: vec![(temp_dir.path().join("newname.txt"), new_file.clone())],
-            backups_path: backup_dir.clone(),
+            backups_path: backup_dir,
             revert_of: None,
             redo_of: None,
         };

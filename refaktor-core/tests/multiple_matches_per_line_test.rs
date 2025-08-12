@@ -45,7 +45,7 @@ fn test_multiple_matches_per_line() {
 
     // Check that columns are different
     let mut columns: Vec<u32> = plan.matches.iter().map(|h| h.col).collect();
-    columns.sort();
+    columns.sort_unstable();
     columns.dedup();
     assert_eq!(
         columns.len(),
@@ -143,7 +143,7 @@ fn test_dot_path_replacement() {
         .filter(|h| {
             h.line_before
                 .as_ref()
-                .map_or(false, |l| l.contains(".refaktor"))
+                .is_some_and(|l| l.contains(".refaktor"))
         })
         .collect();
     assert!(!dot_matches.is_empty(), "Should find .refaktor occurrences");

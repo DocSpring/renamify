@@ -15,7 +15,7 @@ fn test_compound_pascal_case_replacement() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        r#"struct FooBarArg { }
+        r"struct FooBarArg { }
 impl From<FooBarArg> for FooBar {
     fn from(arg: FooBarArg) -> FooBar {
         match arg {
@@ -25,7 +25,7 @@ impl From<FooBarArg> for FooBar {
     }
 }
 struct ShouldReplaceFooBarPlease { }
-fn getFooBarOption() -> FooBarOption { }"#,
+fn getFooBarOption() -> FooBarOption { }",
     )
     .unwrap();
 
@@ -53,7 +53,7 @@ fn getFooBarOption() -> FooBarOption { }"#,
             hunk.line, hunk.col, hunk.before, hunk.after
         );
         if let Some(line_after) = &hunk.line_after {
-            println!("  After: {}", line_after);
+            println!("  After: {line_after}");
         }
     }
 
@@ -101,11 +101,11 @@ fn test_compound_snake_case_replacement() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        r#"let foo_bar_arg = get_foo_bar_arg();
+        r"let foo_bar_arg = get_foo_bar_arg();
 let foo_bar_option = foo_bar_arg.to_option();
 match foo_bar_type {
     FooBarType::Json => foo_bar_json(),
-}"#,
+}",
     )
     .unwrap();
 
@@ -153,15 +153,11 @@ match foo_bar_type {
             .iter()
             .filter(|h| h.before == *compound)
             .collect();
-        assert!(!replacements.is_empty(), "Should find {}", compound);
+        assert!(!replacements.is_empty(), "Should find {compound}");
 
         let expected = compound.replace("foo_bar", "foo");
         for hunk in &replacements {
-            assert_eq!(
-                hunk.after, expected,
-                "{} should become {}",
-                compound, expected
-            );
+            assert_eq!(hunk.after, expected, "{compound} should become {expected}");
         }
     }
 }
@@ -175,11 +171,11 @@ fn test_compound_camel_case_replacement() {
     let test_file = root.join("main.js");
     std::fs::write(
         &test_file,
-        r#"const fooBarArg = getFooBarArg();
+        r"const fooBarArg = getFooBarArg();
 const fooBarOption = fooBarArg.toOption();
 function setFooBarType(fooBarType) {
     this.fooBarType = fooBarType;
-}"#,
+}",
     )
     .unwrap();
 
@@ -226,10 +222,10 @@ function setFooBarType(fooBarType) {
 
     for (from, to) in &camel_compounds {
         let replacements: Vec<_> = plan.matches.iter().filter(|h| h.before == *from).collect();
-        assert!(!replacements.is_empty(), "Should find {}", from);
+        assert!(!replacements.is_empty(), "Should find {from}");
 
         for hunk in &replacements {
-            assert_eq!(hunk.after, *to, "{} should become {}", from, to);
+            assert_eq!(hunk.after, *to, "{from} should become {to}");
         }
     }
 }
@@ -246,7 +242,7 @@ fn test_compound_pascal_and_camel_case_replacement() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        r#"struct FooBarArg { }
+        r"struct FooBarArg { }
 impl From<FooBarArg> for FooBar {
     fn from(arg: FooBarArg) -> FooBar {
         match arg {
@@ -256,7 +252,7 @@ impl From<FooBarArg> for FooBar {
     }
 }
 struct ShouldReplaceFooBarPlease { }
-fn getFooBarOption() -> FooBarOption { }"#,
+fn getFooBarOption() -> FooBarOption { }",
     )
     .unwrap();
 
@@ -376,7 +372,7 @@ fn test_compound_case_preservation_bug() {
 
     // Create test file with PascalCase compound identifier
     let test_file = root.join("main.rs");
-    std::fs::write(&test_file, r#"fn getFooBarOption() -> FooBarOption { }"#).unwrap();
+    std::fs::write(&test_file, r"fn getFooBarOption() -> FooBarOption { }").unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],

@@ -263,12 +263,12 @@ fn test_coercion_in_content_matches() {
     // Create a file with various identifiers that should be coerced
     fs::write(
         temp_dir.path().join("code.rs"),
-        r#"
+        r"
 use refaktor_core::RefaktorEngine;
 use my_refaktor_lib::utils;  
 let refaktor-service = RefaktorService::new();
 let config = refaktor.config.load();
-"#,
+",
     )
     .unwrap();
 
@@ -408,7 +408,7 @@ let regex_pattern = r"refaktor[_-](\w+)";
         .filter(|m| {
             m.coercion_applied
                 .as_ref()
-                .map_or(false, |c| c.contains("Snake"))
+                .is_some_and(|c| c.contains("Snake"))
         })
         .count();
     assert!(
@@ -421,7 +421,7 @@ let regex_pattern = r"refaktor[_-](\w+)";
         .filter(|m| {
             m.coercion_applied
                 .as_ref()
-                .map_or(false, |c| c.contains("Kebab"))
+                .is_some_and(|c| c.contains("Kebab"))
         })
         .count();
     assert!(
@@ -503,7 +503,7 @@ fn test_mixed_style_handling() {
     // Test cases where coercion might be skipped due to mixed styles
     fs::write(
         temp_dir.path().join("mixed.rs"),
-        r#"
+        r"
 // These have mixed styles in the same identifier - coercion might be skipped
 let weird1 = refaktor_someCAMEL-case;
 let weird2 = refaktor-some_MIXED_Case;
@@ -511,7 +511,7 @@ let weird3 = refaktor.some-weird_MIX;
 
 // These are on mixed-style lines but individual contexts should still work
 let snake_case_var = refaktor_core; let camelVar = refaktorService;
-"#,
+",
     )
     .unwrap();
 

@@ -25,13 +25,15 @@ pub enum PreviewFormat {
     Json,
 }
 
-impl PreviewFormat {
-    pub fn from_str(s: &str) -> Option<Self> {
+impl std::str::FromStr for PreviewFormat {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "table" => Some(Self::Table),
-            "diff" => Some(Self::Diff),
-            "json" => Some(Self::Json),
-            _ => None,
+            "table" => Ok(Self::Table),
+            "diff" => Ok(Self::Diff),
+            "json" => Ok(Self::Json),
+            _ => Err(format!("Invalid preview format: {}", s)),
         }
     }
 }
@@ -53,7 +55,7 @@ pub fn should_use_color(use_color: Option<bool>) -> bool {
 }
 
 /// Render the plan in the specified format
-pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<String> {
+pub fn render_plan(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> String {
     render_plan_with_fixed_width(plan, format, use_color, false)
 }
 
@@ -63,7 +65,7 @@ pub fn render_plan_with_fixed_width(
     format: PreviewFormat,
     use_color: Option<bool>,
     fixed_width: bool,
-) -> Result<String> {
+) -> String {
     let use_color = should_use_color(use_color);
 
     match format {
@@ -74,16 +76,12 @@ pub fn render_plan_with_fixed_width(
 }
 
 /// Render plan as a table
-fn render_table(plan: &Plan, use_color: bool) -> Result<String> {
+fn render_table(plan: &Plan, use_color: bool) -> String {
     render_table_with_fixed_width(plan, use_color, false)
 }
 
 /// Render plan as a table with explicit width control
-fn render_table_with_fixed_width(
-    plan: &Plan,
-    use_color: bool,
-    fixed_width: bool,
-) -> Result<String> {
+fn render_table_with_fixed_width(plan: &Plan, use_color: bool, fixed_width: bool) -> String {
     let mut table = Table::new();
 
     // Set content arrangement and constraints based on width parameter
@@ -223,11 +221,12 @@ fn render_table_with_fixed_width(
         ]);
     }
 
-    Ok(table.to_string())
+    table.to_string()
 }
 
 /// Render plan as unified diffs
-fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
+fn render_diff(plan: &Plan, use_color: bool) -> String {
+    use std::fmt::Write;
     let mut output = String::new();
 
     // Group hunks by file
@@ -244,16 +243,18 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
     for file in sorted_files {
         let hunks = &file_hunks[&file];
         if use_color {
-            output.push_str(&format!(
+            write!(
+                output,
                 "{}",
                 AnsiColor::Cyan.bold().paint(format!(
                     "--- {}\n+++ {}\n",
                     file.display(),
                     file.display()
                 ))
-            ));
+            )
+            .unwrap();
         } else {
-            output.push_str(&format!("--- {}\n+++ {}\n", file.display(), file.display()));
+            write!(output, "--- {}\n+++ {}\n", file.display(), file.display()).unwrap();
         }
 
         // Group hunks by line number to merge multiple changes on the same line
@@ -314,12 +315,14 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
             let diff = TextDiff::from_lines(&before_text, &after_text);
 
             if use_color {
-                output.push_str(&format!(
+                write!(
+                    output,
                     "{}",
                     AnsiColor::Blue.paint(format!("@@ line {} @@\n", line_num))
-                ));
+                )
+                .unwrap();
             } else {
-                output.push_str(&format!("@@ line {} @@\n", line_num));
+                writeln!(output, "@@ line {} @@", line_num).unwrap();
             }
 
             for change in diff.iter_all_changes() {
@@ -349,10 +352,12 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
     // Add rename section
     if !plan.renames.is_empty() {
         if use_color {
-            output.push_str(&format!(
+            write!(
+                output,
                 "\n{}\n",
                 AnsiColor::Cyan.bold().paint("=== RENAMES ===")
-            ));
+            )
+            .unwrap();
         } else {
             output.push_str("\n=== RENAMES ===\n");
         }
@@ -364,35 +369,39 @@ fn render_diff(plan: &Plan, use_color: bool) -> Result<String> {
             };
 
             if use_color {
-                output.push_str(&format!(
-                    "{} {} {} {}\n",
+                writeln!(
+                    output,
+                    "{} {} {} {}",
                     AnsiColor::Yellow.paint(kind),
                     AnsiColor::Red.paint(rename.from.display().to_string()),
                     AnsiColor::White.paint("→"),
                     AnsiColor::Green.paint(rename.to.display().to_string())
-                ));
+                )
+                .unwrap();
             } else {
-                output.push_str(&format!(
-                    "{} {} → {}\n",
+                writeln!(
+                    output,
+                    "{} {} → {}",
                     kind,
                     rename.from.display(),
                     rename.to.display()
-                ));
+                )
+                .unwrap();
             }
         }
     }
 
-    Ok(output)
+    output
 }
 
 /// Render plan as JSON
-fn render_json(plan: &Plan) -> Result<String> {
-    Ok(serde_json::to_string_pretty(plan)?)
+fn render_json(plan: &Plan) -> String {
+    serde_json::to_string_pretty(plan).unwrap_or_else(|_| "null".to_string())
 }
 
 /// Write plan preview to stdout
 pub fn write_preview(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<()> {
-    let output = render_plan(plan, format, use_color)?;
+    let output = render_plan(plan, format, use_color);
     let mut stdout = io::stdout();
     write!(stdout, "{}", output)?;
     stdout.flush()?;
@@ -466,17 +475,19 @@ mod tests {
 
     #[test]
     fn test_preview_format_from_str() {
-        assert_eq!(PreviewFormat::from_str("table"), Some(PreviewFormat::Table));
-        assert_eq!(PreviewFormat::from_str("diff"), Some(PreviewFormat::Diff));
-        assert_eq!(PreviewFormat::from_str("json"), Some(PreviewFormat::Json));
-        assert_eq!(PreviewFormat::from_str("TABLE"), Some(PreviewFormat::Table));
-        assert_eq!(PreviewFormat::from_str("invalid"), None);
+        use std::str::FromStr;
+
+        assert_eq!(PreviewFormat::from_str("table"), Ok(PreviewFormat::Table));
+        assert_eq!(PreviewFormat::from_str("diff"), Ok(PreviewFormat::Diff));
+        assert_eq!(PreviewFormat::from_str("json"), Ok(PreviewFormat::Json));
+        assert_eq!(PreviewFormat::from_str("TABLE"), Ok(PreviewFormat::Table));
+        assert!(PreviewFormat::from_str("invalid").is_err());
     }
 
     #[test]
     fn test_render_table_no_color() {
         let plan = create_test_plan();
-        let result = render_table_with_fixed_width(&plan, false, true).unwrap();
+        let result = render_table_with_fixed_width(&plan, false, true);
 
         assert!(result.contains("src/main.rs"));
         assert!(result.contains("Content"));
@@ -488,7 +499,7 @@ mod tests {
     #[test]
     fn test_render_diff_no_color() {
         let plan = create_test_plan();
-        let result = render_diff(&plan, false).unwrap();
+        let result = render_diff(&plan, false);
 
         assert!(result.contains("--- src/main.rs"));
         assert!(result.contains("+++ src/main.rs"));
@@ -541,7 +552,7 @@ mod tests {
             version: "1.0.0".to_string(),
         };
 
-        let result = render_diff(&plan, false).unwrap();
+        let result = render_diff(&plan, false);
 
         // Should show the full line, not just the word
         assert!(result.contains("-    let result = old_func(param1, param2);"));
@@ -555,7 +566,7 @@ mod tests {
     #[test]
     fn test_render_json() {
         let plan = create_test_plan();
-        let result = render_json(&plan).unwrap();
+        let result = render_json(&plan);
         let parsed: Plan = serde_json::from_str(&result).unwrap();
 
         assert_eq!(parsed.id, plan.id);
@@ -584,11 +595,11 @@ mod tests {
             version: "1.0.0".to_string(),
         };
 
-        let table = render_table_with_fixed_width(&plan, false, true).unwrap();
+        let table = render_table_with_fixed_width(&plan, false, true);
         assert!(table.contains("TOTALS"));
-        assert!(table.contains("0"));
+        assert!(table.contains('0'));
 
-        let diff = render_diff(&plan, false).unwrap();
+        let diff = render_diff(&plan, false);
         assert!(diff.is_empty() || diff == "\n");
     }
 
@@ -622,11 +633,11 @@ mod tests {
         std::env::remove_var("NO_COLOR");
 
         // Explicit true should produce colors even in non-terminal environment
-        let output = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
+        let output = render_plan(&plan, PreviewFormat::Table, Some(true));
 
         // Test with NO_COLOR set
         std::env::set_var("NO_COLOR", "1");
-        let output_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
+        let output_no_color = render_plan(&plan, PreviewFormat::Table, Some(false));
 
         // Restore original NO_COLOR state
         match original_no_color {
@@ -710,13 +721,13 @@ mod tests {
         std::env::remove_var("NO_COLOR");
 
         // All formats should respect explicit color settings consistently
-        let table_colored = render_plan(&plan, PreviewFormat::Table, Some(true)).unwrap();
-        let diff_colored = render_plan(&plan, PreviewFormat::Diff, Some(true)).unwrap();
+        let table_colored = render_plan(&plan, PreviewFormat::Table, Some(true));
+        let diff_colored = render_plan(&plan, PreviewFormat::Diff, Some(true));
 
         // Set NO_COLOR for disabled test
         std::env::set_var("NO_COLOR", "1");
-        let table_no_color = render_plan(&plan, PreviewFormat::Table, Some(false)).unwrap();
-        let diff_no_color = render_plan(&plan, PreviewFormat::Diff, Some(false)).unwrap();
+        let table_no_color = render_plan(&plan, PreviewFormat::Table, Some(false));
+        let diff_no_color = render_plan(&plan, PreviewFormat::Diff, Some(false));
 
         // Restore original NO_COLOR state
         match original_no_color {
@@ -746,8 +757,8 @@ mod tests {
         );
 
         // JSON format should never have colors regardless of setting
-        let json_colored = render_plan(&plan, PreviewFormat::Json, Some(true)).unwrap();
-        let json_no_color = render_plan(&plan, PreviewFormat::Json, Some(false)).unwrap();
+        let json_colored = render_plan(&plan, PreviewFormat::Json, Some(true));
+        let json_no_color = render_plan(&plan, PreviewFormat::Json, Some(false));
 
         assert!(
             !json_colored.contains("\u{1b}["),

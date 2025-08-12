@@ -236,7 +236,7 @@ fn test_atomic_operations() {
 
     // Second edit will fail (wrong content)
     plan.matches.push(MatchHunk {
-        file: file2.clone(),
+        file: file2,
         line: 1,
         col: 3,
         variant: "old_name".to_string(),
@@ -280,7 +280,7 @@ fn test_skip_symlinks() {
         // Create plan trying to rename symlink
         let mut plan = create_test_plan("test_symlink", "link", "new_link");
         plan.renames.push(Rename {
-            from: symlink_path.clone(),
+            from: symlink_path,
             to: temp_dir.path().join("new_link.txt"),
             kind: RenameKind::File,
             coercion_applied: None,
@@ -348,7 +348,7 @@ fn test_apply_with_git_commit() {
     // Create plan with edits
     let mut plan = create_test_plan("test_git", "old_name", "new_name");
     plan.matches.push(MatchHunk {
-        file: test_file.clone(),
+        file: test_file,
         line: 1,
         col: 3,
         variant: "old_name".to_string(),

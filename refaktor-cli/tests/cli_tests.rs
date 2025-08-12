@@ -1009,7 +1009,7 @@ fn test_rename_command_large_size_guard() {
     // Create many files to trigger size guard (this is a simplified test)
     for i in 0..10 {
         temp_dir
-            .child(format!("test_{}.rs", i))
+            .child(format!("test_{i}.rs"))
             .write_str("fn old_name() {}")
             .unwrap();
     }

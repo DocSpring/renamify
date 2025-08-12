@@ -115,10 +115,7 @@ fn test_gitignore_with_unrestricted_level_3_still_respects_target() {
 
     // Currently with -uuu it DOES scan target/
     // This is arguably a bug - we should probably never scan build artifacts
-    println!(
-        "Warning: Found {} matches in target/ with -uuu",
-        target_matches
-    );
+    println!("Warning: Found {target_matches} matches in target/ with -uuu");
 }
 
 #[test]

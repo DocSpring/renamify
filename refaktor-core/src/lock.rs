@@ -122,7 +122,10 @@ impl Drop for LockFile {
 #[cfg(unix)]
 fn is_process_running(pid: u32) -> bool {
     // On Unix, we can check if a process exists by sending signal 0
-    unsafe { libc::kill(pid as libc::pid_t, 0) == 0 }
+    #[allow(clippy::cast_possible_wrap)]
+    unsafe {
+        libc::kill(pid as libc::pid_t, 0) == 0
+    }
 }
 
 #[cfg(windows)]

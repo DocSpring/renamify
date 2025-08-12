@@ -129,7 +129,7 @@ impl History {
     }
 
     /// Verify checksums of files from a history entry
-    pub fn verify_checksums(&self, entry: &HistoryEntry) -> Result<Vec<PathBuf>> {
+    pub fn verify_checksums(entry: &HistoryEntry) -> Result<Vec<PathBuf>> {
         let mut mismatches = Vec::new();
 
         for (path, expected_checksum) in &entry.affected_files {
@@ -160,9 +160,9 @@ impl History {
 }
 
 /// Create a history entry from an applied plan
-pub fn create_history_entry(
+pub fn create_history_entry<S: ::std::hash::BuildHasher>(
     plan: &crate::Plan,
-    affected_files: HashMap<PathBuf, String>,
+    affected_files: HashMap<PathBuf, String, S>,
     renames: Vec<(PathBuf, PathBuf)>,
     backups_path: PathBuf,
     revert_of: Option<String>,
@@ -176,7 +176,7 @@ pub fn create_history_entry(
         styles: plan.styles.iter().map(|s| format!("{:?}", s)).collect(),
         includes: plan.includes.clone(),
         excludes: plan.excludes.clone(),
-        affected_files,
+        affected_files: affected_files.into_iter().collect(),
         renames,
         backups_path,
         revert_of,
@@ -243,7 +243,7 @@ pub fn get_status(refaktor_dir: &Path) -> Result<StatusInfo> {
 
     // Check if working tree is clean according to our records
     let working_tree_clean = if let Some(last) = history.last_entry() {
-        history.verify_checksums(last)?.is_empty()
+        History::verify_checksums(last)?.is_empty()
     } else {
         true // No history means clean
     };
@@ -268,10 +268,12 @@ pub struct StatusInfo {
 impl StatusInfo {
     /// Format status for display
     pub fn format(&self) -> String {
+        use std::fmt::Write;
         let mut output = String::new();
 
         if let Some(ref plan_id) = self.last_plan {
-            output.push_str(&format!("Last applied plan: {}\n", plan_id));
+            use std::fmt::Write;
+            writeln!(output, "Last applied plan: {}", plan_id).unwrap();
         } else {
             output.push_str("No plans applied yet\n");
         }
@@ -286,7 +288,7 @@ impl StatusInfo {
             output.push_str("⚠️  Working tree has been modified since last apply\n");
         }
 
-        output.push_str(&format!("Total history entries: {}\n", self.total_entries));
+        writeln!(output, "Total history entries: {}", self.total_entries).unwrap();
 
         output
     }
@@ -323,7 +325,7 @@ mod tests {
         // Create and save history
         let mut history = History::load_from_path(&history_path).unwrap();
         let entry = create_test_entry("test123");
-        history.add_entry(entry.clone()).unwrap();
+        history.add_entry(entry).unwrap();
 
         // Load and verify
         let loaded = History::load_from_path(&history_path).unwrap();

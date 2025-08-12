@@ -150,9 +150,8 @@ pub fn scan_repository_multi(
     let walker = crate::configure_walker(roots, options).build();
 
     for entry in walker {
-        let entry = match entry {
-            Ok(e) => e,
-            Err(_) => continue,
+        let Ok(entry) = entry else {
+            continue;
         };
 
         // Skip non-files
@@ -294,12 +293,13 @@ pub fn build_globset(patterns: &[String]) -> Result<Option<GlobSet>> {
 }
 
 fn read_file_content(path: &Path) -> Result<Vec<u8>> {
+    use std::io::Read;
+
     let file = File::open(path)?;
     let metadata = file.metadata()?;
 
     if metadata.len() > 50 * 1024 * 1024 {
         let mut content = Vec::new();
-        use std::io::Read;
         std::fs::File::open(path)?.read_to_end(&mut content)?;
         Ok(content)
     } else {
@@ -350,25 +350,20 @@ fn generate_hunks(
         let mut coercion_applied = None;
 
         // Apply coercion if enabled (but skip for compound matches - they're already correct)
-        if options.coerce_separators == CoercionMode::Auto {
-            if !is_compound_match {
-                // Find the match position within the line and extract context
-                if let Some(match_pos) = line_string.find(&before) {
-                    let context = extract_immediate_context(
-                        &line_string,
-                        match_pos,
-                        match_pos + before.len(),
-                    );
+        if options.coerce_separators == CoercionMode::Auto && !is_compound_match {
+            // Find the match position within the line and extract context
+            if let Some(match_pos) = line_string.find(&before) {
+                let identifier_context =
+                    extract_immediate_context(&line_string, match_pos, match_pos + before.len());
 
-                    if let Some((_coerced, reason)) =
-                        crate::coercion::apply_coercion(&context, &before, &after)
+                if let Some((_coerced, reason)) =
+                    crate::coercion::apply_coercion(&identifier_context, &before, &after)
+                {
+                    if let Some(coerced_variant) =
+                        apply_coercion_to_variant(&identifier_context, &before, &after)
                     {
-                        if let Some(coerced_variant) =
-                            apply_coercion_to_variant(&context, &before, &after)
-                        {
-                            after = coerced_variant;
-                            coercion_applied = Some(reason);
-                        }
+                        after = coerced_variant;
+                        coercion_applied = Some(reason);
                     }
                 }
             }
@@ -404,7 +399,7 @@ fn generate_hunks(
         hunks.push(MatchHunk {
             file: path.to_path_buf(),
             line: m.line as u64,
-            col: m.column as u32,
+            col: u32::try_from(m.column).unwrap_or(u32::MAX),
             variant: m.variant.clone(),
             before,
             after,
@@ -759,8 +754,8 @@ mod tests {
 
         let walker = Walk::new(temp_dir.path());
         let files: Vec<_> = walker
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().map_or(false, |t| t.is_file()))
+            .filter_map(std::result::Result::ok)
+            .filter(|e| e.file_type().is_some_and(|t| t.is_file()))
             .collect();
 
         assert_eq!(files.len(), 1);
@@ -769,27 +764,28 @@ mod tests {
 
     #[test]
     fn test_scan_with_matches() {
+        use ignore::Walk;
+
         // Create a simple test case
         let temp_dir = TempDir::new().unwrap();
         let test_file = temp_dir.path().join("test.txt");
         std::fs::write(&test_file, "old_name and oldName here").unwrap();
 
         // Use non-parallel walk for testing
-        use ignore::Walk;
         let walker = Walk::new(temp_dir.path());
         let mut file_count = 0;
-        for entry in walker {
-            if let Ok(e) = entry {
-                if e.file_type().map_or(false, |t| t.is_file()) {
-                    file_count += 1;
-                }
+        for e in walker.flatten() {
+            if e.file_type().is_some_and(|t| t.is_file()) {
+                file_count += 1;
             }
         }
         assert_eq!(file_count, 1, "Walker should find 1 file");
 
         // Now test with scan_repository
-        let mut opts = PlanOptions::default();
-        opts.respect_gitignore = false;
+        let opts = PlanOptions {
+            respect_gitignore: false,
+            ..Default::default()
+        };
 
         let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 

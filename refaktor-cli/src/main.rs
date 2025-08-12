@@ -8,6 +8,7 @@ use refaktor_core::{
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 use std::process;
+use std::str::FromStr;
 
 mod rename;
 
@@ -350,14 +351,14 @@ enum StyleArg {
 impl From<StyleArg> for Style {
     fn from(arg: StyleArg) -> Self {
         match arg {
-            StyleArg::Snake => Style::Snake,
-            StyleArg::Kebab => Style::Kebab,
-            StyleArg::Camel => Style::Camel,
-            StyleArg::Pascal => Style::Pascal,
-            StyleArg::ScreamingSnake => Style::ScreamingSnake,
-            StyleArg::Title => Style::Title,
-            StyleArg::Train => Style::Train,
-            StyleArg::Dot => Style::Dot,
+            StyleArg::Snake => Self::Snake,
+            StyleArg::Kebab => Self::Kebab,
+            StyleArg::Camel => Self::Camel,
+            StyleArg::Pascal => Self::Pascal,
+            StyleArg::ScreamingSnake => Self::ScreamingSnake,
+            StyleArg::Title => Self::Title,
+            StyleArg::Train => Self::Train,
+            StyleArg::Dot => Self::Dot,
         }
     }
 }
@@ -385,10 +386,10 @@ impl PreviewFormatArg {
 impl From<PreviewFormatArg> for PreviewFormat {
     fn from(arg: PreviewFormatArg) -> Self {
         match arg {
-            PreviewFormatArg::Table => PreviewFormat::Table,
-            PreviewFormatArg::Diff => PreviewFormat::Diff,
-            PreviewFormatArg::Json => PreviewFormat::Json,
-            PreviewFormatArg::None => PreviewFormat::Table, // Default to table if None is somehow converted
+            PreviewFormatArg::Table => Self::Table,
+            PreviewFormatArg::Diff => Self::Diff,
+            PreviewFormatArg::Json => Self::Json,
+            PreviewFormatArg::None => Self::Table, // Default to table if None is somehow converted
         }
     }
 }
@@ -409,7 +410,7 @@ fn main() {
         std::env::set_current_dir(dir)
             .with_context(|| format!("Failed to change to directory: {}", dir.display()))
             .unwrap_or_else(|e| {
-                eprintln!("Error: {:#}", e);
+                eprintln!("Error: {e:#}");
                 process::exit(2);
             });
     }
@@ -425,7 +426,7 @@ fn main() {
 
     if needs_refaktor_dir && !cli.no_auto_init {
         if let Err(e) = check_and_auto_init(&cli.auto_init, cli.yes) {
-            eprintln!("Error during auto-initialization: {:#}", e);
+            eprintln!("Error during auto-initialization: {e:#}");
             process::exit(2);
         }
     }
@@ -452,10 +453,12 @@ fn main() {
             dry_run,
         } => {
             // Use preview format from CLI arg or config default
-            let format = preview_format.map(|f| f.into()).unwrap_or_else(|| {
-                PreviewFormat::from_str(&config.defaults.preview_format)
-                    .unwrap_or(PreviewFormat::Diff)
-            });
+            let format = preview_format
+                .map(std::convert::Into::into)
+                .unwrap_or_else(|| {
+                    PreviewFormat::from_str(&config.defaults.preview_format)
+                        .unwrap_or(PreviewFormat::Diff)
+                });
 
             handle_plan(
                 &old,
@@ -494,10 +497,12 @@ fn main() {
             preview_format,
         } => {
             // Use preview format from CLI arg or config default
-            let format = preview_format.map(|f| f.into()).unwrap_or_else(|| {
-                PreviewFormat::from_str(&config.defaults.preview_format)
-                    .unwrap_or(PreviewFormat::Diff)
-            });
+            let format = preview_format
+                .map(std::convert::Into::into)
+                .unwrap_or_else(|| {
+                    PreviewFormat::from_str(&config.defaults.preview_format)
+                        .unwrap_or(PreviewFormat::Diff)
+                });
 
             handle_plan(
                 &old,
@@ -601,7 +606,7 @@ fn main() {
     match result {
         Ok(()) => process::exit(0),
         Err(e) => {
-            eprintln!("Error: {:#}", e);
+            eprintln!("Error: {e:#}");
 
             // Determine exit code based on error type
             let exit_code = if e.to_string().contains("conflict") {
@@ -652,10 +657,7 @@ fn handle_plan(
 
     // Build the list of styles to use based on exclude, include, and only options
     let styles = {
-        if !only_styles.is_empty() {
-            // If --only-styles is specified, use only those styles
-            Some(only_styles.into_iter().map(Into::into).collect())
-        } else {
+        if only_styles.is_empty() {
             // Start with the default styles
             let default_styles = vec![
                 StyleArg::Snake,
@@ -684,6 +686,9 @@ fn handle_plan(
             } else {
                 Some(active_styles.into_iter().map(Into::into).collect())
             }
+        } else {
+            // If --only-styles is specified, use only those styles
+            Some(only_styles.into_iter().map(Into::into).collect())
         }
     };
 
@@ -732,7 +737,7 @@ fn handle_plan(
 
     // Check for conflicts and return appropriate exit code
     if let Some(conflicts) = check_for_conflicts(&plan) {
-        eprintln!("\nWarning: {} conflicts detected", conflicts);
+        eprintln!("\nWarning: {conflicts} conflicts detected");
         if !dry_run {
             eprintln!("Use --force-with-conflicts to apply anyway");
         }
@@ -742,7 +747,7 @@ fn handle_plan(
     Ok(())
 }
 
-fn check_for_conflicts(_plan: &refaktor_core::Plan) -> Option<usize> {
+const fn check_for_conflicts(_plan: &refaktor_core::Plan) -> Option<usize> {
     // Check if there are any rename conflicts
     // This is a placeholder - would need to check the actual conflicts
     // from the rename module
@@ -768,7 +773,7 @@ fn handle_apply(
         path
     } else if let Some(id) = id {
         // Load from history by ID (placeholder for now)
-        eprintln!("Loading plan from history ID {} not yet implemented", id);
+        eprintln!("Loading plan from history ID {id} not yet implemented");
         return Ok(());
     } else {
         // Default to last plan
@@ -785,8 +790,7 @@ fn handle_apply(
     if !force_with_conflicts {
         if let Some(conflicts) = check_for_conflicts(&plan) {
             eprintln!(
-                "Error: {} conflicts detected. Use --force-with-conflicts to apply anyway",
-                conflicts
+                "Error: {conflicts} conflicts detected. Use --force-with-conflicts to apply anyway"
             );
             return Err(anyhow!("Conflicts detected"));
         }
@@ -856,7 +860,7 @@ fn handle_history(limit: Option<usize>) -> Result<()> {
     let entries = history.list_entries(limit);
     let formatted = format_history(&entries, false)?;
 
-    println!("{}", formatted);
+    println!("{formatted}");
     Ok(())
 }
 
@@ -895,7 +899,7 @@ fn is_refaktor_ignored() -> Result<bool> {
 fn is_pattern_in_content(content: &str) -> bool {
     content
         .lines()
-        .map(|line| line.trim())
+        .map(str::trim)
         .filter(|line| !line.is_empty() && !line.starts_with('#'))
         .any(|line| {
             line == ".refaktor"
@@ -927,10 +931,7 @@ fn check_and_auto_init(auto_init: &Option<String>, yes: bool) -> Result<()> {
             "local" => InitMode::Local,
             "global" => InitMode::Global,
             _ => {
-                eprintln!(
-                    "Invalid auto-init mode: {}. Use repo, local, or global.",
-                    mode
-                );
+                eprintln!("Invalid auto-init mode: {mode}. Use repo, local, or global.");
                 process::exit(2);
             },
         }
@@ -1078,7 +1079,7 @@ fn configure_global_excludes() -> Result<()> {
     if output.status.success() {
         let existing = String::from_utf8(output.stdout)?.trim().to_string();
         if !existing.is_empty() {
-            eprintln!("Global excludes file already configured: {}", existing);
+            eprintln!("Global excludes file already configured: {existing}");
             return Ok(());
         }
     }
@@ -1114,10 +1115,9 @@ fn handle_init(local: bool, global: bool, check: bool, configure_global: bool) -
         if is_refaktor_ignored()? {
             eprintln!(".refaktor is properly ignored");
             return Ok(());
-        } else {
-            eprintln!(".refaktor is NOT ignored");
-            process::exit(1);
         }
+        eprintln!(".refaktor is NOT ignored");
+        process::exit(1);
     }
 
     // Handle configure_global flag
@@ -1129,11 +1129,9 @@ fn handle_init(local: bool, global: bool, check: bool, configure_global: bool) -
     do_init(local, global, configure_global)?;
 
     // Check if .refaktor is tracked by git (only if not using --global)
-    if !global && is_in_git_repo()? {
-        if is_file_tracked(".refaktor")? {
-            eprintln!("\n⚠ Warning: .refaktor directory is already tracked by git.");
-            eprintln!("  You may want to run: git rm -r --cached .refaktor");
-        }
+    if !global && is_in_git_repo()? && is_file_tracked(".refaktor")? {
+        eprintln!("\n⚠ Warning: .refaktor directory is already tracked by git.");
+        eprintln!("  You may want to run: git rm -r --cached .refaktor");
     }
 
     Ok(())

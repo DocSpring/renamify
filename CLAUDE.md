@@ -155,12 +155,14 @@ Boundary rules
 ## Ignore file handling
 
 Refaktor respects multiple ignore file formats:
+
 - `.gitignore` - Standard Git ignore patterns
 - `.ignore` - Generic ignore file (compatible with ripgrep)
 - `.rgignore` - Ripgrep-specific ignore patterns
 - `.rfignore` - Refaktor-specific ignore patterns (useful for excluding files from refactoring without affecting Git)
 
 The unrestricted levels (`-u` flag) control ignore behavior:
+
 - Level 0 (default): Respects all ignore files, skips hidden files
 - Level 1 (`-u`): Ignores `.gitignore` but respects `.ignore`, `.rgignore`, `.rfignore`
 - Level 2 (`-uu`): Ignores all ignore files, shows hidden files
@@ -215,6 +217,10 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - **ALWAYS use the --dry-run flag when testing the refaktor CLI** to avoid creating unwanted plan files and modifications
 - When running test commands with refaktor, use: `./target/debug/refaktor plan ... --dry-run`
 - This prevents the creation of `.refaktor/plan.json` files during testing
+
+## DO NOT REDIRECT STDERR
+
+"2>&1" causes problems in Claude Code. DO NOT USE IT.
 
 ## UPDATE THIS FILE!
 

@@ -14,7 +14,7 @@ fn test_diff_merging_same_line() {
     let test_file = root.join("main.rs");
     std::fs::write(
         &test_file,
-        r#"fn getPreviewFormatOption() -> PreviewFormatOption { }"#,
+        r"fn getPreviewFormatOption() -> PreviewFormatOption { }",
     )
     .unwrap();
 
@@ -39,11 +39,10 @@ fn test_diff_merging_same_line() {
         &plan,
         refaktor_core::preview::PreviewFormat::Diff,
         Some(false), // No color for easier testing
-    )
-    .unwrap();
+    );
 
     println!("\n=== Diff Merging Test ===");
-    println!("{}", diff_output);
+    println!("{diff_output}");
 
     // Count how many times "@@ line 1 @@" appears in the diff
     let line_1_headers = diff_output.matches("@@ line 1 @@").count();
@@ -51,8 +50,7 @@ fn test_diff_merging_same_line() {
     // The diff should show only ONE entry for line 1, not multiple
     assert_eq!(
         line_1_headers, 1,
-        "Diff should merge multiple changes on the same line into a single diff entry, found {} entries",
-        line_1_headers
+        "Diff should merge multiple changes on the same line into a single diff entry, found {line_1_headers} entries"
     );
 
     // The diff should show the cumulative effect of both replacements
