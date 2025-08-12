@@ -1,27 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ -d /tmp/refaktor-e2e-test ]; then
-  echo "Removing existing /tmp/refaktor-e2e-test"
-  rm -rf /tmp/refaktor-e2e-test
+# Faster: build debug for the loop, build release once at the end
+export CARGO_TARGET_DIR=/tmp/refaktor-target
+
+WORKDIR=/tmp/refaktor-e2e-test
+
+if [ -d "$WORKDIR" ]; then
+  echo "Removing existing $WORKDIR"
+  rm -rf "$WORKDIR"
 fi
 
-echo "Cloning refaktor to /tmp/refaktor-e2e-test"
-git clone . /tmp/refaktor-e2e-test
-cd /tmp/refaktor-e2e-test
+echo "Cloning refaktor to $WORKDIR"
+git clone . "$WORKDIR"
+cd "$WORKDIR"
 
-# For these tests, we want ripgrep to ignore the same files as refaktor
+# Make ripgrep respect the same ignores as the tool
 cp .rfignore .rgignore
 echo .rgignore >> .git/info/exclude
 
-cargo build --release
-./target/release/refaktor --version
+echo "=== Initial debug build ==="
+cargo build
+DEBUG_REFAKTOR="$CARGO_TARGET_DIR/debug/refaktor"
+"$DEBUG_REFAKTOR" --version
 
 echo "=== Testing refaktor rename to smart_search_and_replace ==="
-
 # Use refaktor to rename itself using plan/apply
-./target/release/refaktor plan refaktor smart_search_and_replace --preview summary
-./target/release/refaktor apply
+"$DEBUG_REFAKTOR" plan refaktor smart_search_and_replace --preview summary
+"$DEBUG_REFAKTOR" apply
 
 # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
 echo "Checking for remaining instances of 'refaktor'..."
@@ -39,14 +45,10 @@ if [ ! -f "smart-search-and-replace-core/Cargo.toml" ]; then
   echo "ERROR: smart-search-and-replace-core/Cargo.toml not found!"
   exit 1
 fi
-
 echo "✓ No instances of 'refaktor' found"
-       
-      
-echo "=== Testing undo functionality ==="
 
-# Undo the rename
-./target/release/refaktor undo latest
+echo "=== Testing undo functionality ==="
+"$DEBUG_REFAKTOR" undo latest
 
 # Verify the undo worked
 if [ -f "smart-search-and-replace-core/Cargo.toml" ]; then
@@ -61,14 +63,10 @@ if [ -n "$(git status --porcelain)" ]; then
   git diff
   exit 1
 fi
-
 echo "✓ Working directory is clean - undo successful!"
-        
-      
-echo "=== Testing redo functionality ==="
 
-# Redo the rename
-./target/release/refaktor redo latest
+echo "=== Testing redo functionality ==="
+"$DEBUG_REFAKTOR" redo latest
 
 # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
 echo "Checking for remaining instances of 'refaktor'..."
@@ -78,15 +76,14 @@ if rg -i "refaktor"; then
 fi
 echo "✓ No instances of 'refaktor' found"
 
-rm -rf target
-cargo build --release
-./target/release/smart_search_and_replace --version
-
+echo "=== Build debug for smart_search_and_replace and check ==="
+cargo build
+DEBUG_SSAR="$CARGO_TARGET_DIR/debug/smart_search_and_replace"
+"$DEBUG_SSAR" --version
 
 echo "=== Testing smart_search_and_replace rename back to refaktor ==="
-
 # Use smart_search_and_replace to rename itself back
-./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --preview summary
+"$DEBUG_SSAR" rename smart_search_and_replace refaktor --preview summary
 
 # Verify the rename worked
 if [ -f "smart-search-and-replace-core/Cargo.toml" ]; then
@@ -106,13 +103,12 @@ if rg "(smart_search_and_replace|smart-search-and-replace|smartsearchandreplace)
 fi
 echo "✓ No instances of 'smart_search_and_replace' found"
 
-# Clean and rebuild with original name
-rm -rf target
+echo "=== Final release build and verification ==="
 cargo build --release
+REL_REFAKTOR="$CARGO_TARGET_DIR/release/refaktor"
 
-# Final verification
-./target/release/refaktor --version
-./target/release/refaktor --help
+"$REL_REFAKTOR" --version
+"$REL_REFAKTOR" --help
 
 # The working directory should be clean after the round-trip
 if [ -n "$(git status --porcelain)" ]; then

@@ -547,14 +547,67 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
     }
 
     // STEP 3: Apply renames AFTER content edits
-    // Sort renames by depth (deepest first) for proper ordering
+    // Sort renames: directories first (shallowest to deepest), then files (deepest to shallowest)
+    // This ensures parent directories are renamed before their contents
     let mut renames = plan.renames.clone();
-    renames.sort_by_key(|r| std::cmp::Reverse(r.from.components().count()));
+    renames.sort_by(|a, b| {
+        use crate::scanner::RenameKind;
+        match (&a.kind, &b.kind) {
+            (RenameKind::Dir, RenameKind::File) => std::cmp::Ordering::Less,
+            (RenameKind::File, RenameKind::Dir) => std::cmp::Ordering::Greater,
+            (RenameKind::Dir, RenameKind::Dir) => {
+                // For directories: shallowest first
+                a.from
+                    .components()
+                    .count()
+                    .cmp(&b.from.components().count())
+            },
+            (RenameKind::File, RenameKind::File) => {
+                // For files: deepest first
+                b.from
+                    .components()
+                    .count()
+                    .cmp(&a.from.components().count())
+            },
+        }
+    });
 
-    for rename in &renames {
+    for mut rename in renames {
         let is_dir = rename.kind == crate::scanner::RenameKind::Dir;
 
-        if let Err(e) = perform_rename(&rename.from, &rename.to, is_dir, &mut state) {
+        // Check if this rename's source path has been affected by a previous directory rename
+        // This handles the case where a file inside a renamed directory also needs to be renamed
+        let mut adjusted_from = rename.from.clone();
+        let mut adjusted_to = rename.to.clone();
+
+        // Clone to avoid borrow checker issues
+        let previous_renames = state.renames_performed.clone();
+
+        for (prev_from, prev_to) in &previous_renames {
+            // Check if the source path needs adjustment
+            if let Ok(relative) = rename.from.strip_prefix(prev_from) {
+                // This rename's source is inside a directory that was already renamed
+                adjusted_from = prev_to.join(relative);
+                state.log(&format!(
+                    "Adjusted rename source: {} -> {} (due to parent directory rename)",
+                    rename.from.display(),
+                    adjusted_from.display()
+                ))?;
+            }
+
+            // Check if the destination path needs adjustment
+            if let Ok(relative) = rename.to.strip_prefix(prev_from) {
+                // This rename's destination is inside a directory that was already renamed
+                adjusted_to = prev_to.join(relative);
+                state.log(&format!(
+                    "Adjusted rename destination: {} -> {} (due to parent directory rename)",
+                    rename.to.display(),
+                    adjusted_to.display()
+                ))?;
+            }
+        }
+
+        if let Err(e) = perform_rename(&adjusted_from, &adjusted_to, is_dir, &mut state) {
             state.log(&format!("Error performing rename: {}", e))?;
 
             if options.atomic {
@@ -562,6 +615,18 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
             }
 
             return Err(e);
+        }
+
+        // Override the recorded rename to use the ORIGINAL paths for tracking
+        // The perform_rename function records adjusted_from -> adjusted_to
+        // But we need original_from -> final_to for proper tracking
+        if adjusted_from != rename.from || adjusted_to != rename.to {
+            // Remove the last entry (which has adjusted paths)
+            state.renames_performed.pop();
+            // Add the correct entry with original from path and adjusted to path
+            state
+                .renames_performed
+                .push((rename.from.clone(), adjusted_to.clone()));
         }
     }
 

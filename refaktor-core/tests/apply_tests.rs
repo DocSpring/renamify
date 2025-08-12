@@ -418,6 +418,18 @@ fn test_apply_with_both_renames_and_content_changes() {
     let old_file2 = temp_dir.path().join("old_name.txt");
     fs::write(&old_file2, "This file has no content changes").unwrap();
 
+    // Case 5: CRITICAL - File that gets renamed inside a directory that also gets renamed
+    // This is the case that was failing in the E2E test
+    let service_dir = temp_dir.path().join("old_name_service");
+    let src_dir = service_dir.join("src");
+    fs::create_dir_all(&src_dir).unwrap();
+    let service_file = src_dir.join("old_name-service.ts");
+    fs::write(
+        &service_file,
+        "export class OldNameService {\n  old_name: string;\n}",
+    )
+    .unwrap();
+
     // Create a comprehensive plan
     let mut plan = create_test_plan("test_both", "old_name", "new_name");
 
@@ -439,6 +451,21 @@ fn test_apply_with_both_renames_and_content_changes() {
     plan.renames.push(Rename {
         from: old_file2.clone(),
         to: temp_dir.path().join("new_name.txt"),
+        kind: RenameKind::File,
+        coercion_applied: None,
+    });
+
+    // Case 5 renames: BOTH directory and file inside it get renamed
+    plan.renames.push(Rename {
+        from: service_dir.clone(),
+        to: temp_dir.path().join("new_name_service"),
+        kind: RenameKind::Dir,
+        coercion_applied: None,
+    });
+
+    plan.renames.push(Rename {
+        from: service_file.clone(),
+        to: service_dir.join("src").join("new_name-service.ts"), // Using old path - will be adjusted during apply
         kind: RenameKind::File,
         coercion_applied: None,
     });
@@ -528,6 +555,22 @@ fn test_apply_with_both_renames_and_content_changes() {
         after: "new_name".to_string(),
         start: 18,
         end: 26,
+        line_before: None,
+        line_after: None,
+        coercion_applied: None,
+    });
+
+    // Case 5: Add content changes for the file that gets renamed inside a renamed directory
+    // "export class OldNameService {\n  old_name: string;\n}"
+    plan.matches.push(MatchHunk {
+        file: service_file.clone(),
+        line: 2,
+        col: 2,
+        variant: "old_name".to_string(),
+        before: "old_name".to_string(),
+        after: "new_name".to_string(),
+        start: 32, // Position of old_name in the string
+        end: 40,
         line_before: None,
         line_after: None,
         coercion_applied: None,
@@ -629,4 +672,37 @@ fn test_apply_with_both_renames_and_content_changes() {
         !no_diff.exists(),
         "No diff should exist for file without content changes"
     );
+
+    // Case 5 verifications: File renamed inside renamed directory
+    let new_service_dir = temp_dir.path().join("new_name_service");
+    let new_service_file = new_service_dir.join("src").join("new_name-service.ts");
+
+    assert!(
+        new_service_dir.exists(),
+        "new_name_service directory should exist"
+    );
+    assert!(
+        new_service_file.exists(),
+        "new_name-service.ts should exist in renamed directory"
+    );
+    assert!(
+        !service_dir.exists(),
+        "old_name_service directory should not exist"
+    );
+    assert!(!service_file.exists(), "old service file should not exist");
+
+    // Verify content changes in the service file
+    let service_content = fs::read_to_string(&new_service_file).unwrap();
+    assert!(
+        service_content.contains("new_name: string"),
+        "Property should be renamed"
+    );
+    assert!(
+        !service_content.contains("old_name: string"),
+        "Old property name should not exist"
+    );
+
+    // Verify diff was created for the service file
+    let service_diff = backup_dir.join("old_name-service.ts.diff");
+    assert!(service_diff.exists(), "Diff for service file should exist");
 }
