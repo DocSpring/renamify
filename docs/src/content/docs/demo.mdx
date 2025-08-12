@@ -11,7 +11,7 @@ Watch Refaktor rename itself to `smart_search_and_replace`, then use the renamed
 # Clone and build
 git clone https://github.com/DocSpring/refaktor
 cd refaktor
-cargo build
+cargo build --release
 
 # Use refaktor to rename itself to smart_search_and_replace
 ./target/release/refaktor rename refaktor smart_search_and_replace --preview-format table --yes
@@ -19,7 +19,7 @@ cargo build
 # Remove the old binary, run tests, and rebuild with the new name
 rm -rf target
 cargo test
-cargo build
+cargo build --release
 
 # Now use the new smart_search_and_replace binary to rename itself back to refaktor
 ./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --preview-format table --yes
@@ -27,7 +27,7 @@ cargo build
 # Back to the original
 rm -rf target
 cargo test
-cargo build
+cargo build --release
 ./target/release/refaktor --help
 
 git status
@@ -35,7 +35,6 @@ git status
 # Your branch is up to date with 'origin/main'.
 
 # nothing to commit, working tree clean
-
 ```
 
 You can use Refaktor to rename entire projects including all code references, 
