@@ -656,7 +656,7 @@ mod tests {
         // Test case that should be considered a root directory rename (current working directory)
         let root_rename = Rename {
             from: current_dir.clone(),
-            to: PathBuf::from("smart_search_and_replace"),
+            to: PathBuf::from("renamed_refactoring_tool"),
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
@@ -668,7 +668,7 @@ mod tests {
         // Test case for a relative path - should NOT be considered root unless it matches current dir
         let relative_rename = Rename {
             from: PathBuf::from("project"),
-            to: PathBuf::from("smart_search_and_replace"),
+            to: PathBuf::from("renamed_refactoring_tool"),
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
@@ -680,7 +680,7 @@ mod tests {
         // Test cases that should NOT be considered root directory renames
         let subdir_rename = Rename {
             from: current_dir.join("subdir"),
-            to: PathBuf::from("smart-search-and-replace-subdir"),
+            to: PathBuf::from("renamed-refactoring-tool-subdir"),
             kind: RenameKind::Dir,
             coercion_applied: None,
         };

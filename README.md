@@ -18,7 +18,7 @@ Smart search & replace for code and files with case-aware transformations and bu
 
 ## Demo
 
-Watch Refaktor rename itself to `smart_search_and_replace`, then use the renamed binary to change it back:
+Watch Refaktor rename itself to `renamed_refactoring_tool`, then use the renamed binary to change it back:
 
 ```bash
 # Clone and build
@@ -26,15 +26,15 @@ git clone https://github.com/DocSpring/refaktor
 cd refaktor
 cargo build --release
 
-# Use refaktor to rename itself to smart_search_and_replace
-./target/release/refaktor rename refaktor smart_search_and_replace --preview table
+# Use refaktor to rename itself to renamed_refactoring_tool
+./target/release/refaktor rename refaktor renamed_refactoring_tool --preview table
 
 # Rebuild with the new name
 rm -rf target
 cargo build --release
 
-# Now use smart_search_and_replace to rename itself back to refaktor!
-./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --preview table
+# Now use renamed_refactoring_tool to rename itself back to refaktor!
+./target/release/renamed_refactoring_tool rename renamed_refactoring_tool refaktor --preview table
 
 # Back to the original
 rm -rf target

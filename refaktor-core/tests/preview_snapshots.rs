@@ -214,7 +214,7 @@ fn test_root_directory_rename_handling() {
         id: "root-test".to_string(),
         created_at: "1234567890".to_string(),
         old: "refaktor".to_string(),
-        new: "smart_search_and_replace".to_string(),
+        new: "renamed_refactoring_tool".to_string(),
         styles: vec![Style::Snake, Style::Kebab],
         includes: vec![],
         excludes: vec![],
@@ -224,7 +224,7 @@ fn test_root_directory_rename_handling() {
             col: 0,
             variant: "refaktor".to_string(),
             before: "refaktor".to_string(),
-            after: "smart_search_and_replace".to_string(),
+            after: "renamed_refactoring_tool".to_string(),
             start: 2,
             end: 10,
             line_before: Some("# Refaktor".to_string()),
@@ -235,7 +235,7 @@ fn test_root_directory_rename_handling() {
             // Only regular directory rename - root directory rename is filtered out
             Rename {
                 from: PathBuf::from("/project/refaktor-core"),
-                to: PathBuf::from("/project/smart-search-and-replace-core"),
+                to: PathBuf::from("/project/renamed-refactoring-tool-core"),
                 kind: RenameKind::Dir,
                 coercion_applied: None,
             },
@@ -260,7 +260,7 @@ fn test_root_directory_rename_handling() {
         "Regular directory should appear in table"
     );
     assert!(
-        normalized.contains("smart-search-and-replace-core"),
+        normalized.contains("renamed-refactoring-tool-core"),
         "Regular directory rename should appear in table"
     );
 

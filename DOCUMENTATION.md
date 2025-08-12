@@ -25,10 +25,10 @@ When you provide a search and replace pattern, Refaktor will automatically apply
 
 Refaktor includes intelligent contextual separator coercion that adapts the replacement style based on the surrounding code context:
 
-- **Context-aware replacement**: `refaktor_core::Engine` becomes `smart_search_and_replace_core::Engine` (snake_case context)
-- **Path-aware**: `src/refaktor/main.rs` becomes `src/smart-search-and-replace/main.rs` (kebab-case for paths)
-- **URL-aware**: `https://github.com/user/refaktor` becomes `https://github.com/user/smart-search-and-replace`
-- **Module-aware**: `refaktor::core::apply()` becomes `smart_search_and_replace::core::apply()`
+- **Context-aware replacement**: `refaktor_core::Engine` becomes `renamed_refactoring_tool_core::Engine` (snake_case context)
+- **Path-aware**: `src/refaktor/main.rs` becomes `src/renamed-refactoring-tool/main.rs` (kebab-case for paths)
+- **URL-aware**: `https://github.com/user/refaktor` becomes `https://github.com/user/renamed-refactoring-tool`
+- **Module-aware**: `refaktor::core::apply()` becomes `renamed_refactoring_tool::core::apply()`
 
 The coercion analyzes the immediate context around each match to determine the most appropriate separator style, making refactoring feel more natural and reducing manual corrections.
 
@@ -54,11 +54,11 @@ In addition to replacing text within files, Refaktor can rename:
 ```bash
 # This will offer to rename the project directory itself
 cd /path/to/refaktor-project
-refaktor rename refaktor smart_search_and_replace --rename-root
+refaktor rename refaktor renamed_refactoring_tool --rename-root
 
 # Refaktor will show a "Next Steps" snippet like:
 # Next Steps:
-# 1. cd ../smart-search-and-replace-project
+# 1. cd ../renamed-refactoring-tool-project
 # 2. cargo build --release  # if Rust project
 # 3. Update any IDE project settings
 ```

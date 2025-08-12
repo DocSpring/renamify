@@ -424,77 +424,73 @@ mod tests {
     fn test_render_tokens() {
         let tokens = vec![
             Token {
-                word: "smart".to_string(),
+                word: "renamed".to_string(),
                 is_acronym: false,
             },
             Token {
-                word: "search".to_string(),
+                word: "refactoring".to_string(),
                 is_acronym: false,
             },
             Token {
-                word: "and".to_string(),
-                is_acronym: false,
-            },
-            Token {
-                word: "replace".to_string(),
+                word: "tool".to_string(),
                 is_acronym: false,
             },
         ];
 
         assert_eq!(
             render_tokens(&tokens, Style::Snake),
-            "smart_search_and_replace"
+            "renamed_refactoring_tool"
         );
         assert_eq!(
             render_tokens(&tokens, Style::Kebab),
-            "smart-search-and-replace"
+            "renamed-refactoring-tool"
         );
         assert_eq!(
             render_tokens(&tokens, Style::Camel),
-            "smartSearchAndReplace"
+            "renamedRefactoringTool"
         );
         assert_eq!(
             render_tokens(&tokens, Style::Pascal),
-            "SmartSearchAndReplace"
+            "RenamedRefactoringTool"
         );
         assert_eq!(
             render_tokens(&tokens, Style::ScreamingSnake),
-            "SMART_SEARCH_AND_REPLACE"
+            "RENAMED_REFACTORING_TOOL"
         );
         assert_eq!(
             render_tokens(&tokens, Style::Dot),
-            "smart.search.and.replace"
+            "renamed.refactoring.tool"
         );
     }
 
     #[test]
     fn test_apply_coercion() {
         // Test kebab-case container
-        let result = apply_coercion("refaktor-core", "refaktor", "smart_search_and_replace");
+        let result = apply_coercion("refaktor-core", "refaktor", "renamed_refactoring_tool");
         assert_eq!(
             result,
             Some((
-                "smart-search-and-replace-core".to_string(),
+                "renamed-refactoring-tool-core".to_string(),
                 "coerced to Kebab style".to_string()
             ))
         );
 
         // Test snake_case container
-        let result = apply_coercion("refaktor_core", "refaktor", "smart-search-and-replace");
+        let result = apply_coercion("refaktor_core", "refaktor", "renamed-refactoring-tool");
         assert_eq!(
             result,
             Some((
-                "smart_search_and_replace_core".to_string(),
+                "renamed_refactoring_tool_core".to_string(),
                 "coerced to Snake style".to_string()
             ))
         );
 
         // Test PascalCase container
-        let result = apply_coercion("RefaktorCore", "Refaktor", "smart_search_and_replace");
+        let result = apply_coercion("RefaktorCore", "Refaktor", "renamed_refactoring_tool");
         assert_eq!(
             result,
             Some((
-                "SmartSearchAndReplaceCore".to_string(),
+                "RenamedRefactoringToolCore".to_string(),
                 "coerced to Pascal style".to_string()
             ))
         );

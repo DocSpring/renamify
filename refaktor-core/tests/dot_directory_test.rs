@@ -37,7 +37,7 @@ temp_dir.child(".refaktor").create_dir_all().unwrap();
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "smart_search_and_replace", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Should find all occurrences including .refaktor
 
@@ -72,8 +72,8 @@ temp_dir.child(".refaktor").create_dir_all().unwrap();
         assert!(
             hunk.line_after
                 .as_ref()
-                .map_or(false, |l| l.contains(".smart_search_and_replace")),
-            "Should replace .refaktor with .smart_search_and_replace"
+                .map_or(false, |l| l.contains(".renamed_refactoring_tool")),
+            "Should replace .refaktor with .renamed_refactoring_tool"
         );
     }
 }
@@ -112,7 +112,7 @@ coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     let plan = scan_repository(
         &root,
         "refaktor_core",
-        "smart_search_and_replace_core",
+        "renamed_refactoring_tool_core",
         &options,
     )
     .unwrap();
@@ -134,7 +134,7 @@ coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     // Verify each is properly replaced
     for hunk in &plan.matches {
         assert_eq!(hunk.before, "refaktor_core");
-        assert_eq!(hunk.after, "smart_search_and_replace_core");
+        assert_eq!(hunk.after, "renamed_refactoring_tool_core");
     }
 }
 
@@ -177,7 +177,7 @@ Commands:
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "smart_search_and_replace", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     println!("Total matches: {}", plan.stats.total_matches);
     for hunk in &plan.matches {
