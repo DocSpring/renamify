@@ -1,49 +1,37 @@
-# Starlight Starter Kit: Basics
+# Refaktor Documentation Site
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+This directory contains the Refaktor documentation website built with [Starlight](https://starlight.astro.build).
 
-```
-npm create astro@latest -- --template starlight
-```
+## 📖 Documentation Structure
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- **Guide** - User guides and tutorials
+- **Reference** - CLI reference and configuration options
+- **Demo** - Interactive demonstration of Refaktor's capabilities
+- **Case Studies** - Real-world usage examples
 
-## 🚀 Project Structure
+## 🛠️ Development
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+```bash
+# Install dependencies
+npm install
 
-```
-.
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   └── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+The documentation is automatically built and deployed from the `main` branch.
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+## 📝 Content
 
-Static assets, like favicons, can be placed in the `public/` directory.
+Documentation content is written in Markdown/MDX and located in `src/content/docs/`. The site includes:
 
-## 🧞 Commands
+- Getting started guides
+- CLI command reference
+- Configuration examples
+- Live demo with self-referential testing
+- Real-world case studies
 
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+Visit the live documentation at https://docspring.github.io/refaktor/ to learn more about Refaktor.

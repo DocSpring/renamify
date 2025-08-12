@@ -75,10 +75,6 @@ You can control how ignore files are handled using the `-u` flag:
 
 The `.rfignore` file is useful when you want to exclude files specifically from refaktor operations without affecting Git or other tools.
 
-## Build Status
-
-[![CI](https://github.com/ndbroadbent/refaktor/actions/workflows/ci.yml/badge.svg)](https://github.com/ndbroadbent/refaktor/actions/workflows/ci.yml)
-
 ## Development
 
 ### Prerequisites
@@ -116,6 +112,12 @@ cargo llvm-cov --package refaktor-core
 ## License
 
 MIT License - Copyright (c) 2025 DocSpring
+
+## Build Status
+
+[![CI](https://github.com/DocSpring/refaktor/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/refaktor/actions/workflows/ci.yml)
+
+[![E2E Tests](https://github.com/DocSpring/refaktor/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/refaktor/actions/workflows/e2e.yml)
 
 ---
 
