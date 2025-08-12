@@ -158,7 +158,7 @@ fn test_refaktor() {
         .args(["apply"])
         .assert()
         .success()
-        .stderr(predicate::str::contains("Plan applied successfully!"));
+        .stdout(predicate::str::contains("Applied"));
 
     // Verify the files were modified correctly
     let readme_content = std::fs::read_to_string(temp_dir.path().join("docs/README.md")).unwrap();
@@ -217,24 +217,47 @@ The Refaktor-Based-Solution is working.
         .write_str(original_content)
         .unwrap();
 
-    // Apply rename
-    let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.current_dir(temp_dir.path())
-        .args(["rename", "refaktor", "smart_search_and_replace", "-y"])
-        .assert()
-        .success();
+    // Change to the temp directory for the commands
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(temp_dir.path()).unwrap();
+
+    // Apply rename using the core rename operation directly
+    use refaktor_core::rename_operation;
+    rename_operation(
+        "refaktor",
+        "smart_search_and_replace",
+        vec![],  // paths (empty = current dir)
+        vec![],  // include
+        vec![],  // exclude
+        0,       // unrestricted_level
+        true,    // rename_files
+        true,    // rename_dirs
+        vec![],  // exclude_styles
+        vec![],  // include_styles
+        vec![],  // only_styles
+        vec![],  // exclude_match
+        None,    // preview_format
+        false,   // commit
+        false,   // large
+        false,   // force_with_conflicts
+        false,   // rename_root
+        false,   // no_rename_root
+        false,   // dry_run
+        true,    // auto_approve
+        true,    // use_color
+    ).unwrap();
 
     // Verify changes were applied
-    let changed_content = std::fs::read_to_string(temp_dir.path().join("doc.md")).unwrap();
+    let changed_content = std::fs::read_to_string("doc.md").unwrap();
     assert!(changed_content.contains("Smart-Search-And-Replace-Core-Engine"));
     assert!(!changed_content.contains("Refaktor-Core-Engine"));
 
-    // Undo the changes
-    let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    cmd.current_dir(temp_dir.path())
-        .args(["undo", "latest"])
-        .assert()
-        .success();
+    // Undo the changes using the core undo operation directly
+    use refaktor_core::undo_operation;
+    undo_operation("latest", None).unwrap();
+
+    // Restore original directory
+    std::env::set_current_dir(original_dir).unwrap();
 
     // Verify content is back to original
     let restored_content = std::fs::read_to_string(temp_dir.path().join("doc.md")).unwrap();

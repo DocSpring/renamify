@@ -4,3 +4,4 @@ some more ideas please:
 - [x] lock file in .refaktor/ - abort with error if another process is running (for plan/apply/rename)
 - homebrew formula
 - interactive mode like git add -P for accepting/rejecting individual changes
+- publish this as a Rust crate that other Rust programs can use directly

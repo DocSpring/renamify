@@ -24,6 +24,7 @@ pub enum Preview {
     Diff,
     Json,
     Summary,
+    None,
 }
 
 impl std::str::FromStr for Preview {
@@ -35,6 +36,7 @@ impl std::str::FromStr for Preview {
             "diff" => Ok(Self::Diff),
             "json" => Ok(Self::Json),
             "summary" => Ok(Self::Summary),
+            "none" => Ok(Self::None),
             _ => Err(format!("Invalid preview format: {}", s)),
         }
     }
@@ -75,6 +77,7 @@ pub fn render_plan_with_fixed_width(
         Preview::Diff => render_diff(plan, use_color),
         Preview::Json => render_json(plan),
         Preview::Summary => render_summary(plan),
+        Preview::None => String::new(), // Return empty string for no preview
     }
 }
 
@@ -584,8 +587,10 @@ mod tests {
         assert_eq!(Preview::from_str("diff"), Ok(Preview::Diff));
         assert_eq!(Preview::from_str("json"), Ok(Preview::Json));
         assert_eq!(Preview::from_str("summary"), Ok(Preview::Summary));
+        assert_eq!(Preview::from_str("none"), Ok(Preview::None));
         assert_eq!(Preview::from_str("TABLE"), Ok(Preview::Table));
         assert_eq!(Preview::from_str("SUMMARY"), Ok(Preview::Summary));
+        assert_eq!(Preview::from_str("NONE"), Ok(Preview::None));
         assert!(Preview::from_str("invalid").is_err());
     }
 

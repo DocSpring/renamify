@@ -10,6 +10,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 
+pub mod api;
 pub mod apply;
 pub mod case_model;
 pub mod coercion;
@@ -18,12 +19,15 @@ pub mod compound_scanner;
 pub mod config;
 pub mod history;
 pub mod lock;
+pub mod operations;
 pub mod pattern;
 pub mod preview;
 pub mod rename;
 pub mod scanner;
 pub mod undo;
 
+pub use api::{rename, undo, plan, apply};
+pub use operations::{rename_operation, undo_operation, redo_operation, plan_operation, plan_operation_with_dry_run, apply_operation};
 pub use apply::{apply_plan, ApplyOptions};
 pub use case_model::{
     detect_style, generate_variant_map, parse_to_tokens, to_style, Style, Token, TokenModel,

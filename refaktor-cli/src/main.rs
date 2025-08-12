@@ -1,30 +1,19 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
-use refaktor_core::{
-    apply_plan, format_history, get_status, redo_refactoring, scan_repository_multi,
-    undo_refactoring, write_plan, write_preview, ApplyOptions, Config, History, LockFile, Plan,
-    PlanOptions, Preview, Style,
-};
+use refaktor_core::{Config, Preview, Style};
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 use std::process;
 use std::str::FromStr;
 
+mod apply;
+mod history;
+mod plan;
+mod redo;
 mod rename;
+mod status;
+mod undo;
 
-/// Returns the default styles used by refaktor CLI
-pub(crate) fn get_default_styles() -> Vec<StyleArg> {
-    vec![
-        StyleArg::Original,
-        StyleArg::Snake,
-        StyleArg::Kebab,
-        StyleArg::Camel,
-        StyleArg::Pascal,
-        StyleArg::ScreamingSnake,
-        StyleArg::Train,          // Include Train-Case in CLI defaults
-        StyleArg::ScreamingTrain, // Include ScreamingTrain for ALL-CAPS-PATTERNS
-    ]
-}
 
 /// Smart search & replace for code and files with case-aware transformations
 #[derive(Parser, Debug)]
@@ -478,7 +467,7 @@ fn main() {
                 Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
             });
 
-            handle_plan(
+            plan::handle_plan(
                 &old,
                 &new,
                 paths,
@@ -492,7 +481,7 @@ fn main() {
                 include_styles,
                 only_styles,
                 exclude_match,
-                format,
+                Some(format),
                 plan_out,
                 dry_run,
                 use_color,
@@ -519,7 +508,7 @@ fn main() {
                 Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
             });
 
-            handle_plan(
+            plan::handle_plan(
                 &old,
                 &new,
                 paths,
@@ -533,7 +522,7 @@ fn main() {
                 include_styles,
                 only_styles,
                 exclude_match,
-                format,
+                Some(format),
                 PathBuf::from(".refaktor/plan.json"),
                 true, // Always dry-run
                 use_color,
@@ -543,21 +532,18 @@ fn main() {
         Commands::Apply {
             plan,
             id,
-            atomic,
+            atomic: _,
             commit,
             force_with_conflicts,
-        } => handle_apply(plan, id, atomic, commit, force_with_conflicts),
+        } => apply::handle_apply(plan, id, commit, force_with_conflicts),
 
-        Commands::Undo { id } => handle_undo(id),
+        Commands::Undo { id } => undo::handle_undo(&id),
 
-        Commands::Redo { id } => {
-            let refaktor_dir = PathBuf::from(".refaktor");
-            redo_refactoring(&id, &refaktor_dir).context("Failed to redo refactoring")
-        },
+        Commands::Redo { id } => redo::handle_redo(&id),
 
-        Commands::Status => handle_status(),
+        Commands::Status => status::handle_status(),
 
-        Commands::History { limit } => handle_history(limit),
+        Commands::History { limit } => history::handle_history(limit),
 
         Commands::Init {
             local,
@@ -636,255 +622,7 @@ fn main() {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn handle_plan(
-    old: &str,
-    new: &str,
-    paths: Vec<PathBuf>,
-    include: Vec<String>,
-    exclude: Vec<String>,
-    respect_gitignore: bool,
-    unrestricted: u8,
-    rename_files: bool,
-    rename_dirs: bool,
-    exclude_styles: Vec<StyleArg>,
-    include_styles: Vec<StyleArg>,
-    only_styles: Vec<StyleArg>,
-    exclude_match: Vec<String>,
-    preview: Preview,
-    plan_out: PathBuf,
-    dry_run: bool,
-    use_color: bool,
-) -> Result<()> {
-    let current_dir = std::env::current_dir().context("Failed to get current directory")?;
 
-    // Use provided paths or default to current directory
-    let search_paths = if paths.is_empty() {
-        vec![PathBuf::from(".")]
-    } else {
-        paths
-    };
-
-    // Acquire lock
-    let refaktor_dir = current_dir.join(".refaktor");
-    let _lock = LockFile::acquire(&refaktor_dir)
-        .context("Failed to acquire lock for refaktor operation")?;
-
-    // Build the list of styles to use based on exclude, include, and only options
-    let styles = {
-        if only_styles.is_empty() {
-            // Start with the default styles
-            let default_styles = get_default_styles();
-
-            // Remove excluded styles from defaults
-            let mut active_styles: Vec<StyleArg> = default_styles
-                .into_iter()
-                .filter(|s| !exclude_styles.contains(s))
-                .collect();
-
-            // Add included styles (Title, Train, Dot)
-            for style in include_styles {
-                if !active_styles.contains(&style) {
-                    active_styles.push(style);
-                }
-            }
-
-            if active_styles.is_empty() {
-                eprintln!("Warning: All styles have been excluded, using default styles");
-                None // Use default styles
-            } else {
-                Some(active_styles.into_iter().map(Into::into).collect())
-            }
-        } else {
-            // If --only-styles is specified, use only those styles
-            Some(only_styles.into_iter().map(Into::into).collect())
-        }
-    };
-
-    let options = PlanOptions {
-        includes: include,
-        excludes: exclude,
-        respect_gitignore,
-        unrestricted_level: unrestricted.min(3), // Cap at 3 for safety
-        styles,
-        rename_files,
-        rename_dirs,
-        rename_root: false, // Default: do not allow root directory renames in plan
-        plan_out: plan_out.clone(),
-        coerce_separators: refaktor_core::scanner::CoercionMode::Auto, // TODO: make configurable
-        exclude_match,
-    };
-
-    // Resolve all search paths to absolute paths and canonicalize them
-    let resolved_paths: Vec<PathBuf> = search_paths
-        .iter()
-        .map(|path| {
-            let absolute_path = if path.is_absolute() {
-                path.clone()
-            } else {
-                current_dir.join(path)
-            };
-            // Canonicalize to remove . and .. components
-            absolute_path.canonicalize().unwrap_or(absolute_path)
-        })
-        .collect();
-
-    let plan = scan_repository_multi(&resolved_paths, old, new, &options)
-        .context("Failed to scan repository")?;
-
-    // Show preview
-    write_preview(&plan, preview, Some(use_color)).context("Failed to write preview")?;
-
-    // Write plan unless dry-run
-    if !dry_run {
-        write_plan(&plan, &plan_out).context("Failed to write plan")?;
-
-        if preview != Preview::Json {
-            eprintln!("\nPlan written to: {}", plan_out.display());
-        }
-    }
-
-    // Check for conflicts and return appropriate exit code
-    if let Some(conflicts) = check_for_conflicts(&plan) {
-        eprintln!("\nWarning: {conflicts} conflicts detected");
-        if !dry_run {
-            eprintln!("Use --force-with-conflicts to apply anyway");
-        }
-        // We don't exit with error here, just warn
-    }
-
-    Ok(())
-}
-
-const fn check_for_conflicts(_plan: &refaktor_core::Plan) -> Option<usize> {
-    // Check if there are any rename conflicts
-    // This is a placeholder - would need to check the actual conflicts
-    // from the rename module
-    None
-}
-
-fn handle_apply(
-    plan_path: Option<PathBuf>,
-    id: Option<String>,
-    atomic: bool,
-    commit: bool,
-    force_with_conflicts: bool,
-) -> Result<()> {
-    let root = std::env::current_dir().context("Failed to get current directory")?;
-
-    // Acquire lock
-    let refaktor_dir = root.join(".refaktor");
-    let _lock = LockFile::acquire(&refaktor_dir)
-        .context("Failed to acquire lock for refaktor operation")?;
-
-    // Determine which plan to load
-    let plan_path = if let Some(path) = plan_path {
-        path
-    } else if let Some(id) = id {
-        // Load from history by ID (placeholder for now)
-        eprintln!("Loading plan from history ID {id} not yet implemented");
-        return Ok(());
-    } else {
-        // Default to last plan
-        PathBuf::from(".refaktor/plan.json")
-    };
-
-    // Load the plan
-    let plan_json = std::fs::read_to_string(&plan_path)
-        .with_context(|| format!("Failed to read plan from {}", plan_path.display()))?;
-
-    let plan: Plan = serde_json::from_str(&plan_json).context("Failed to parse plan JSON")?;
-
-    // Check for conflicts if not forcing
-    if !force_with_conflicts {
-        if let Some(conflicts) = check_for_conflicts(&plan) {
-            eprintln!(
-                "Error: {conflicts} conflicts detected. Use --force-with-conflicts to apply anyway"
-            );
-            return Err(anyhow!("Conflicts detected"));
-        }
-    }
-
-    // Set up apply options
-    let options = ApplyOptions {
-        atomic,
-        commit,
-        force: force_with_conflicts,
-        ..Default::default()
-    };
-
-    eprintln!(
-        "Applying plan {} ({} edits, {} renames)...",
-        plan.id,
-        plan.matches.len(),
-        plan.renames.len()
-    );
-
-    // Apply the plan
-    apply_plan(&plan, &options).context("Failed to apply plan")?;
-
-    eprintln!("Plan applied successfully!");
-
-    // Delete the plan.json file after successful apply (only if using default path)
-    if plan_path == PathBuf::from(".refaktor/plan.json") {
-        if let Err(e) = std::fs::remove_file(&plan_path) {
-            eprintln!(
-                "Warning: Failed to delete plan file {}: {}",
-                plan_path.display(),
-                e
-            );
-        } else {
-            eprintln!("Deleted plan file: {}", plan_path.display());
-        }
-    }
-
-    if commit {
-        eprintln!("Changes committed to git");
-    }
-
-    Ok(())
-}
-
-fn handle_status() -> Result<()> {
-    let refaktor_dir = PathBuf::from(".refaktor");
-    let status = get_status(&refaktor_dir).context("Failed to get status")?;
-
-    print!("{}", status.format());
-    Ok(())
-}
-
-fn handle_undo(id: String) -> Result<()> {
-    let refaktor_dir = PathBuf::from(".refaktor");
-
-    // Handle "latest" keyword
-    let actual_id = if id == "latest" {
-        // Load history and get the most recent non-revert entry
-        let history = History::load(&refaktor_dir).context("Failed to load history")?;
-        let entries = history.list_entries(None);
-
-        // Find the most recent non-revert entry
-        entries
-            .iter()
-            .find(|e| e.revert_of.is_none())
-            .map(|e| e.id.clone())
-            .ok_or_else(|| anyhow!("No entries to undo"))?
-    } else {
-        id
-    };
-
-    undo_refactoring(&actual_id, &refaktor_dir).context("Failed to undo refactoring")
-}
-
-fn handle_history(limit: Option<usize>) -> Result<()> {
-    let refaktor_dir = PathBuf::from(".refaktor");
-    let history = History::load(&refaktor_dir).context("Failed to load history")?;
-
-    let entries = history.list_entries(limit);
-    let formatted = format_history(&entries, false)?;
-
-    println!("{formatted}");
-    Ok(())
-}
 
 fn is_refaktor_ignored() -> Result<bool> {
     // Check if .refaktor is already ignored in any ignore file

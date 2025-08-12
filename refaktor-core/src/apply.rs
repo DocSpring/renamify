@@ -95,54 +95,131 @@ impl ApplyState {
     }
 }
 
-/// Create a diff-based backup of a file
-fn create_diff_backup(
-    original_path: &Path,
-    modified_content: &str,
-    backup_dir: &Path,
-    plan_id: &str,
+/// Generate a comprehensive patch that includes all changes using diffy
+fn generate_comprehensive_patch(
+    plan: &Plan,
+    options: &ApplyOptions,
+    state: &ApplyState,
+    original_contents: &HashMap<PathBuf, String>,
 ) -> Result<PathBuf> {
     // Create backup directory structure
-    let backup_base = backup_dir.join(plan_id);
+    let backup_base = options.backup_dir.join(&plan.id);
     fs::create_dir_all(&backup_base)?;
 
-    // Generate diff path using the filename + .diff extension
-    let diff_filename = format!(
-        "{}.diff",
-        original_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
-    );
-    let diff_path = backup_base.join(diff_filename);
+    // Generate BOTH forward and reverse patches for debugging and clarity
+    let forward_patch_path = backup_base.join("forward.patch");
+    let reverse_patch_path = backup_base.join("reverse.patch");
+    let patch_path = backup_base.join("refactoring.patch"); // Keep for compatibility
+    
+    let mut forward_patch_content = String::new();
+    let mut reverse_patch_content = String::new();
 
-    // Create a temporary file with the modified content
-    let temp_dir = std::env::temp_dir();
-    let temp_file = temp_dir.join(format!("refaktor_{}.tmp", std::process::id()));
-    fs::write(&temp_file, modified_content)?;
+    // Add headers to both patches
+    let timestamp = chrono::Local::now().to_rfc3339();
+    
+    // Forward patch header (old -> new)
+    forward_patch_content.push_str(&format!("# Refaktor forward patch for plan {}", plan.id));
+    forward_patch_content.push_str(&format!("\n# Created: {}\n", timestamp));
+    forward_patch_content.push_str(&format!("# Old: {} -> New: {}\n\n", plan.old, plan.new));
+    
+    // Reverse patch header (new -> old) 
+    reverse_patch_content.push_str(&format!("# Refaktor reverse patch for plan {}", plan.id));
+    reverse_patch_content.push_str(&format!("\n# Created: {}\n", timestamp));
+    reverse_patch_content.push_str(&format!("# New: {} -> Old: {} (for undo)\n\n", plan.new, plan.old));
 
-    // Generate diff using git diff
-    // Note: git diff returns exit code 1 when files differ, which is expected
-    let output = std::process::Command::new("git")
-        .args([
-            "diff",
-            "--no-index",
-            "--no-prefix",
-            original_path.to_str().unwrap(),
-            temp_file.to_str().unwrap(),
-        ])
-        .output();
+    // Process each file that had content changes
+    for (original_path, original_content) in original_contents {
+        // Find the current path for this file (may have been renamed)
+        let current_path = if let Some((_, to)) = state
+            .renames_performed
+            .iter()
+            .find(|(from, _)| from == original_path)
+        {
+            to.clone()
+        } else {
+            // Check if any parent directory was renamed
+            let mut current = original_path.to_path_buf();
+            for (from, to) in &state.renames_performed {
+                if let Ok(relative) = original_path.strip_prefix(from) {
+                    current = to.join(relative);
+                    break;
+                }
+            }
+            current
+        };
 
-    // Always clean up temp file, even if git diff failed
-    let _ = fs::remove_file(&temp_file);
+        // Read current content
+        let current_content = fs::read_to_string(&current_path).with_context(|| {
+            format!(
+                "Failed to read current content from {}",
+                current_path.display()
+            )
+        })?;
 
-    // Check if git diff succeeded
-    let output = output.context("Failed to run git diff")?;
+        // Generate FORWARD diff (old -> new) using diffy
+        let forward_patch = diffy::create_patch(original_content.as_str(), current_content.as_str());
+        let forward_diff_str = forward_patch.to_string();
 
-    // Save the diff (even if empty, which might happen if files are identical)
-    fs::write(&diff_path, &output.stdout)?;
+        // Generate REVERSE diff (new -> old) using diffy
+        let reverse_patch = diffy::create_patch(current_content.as_str(), original_content.as_str());
+        let reverse_diff_str = reverse_patch.to_string();
 
-    Ok(diff_path)
+        // If there are actual differences, add to both patches
+        if !forward_diff_str.is_empty() && forward_diff_str != "--- original\n+++ modified\n" {
+            // Forward patch: old -> new
+            let forward_lines: Vec<&str> = forward_diff_str.lines().collect();
+            forward_patch_content.push_str(&format!("--- {}\n", original_path.display()));
+            forward_patch_content.push_str(&format!("+++ {}\n", current_path.display()));
+            for line in forward_lines.iter().skip(2) {
+                forward_patch_content.push_str(line);
+                forward_patch_content.push('\n');
+            }
+
+            // Reverse patch: new -> old (for undo)
+            let reverse_lines: Vec<&str> = reverse_diff_str.lines().collect();
+            reverse_patch_content.push_str(&format!("--- {}\n", current_path.display()));
+            reverse_patch_content.push_str(&format!("+++ {}\n", original_path.display()));
+            for line in reverse_lines.iter().skip(2) {
+                reverse_patch_content.push_str(line);
+                reverse_patch_content.push('\n');
+            }
+        }
+    }
+
+    // Add rename-only operations (files/dirs renamed without content changes)
+    for (from, to) in &state.renames_performed {
+        // Skip if this file already had content changes (already in patch)
+        if original_contents.contains_key(from) {
+            continue;
+        }
+
+        // Add rename-only entry to forward patch
+        forward_patch_content.push_str(&format!(
+            "diff --git a/{} b/{}\n",
+            from.display(),
+            to.display()
+        ));
+        forward_patch_content.push_str(&format!("rename from {}\n", from.display()));
+        forward_patch_content.push_str(&format!("rename to {}\n", to.display()));
+        forward_patch_content.push_str("\n");
+        
+        // Add rename-only entry to reverse patch (reversed)
+        reverse_patch_content.push_str(&format!(
+            "diff --git a/{} b/{}\n",
+            to.display(),
+            from.display()
+        ));
+        reverse_patch_content.push_str(&format!("rename from {}\n", to.display()));
+        reverse_patch_content.push_str(&format!("rename to {}\n", from.display()));
+        reverse_patch_content.push_str("\n");
+    }
+
+    // Write all three patches
+    fs::write(&forward_patch_path, &forward_patch_content)?;
+    fs::write(&reverse_patch_path, &reverse_patch_content)?;
+    fs::write(&patch_path, &reverse_patch_content)?; // refactoring.patch is the REVERSE patch for undo
+
+    Ok(patch_path)
 }
 
 /// Create a backup of a file or directory (for renames only)
@@ -266,79 +343,6 @@ fn apply_content_edits_with_content(
     state.log(&format!("Successfully applied edits to {}", path.display()))?;
 
     Ok(())
-}
-
-/// Create a diff backup using stored original content
-fn create_diff_backup_with_content(
-    original_path: &Path,
-    current_path: &Path,
-    original_content: &str,
-    backup_dir: &Path,
-    plan_id: &str,
-) -> Result<PathBuf> {
-    // Create backup directory structure
-    let backup_base = backup_dir.join(plan_id);
-    fs::create_dir_all(&backup_base)?;
-
-    // Generate diff path using the original filename + .diff extension
-    let diff_filename = format!(
-        "{}.diff",
-        original_path
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
-    );
-    let diff_path = backup_base.join(diff_filename);
-
-    // Read current content from the current path (which may be renamed)
-    let current_content = fs::read_to_string(current_path).with_context(|| {
-        format!(
-            "Failed to read current content from {} (was: {})",
-            current_path.display(),
-            original_path.display()
-        )
-    })?;
-
-    // Create temporary files for git diff
-    let temp_dir = std::env::temp_dir();
-    let temp_original = temp_dir.join(format!("refaktor_orig_{}.tmp", std::process::id()));
-    let temp_current = temp_dir.join(format!("refaktor_curr_{}.tmp", std::process::id()));
-
-    fs::write(&temp_original, original_content)?;
-    fs::write(&temp_current, &current_content)?;
-
-    // Generate diff using git diff
-    let output = std::process::Command::new("git")
-        .args([
-            "diff",
-            "--no-index",
-            "--no-prefix",
-            temp_original.to_str().unwrap(),
-            temp_current.to_str().unwrap(),
-        ])
-        .output();
-
-    // Clean up temp files
-    let _ = fs::remove_file(&temp_original);
-    let _ = fs::remove_file(&temp_current);
-
-    let output = output.context("Failed to run git diff")?;
-
-    // Replace temp paths with original path in diff
-    let diff_content = String::from_utf8_lossy(&output.stdout)
-        .replace(
-            &temp_original.to_string_lossy().to_string(),
-            &original_path.to_string_lossy(),
-        )
-        .replace(
-            &temp_current.to_string_lossy().to_string(),
-            &original_path.to_string_lossy(),
-        );
-
-    // Save the diff
-    fs::write(&diff_path, diff_content)?;
-
-    Ok(diff_path)
 }
 
 /// Check if filesystem is case-insensitive
@@ -630,55 +634,19 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
-    // STEP 4: Generate diffs after all changes are complete
+    // STEP 4: Generate comprehensive patch after all changes are complete
     if options.create_backups {
-        state.log("Creating diff backups after all changes")?;
+        state.log("Creating comprehensive patch backup")?;
 
-        for (original_path, original_content) in &original_contents {
-            // Only create diff if the file was actually modified
-            if !state.content_edits_applied.contains(original_path) {
-                continue;
-            }
-
-            // Find the current path for this file (may have been renamed)
-            // Check if the file itself was renamed
-            let current_path = if let Some((_, to)) = state
-                .renames_performed
-                .iter()
-                .find(|(from, _)| from == original_path)
-            {
-                to.clone()
-            } else {
-                // Check if any parent directory was renamed
-                let mut current = original_path.to_path_buf();
-                for (from, to) in &state.renames_performed {
-                    // Check if this is a directory rename that affects our file
-                    if let Ok(relative) = original_path.strip_prefix(from) {
-                        current = to.join(relative);
-                        break;
-                    }
-                }
-                current
-            };
-
-            // Create diff showing the content changes
-            if let Err(e) = create_diff_backup_with_content(
-                original_path,
-                &current_path,
-                original_content,
-                &options.backup_dir,
-                &plan.id,
-            ) {
-                state.log(&format!(
-                    "Failed to create diff backup for {}: {}",
-                    current_path.display(),
-                    e
-                ))?;
-                if !options.force {
-                    return Err(e);
-                }
+        // Generate a single comprehensive patch file
+        if let Err(e) = generate_comprehensive_patch(plan, options, &state, &original_contents) {
+            state.log(&format!("Failed to create comprehensive patch: {}", e))?;
+            if !options.force {
+                return Err(e);
             }
         }
+
+        state.log("Comprehensive patch created successfully")?;
     }
 
     // Commit to git if requested
@@ -862,20 +830,20 @@ mod tests {
         let content = fs::read_to_string(&test_file).unwrap();
         assert_eq!(content, "fn new_name() {}");
 
-        // Check diff backup was created at the right path
-        let expected_diff = options
+        // Check comprehensive patch was created at the right path
+        let expected_patch = options
             .backup_dir
             .join("test_plan_456")
-            .join("test.rs.diff");
+            .join("refactoring.patch");
         assert!(
-            expected_diff.exists(),
-            "Diff backup should exist at {:?}",
-            expected_diff
+            expected_patch.exists(),
+            "Comprehensive patch should exist at {:?}",
+            expected_patch
         );
-        // The diff should contain the changes
-        let diff_content = fs::read_to_string(&expected_diff).unwrap();
-        assert!(diff_content.contains("old_name"));
-        assert!(diff_content.contains("new_name"));
+        // The patch should contain the changes
+        let patch_content = fs::read_to_string(&expected_patch).unwrap();
+        assert!(patch_content.contains("old_name"));
+        assert!(patch_content.contains("new_name"));
 
         // Load history and check the entry
         let history = History::load(temp_dir.path().join(".refaktor").as_path()).unwrap();

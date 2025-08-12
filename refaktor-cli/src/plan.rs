@@ -1,16 +1,18 @@
 use anyhow::Result;
-use refaktor_core::{rename_operation, Style};
+use refaktor_core::{plan_operation_with_dry_run, Style};
 use std::path::PathBuf;
 
-use crate::{PreviewArg, StyleArg};
+use crate::StyleArg;
+use refaktor_core::Preview;
 
 #[allow(clippy::too_many_arguments)]
-pub fn handle_rename(
+pub fn handle_plan(
     old: &str,
     new: &str,
     paths: Vec<PathBuf>,
     include: Vec<String>,
     exclude: Vec<String>,
+    respect_gitignore: bool,
     unrestricted: u8,
     rename_files: bool,
     rename_dirs: bool,
@@ -18,15 +20,9 @@ pub fn handle_rename(
     include_styles: Vec<StyleArg>,
     only_styles: Vec<StyleArg>,
     exclude_match: Vec<String>,
-    preview: Option<PreviewArg>,
-    commit: bool,
-    large: bool,
-    force_with_conflicts: bool,
-    _confirm_collisions: bool, // TODO: implement collision detection
-    rename_root: bool,
-    no_rename_root: bool,
+    preview: Option<Preview>,
+    plan_out: PathBuf,
     dry_run: bool,
-    auto_approve: bool,
     use_color: bool,
 ) -> Result<()> {
     // Convert CLI style args to core Style enum
@@ -36,20 +32,21 @@ pub fn handle_rename(
 
     // Convert preview arg to string format
     let preview_format = preview.map(|p| match p {
-        PreviewArg::Table => "table".to_string(),
-        PreviewArg::Diff => "diff".to_string(),
-        PreviewArg::Json => "json".to_string(),
-        PreviewArg::Summary => "summary".to_string(),
-        PreviewArg::None => "none".to_string(),
+        Preview::Table => "table".to_string(),
+        Preview::Diff => "diff".to_string(),
+        Preview::Json => "json".to_string(),
+        Preview::Summary => "summary".to_string(),
+        Preview::None => "none".to_string(),
     });
 
     // Call the core operation
-    let result = rename_operation(
+    let result = plan_operation_with_dry_run(
         old,
         new,
         paths,
         include,
         exclude,
+        respect_gitignore,
         unrestricted,
         rename_files,
         rename_dirs,
@@ -57,18 +54,12 @@ pub fn handle_rename(
         include_styles,
         only_styles,
         exclude_match,
+        Some(plan_out),
         preview_format,
-        commit,
-        large,
-        force_with_conflicts,
-        rename_root,
-        no_rename_root,
         dry_run,
-        auto_approve,
         use_color,
     )?;
 
-    // Print the result
     println!("{}", result);
     Ok(())
 }

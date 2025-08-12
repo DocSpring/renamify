@@ -657,20 +657,27 @@ fn test_apply_with_both_renames_and_content_changes() {
     let backup_dir = temp_dir.path().join(".refaktor/backups").join("test_both");
     assert!(backup_dir.exists(), "Backup directory should exist");
 
-    // Check for diff files (only for files with content changes)
-    let diff1 = backup_dir.join("old_name.rs.diff");
-    let diff2 = backup_dir.join("stable.rs.diff");
-    let diff3 = backup_dir.join("nested.rs.diff");
+    // Check for comprehensive patch file
+    let patch_file = backup_dir.join("refactoring.patch");
+    assert!(patch_file.exists(), "Comprehensive patch should exist");
 
-    assert!(diff1.exists(), "Diff for old_name.rs should exist");
-    assert!(diff2.exists(), "Diff for stable.rs should exist");
-    assert!(diff3.exists(), "Diff for nested.rs should exist");
-
-    // The file that was only renamed (no content changes) should NOT have a diff
-    let no_diff = backup_dir.join("old_name.txt.diff");
+    // The patch should contain all the changes
+    let patch_content = fs::read_to_string(&patch_file).unwrap();
     assert!(
-        !no_diff.exists(),
-        "No diff should exist for file without content changes"
+        patch_content.contains("old_name.rs"),
+        "Patch should contain old_name.rs"
+    );
+    assert!(
+        patch_content.contains("new_name.rs"),
+        "Patch should contain new_name.rs"
+    );
+    assert!(
+        patch_content.contains("stable.rs"),
+        "Patch should contain stable.rs"
+    );
+    assert!(
+        patch_content.contains("nested.rs"),
+        "Patch should contain nested.rs"
     );
 
     // Case 5 verifications: File renamed inside renamed directory
@@ -702,7 +709,13 @@ fn test_apply_with_both_renames_and_content_changes() {
         "Old property name should not exist"
     );
 
-    // Verify diff was created for the service file
-    let service_diff = backup_dir.join("old_name-service.ts.diff");
-    assert!(service_diff.exists(), "Diff for service file should exist");
+    // Verify the service file changes are in the comprehensive patch
+    assert!(
+        patch_content.contains("old_name-service.ts"),
+        "Patch should contain service file changes"
+    );
+    assert!(
+        patch_content.contains("new_name-service.ts"),
+        "Patch should contain renamed service file"
+    );
 }

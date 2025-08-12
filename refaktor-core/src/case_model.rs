@@ -16,6 +16,22 @@ pub enum Style {
     Original, // Matches the exact original string regardless of case style
 }
 
+impl Style {
+    /// Returns the default styles used by refaktor
+    pub fn default_styles() -> Vec<Style> {
+        vec![
+            Style::Original,
+            Style::Snake,
+            Style::Kebab,
+            Style::Camel,
+            Style::Pascal,
+            Style::ScreamingSnake,
+            Style::Train,          // Include Train-Case in defaults
+            Style::ScreamingTrain, // Include ScreamingTrain for ALL-CAPS-PATTERNS
+        ]
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Token {
     pub text: String,
