@@ -285,7 +285,7 @@ fn perform_rename(from: &Path, to: &Path, is_dir: bool, state: &mut ApplyState) 
     let case_only_rename =
         from.to_string_lossy().to_lowercase() == to.to_string_lossy().to_lowercase() && from != to;
 
-    if case_only_rename && is_case_insensitive_fs(from.parent().unwrap_or(Path::new("."))) {
+    if case_only_rename && is_case_insensitive_fs(from.parent().unwrap_or_else(|| Path::new("."))) {
         // Two-step rename for case-only changes
         let temp_name = from.with_extension(format!("{}.refaktor.tmp", std::process::id()));
 
@@ -517,15 +517,15 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         options.backup_dir
             .parent() // .refaktor/backups
             .and_then(|p| p.parent()) // .refaktor
-            .unwrap_or(Path::new(".refaktor"))
+            .unwrap_or_else(|| Path::new(".refaktor"))
     } else {
         // backup_dir is .refaktor/backups
         options.backup_dir
             .parent() // .refaktor
-            .unwrap_or(Path::new(".refaktor"))
+            .unwrap_or_else(|| Path::new(".refaktor"))
     };
 
-    let mut history = History::load(&refaktor_dir)?;
+    let mut history = History::load(refaktor_dir)?;
     history.add_entry(history_entry)?;
 
     // Store the complete plan for redo functionality
@@ -542,6 +542,7 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::too_many_lines)]
     use super::*;
     use crate::scanner::{MatchHunk, Rename, RenameKind, Stats};
     use serial_test::serial;

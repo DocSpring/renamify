@@ -153,7 +153,9 @@ jobs:
         shell: bash
 
       - name: Build refaktor
-        run: cargo build --release
+        run: |
+          cargo build --release
+          ./target/release/refaktor --version
 
       - name: Test refaktor -> smart_search_and_replace
         run: |
@@ -180,13 +182,6 @@ jobs:
             exit 1
           fi
           echo "✓ No instances of 'refaktor' found"
-
-          # Clean and rebuild with new name
-          rm -rf target
-          cargo build --release
-
-          # Verify the new binary exists and works
-          ./target/release/smart_search_and_replace --version
         shell: bash
 
       - name: Test undo
@@ -211,13 +206,6 @@ jobs:
           fi
 
           echo "✓ Working directory is clean - undo successful!"
-
-          # Clean and rebuild with original name
-          rm -rf target
-          cargo build --release
-
-          # Verify the new binary exists and works
-          ./target/release/refaktor --version
         shell: bash
 
       - name: Test redo
@@ -234,14 +222,13 @@ jobs:
             exit 1
           fi
           echo "✓ No instances of 'refaktor' found"
+        shell: bash
 
-          # Clean and rebuild with new name again
+      - name: Build smart_search_and_replace
+        run: |
           rm -rf target
           cargo build --release
-
-          # Verify the new binary exists and works
           ./target/release/smart_search_and_replace --version
-        shell: bash
 
       - name: Test smart_search_and_replace -> refaktor
         run: |
@@ -268,6 +255,8 @@ jobs:
           fi
           echo "✓ No instances of 'smart_search_and_replace' found"
 
+      - name: Build refaktor again
+        run: |
           # Clean and rebuild with original name
           rm -rf target
           cargo build --release

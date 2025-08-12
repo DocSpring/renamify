@@ -219,12 +219,12 @@ mod tests {
         // Create a diff backup that will restore the original content
         // The diff shows: original -> modified
         // When reversed with patch -R, it restores: modified -> original
-        let diff_content = r#"--- old_name.txt
+        let diff_content = r"--- old_name.txt
 +++ old_name.txt
 @@ -1 +1 @@
 -original content
 +modified content
-"#;
+";
         let diff_file = backup_dir.join("old_name.txt.diff");
         fs::write(&diff_file, diff_content).unwrap();
 
