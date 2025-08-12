@@ -246,7 +246,24 @@ pub fn find_enhanced_matches(
     // Third, find all identifiers and check for compound matches
     let identifiers = find_all_identifiers(content);
 
+    if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() {
+        eprintln!("=== Checking for compound matches in {} ===", file);
+        eprintln!("Looking for pattern: '{}' -> '{}'", old, new);
+        eprintln!("Found {} identifiers", identifiers.len());
+    }
+
     for (start, end, identifier) in identifiers {
+        // Debug: Show Train-Case identifiers
+        if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok()
+            && identifier.contains('-')
+            && identifier
+                .chars()
+                .next()
+                .map_or(false, |c| c.is_uppercase())
+        {
+            eprintln!("  Train-Case identifier found: '{}'", identifier);
+        }
+
         // Skip if this identifier was already matched exactly or if it's completely contained within a processed range
         let should_skip = processed_ranges.iter().any(|(proc_start, proc_end)| {
             // Skip if exact match (same start and end)
@@ -256,11 +273,25 @@ pub fn find_enhanced_matches(
         });
 
         if should_skip {
+            if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() && identifier.contains('-') {
+                eprintln!("    Skipping '{}' - already processed", identifier);
+            }
             continue;
         }
 
         // Check if this identifier contains our pattern as a compound
         let compound_matches = find_compound_variants(&identifier, old, new, styles);
+
+        if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() && identifier.contains('-') {
+            eprintln!(
+                "    Compound matches for '{}': {} found",
+                identifier,
+                compound_matches.len()
+            );
+            for cm in &compound_matches {
+                eprintln!("      {} -> {}", cm.full_identifier, cm.replacement);
+            }
+        }
 
         if !compound_matches.is_empty() {
             // We found a compound match!

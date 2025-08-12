@@ -12,6 +12,20 @@ use std::str::FromStr;
 
 mod rename;
 
+/// Returns the default styles used by refaktor CLI
+pub(crate) fn get_default_styles() -> Vec<StyleArg> {
+    vec![
+        StyleArg::Original,
+        StyleArg::Snake,
+        StyleArg::Kebab,
+        StyleArg::Camel,
+        StyleArg::Pascal,
+        StyleArg::ScreamingSnake,
+        StyleArg::Train,          // Include Train-Case in CLI defaults
+        StyleArg::ScreamingTrain, // Include ScreamingTrain for ALL-CAPS-PATTERNS
+    ]
+}
+
 /// Smart search & replace for code and files with case-aware transformations
 #[derive(Parser, Debug)]
 #[command(name = "refaktor")]
@@ -345,6 +359,7 @@ enum StyleArg {
     ScreamingSnake,
     Title,
     Train,
+    ScreamingTrain,
     Dot,
     Original,
 }
@@ -359,6 +374,7 @@ impl From<StyleArg> for Style {
             StyleArg::ScreamingSnake => Self::ScreamingSnake,
             StyleArg::Title => Self::Title,
             StyleArg::Train => Self::Train,
+            StyleArg::ScreamingTrain => Self::ScreamingTrain,
             StyleArg::Dot => Self::Dot,
             StyleArg::Original => Self::Original,
         }
@@ -662,14 +678,7 @@ fn handle_plan(
     let styles = {
         if only_styles.is_empty() {
             // Start with the default styles
-            let default_styles = vec![
-                StyleArg::Original,
-                StyleArg::Snake,
-                StyleArg::Kebab,
-                StyleArg::Camel,
-                StyleArg::Pascal,
-                StyleArg::ScreamingSnake,
-            ];
+            let default_styles = get_default_styles();
 
             // Remove excluded styles from defaults
             let mut active_styles: Vec<StyleArg> = default_styles

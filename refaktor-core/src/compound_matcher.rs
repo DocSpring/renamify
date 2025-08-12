@@ -40,6 +40,11 @@ pub fn find_compound_variants(
 ) -> Vec<CompoundMatch> {
     let mut matches = Vec::new();
 
+    // Debug: print styles array being passed
+    if std::env::var("REFAKTOR_DEBUG_COMPOUND").is_ok() {
+        println!("find_compound_variants called with styles: {:?}", styles);
+    }
+
     // Parse all three into tokens
     let identifier_tokens = parse_to_tokens(identifier);
     let old_tokens = parse_to_tokens(old_pattern);
@@ -210,7 +215,15 @@ fn replace_in_hyphenated(identifier: &str, old_pattern: &str, new_pattern: &str)
         // Check if this part matches the pattern exactly (case-insensitive)
         if part.to_lowercase() == old_pattern.to_lowercase() {
             // Exact match - detect the style of this part and apply appropriate replacement
-            if let Some(style) = crate::case_model::detect_style(part) {
+            if part.chars().all(|c| c.is_ascii_uppercase()) {
+                // All caps part - use SCREAMING_SNAKE style regardless of separators
+                let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
+                let replacement = crate::case_model::to_style(
+                    &new_tokens,
+                    crate::case_model::Style::ScreamingSnake,
+                );
+                replaced_parts.push(replacement);
+            } else if let Some(style) = crate::case_model::detect_style(part) {
                 // Convert new pattern to match the style of this part
                 let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
                 let replacement = crate::case_model::to_style(&new_tokens, style);

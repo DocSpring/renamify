@@ -11,6 +11,7 @@ pub enum Style {
     ScreamingSnake,
     Title,
     Train,
+    ScreamingTrain, // ALL-CAPS-WITH-HYPHENS
     Dot,
     Original, // Matches the exact original string regardless of case style
 }
@@ -61,6 +62,7 @@ pub fn detect_style(s: &str) -> Option<Style> {
         (true, false, false, false, false, true) => Some(Style::Snake),
         (true, false, false, false, true, false) => Some(Style::ScreamingSnake),
         (false, true, false, false, false, true) => Some(Style::Kebab),
+        (false, true, false, false, true, false) => Some(Style::ScreamingTrain), // ALL-CAPS-WITH-HYPHENS
         (false, true, false, false, true, true) => {
             if is_train_case(s) {
                 Some(Style::Train)
@@ -212,6 +214,13 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
             .collect::<Vec<_>>()
             .join("-"),
 
+        Style::ScreamingTrain => model
+            .tokens
+            .iter()
+            .map(|t| t.text.to_uppercase())
+            .collect::<Vec<_>>()
+            .join("-"),
+
         Style::Dot => model
             .tokens
             .iter()
@@ -256,6 +265,7 @@ pub fn generate_variant_map(
         Style::Pascal,
         Style::ScreamingSnake,
         Style::Train, // Include Train-Case for patterns like Refaktor-Core-Engine
+        Style::ScreamingTrain, // Include ScreamingTrain for patterns like REFAKTOR-DEBUG
     ];
     let styles = styles.unwrap_or(&default_styles);
 
@@ -379,6 +389,22 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_train_case() {
+        assert_eq!(detect_style("Hello-World"), Some(Style::Train));
+        assert_eq!(detect_style("Refaktor-Core-Engine"), Some(Style::Train));
+    }
+
+    #[test]
+    fn test_detect_screaming_train_case() {
+        assert_eq!(detect_style("HELLO-WORLD"), Some(Style::ScreamingTrain));
+        assert_eq!(detect_style("REFAKTOR-DEBUG"), Some(Style::ScreamingTrain));
+        assert_eq!(
+            detect_style("ALL-CAPS-HYPHENATED"),
+            Some(Style::ScreamingTrain)
+        );
+    }
+
+    #[test]
     fn test_to_snake_case() {
         let tokens = parse_to_tokens("HelloWorld");
         assert_eq!(to_style(&tokens, Style::Snake), "hello_world");
@@ -403,6 +429,27 @@ mod tests {
     }
 
     #[test]
+    fn test_to_train_case() {
+        let tokens = parse_to_tokens("hello_world");
+        assert_eq!(to_style(&tokens, Style::Train), "Hello-World");
+
+        let tokens = parse_to_tokens("refaktor_core_engine");
+        assert_eq!(to_style(&tokens, Style::Train), "Refaktor-Core-Engine");
+    }
+
+    #[test]
+    fn test_to_screaming_train_case() {
+        let tokens = parse_to_tokens("hello_world");
+        assert_eq!(to_style(&tokens, Style::ScreamingTrain), "HELLO-WORLD");
+
+        let tokens = parse_to_tokens("smart_search_and_replace");
+        assert_eq!(
+            to_style(&tokens, Style::ScreamingTrain),
+            "SMART-SEARCH-AND-REPLACE"
+        );
+    }
+
+    #[test]
     fn test_generate_variant_map() {
         let map = generate_variant_map("old_name", "new_name", None);
         assert_eq!(map.get("old_name"), Some(&"new_name".to_string()));
@@ -410,6 +457,9 @@ mod tests {
         assert_eq!(map.get("OldName"), Some(&"NewName".to_string()));
         assert_eq!(map.get("old-name"), Some(&"new-name".to_string()));
         assert_eq!(map.get("OLD_NAME"), Some(&"NEW_NAME".to_string()));
+        // Check Train and ScreamingTrain are included
+        assert_eq!(map.get("Old-Name"), Some(&"New-Name".to_string()));
+        assert_eq!(map.get("OLD-NAME"), Some(&"NEW-NAME".to_string()));
     }
 
     #[test]

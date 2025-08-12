@@ -208,10 +208,31 @@ fn apply_content_edits(
 
     // Apply replacements (in reverse order to maintain positions)
     let mut modified = original_content.clone();
+
+    // Debug Train-Case replacements
+    if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() {
+        eprintln!("\n=== Applying replacements to {} ===", path.display());
+        eprintln!("Total replacements: {}", replacements.len());
+        for (before, after, start, end) in replacements {
+            if before.contains('-') && before.chars().next().map_or(false, |c| c.is_uppercase()) {
+                eprintln!(
+                    "  Train-Case: '{}' -> '{}' at [{}, {}]",
+                    before, after, start, end
+                );
+            }
+        }
+    }
+
     for (before, after, start, end) in replacements.iter().rev() {
         // Validate the replacement matches expected content
         let actual = &original_content[*start..*end];
         if actual != before {
+            if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() {
+                eprintln!("ERROR: Content mismatch!");
+                eprintln!("  Expected: '{}'", before);
+                eprintln!("  Found: '{}'", actual);
+                eprintln!("  Position: [{}, {}]", start, end);
+            }
             return Err(anyhow!(
                 "Content mismatch in {}: expected '{}', found '{}'",
                 path.display(),
@@ -395,6 +416,26 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
 
     // Group content edits by file
     let mut edits_by_file: BTreeMap<&Path, Vec<_>> = BTreeMap::new();
+
+    // Debug Train-Case patterns in plan
+    if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() {
+        eprintln!("\n=== Plan matches for Train-Case patterns ===");
+        for hunk in &plan.matches {
+            if hunk.before.contains('-')
+                && hunk
+                    .before
+                    .chars()
+                    .next()
+                    .map_or(false, |c| c.is_uppercase())
+            {
+                eprintln!("  File: {}", hunk.file.display());
+                eprintln!("    Before: '{}'", hunk.before);
+                eprintln!("    After: '{}'", hunk.after);
+                eprintln!("    Position: [{}, {}]", hunk.start, hunk.end);
+            }
+        }
+    }
+
     for hunk in &plan.matches {
         edits_by_file.entry(&hunk.file).or_default().push((
             hunk.before.clone(),

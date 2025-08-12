@@ -4,7 +4,7 @@ use std::fs;
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 
-use crate::{PreviewFormatArg, StyleArg};
+use crate::{get_default_styles, PreviewFormatArg, StyleArg};
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_rename(
@@ -49,14 +49,7 @@ pub fn handle_rename(
     let styles = {
         if only_styles.is_empty() {
             // Start with the default styles
-            let default_styles = vec![
-                StyleArg::Original,
-                StyleArg::Snake,
-                StyleArg::Kebab,
-                StyleArg::Camel,
-                StyleArg::Pascal,
-                StyleArg::ScreamingSnake,
-            ];
+            let default_styles = get_default_styles();
 
             // Remove excluded styles from defaults
             let mut active_styles: Vec<StyleArg> = default_styles

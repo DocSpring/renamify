@@ -189,21 +189,29 @@ pub fn scan_repository_multi(
             }
 
             // Only use compound scanner (which also finds exact matches)
+            // Debug: Check what styles are being used
+            let actual_styles = options.styles.as_deref().unwrap_or(&[
+                Style::Original, // Always include for exact string matching
+                Style::Snake,
+                Style::Kebab,
+                Style::Camel,
+                Style::Pascal,
+                Style::ScreamingSnake,
+                Style::Train, // Include Train-Case in default styles
+            ]);
+
+            if std::env::var("REFAKTOR_DEBUG_COMPOUND").is_ok() {
+                eprintln!("SCANNER: Using styles: {:?}", actual_styles);
+                eprintln!("SCANNER: options.styles = {:?}", options.styles);
+            }
+
             let mut file_matches = crate::compound_scanner::find_enhanced_matches(
                 &content,
                 path.to_str().unwrap_or(""),
                 old,
                 new,
                 &variant_map,
-                options.styles.as_deref().unwrap_or(&[
-                    Style::Original, // Always include for exact string matching
-                    Style::Snake,
-                    Style::Kebab,
-                    Style::Camel,
-                    Style::Pascal,
-                    Style::ScreamingSnake,
-                    Style::Train, // Include Train-Case in default styles
-                ]),
+                actual_styles,
             );
 
             if !file_matches.is_empty() {
