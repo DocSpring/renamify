@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 use crate::{PreviewFormatArg, StyleArg};
 
+#[allow(clippy::too_many_arguments)]
 pub fn handle_rename(
     old: &str,
     new: &str,

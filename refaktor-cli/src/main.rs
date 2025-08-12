@@ -622,6 +622,7 @@ fn main() {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn handle_plan(
     old: &str,
     new: &str,
@@ -1170,9 +1171,9 @@ fn get_global_excludes_path() -> Result<PathBuf> {
 
         if !path.is_empty() {
             // Expand ~ if present
-            if path.starts_with("~/") {
+            if let Some(stripped) = path.strip_prefix("~/") {
                 if let Some(home) = dirs::home_dir() {
-                    return Ok(home.join(&path[2..]));
+                    return Ok(home.join(stripped));
                 }
             }
             return Ok(PathBuf::from(path));
