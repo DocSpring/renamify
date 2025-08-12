@@ -75,10 +75,9 @@ export default defineConfig({
           autogenerate: { directory: "case-studies" },
         },
         {
-          label: "Integration",
+          label: "VS Code Extension",
           items: [
-            { label: "VS Code Extension", slug: "integration/vscode" },
-            { label: "MCP Server", slug: "integration/mcp" },
+            { label: "Overview", slug: "vscode/overview" },
           ],
         },
         {
