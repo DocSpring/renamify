@@ -100,12 +100,12 @@ MIT License - Copyright (c) 2025 DocSpring
 
 ---
 
-## Supported By
+## Created By
 
 <a href="https://docspring.com">
   <img src="https://docspring.com/assets/logo-text-1e09b5522ee8602e08f1e3c4851e1657b14bd49e2e633618c344b4dc23fcbf79.svg" alt="DocSpring Logo" width="200">
 </a>
 
-Refaktor is supported by [DocSpring](https://docspring.com).
+Refaktor was created by [DocSpring](https://docspring.com)
 
-DocSpring is a powerful API for filling out and generating PDFs.
+Fill, sign, and generate PDFs at scale
