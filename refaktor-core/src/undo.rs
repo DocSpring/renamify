@@ -259,6 +259,25 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
                     current_path.display(),
                     e
                 );
+
+                // Save the failed patch as a .rej file for debugging
+                let rej_path = current_path.with_extension(format!(
+                    "{}.rej",
+                    current_path
+                        .extension()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("")
+                ));
+                if let Err(write_err) = fs::write(&rej_path, &patch_content) {
+                    eprintln!(
+                        "    WARNING: Could not write reject file {}: {}",
+                        rej_path.display(),
+                        write_err
+                    );
+                } else {
+                    eprintln!("    Saved failed patch to: {}", rej_path.display());
+                }
+
                 failed_patches.push(format!("{}: {}", current_path.display(), e));
             } else {
                 files_processed += 1;
