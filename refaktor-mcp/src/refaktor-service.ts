@@ -1,6 +1,6 @@
-import { execa, ExecaError } from 'execa';
-import * as path from 'path';
-import * as fs from 'fs/promises';
+import { access } from 'node:fs/promises';
+import { join } from 'node:path';
+import { type ExecaError, execa } from 'execa';
 
 export interface PlanOptions {
   old: string;
@@ -93,7 +93,9 @@ export class RefaktorService {
     } catch (error) {
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
-        throw new Error(`Refaktor plan failed: ${execaError.stderr || execaError.message}`);
+        throw new Error(
+          `Refaktor plan failed: ${execaError.stderr || execaError.message}`
+        );
       }
       throw error;
     }
@@ -125,7 +127,9 @@ export class RefaktorService {
     } catch (error) {
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
-        throw new Error(`Refaktor apply failed: ${execaError.stderr || execaError.message}`);
+        throw new Error(
+          `Refaktor apply failed: ${execaError.stderr || execaError.message}`
+        );
       }
       throw error;
     }
@@ -141,7 +145,9 @@ export class RefaktorService {
     } catch (error) {
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
-        throw new Error(`Refaktor undo failed: ${execaError.stderr || execaError.message}`);
+        throw new Error(
+          `Refaktor undo failed: ${execaError.stderr || execaError.message}`
+        );
       }
       throw error;
     }
@@ -157,7 +163,9 @@ export class RefaktorService {
     } catch (error) {
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
-        throw new Error(`Refaktor redo failed: ${execaError.stderr || execaError.message}`);
+        throw new Error(
+          `Refaktor redo failed: ${execaError.stderr || execaError.message}`
+        );
       }
       throw error;
     }
@@ -178,7 +186,9 @@ export class RefaktorService {
     } catch (error) {
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
-        throw new Error(`Refaktor history failed: ${execaError.stderr || execaError.message}`);
+        throw new Error(
+          `Refaktor history failed: ${execaError.stderr || execaError.message}`
+        );
       }
       throw error;
     }
@@ -194,7 +204,9 @@ export class RefaktorService {
     } catch (error) {
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
-        throw new Error(`Refaktor status failed: ${execaError.stderr || execaError.message}`);
+        throw new Error(
+          `Refaktor status failed: ${execaError.stderr || execaError.message}`
+        );
       }
       throw error;
     }
@@ -211,19 +223,19 @@ export class RefaktorService {
       planPath = options.planPath;
     } else if (options.planId) {
       // Construct path from ID (assuming default .refaktor directory)
-      planPath = path.join('.refaktor', 'plans', `${options.planId}.json`);
+      planPath = join('.refaktor', 'plans', `${options.planId}.json`);
     } else {
       // Use the latest plan
-      planPath = path.join('.refaktor', 'plan.json');
+      planPath = join('.refaktor', 'plan.json');
     }
 
     try {
       // Check if plan file exists
-      await fs.access(planPath);
+      await access(planPath);
 
       // Use refaktor CLI to preview the plan with the specified format
       const args = ['plan', '--preview-only'];
-      
+
       if (options.planPath || options.planId) {
         args.push('--plan', planPath);
       }
@@ -241,7 +253,9 @@ export class RefaktorService {
         }
         if ('stderr' in error) {
           const execaError = error as ExecaError;
-          throw new Error(`Refaktor preview failed: ${execaError.stderr || execaError.message}`);
+          throw new Error(
+            `Refaktor preview failed: ${execaError.stderr || execaError.message}`
+          );
         }
       }
       throw error;

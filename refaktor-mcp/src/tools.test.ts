@@ -1,16 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RefaktorTools } from './tools';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RefaktorService } from './refaktor-service';
+import { RefaktorTools } from './tools';
 
 // Mock RefaktorService
 vi.mock('./refaktor-service');
 
 describe('RefaktorTools', () => {
   let tools: RefaktorTools;
-  let mockService: any;
+  let mockService: ReturnType<typeof vi.mocked<RefaktorService>>;
 
   beforeEach(() => {
-    mockService = new RefaktorService() as any;
+    mockService = new RefaktorService() as ReturnType<
+      typeof vi.mocked<RefaktorService>
+    >;
     tools = new RefaktorTools(mockService);
     vi.clearAllMocks();
   });
@@ -22,7 +24,7 @@ describe('RefaktorTools', () => {
       const result = await tools.plan({ old: 'foo', new: 'bar' });
 
       expect(result).toContain('Refaktor CLI is not available');
-      expect(result).toContain('Please ensure \'refaktor\' is installed');
+      expect(result).toContain("Please ensure 'refaktor' is installed");
     });
 
     it('should create plan and add helpful context', async () => {
@@ -33,7 +35,7 @@ describe('RefaktorTools', () => {
 
       expect(result).toContain('PLAN SUMMARY');
       expect(result).toContain('NEXT STEPS:');
-      expect(result).toContain('Use \'refaktor_apply\' to apply these changes');
+      expect(result).toContain("Use 'refaktor_apply' to apply these changes");
       expect(result).toContain('SAFETY NOTES:');
     });
 
@@ -64,7 +66,9 @@ describe('RefaktorTools', () => {
       const result = await tools.apply({});
 
       expect(result).toContain('Applied 10 changes to 3 files');
-      expect(result).toContain('SUCCESS: Changes have been applied successfully');
+      expect(result).toContain(
+        'SUCCESS: Changes have been applied successfully'
+      );
       expect(result).toContain('NEXT STEPS:');
       expect(result).toContain('Run your tests to ensure everything works');
     });
@@ -112,12 +116,14 @@ describe('RefaktorTools', () => {
 
   describe('history', () => {
     it('should show history with usage hint', async () => {
-      mockService.history.mockResolvedValue('ID: abc123 - Applied at 2024-01-01');
+      mockService.history.mockResolvedValue(
+        'ID: abc123 - Applied at 2024-01-01'
+      );
 
       const result = await tools.history({});
 
       expect(result).toContain('ID: abc123');
-      expect(result).toContain('Use \'refaktor_undo <id>\' to revert');
+      expect(result).toContain("Use 'refaktor_undo <id>' to revert");
     });
 
     it('should handle empty history', async () => {
@@ -129,7 +135,9 @@ describe('RefaktorTools', () => {
     });
 
     it('should handle history errors', async () => {
-      mockService.history.mockRejectedValue(new Error('Failed to read history'));
+      mockService.history.mockRejectedValue(
+        new Error('Failed to read history')
+      );
 
       const result = await tools.history({ limit: 10 });
 
@@ -144,7 +152,7 @@ describe('RefaktorTools', () => {
       const result = await tools.status({});
 
       expect(result).toContain('1 pending plan');
-      expect(result).toContain('Use \'refaktor_apply\' to apply pending plans');
+      expect(result).toContain("Use 'refaktor_apply' to apply pending plans");
     });
 
     it('should handle empty status', async () => {
@@ -163,7 +171,9 @@ describe('RefaktorTools', () => {
       const result = await tools.preview({ format: 'summary' });
 
       expect(result).toContain('PLAN PREVIEW');
-      expect(result).toContain('This is a preview only. Use \'refaktor_apply\' to make these changes');
+      expect(result).toContain(
+        "This is a preview only. Use 'refaktor_apply' to make these changes"
+      );
     });
 
     it('should handle preview errors', async () => {

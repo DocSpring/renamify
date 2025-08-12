@@ -3,27 +3,63 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { RefaktorTools } from './tools.js';
 import { RefaktorService } from './refaktor-service.js';
+import { RefaktorTools } from './tools.js';
 
 // Tool schemas
 const PlanToolSchema = z.object({
   old: z.string().describe('The old name/identifier to replace'),
   new: z.string().describe('The new name/identifier to replace with'),
-  includes: z.array(z.string()).optional().describe('Glob patterns for files to include'),
-  excludes: z.array(z.string()).optional().describe('Glob patterns for files to exclude'),
-  styles: z.array(z.string()).optional().describe('Case styles to detect and transform'),
-  previewFormat: z.enum(['table', 'diff', 'json', 'summary']).optional().default('summary').describe('Output format for the plan'),
-  dryRun: z.boolean().optional().default(false).describe('If true, only preview without creating plan file'),
-  renameFiles: z.boolean().optional().default(true).describe('Whether to rename files'),
-  renameDirs: z.boolean().optional().default(true).describe('Whether to rename directories'),
+  includes: z
+    .array(z.string())
+    .optional()
+    .describe('Glob patterns for files to include'),
+  excludes: z
+    .array(z.string())
+    .optional()
+    .describe('Glob patterns for files to exclude'),
+  styles: z
+    .array(z.string())
+    .optional()
+    .describe('Case styles to detect and transform'),
+  previewFormat: z
+    .enum(['table', 'diff', 'json', 'summary'])
+    .optional()
+    .default('summary')
+    .describe('Output format for the plan'),
+  dryRun: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('If true, only preview without creating plan file'),
+  renameFiles: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Whether to rename files'),
+  renameDirs: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Whether to rename directories'),
 });
 
 const ApplyToolSchema = z.object({
-  planId: z.string().optional().describe('Plan ID to apply (uses latest if not specified)'),
+  planId: z
+    .string()
+    .optional()
+    .describe('Plan ID to apply (uses latest if not specified)'),
   planPath: z.string().optional().describe('Path to plan file'),
-  atomic: z.boolean().optional().default(true).describe('Apply changes atomically'),
-  commit: z.boolean().optional().default(false).describe('Create a git commit after applying'),
+  atomic: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Apply changes atomically'),
+  commit: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Create a git commit after applying'),
 });
 
 const UndoToolSchema = z.object({
@@ -35,7 +71,11 @@ const RedoToolSchema = z.object({
 });
 
 const HistoryToolSchema = z.object({
-  limit: z.number().optional().default(10).describe('Number of history entries to show'),
+  limit: z
+    .number()
+    .optional()
+    .default(10)
+    .describe('Number of history entries to show'),
 });
 
 const StatusToolSchema = z.object({});
@@ -43,7 +83,11 @@ const StatusToolSchema = z.object({});
 const PreviewToolSchema = z.object({
   planId: z.string().optional().describe('Plan ID to preview'),
   planPath: z.string().optional().describe('Path to plan file to preview'),
-  format: z.enum(['table', 'diff', 'json', 'summary']).optional().default('summary').describe('Preview format'),
+  format: z
+    .enum(['table', 'diff', 'json', 'summary'])
+    .optional()
+    .default('summary')
+    .describe('Preview format'),
 });
 
 async function main() {
@@ -63,52 +107,60 @@ async function main() {
   const tools = new RefaktorTools(refaktorService);
 
   // Register tool handlers
-  server.setRequestHandler<any>('tools/list', async () => ({
+  server.setRequestHandler('tools/list', async () => ({
     tools: [
       {
         name: 'refaktor_plan',
-        description: 'Create a refactoring plan to replace identifiers across a codebase with case-awareness',
+        description:
+          'Create a refactoring plan to replace identifiers across a codebase with case-awareness',
         inputSchema: {
           type: 'object',
           properties: {
-            old: { type: 'string', description: 'The old name/identifier to replace' },
-            new: { type: 'string', description: 'The new name/identifier to replace with' },
-            includes: { 
-              type: 'array', 
-              items: { type: 'string' },
-              description: 'Glob patterns for files to include'
+            old: {
+              type: 'string',
+              description: 'The old name/identifier to replace',
             },
-            excludes: { 
-              type: 'array', 
+            new: {
+              type: 'string',
+              description: 'The new name/identifier to replace with',
+            },
+            includes: {
+              type: 'array',
               items: { type: 'string' },
-              description: 'Glob patterns for files to exclude'
+              description: 'Glob patterns for files to include',
+            },
+            excludes: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Glob patterns for files to exclude',
             },
             styles: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Case styles to detect (snake, camel, pascal, kebab, etc.)'
+              description:
+                'Case styles to detect (snake, camel, pascal, kebab, etc.)',
             },
             previewFormat: {
               type: 'string',
               enum: ['table', 'diff', 'json', 'summary'],
               default: 'summary',
-              description: 'Output format for the plan'
+              description: 'Output format for the plan',
             },
             dryRun: {
               type: 'boolean',
               default: false,
-              description: 'If true, only preview without creating plan file'
+              description: 'If true, only preview without creating plan file',
             },
             renameFiles: {
               type: 'boolean',
               default: true,
-              description: 'Whether to rename files'
+              description: 'Whether to rename files',
             },
             renameDirs: {
               type: 'boolean',
               default: true,
-              description: 'Whether to rename directories'
-            }
+              description: 'Whether to rename directories',
+            },
           },
           required: ['old', 'new'],
         },
@@ -119,10 +171,21 @@ async function main() {
         inputSchema: {
           type: 'object',
           properties: {
-            planId: { type: 'string', description: 'Plan ID to apply (uses latest if not specified)' },
+            planId: {
+              type: 'string',
+              description: 'Plan ID to apply (uses latest if not specified)',
+            },
             planPath: { type: 'string', description: 'Path to plan file' },
-            atomic: { type: 'boolean', default: true, description: 'Apply changes atomically' },
-            commit: { type: 'boolean', default: false, description: 'Create a git commit after applying' },
+            atomic: {
+              type: 'boolean',
+              default: true,
+              description: 'Apply changes atomically',
+            },
+            commit: {
+              type: 'boolean',
+              default: false,
+              description: 'Create a git commit after applying',
+            },
           },
         },
       },
@@ -154,7 +217,11 @@ async function main() {
         inputSchema: {
           type: 'object',
           properties: {
-            limit: { type: 'number', default: 10, description: 'Number of history entries to show' },
+            limit: {
+              type: 'number',
+              default: 10,
+              description: 'Number of history entries to show',
+            },
           },
         },
       },
@@ -173,12 +240,15 @@ async function main() {
           type: 'object',
           properties: {
             planId: { type: 'string', description: 'Plan ID to preview' },
-            planPath: { type: 'string', description: 'Path to plan file to preview' },
+            planPath: {
+              type: 'string',
+              description: 'Path to plan file to preview',
+            },
             format: {
               type: 'string',
               enum: ['table', 'diff', 'json', 'summary'],
               default: 'summary',
-              description: 'Preview format'
+              description: 'Preview format',
             },
           },
         },
@@ -186,7 +256,7 @@ async function main() {
     ],
   }));
 
-  server.setRequestHandler<any>('tools/call', async (request) => {
+  server.setRequestHandler('tools/call', async (request) => {
     const { name, arguments: args } = request.params;
 
     try {
@@ -230,7 +300,8 @@ async function main() {
           throw new Error(`Unknown tool: ${name}`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         content: [{ type: 'text', text: `Error: ${errorMessage}` }],
         isError: true,
@@ -240,10 +311,11 @@ async function main() {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Refaktor MCP server started');
+  // Server started successfully - MCP servers communicate via stdio
 }
 
 main().catch((error) => {
-  console.error('Fatal error:', error);
+  // Fatal errors need to be reported before exit
+  process.stderr.write(`Fatal error: ${error}\n`);
   process.exit(1);
 });

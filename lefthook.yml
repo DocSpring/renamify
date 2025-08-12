@@ -23,6 +23,16 @@ pre-commit:
       glob: "*.rs"
       run: cargo test
 
+    mcp-biome:
+      root: refaktor-mcp/
+      glob: "*.{ts,js,json}"
+      run: cd refaktor-mcp && pnpm run check
+
+    mcp-test:
+      root: refaktor-mcp/
+      glob: "*.ts"
+      run: cd refaktor-mcp && pnpm run test
+
 # pre-push:
 #   commands:
 #     test-all:

@@ -1,7 +1,16 @@
-import { RefaktorService, PlanOptions, ApplyOptions, PreviewOptions } from './refaktor-service.js';
+import type {
+  ApplyOptions,
+  PlanOptions,
+  PreviewOptions,
+  RefaktorService,
+} from './refaktor-service.js';
 
 export class RefaktorTools {
-  constructor(private refaktorService: RefaktorService) {}
+  private refaktorService: RefaktorService;
+
+  constructor(refaktorService: RefaktorService) {
+    this.refaktorService = refaktorService;
+  }
 
   /**
    * Create a refactoring plan
@@ -22,7 +31,7 @@ For more information, visit: https://github.com/docspring/refaktor`;
 
     try {
       const result = await this.refaktorService.plan(params);
-      
+
       // Add helpful context for AI agents
       const helpText = `
 ${result}
@@ -50,7 +59,7 @@ SAFETY NOTES:
   async apply(params: ApplyOptions): Promise<string> {
     try {
       const result = await this.refaktorService.apply(params);
-      
+
       return `${result}
 
 SUCCESS: Changes have been applied successfully.
@@ -104,11 +113,11 @@ Refactoring has been redone successfully.`;
   async history(params: { limit?: number }): Promise<string> {
     try {
       const result = await this.refaktorService.history(params.limit);
-      
+
       if (!result || result.trim() === '') {
         return 'No refactoring history found.';
       }
-      
+
       return `${result}
 
 Use 'refaktor_undo <id>' to revert any of these changes.`;
@@ -120,14 +129,14 @@ Use 'refaktor_undo <id>' to revert any of these changes.`;
   /**
    * Show refaktor status
    */
-  async status(_params: {}): Promise<string> {
+  async status(_params: Record<string, never>): Promise<string> {
     try {
       const result = await this.refaktorService.status();
-      
+
       if (!result || result.trim() === '') {
         return 'No pending plans or active refactorings.';
       }
-      
+
       return `${result}
 
 Use 'refaktor_apply' to apply pending plans or 'refaktor_preview' to review them.`;
