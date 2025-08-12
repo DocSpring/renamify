@@ -106,8 +106,21 @@ pub fn find_compound_variants(
 
     // If we made any replacements, create the compound match
     if replacements_made > 0 {
+        // Debug: print compound matching attempt
+        if std::env::var("REFAKTOR_DEBUG_COMPOUND").is_ok() {
+            println!(
+                "Found {} replacements in '{}' -> trying to create compound match",
+                replacements_made, identifier
+            );
+        }
+
         // Detect the style of the original identifier
         if let Some(style) = crate::case_model::detect_style(identifier) {
+            // Debug: print style detection
+            if std::env::var("REFAKTOR_DEBUG_COMPOUND").is_ok() {
+                println!("  Detected style: {:?} for '{}'", style, identifier);
+            }
+
             // Identifier detected with style and replacements made
             // Check if this style is in our target styles
             if styles.contains(&style) {
@@ -123,19 +136,59 @@ pub fn find_compound_variants(
                     pattern_start: 0, // Not meaningful when we have multiple replacements
                     pattern_end: 0,   // Not meaningful when we have multiple replacements
                 });
+            } else if styles.contains(&Style::Original) {
+                // Debug: style not in target styles but Original is enabled
+                if std::env::var("REFAKTOR_DEBUG_COMPOUND").is_ok() {
+                    println!("  Style {:?} not in target styles for '{}', but Original style is enabled - using simple replacement", style, identifier);
+                }
+
+                // Style detected but not in target styles - however, Original style is enabled
+                // so we do a simple string replacement
+                let replacement = identifier.replace(old_pattern, new_pattern);
+
+                matches.push(CompoundMatch {
+                    full_identifier: identifier.to_string(),
+                    replacement,
+                    style: Style::Original,
+                    pattern_start: 0,
+                    pattern_end: 0,
+                });
+            } else {
+                // Debug: style not in target styles and Original not enabled
+                if std::env::var("REFAKTOR_DEBUG_COMPOUND").is_ok() {
+                    println!("  Style {:?} not in target styles and Original not enabled for '{}', skipping", style, identifier);
+                }
+
+                // Style detected but not in target styles and Original style not enabled - skip this match
+                // This ensures that compound matching respects the target styles
             }
-        } else {
-            // No style detected (mixed or unknown style), but we still made replacements
+        } else if styles.contains(&Style::Original) {
+            // Debug: no style detected but Original is enabled
+            if std::env::var("REFAKTOR_DEBUG_COMPOUND").is_ok() {
+                println!("  No style detected for '{}', but Original style is enabled - using simple replacement", identifier);
+            }
+
+            // No style detected (mixed or unknown style), but Original style is enabled
             // Do a simple string replacement to preserve the original structure
             let replacement = identifier.replace(old_pattern, new_pattern);
 
             matches.push(CompoundMatch {
                 full_identifier: identifier.to_string(),
                 replacement,
-                style: Style::Original, // Use Original to indicate no style transformation
+                style: Style::Original,
                 pattern_start: 0,
                 pattern_end: 0,
             });
+        } else {
+            // Debug: no style detected and Original not enabled
+            if std::env::var("REFAKTOR_DEBUG_COMPOUND").is_ok() {
+                println!(
+                    "  No style detected and Original not enabled for '{}', skipping",
+                    identifier
+                );
+            }
+
+            // No style detected and Original style not enabled - skip this match
         }
     }
 

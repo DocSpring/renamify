@@ -196,6 +196,7 @@ pub fn scan_repository_multi(
                 new,
                 &variant_map,
                 options.styles.as_deref().unwrap_or(&[
+                    Style::Original, // Always include for exact string matching
                     Style::Snake,
                     Style::Kebab,
                     Style::Camel,
@@ -349,21 +350,35 @@ fn generate_hunks(
         };
         let mut coercion_applied = None;
 
-        // Apply coercion if enabled (but skip for compound matches - they're already correct)
-        if options.coerce_separators == CoercionMode::Auto && !is_compound_match {
+        // Apply coercion if enabled
+        if options.coerce_separators == CoercionMode::Auto {
             // Find the match position within the line and extract context
             if let Some(match_pos) = line_string.find(&before) {
                 let identifier_context =
                     extract_immediate_context(&line_string, match_pos, match_pos + before.len());
 
-                if let Some((_coerced, reason)) =
-                    crate::coercion::apply_coercion(&identifier_context, &before, &after)
-                {
-                    if let Some(coerced_variant) =
-                        apply_coercion_to_variant(&identifier_context, &before, &after)
+                if is_compound_match {
+                    // For compound matches, check if style coercion was already applied by the compound matcher
+                    // by detecting if the replacement uses a consistent style that matches the context
+                    if let Some(detected_style) =
+                        detect_compound_coercion(&identifier_context, &before, &after)
                     {
-                        after = coerced_variant;
-                        coercion_applied = Some(reason);
+                        coercion_applied = Some(format!(
+                            "Compound coercion applied: {} style",
+                            style_name(detected_style)
+                        ));
+                    }
+                } else {
+                    // For exact matches, apply normal coercion
+                    if let Some((_coerced, reason)) =
+                        crate::coercion::apply_coercion(&identifier_context, &before, &after)
+                    {
+                        if let Some(coerced_variant) =
+                            apply_coercion_to_variant(&identifier_context, &before, &after)
+                        {
+                            after = coerced_variant;
+                            coercion_applied = Some(reason);
+                        }
                     }
                 }
             }
@@ -477,6 +492,52 @@ fn apply_coercion_to_variant(
     let coerced_variant = crate::coercion::render_tokens(&new_tokens, container_style);
 
     Some(coerced_variant)
+}
+
+/// Detect if compound coercion was applied by checking if the replacement style matches the context style
+fn detect_compound_coercion(
+    context: &str,
+    _before: &str,
+    after: &str,
+) -> Option<crate::coercion::Style> {
+    let context_style = crate::coercion::detect_style(context);
+    let after_style = crate::coercion::detect_style(after);
+
+    // If the context has a clear style and the replacement matches that style,
+    // then compound coercion was likely applied
+    match context_style {
+        crate::coercion::Style::Snake if after_style == crate::coercion::Style::Snake => {
+            Some(context_style)
+        },
+        crate::coercion::Style::Kebab if after_style == crate::coercion::Style::Kebab => {
+            Some(context_style)
+        },
+        crate::coercion::Style::Pascal if after_style == crate::coercion::Style::Pascal => {
+            Some(context_style)
+        },
+        crate::coercion::Style::Camel if after_style == crate::coercion::Style::Camel => {
+            Some(context_style)
+        },
+        crate::coercion::Style::ScreamingSnake
+            if after_style == crate::coercion::Style::ScreamingSnake =>
+        {
+            Some(context_style)
+        },
+        _ => None,
+    }
+}
+
+/// Convert a coercion style to a human-readable name
+fn style_name(style: crate::coercion::Style) -> &'static str {
+    match style {
+        crate::coercion::Style::Snake => "Snake",
+        crate::coercion::Style::Kebab => "Kebab",
+        crate::coercion::Style::Pascal => "Pascal",
+        crate::coercion::Style::Camel => "Camel",
+        crate::coercion::Style::ScreamingSnake => "ScreamingSnake",
+        crate::coercion::Style::Mixed => "Mixed",
+        crate::coercion::Style::Dot => "Dot",
+    }
 }
 
 fn generate_plan_id(old: &str, new: &str, options: &PlanOptions) -> String {

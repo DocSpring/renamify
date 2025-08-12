@@ -64,6 +64,28 @@ pub fn is_boundary(bytes: &[u8], start: usize, end: usize) -> bool {
     left_boundary && right_boundary
 }
 
+/// More permissive boundary check specifically for format string patterns
+/// Only allows certain non-identifier characters like `{` as boundaries
+pub fn is_compound_boundary(bytes: &[u8], start: usize, end: usize) -> bool {
+    let left_boundary = if start == 0 {
+        true
+    } else {
+        let prev_char = bytes[start - 1];
+        // Standard word boundary
+        !prev_char.is_ascii_alphanumeric() && prev_char != b'_'
+    };
+
+    let right_boundary = if end >= bytes.len() {
+        true
+    } else {
+        let next_char = bytes[end];
+        // Allow standard boundaries plus specific format string characters
+        (!next_char.is_ascii_alphanumeric() && next_char != b'_') || next_char == b'{'
+    };
+
+    left_boundary && right_boundary
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Match {
     pub file: String,

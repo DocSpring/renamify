@@ -298,6 +298,15 @@ let config = refaktor.config.load();
     let content_matches = &plan.matches;
     assert!(!content_matches.is_empty());
 
+    // Debug: Print all matches to understand what's happening
+    println!("\n=== Debug: All matches found ===");
+    for (i, m) in content_matches.iter().enumerate() {
+        println!(
+            "{}: '{}' -> '{}' (coercion: {:?})",
+            i, m.before, m.after, m.coercion_applied
+        );
+    }
+
     // Find matches that should have been coerced
     let coerced_matches = content_matches
         .iter()

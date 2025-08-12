@@ -1,6 +1,6 @@
 use crate::case_model::{generate_variant_map, Style};
 use crate::compound_matcher::{find_compound_variants, CompoundMatch};
-use crate::pattern::{build_pattern, is_boundary, Match, MatchPattern};
+use crate::pattern::{build_pattern, is_boundary, is_compound_boundary, Match, MatchPattern};
 use crate::scanner::{CoercionMode, MatchHunk};
 use anyhow::Result;
 use bstr::ByteSlice;
@@ -8,18 +8,36 @@ use regex::bytes::Regex;
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 
-/// Check if an identifier has camelCase/PascalCase around dots (like obj.method)
-fn has_camel_case_around_dot(identifier: &str) -> bool {
-    let parts: Vec<&str> = identifier.split('.').collect();
-    if parts.len() < 2 {
+/// Check if a string has any recognizable case style
+fn has_recognizable_case_style(s: &str) -> bool {
+    if s.is_empty() {
         return false;
     }
 
-    // Check if any part looks like camelCase or PascalCase
-    for part in &parts {
-        if is_camel_or_pascal_case(part) {
-            return true;
-        }
+    // Check for camelCase/PascalCase
+    if is_camel_or_pascal_case(s) {
+        return true;
+    }
+
+    // Check for SCREAMING_SNAKE_CASE
+    if s.contains('_') && s.chars().all(|c| c.is_ascii_uppercase() || c == '_') {
+        return true;
+    }
+
+    // Check for snake_case
+    if s.contains('_')
+        && s.chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+    {
+        return true;
+    }
+
+    // Check for kebab-case
+    if s.contains('-')
+        && s.chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
+        return true;
     }
 
     false
@@ -54,9 +72,19 @@ fn find_all_identifiers(content: &[u8]) -> Vec<(usize, usize, String)> {
     for m in regex.find_iter(content) {
         let identifier = String::from_utf8_lossy(m.as_bytes()).to_string();
 
-        // Heuristic: if the identifier contains camelCase/PascalCase around a dot,
-        // it's likely obj.method or obj.property, so split it
-        if identifier.contains('.') && has_camel_case_around_dot(&identifier) {
+        // Debug: print what identifiers are being found
+        if std::env::var("REFAKTOR_DEBUG_IDENTIFIERS").is_ok() {
+            println!(
+                "Found identifier: '{}' at {}-{}",
+                identifier,
+                m.start(),
+                m.end()
+            );
+        }
+
+        // Split on dots for expressions like obj.method, process.env.VARIABLE, etc.
+        // Always split on dots to check each part independently for compound matching
+        if identifier.contains('.') {
             // Split on dots for things like obj.method or this.property
             let parts: Vec<&str> = identifier.split('.').collect();
             let mut current_pos = m.start();
@@ -133,16 +161,101 @@ pub fn find_enhanced_matches(
         }
     }
 
-    // Second, find all identifiers and check for compound matches
+    // Second, if Original style is enabled, do simple string replacement for remaining instances
+    // Note: Original style does NOT use boundary checking - it matches exact strings anywhere
+    if styles.contains(&Style::Original) {
+        // Find the original exact mapping in the variant map
+        if let Some(replacement) = variant_map.get(old) {
+            let old_pattern = old;
+            let new_pattern = replacement;
+            let pattern_bytes = old_pattern.as_bytes();
+            let mut search_start = 0;
+
+            while let Some(pos) = content[search_start..]
+                .windows(pattern_bytes.len())
+                .position(|window| window == pattern_bytes)
+            {
+                let actual_pos = search_start + pos;
+                let end_pos = actual_pos + pattern_bytes.len();
+
+                // Skip if this position was already processed
+                let already_processed = processed_ranges.iter().any(|(proc_start, proc_end)| {
+                    // Check for overlap
+                    actual_pos < *proc_end && end_pos > *proc_start
+                });
+
+                // For Original style, use a more permissive boundary check
+                // Allow matching when followed by underscore if it's not a simple identifier continuation
+                let passes_boundary =
+                    if actual_pos > 0 && content[actual_pos - 1].is_ascii_alphanumeric() {
+                        // If preceded by alphanumeric, skip this match (it's in the middle of a word)
+                        false
+                    } else if end_pos < content.len() {
+                        let next_char = content[end_pos];
+                        // Allow if followed by:
+                        // - Non-alphanumeric and not underscore (normal boundary)
+                        // - Underscore followed by non-alphanumeric (like _{, _[, etc.)
+                        if !next_char.is_ascii_alphanumeric() && next_char != b'_' {
+                            true // Normal word boundary
+                        } else if next_char == b'_' && end_pos + 1 < content.len() {
+                            // Check what comes after the underscore
+                            let after_underscore = content[end_pos + 1];
+                            // Allow if underscore is followed by non-identifier characters
+                            !after_underscore.is_ascii_alphanumeric() && after_underscore != b'_'
+                        } else {
+                            false
+                        }
+                    } else {
+                        true // At end of content
+                    };
+
+                if !already_processed && passes_boundary {
+                    #[allow(clippy::naive_bytecount)]
+                    let line_number = content[..actual_pos]
+                        .iter()
+                        .filter(|&&b| b == b'\n')
+                        .count()
+                        + 1;
+
+                    let line_start = content[..actual_pos]
+                        .iter()
+                        .rposition(|&b| b == b'\n')
+                        .map_or(0, |p| p + 1);
+
+                    let column = actual_pos - line_start;
+
+                    // Mark this range as processed
+                    processed_ranges.push((actual_pos, end_pos));
+
+                    all_matches.push(Match {
+                        file: file.to_string(),
+                        line: line_number,
+                        column,
+                        start: actual_pos,
+                        end: end_pos,
+                        variant: old_pattern.to_string(),
+                        text: new_pattern.clone(),
+                    });
+                }
+
+                search_start = actual_pos + 1; // Move past this match
+            }
+        }
+    }
+
+    // Third, find all identifiers and check for compound matches
     let identifiers = find_all_identifiers(content);
 
     for (start, end, identifier) in identifiers {
-        // Skip if this entire identifier was already matched exactly
-        let fully_processed = processed_ranges
-            .iter()
-            .any(|(proc_start, proc_end)| *proc_start == start && *proc_end == end);
+        // Skip if this identifier was already matched exactly or if it's completely contained within a processed range
+        let should_skip = processed_ranges.iter().any(|(proc_start, proc_end)| {
+            // Skip if exact match (same start and end)
+            (*proc_start == start && *proc_end == end) ||
+                // Skip if identifier is completely contained within processed range
+                (*proc_start <= start && *proc_end >= end)
+        });
 
-        if fully_processed {
+        if should_skip {
             continue;
         }
 
@@ -179,7 +292,41 @@ pub fn find_enhanced_matches(
     // Sort matches by position
     all_matches.sort_by_key(|m| (m.line, m.column));
 
-    all_matches
+    // Remove overlapping matches, prioritizing longer matches
+    let mut final_matches = Vec::new();
+    let mut i = 0;
+    while i < all_matches.len() {
+        let current = &all_matches[i];
+        let mut best_match = current;
+        let mut j = i + 1;
+
+        // Find all matches that overlap with current
+        while j < all_matches.len() {
+            let candidate = &all_matches[j];
+
+            // Check if they overlap
+            let overlaps = current.start < candidate.end && current.end > candidate.start;
+
+            if !overlaps {
+                break; // Since sorted by position, no more overlaps
+            }
+
+            // If they overlap, choose the longer match
+            let current_len = best_match.end - best_match.start;
+            let candidate_len = candidate.end - candidate.start;
+
+            if candidate_len > current_len {
+                best_match = candidate;
+            }
+
+            j += 1;
+        }
+
+        final_matches.push(best_match.clone());
+        i = j; // Skip all overlapping matches
+    }
+
+    final_matches
 }
 
 /// Convert enhanced matches to `MatchHunks` with proper line context
