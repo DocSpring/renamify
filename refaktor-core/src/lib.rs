@@ -10,7 +10,6 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 
-pub mod api;
 pub mod apply;
 pub mod case_model;
 pub mod coercion;
@@ -26,8 +25,6 @@ pub mod rename;
 pub mod scanner;
 pub mod undo;
 
-pub use api::{rename, undo, plan, apply};
-pub use operations::{rename_operation, undo_operation, redo_operation, plan_operation, plan_operation_with_dry_run, apply_operation};
 pub use apply::{apply_plan, ApplyOptions};
 pub use case_model::{
     detect_style, generate_variant_map, parse_to_tokens, to_style, Style, Token, TokenModel,
@@ -37,6 +34,10 @@ pub use history::{
     create_history_entry, format_history, get_status, History, HistoryEntry, StatusInfo,
 };
 pub use lock::LockFile;
+pub use operations::{
+    apply_operation, plan_operation, plan_operation_with_dry_run, redo_operation, rename_operation,
+    undo_operation,
+};
 pub use pattern::{build_pattern, find_matches, is_boundary, Match, MatchPattern};
 pub use preview::{render_plan, write_preview, Preview};
 pub use rename::{

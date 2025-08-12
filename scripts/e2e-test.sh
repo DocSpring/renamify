@@ -10,6 +10,11 @@ if [ -d "$WORKDIR" ]; then
   echo "Removing existing $WORKDIR"
   rm -rf "$WORKDIR"
 fi
+if [ -d "$CARGO_TARGET_DIR" ]; then
+  echo "Removing existing $CARGO_TARGET_DIR"
+  rm -rf "$CARGO_TARGET_DIR"
+fi
+
 
 echo "Cloning refaktor to $WORKDIR"
 git clone . "$WORKDIR"
@@ -60,7 +65,7 @@ fi
 if [ -n "$(git status --porcelain)" ]; then
   echo "ERROR: Working directory is not clean after undo!"
   git status
-  git diff
+  git diff | head -n 100 
   exit 1
 fi
 echo "✓ Working directory is clean - undo successful!"
@@ -114,7 +119,7 @@ REL_REFAKTOR="$CARGO_TARGET_DIR/release/refaktor"
 if [ -n "$(git status --porcelain)" ]; then
   echo "ERROR: Working directory is not clean after round-trip!"
   git status
-  git diff
+  git diff | head -n 100
   exit 1
 fi
 echo "✓ Working directory is clean - round-trip successful!"

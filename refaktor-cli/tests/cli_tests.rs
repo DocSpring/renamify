@@ -43,21 +43,23 @@ fn test_plan_command_basic() {
         "old_name",
         "new_name",
         vec![temp_dir.path().to_path_buf()], // paths
-        vec![], // include
-        vec![], // exclude
-        true,   // respect_gitignore
-        0,      // unrestricted_level
-        true,   // rename_files
-        true,   // rename_dirs
-        vec![], // exclude_styles
-        vec![], // include_styles
-        vec![], // only_styles
-        vec![], // exclude_match
-        None,   // plan_out
-        Some("table".to_string()), // preview_format
-        true,   // dry_run
-        false,  // use_color
-    ).unwrap();
+        vec![],                              // include
+        vec![],                              // exclude
+        true,                                // respect_gitignore
+        0,                                   // unrestricted_level
+        true,                                // rename_files
+        true,                                // rename_dirs
+        vec![],                              // exclude_styles
+        vec![],                              // include_styles
+        vec![],                              // only_styles
+        vec![],                              // exclude_match
+        None,                                // plan_out
+        Some("table".to_string()),           // preview_format
+        true,                                // dry_run
+        true,                                // fixed_table_width - for consistent test output
+        false,                               // use_color
+    )
+    .unwrap();
 
     // Verify the result contains the table content
     assert!(result.contains("test.rs"));
@@ -76,21 +78,23 @@ fn test_plan_command_with_styles() {
         "old-name",
         "new-name",
         vec![temp_dir.path().to_path_buf()], // paths
-        vec![], // include
-        vec![], // exclude
-        true,   // respect_gitignore
-        0,      // unrestricted_level
-        true,   // rename_files
-        true,   // rename_dirs
+        vec![],                              // include
+        vec![],                              // exclude
+        true,                                // respect_gitignore
+        0,                                   // unrestricted_level
+        true,                                // rename_files
+        true,                                // rename_dirs
         vec![Style::Kebab, Style::Pascal, Style::ScreamingSnake], // exclude_styles
-        vec![], // include_styles
-        vec![], // only_styles
-        vec![], // exclude_match
-        None,   // plan_out
-        Some("table".to_string()), // preview_format
-        true,   // dry_run
-        false,  // use_color
-    ).unwrap();
+        vec![],                              // include_styles
+        vec![],                              // only_styles
+        vec![],                              // exclude_match
+        None,                                // plan_out
+        Some("table".to_string()),           // preview_format
+        true,                                // dry_run
+        true,                                // fixed_table_width - for consistent test output
+        false,                               // use_color
+    )
+    .unwrap();
 
     // Verify the result contains the table content
     assert!(result.contains("test.rs"));
@@ -101,21 +105,23 @@ fn test_plan_command_with_styles() {
         "old-name",
         "new-name",
         vec![temp_dir.path().to_path_buf()], // paths
-        vec![], // include
-        vec![], // exclude
-        true,   // respect_gitignore
-        0,      // unrestricted_level
-        true,   // rename_files
-        true,   // rename_dirs
-        vec![], // exclude_styles
-        vec![Style::Title, Style::Train], // include_styles
-        vec![], // only_styles
-        vec![], // exclude_match
-        None,   // plan_out
-        Some("table".to_string()), // preview_format
-        true,   // dry_run
-        false,  // use_color
-    ).unwrap();
+        vec![],                              // include
+        vec![],                              // exclude
+        true,                                // respect_gitignore
+        0,                                   // unrestricted_level
+        true,                                // rename_files
+        true,                                // rename_dirs
+        vec![],                              // exclude_styles
+        vec![Style::Title, Style::Train],    // include_styles
+        vec![],                              // only_styles
+        vec![],                              // exclude_match
+        None,                                // plan_out
+        Some("table".to_string()),           // preview_format
+        true,                                // dry_run
+        true,                                // fixed_table_width - for consistent test output
+        false,                               // use_color
+    )
+    .unwrap();
 
     assert!(result2.contains("test.rs"));
 }
@@ -1230,15 +1236,22 @@ fn test_undo_after_rename() {
 
     // Now undo the operation
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    let output = cmd.current_dir(temp_dir.path())
+    let output = cmd
+        .current_dir(temp_dir.path())
         .args(["undo", id])
         .assert()
         .success()
         .get_output()
         .clone();
-    
-    eprintln!("DEBUG test_undo_after_rename undo stdout: {}", String::from_utf8_lossy(&output.stdout));
-    eprintln!("DEBUG test_undo_after_rename undo stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+    eprintln!(
+        "DEBUG test_undo_after_rename undo stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    eprintln!(
+        "DEBUG test_undo_after_rename undo stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 
     // Verify files are back to original state
     let test_rs_content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
@@ -1268,28 +1281,58 @@ fn test_undo_latest() {
 
     // Verify the rename was applied correctly
     let content_after_rename = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
-    eprintln!("DEBUG test_undo_latest: content after rename = {:?}", content_after_rename);
-    assert!(content_after_rename.contains("bar"), "Expected 'bar' in content after rename: {:?}", content_after_rename);
-    assert!(!content_after_rename.contains("foo"), "Did not expect 'foo' in content after rename: {:?}", content_after_rename);
-    assert!(!content_after_rename.ends_with('\n'), "Expected no trailing newline after rename: {:?}", content_after_rename);
+    eprintln!(
+        "DEBUG test_undo_latest: content after rename = {:?}",
+        content_after_rename
+    );
+    assert!(
+        content_after_rename.contains("bar"),
+        "Expected 'bar' in content after rename: {:?}",
+        content_after_rename
+    );
+    assert!(
+        !content_after_rename.contains("foo"),
+        "Did not expect 'foo' in content after rename: {:?}",
+        content_after_rename
+    );
+    assert!(
+        !content_after_rename.ends_with('\n'),
+        "Expected no trailing newline after rename: {:?}",
+        content_after_rename
+    );
 
     // Undo using "latest"
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
-    let output = cmd.current_dir(temp_dir.path())
+    let output = cmd
+        .current_dir(temp_dir.path())
         .args(["undo", "latest"])
         .assert()
         .success()
         .get_output()
         .clone();
-    
-    eprintln!("DEBUG undo stdout: {}", String::from_utf8_lossy(&output.stdout));
-    eprintln!("DEBUG undo stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+    eprintln!(
+        "DEBUG undo stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    eprintln!(
+        "DEBUG undo stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 
     // Verify revert
     let content = std::fs::read_to_string(temp_dir.path().join("test.rs")).unwrap();
     eprintln!("DEBUG test_undo_latest: actual content = {:?}", content);
-    assert!(content.contains("foo"), "Expected 'foo' in content: {:?}", content);
-    assert!(!content.contains("bar"), "Did not expect 'bar' in content: {:?}", content);
+    assert!(
+        content.contains("foo"),
+        "Expected 'foo' in content: {:?}",
+        content
+    );
+    assert!(
+        !content.contains("bar"),
+        "Did not expect 'bar' in content: {:?}",
+        content
+    );
 }
 
 #[test]

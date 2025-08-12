@@ -1,5 +1,7 @@
+use crate::{
+    scan_repository_multi, write_plan, write_preview, LockFile, PlanOptions, Preview, Style,
+};
 use anyhow::{Context, Result};
-use crate::{scan_repository_multi, write_plan, write_preview, PlanOptions, Style, LockFile, Preview};
 use std::path::PathBuf;
 
 /// High-level plan operation - equivalent to `refaktor plan` command
@@ -37,6 +39,7 @@ pub fn plan_operation(
         plan_out,
         preview_format,
         false, // dry_run
+        false, // fixed_table_width - not applicable for non-dry-run
         use_color,
     )
 }
@@ -60,6 +63,7 @@ pub fn plan_operation_with_dry_run(
     plan_out: Option<PathBuf>,
     preview_format: Option<String>, // "table", "diff", "json", "summary", "none"
     dry_run: bool,
+    fixed_table_width: bool,
     use_color: bool,
 ) -> Result<String> {
     let current_dir = std::env::current_dir().context("Failed to get current directory")?;
@@ -74,8 +78,10 @@ pub fn plan_operation_with_dry_run(
     // Acquire lock (only for non-dry-run operations)
     let refaktor_dir = current_dir.join(".refaktor");
     let _lock = if !dry_run {
-        Some(LockFile::acquire(&refaktor_dir)
-            .context("Failed to acquire lock for refaktor operation")?)
+        Some(
+            LockFile::acquire(&refaktor_dir)
+                .context("Failed to acquire lock for refaktor operation")?,
+        )
     } else {
         None
     };
@@ -84,7 +90,7 @@ pub fn plan_operation_with_dry_run(
     let styles = build_styles_list(exclude_styles, include_styles, only_styles);
 
     let plan_out_path = plan_out.unwrap_or_else(|| PathBuf::from(".refaktor/plan.json"));
-    
+
     let plan_options = PlanOptions {
         includes: include,
         excludes: exclude,
@@ -120,7 +126,16 @@ pub fn plan_operation_with_dry_run(
     let preview_content = if let Some(format) = preview_format.as_ref() {
         if format != "none" {
             let preview_format = parse_preview_format(format)?;
-            let content = crate::preview::render_plan(&plan, preview_format, Some(use_color));
+            let content = if fixed_table_width {
+                crate::preview::render_plan_with_fixed_width(
+                    &plan,
+                    preview_format,
+                    Some(use_color),
+                    true,
+                )
+            } else {
+                crate::preview::render_plan(&plan, preview_format, Some(use_color))
+            };
             // For dry-run operations (like tests), print the preview
             if dry_run {
                 println!("{}", content);
@@ -132,14 +147,17 @@ pub fn plan_operation_with_dry_run(
     } else {
         None
     };
-    
+
     // Write plan unless dry-run
     if !dry_run {
         write_plan(&plan, &plan_out_path).context("Failed to write plan")?;
-        
-        // Return message with file path for non-JSON previews
-        if preview_format.as_ref().map_or(true, |f| f != "json") {
-            return Ok(format!("Plan written to: {}", plan_out_path.display()));
+
+        // Return both preview content and file path message for non-dry-run
+        let file_message = format!("Plan written to: {}", plan_out_path.display());
+        if let Some(content) = preview_content {
+            return Ok(format!("{}\n\n{}", content, file_message));
+        } else if preview_format.as_ref().map_or(true, |f| f != "json") {
+            return Ok(file_message);
         }
     }
 
@@ -152,7 +170,7 @@ pub fn plan_operation_with_dry_run(
         }
         return Ok(warning);
     }
-    
+
     // Return preview content for dry-run operations, summary for others
     if dry_run && preview_content.is_some() {
         Ok(preview_content.unwrap())
@@ -161,7 +179,11 @@ pub fn plan_operation_with_dry_run(
             "Generated plan with {} matches and {} renames{}",
             plan.stats.total_matches,
             plan.renames.len(),
-            if dry_run { "" } else { &format!(". Saved to {}", plan_out_path.display()) }
+            if dry_run {
+                ""
+            } else {
+                &format!(". Saved to {}", plan_out_path.display())
+            }
         ))
     }
 }
@@ -198,7 +220,6 @@ fn build_styles_list(
         Some(only_styles)
     }
 }
-
 
 fn parse_preview_format(format: &str) -> Result<Preview> {
     match format.to_lowercase().as_str() {

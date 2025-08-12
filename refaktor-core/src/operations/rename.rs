@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Context, Result};
 use crate::{apply_plan, scan_repository_multi, ApplyOptions, LockFile, Plan, PlanOptions, Style};
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::path::PathBuf;
@@ -82,10 +82,10 @@ pub fn rename_operation(
 
     // Update plan with filtered renames
     plan.renames = filter_renames_by_root_policy(
-        root_renames.clone(), 
-        other_renames, 
-        rename_root, 
-        no_rename_root
+        root_renames.clone(),
+        other_renames,
+        rename_root,
+        no_rename_root,
     );
 
     // Check if there's anything to do after filtering
@@ -130,7 +130,10 @@ pub fn rename_operation(
     let mut output = result;
     if !root_renames.is_empty() && !rename_root && !no_rename_root {
         let snippet = generate_root_rename_snippet(&root_renames)?;
-        output.push_str(&format!("\n\nNext step (root directory rename):\n{}", snippet));
+        output.push_str(&format!(
+            "\n\nNext step (root directory rename):\n{}",
+            snippet
+        ));
     }
 
     Ok(output)
@@ -168,7 +171,6 @@ fn build_styles_list(
         Some(only_styles)
     }
 }
-
 
 fn separate_root_renames(
     renames: &[crate::scanner::Rename],
@@ -244,8 +246,12 @@ fn generate_preview_output(plan: &Plan, format: &str, use_color: bool) -> Result
         "summary" => crate::preview::Preview::Summary,
         _ => return Err(anyhow!("Invalid preview format: {}", format)),
     };
-    
-    Ok(crate::preview::render_plan(plan, preview_format, Some(use_color)))
+
+    Ok(crate::preview::render_plan(
+        plan,
+        preview_format,
+        Some(use_color),
+    ))
 }
 
 fn show_rename_summary(plan: &Plan, include: &[String], exclude: &[String]) -> Result<()> {
@@ -312,15 +318,15 @@ fn apply_rename_changes(plan: &Plan, commit: bool, force_with_conflicts: bool) -
         "✓ Applied {} replacements across {} files",
         plan.stats.total_matches, plan.stats.files_with_matches
     );
-    
+
     if !plan.renames.is_empty() {
         output.push_str(&format!("\n✓ Renamed {} items", plan.renames.len()));
     }
-    
+
     if commit {
         output.push_str("\n✓ Changes committed to git");
     }
-    
+
     output.push_str(&format!("\nUndo with: refaktor undo {history_id}"));
 
     Ok(output)

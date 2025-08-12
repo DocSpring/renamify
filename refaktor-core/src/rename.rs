@@ -327,7 +327,6 @@ mod tests {
         // On macOS default FS, this is typically true
         // On Linux, this is typically false
         // We just verify it doesn't panic
-        println!("Filesystem case-insensitive: {}", is_case_insensitive);
     }
 
     #[test]
@@ -507,8 +506,6 @@ mod tests {
             })
             .collect();
 
-        println!("Paths with gitignore enabled: {:?}", rename_paths);
-
         // Should NOT rename files in target/ or build/ directories
         assert!(
             !rename_paths.iter().any(|p| p.contains("target/")),
@@ -552,8 +549,6 @@ mod tests {
                     .to_string()
             })
             .collect();
-
-        println!("All paths with gitignore disabled: {:?}", all_paths);
 
         // Should include ignored files when respect_gitignore is false
         assert!(

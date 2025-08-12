@@ -63,7 +63,7 @@ pub fn render_plan(plan: &Plan, format: Preview, use_color: Option<bool>) -> Str
     render_plan_with_fixed_width(plan, format, use_color, false)
 }
 
-// Mainly for tests without a tty
+// For backwards compatibility and tests
 pub fn render_plan_with_fixed_width(
     plan: &Plan,
     format: Preview,
@@ -73,7 +73,7 @@ pub fn render_plan_with_fixed_width(
     let use_color = should_use_color(use_color);
 
     match format {
-        Preview::Table => render_table_with_fixed_width(plan, use_color, fixed_width),
+        Preview::Table => render_table(plan, use_color, fixed_width),
         Preview::Diff => render_diff(plan, use_color),
         Preview::Json => render_json(plan),
         Preview::Summary => render_summary(plan),
@@ -81,17 +81,12 @@ pub fn render_plan_with_fixed_width(
     }
 }
 
-/// Render plan as a table
-fn render_table(plan: &Plan, use_color: bool) -> String {
-    render_table_with_fixed_width(plan, use_color, false)
-}
-
-/// Render plan as a table with explicit width control
-fn render_table_with_fixed_width(plan: &Plan, use_color: bool, fixed_width: bool) -> String {
+/// Render plan as a table with optional fixed column widths
+fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String {
     let mut table = Table::new();
 
-    // Set content arrangement and constraints based on width parameter
-    if fixed_width {
+    // Set content arrangement and constraints based on fixed width parameter
+    if fixed_table_width {
         table.set_content_arrangement(ContentArrangement::Disabled);
         // Set absolute column widths for consistent layout
         table.set_constraints(vec![
@@ -101,7 +96,18 @@ fn render_table_with_fixed_width(plan: &Plan, use_color: bool, fixed_width: bool
             ColumnConstraint::Absolute(Width::Fixed(75)), // Variants
         ]);
     } else {
-        table.set_content_arrangement(ContentArrangement::Dynamic);
+        // Use TTY detection fallback when no fixed width specified
+        if !io::stdout().is_terminal() {
+            table.set_content_arrangement(ContentArrangement::Disabled);
+            table.set_constraints(vec![
+                ColumnConstraint::Absolute(Width::Fixed(75)), // File
+                ColumnConstraint::Absolute(Width::Fixed(30)), // Kind
+                ColumnConstraint::Absolute(Width::Fixed(15)), // Matches
+                ColumnConstraint::Absolute(Width::Fixed(75)), // Variants
+            ]);
+        } else {
+            table.set_content_arrangement(ContentArrangement::Dynamic);
+        }
     }
 
     // Force styling even in non-TTY environments when colors are explicitly requested
@@ -597,7 +603,7 @@ mod tests {
     #[test]
     fn test_render_table_no_color() {
         let plan = create_test_plan();
-        let result = render_table_with_fixed_width(&plan, false, true);
+        let result = render_table(&plan, false, true);
 
         assert!(result.contains("src/main.rs"));
         assert!(result.contains("Content"));
@@ -727,7 +733,7 @@ mod tests {
             version: "1.0.0".to_string(),
         };
 
-        let table = render_table_with_fixed_width(&plan, false, true);
+        let table = render_table(&plan, false, true);
         assert!(table.contains("TOTALS"));
         assert!(table.contains('0'));
 

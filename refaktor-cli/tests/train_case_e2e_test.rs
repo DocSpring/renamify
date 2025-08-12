@@ -226,26 +226,27 @@ The Refaktor-Based-Solution is working.
     rename_operation(
         "refaktor",
         "smart_search_and_replace",
-        vec![],  // paths (empty = current dir)
-        vec![],  // include
-        vec![],  // exclude
-        0,       // unrestricted_level
-        true,    // rename_files
-        true,    // rename_dirs
-        vec![],  // exclude_styles
-        vec![],  // include_styles
-        vec![],  // only_styles
-        vec![],  // exclude_match
-        None,    // preview_format
-        false,   // commit
-        false,   // large
-        false,   // force_with_conflicts
-        false,   // rename_root
-        false,   // no_rename_root
-        false,   // dry_run
-        true,    // auto_approve
-        true,    // use_color
-    ).unwrap();
+        vec![], // paths (empty = current dir)
+        vec![], // include
+        vec![], // exclude
+        0,      // unrestricted_level
+        true,   // rename_files
+        true,   // rename_dirs
+        vec![], // exclude_styles
+        vec![], // include_styles
+        vec![], // only_styles
+        vec![], // exclude_match
+        None,   // preview_format
+        false,  // commit
+        false,  // large
+        false,  // force_with_conflicts
+        false,  // rename_root
+        false,  // no_rename_root
+        false,  // dry_run
+        true,   // auto_approve
+        true,   // use_color
+    )
+    .unwrap();
 
     // Verify changes were applied
     let changed_content = std::fs::read_to_string("doc.md").unwrap();

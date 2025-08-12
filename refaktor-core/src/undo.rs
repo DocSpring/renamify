@@ -9,7 +9,9 @@ use std::str::FromStr;
 
 /// Extract individual file patches from a comprehensive patch
 /// Returns Vec<(original_path, modified_path, patch_content)>
-fn extract_individual_patches(comprehensive_patch: &str) -> Result<Vec<(PathBuf, PathBuf, String)>> {
+fn extract_individual_patches(
+    comprehensive_patch: &str,
+) -> Result<Vec<(PathBuf, PathBuf, String)>> {
     let mut patches = Vec::new();
     let mut current_patch = String::new();
     let mut current_original: Option<PathBuf> = None;
@@ -27,15 +29,20 @@ fn extract_individual_patches(comprehensive_patch: &str) -> Result<Vec<(PathBuf,
             // Save previous patch if we have one
             if let (Some(orig), Some(modif)) = (current_original.take(), current_modified.take()) {
                 if !current_patch.is_empty() {
-                    patches.push((orig, modif, current_patch.clone()));
+                    // Strip exactly 2 trailing newlines (the separator between patches)
+                    let mut trimmed_patch = current_patch.clone();
+                    if trimmed_patch.ends_with("\n\n") {
+                        trimmed_patch.truncate(trimmed_patch.len() - 2);
+                    }
+                    patches.push((orig, modif, trimmed_patch));
                 }
             }
-            
+
             // Start new patch
             current_patch.clear();
             current_patch.push_str(line);
             current_patch.push('\n');
-            
+
             let path_str = line.strip_prefix("--- ").unwrap_or("");
             current_original = Some(PathBuf::from(path_str));
             in_patch_section = true;
@@ -45,7 +52,7 @@ fn extract_individual_patches(comprehensive_patch: &str) -> Result<Vec<(PathBuf,
         if line.starts_with("+++ ") {
             current_patch.push_str(line);
             current_patch.push('\n');
-            
+
             let path_str = line.strip_prefix("+++ ").unwrap_or("");
             current_modified = Some(PathBuf::from(path_str));
             continue;
@@ -59,7 +66,7 @@ fn extract_individual_patches(comprehensive_patch: &str) -> Result<Vec<(PathBuf,
             continue;
         }
 
-        // Include ALL patch content lines (including \ No newline at end of file)
+        // Include patch content lines
         if in_patch_section {
             current_patch.push_str(line);
             current_patch.push('\n');
@@ -69,41 +76,23 @@ fn extract_individual_patches(comprehensive_patch: &str) -> Result<Vec<(PathBuf,
     // Don't forget the last patch
     if let (Some(orig), Some(modif)) = (current_original, current_modified) {
         if !current_patch.is_empty() {
-            patches.push((orig, modif, current_patch));
+            // Strip trailing newlines from the last patch too (there might be separator content after it)
+            let mut trimmed_patch = current_patch.clone();
+            if trimmed_patch.ends_with("\n\n") {
+                trimmed_patch.truncate(trimmed_patch.len() - 2);
+            }
+            patches.push((orig, modif, trimmed_patch));
         }
     }
 
     Ok(patches)
 }
 
-/// Find the current path of a file after renames have been reversed
-fn find_current_path_after_renames(original_patch_path: &Path, renames: &[(PathBuf, PathBuf)]) -> PathBuf {
-    // During undo, renames have already been reversed (new_path -> old_path)
-    // The patch refers to paths during the original operation
-    // We need to find where this file actually is now after the reversal
-    
-    for (from_path, to_path) in renames {
-        // Check if the original patch path matches the "to" path (the new location during original operation)
-        if original_patch_path == to_path {
-            // After undo, this file is now at the "from" path (the original location)
-            return from_path.clone();
-        }
-    }
-    
-    // If no rename match found, the file wasn't renamed - use original path
-    original_patch_path.to_path_buf()
-}
-
 /// Apply a single patch to a specific file using diffy
 fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
-    eprintln!("DEBUG apply_single_patch: file={}", file_path.display());
-    eprintln!("DEBUG apply_single_patch: patch_content={:?}", patch_content);
-    
     // Read the current file content
     let current_content = fs::read_to_string(file_path)
         .with_context(|| format!("Failed to read file: {}", file_path.display()))?;
-    
-    eprintln!("DEBUG apply_single_patch: current_content={:?}", current_content);
 
     // Parse the patch using diffy
     let patch = diffy::Patch::from_str(patch_content)
@@ -112,29 +101,15 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     // The patch is ALREADY a reverse patch (new -> old) from our generation
     // So we can apply it directly
     let restored = diffy::apply(&current_content, &patch)
-        .map_err(|e| {
-            eprintln!("DEBUG diffy error details: {:?}", e);
-            eprintln!("DEBUG patch details: {:?}", patch);
-            eprintln!("DEBUG patch hunks count: {}", patch.hunks().len());
-            for (i, hunk) in patch.hunks().iter().enumerate() {
-                eprintln!("DEBUG hunk {}: {:?}", i, hunk);
-                eprintln!("DEBUG hunk {} old_range: {:?}", i, hunk.old_range());
-                eprintln!("DEBUG hunk {} new_range: {:?}", i, hunk.new_range());
-            }
-            anyhow!("Failed to apply patch: {}", e)
-        })?;
-    
-    eprintln!("DEBUG apply_single_patch: restored={:?}", restored);
+        .map_err(|e| anyhow!("Failed to apply patch: {}", e))?;
 
     // Write the restored content
-    fs::write(file_path, restored.clone()).with_context(|| {
+    fs::write(file_path, restored).with_context(|| {
         format!(
             "Failed to write restored content to {}",
             file_path.display()
         )
     })?;
-    
-    eprintln!("DEBUG apply_single_patch: wrote {} bytes", restored.len());
 
     Ok(())
 }
@@ -164,13 +139,10 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         return Err(anyhow!("Entry '{}' has already been reverted", id));
     }
 
-    // Look for comprehensive patch file
-    let patch_path = entry.backups_path.join("refactoring.patch");
-    
-    eprintln!("DEBUG undo: Looking for patch at {}", patch_path.display());
+    // Look for reverse patch file
+    let patch_path = entry.backups_path.join("reverse.patch");
 
     if patch_path.exists() {
-        eprintln!("DEBUG undo: Found patch file");
         // Use the comprehensive patch for undo
 
         // STEP 1: Reverse renames first (new locations back to old)
@@ -267,23 +239,18 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         // STEP 2: Apply content changes from the patch
         let patch_content = fs::read_to_string(&patch_path)
             .with_context(|| format!("Failed to read patch from {}", patch_path.display()))?;
-        
-        eprintln!("DEBUG undo: Raw patch file content:");
-        eprintln!("{}", patch_content);
 
         // Extract individual file patches
         let individual_patches = extract_individual_patches(&patch_content)?;
-        eprintln!("DEBUG undo: Found {} individual patches", individual_patches.len());
 
         let mut files_processed = 0;
-        for (original_path, _modified_path, patch_content) in individual_patches {
-            // Find the current path for this file after renames have been reversed
-            let current_path = find_current_path_after_renames(&original_path, &entry.renames);
-            
-            eprintln!("DEBUG undo: original_path={}, current_path={}", original_path.display(), current_path.display());
-            
+        for (original_path, modified_path, patch_content) in individual_patches {
+            // The modified_path (from +++ line) tells us where the file should be after applying this reverse patch
+            // Since renames have already been reversed, the file should be at the modified_path location
+            let current_path = &modified_path;
+
             // Apply patch to the current path (where the file actually is now)
-            if let Err(e) = apply_single_patch(&current_path, &patch_content) {
+            if let Err(e) = apply_single_patch(current_path, &patch_content) {
                 eprintln!(
                     "  WARNING: Failed to apply patch to {}: {}",
                     current_path.display(),
@@ -292,14 +259,10 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
                 // Continue with other files instead of failing completely
             } else {
                 files_processed += 1;
-                eprintln!("  Successfully applied patch to {}", current_path.display());
             }
         }
-
-        if files_processed > 0 {}
     } else {
         // Fallback to old method for backward compatibility
-        eprintln!("  No comprehensive patch found, using legacy undo method...");
 
         // Build a map from renamed paths back to their original names
         let mut rename_map: HashMap<&PathBuf, &PathBuf> = HashMap::new();
@@ -383,7 +346,6 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
                 }
 
                 restored_files.push((*current_path).clone());
-                eprintln!("  Restored: {}", current_path.display());
             }
         }
     }
@@ -432,7 +394,6 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
 
     history.add_entry(revert_entry)?;
 
-    eprintln!("Successfully undid refactoring '{}'", id);
     Ok(())
 }
 
@@ -776,20 +737,25 @@ mod tests {
 
     #[test]
     fn test_apply_single_patch_newline_comparison() {
-        // Test that we correctly compare files with/without trailing newlines
+        // Test that we correctly apply reverse patches with "No newline at end of file" markers
         let temp_dir = TempDir::new().unwrap();
         let test_file = temp_dir.path().join("test.txt");
-        
-        // Current file has NO trailing newline
+
+        // Current file has NO trailing newline (this is the "after" state)
         fs::write(&test_file, "new content").unwrap();
-        
-        // Create a proper patch with no newline markers
-        let patch_content = "--- test.txt\n+++ test.txt\n@@ -1 +1 @@\n-old content\n\\ No newline at end of file\n+new content\n\\ No newline at end of file\n";
-        
-        // This should work - file matches what patch expects
+
+        // Create a reverse patch that changes "new content" back to "old content"
+        // This is what our undo system now generates - a proper reverse patch
+        let patch_content = "--- test.txt\n+++ test.txt\n@@ -1 +1 @@\n-new content\n\\ No newline at end of file\n+old content\n\\ No newline at end of file\n";
+
+        // This should work - applying reverse patch to restore original content
         let result = apply_single_patch(&test_file, patch_content);
-        assert!(result.is_ok(), "Should apply when content matches exactly: {:?}", result.err());
-        
+        assert!(
+            result.is_ok(),
+            "Should apply reverse patch successfully: {:?}",
+            result.err()
+        );
+
         // Verify old content was restored without newline
         let content = fs::read(&test_file).unwrap();
         assert_eq!(content, b"old content");
@@ -827,7 +793,10 @@ mod tests {
         assert!(content1.contains("@@ -1 +1 @@"));
         assert!(content1.contains("-fn bar() {}"));
         assert!(content1.contains("+fn foo() {}"));
-        assert!(content1.contains("\\ No newline at end of file"), "Should preserve no newline markers");
+        assert!(
+            content1.contains("\\ No newline at end of file"),
+            "Should preserve no newline markers"
+        );
 
         let (orig2, mod2, content2) = &patches[1];
         assert_eq!(orig2, &PathBuf::from("/path/to/file2.rs"));
@@ -853,17 +822,17 @@ rename to new_file.rs
 
         let patches = extract_individual_patches(comprehensive_patch).unwrap();
         assert_eq!(patches.len(), 1);
-        
+
         let (orig, modif, content) = &patches[0];
         assert_eq!(orig, &PathBuf::from("/path/to/file.rs"));
         assert_eq!(modif, &PathBuf::from("/path/to/file.rs"));
-        
+
         // Should not contain comments or rename metadata
         assert!(!content.contains("# This is a comment"));
         assert!(!content.contains("diff --git"));
         assert!(!content.contains("rename from"));
         assert!(!content.contains("rename to"));
-        
+
         // Should contain patch content
         assert!(content.contains("--- /path/to/file.rs"));
         assert!(content.contains("+++ /path/to/file.rs"));
@@ -885,38 +854,83 @@ rename to new_file.rs
 
         let patches = extract_individual_patches(comprehensive_patch).unwrap();
         assert_eq!(patches.len(), 1);
-        
+
         let (_orig, _modif, content) = &patches[0];
-        
+
         // CRITICAL: Must preserve the backslash lines
         let backslash_count = content.matches("\\ No newline at end of file").count();
-        assert_eq!(backslash_count, 2, "Should preserve both 'No newline at end of file' markers: {}", content);
-        
+        assert_eq!(
+            backslash_count, 2,
+            "Should preserve both 'No newline at end of file' markers: {}",
+            content
+        );
+
         // Should contain the full patch
         assert!(content.contains("-old text"));
         assert!(content.contains("+new text"));
     }
 
     #[test]
-    fn test_find_current_path_after_renames() {
+    fn test_multiple_patches_extraction_no_extra_newlines() {
         use std::path::PathBuf;
-        
-        let renames = vec![
-            (PathBuf::from("/path/old_name.txt"), PathBuf::from("/path/new_name.txt")),
-            (PathBuf::from("/path/test.rs"), PathBuf::from("/path/test.rs")), // No rename
-        ];
-        
-        // File that was renamed: patch refers to new_name.txt, but after undo it's at old_name.txt
-        let current_path = find_current_path_after_renames(&PathBuf::from("/path/new_name.txt"), &renames);
-        assert_eq!(current_path, PathBuf::from("/path/old_name.txt"));
-        
-        // File that wasn't renamed: path should stay the same
-        let current_path = find_current_path_after_renames(&PathBuf::from("/path/test.rs"), &renames);
-        assert_eq!(current_path, PathBuf::from("/path/test.rs"));
-        
-        // File not in renames list: path should stay the same
-        let current_path = find_current_path_after_renames(&PathBuf::from("/path/other.rs"), &renames);
-        assert_eq!(current_path, PathBuf::from("/path/other.rs"));
+
+        // Create a comprehensive patch that mimics what we generate with separators
+        let comprehensive_patch = "# Refaktor reverse patch for plan test
+# Created: 2025-01-01T00:00:00Z
+
+--- /path/to/file1.rs
++++ /path/to/file1.rs
+@@ -1,3 +1,3 @@
+-fn new_name() {
+-    println!(\"new_name\");
++fn old_name() {
++    println!(\"old_name\");
+ }
+\\ No newline at end of file
+
+--- /path/to/stable.rs
++++ /path/to/stable.rs
+@@ -1,2 +1,2 @@
+-use new_name;
+-fn main() { new_name(); }
+\\ No newline at end of file
++use old_name;
++fn main() { old_name(); }
+\\ No newline at end of file
+
+diff --git a/some/dir b/other/dir
+rename from some/dir
+rename to other/dir
+";
+
+        let patches = extract_individual_patches(comprehensive_patch).unwrap();
+        assert_eq!(patches.len(), 2, "Should extract exactly 2 patches");
+
+        let (orig1, _mod1, content1) = &patches[0];
+        assert_eq!(orig1, &PathBuf::from("/path/to/file1.rs"));
+
+        // The first patch should NOT have extra newlines at the end
+        assert!(
+            !content1.ends_with("\n\n"),
+            "First patch should not end with double newlines"
+        );
+        assert!(
+            content1.ends_with("\\ No newline at end of file"),
+            "First patch should end with no newline marker"
+        );
+
+        let (orig2, _mod2, content2) = &patches[1];
+        assert_eq!(orig2, &PathBuf::from("/path/to/stable.rs"));
+
+        // The second patch should also NOT have extra newlines at the end
+        assert!(
+            !content2.ends_with("\n\n"),
+            "Second patch should not end with double newlines"
+        );
+        assert!(
+            content2.ends_with("\\ No newline at end of file"),
+            "Second patch should end with no newline marker"
+        );
     }
 
     #[test]

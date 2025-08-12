@@ -657,9 +657,9 @@ fn test_apply_with_both_renames_and_content_changes() {
     let backup_dir = temp_dir.path().join(".refaktor/backups").join("test_both");
     assert!(backup_dir.exists(), "Backup directory should exist");
 
-    // Check for comprehensive patch file
-    let patch_file = backup_dir.join("refactoring.patch");
-    assert!(patch_file.exists(), "Comprehensive patch should exist");
+    // Check for reverse patch file
+    let patch_file = backup_dir.join("reverse.patch");
+    assert!(patch_file.exists(), "Reverse patch should exist");
 
     // The patch should contain all the changes
     let patch_content = fs::read_to_string(&patch_file).unwrap();

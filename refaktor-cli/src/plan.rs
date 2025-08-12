@@ -21,10 +21,18 @@ pub fn handle_plan(
     only_styles: Vec<StyleArg>,
     exclude_match: Vec<String>,
     preview: Option<Preview>,
+    fixed_table_width: bool,
     plan_out: PathBuf,
     dry_run: bool,
     use_color: bool,
 ) -> Result<()> {
+    // Validate that --fixed-table-width is only used with table preview
+    if fixed_table_width && preview.is_some() && preview != Some(Preview::Table) {
+        return Err(anyhow::anyhow!(
+            "--fixed-table-width can only be used with --preview table"
+        ));
+    }
+
     // Convert CLI style args to core Style enum
     let exclude_styles: Vec<Style> = exclude_styles.into_iter().map(Into::into).collect();
     let include_styles: Vec<Style> = include_styles.into_iter().map(Into::into).collect();
@@ -57,6 +65,7 @@ pub fn handle_plan(
         Some(plan_out),
         preview_format,
         dry_run,
+        fixed_table_width,
         use_color,
     )?;
 

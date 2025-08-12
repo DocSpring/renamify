@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Context, Result};
 use crate::{apply_plan, scanner::Plan, ApplyOptions};
+use anyhow::{anyhow, Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -14,8 +14,9 @@ pub fn apply_operation(
     let current_dir = working_dir.unwrap_or_else(|| Path::new("."));
     let refaktor_dir = current_dir.join(".refaktor");
 
-    // Load the plan
-    let plan = load_plan_from_source(plan_path, plan_id, &refaktor_dir)?;
+    // Load the plan and track if using default plan file
+    let (plan, used_default_plan_file) =
+        load_plan_from_source_with_tracking(plan_path, plan_id, &refaktor_dir)?;
 
     // Apply the plan
     let apply_options = ApplyOptions {
@@ -30,39 +31,54 @@ pub fn apply_operation(
 
     apply_plan(&plan, &apply_options)?;
 
+    // Write success message to stderr
+    eprintln!("Plan applied successfully!");
+
+    // Delete the plan.json file after successful apply (only if using default path)
+    if let Some(default_plan_path) = used_default_plan_file {
+        if let Err(e) = fs::remove_file(&default_plan_path) {
+            eprintln!(
+                "Warning: Failed to delete plan file {}: {}",
+                default_plan_path.display(),
+                e
+            );
+        }
+    }
+
     let mut result = format!(
         "✓ Applied {} replacements across {} files",
         plan.stats.total_matches, plan.stats.files_with_matches
     );
-    
+
     if !plan.renames.is_empty() {
         result.push_str(&format!("\n✓ Renamed {} items", plan.renames.len()));
     }
-    
+
     if commit {
         result.push_str("\n✓ Changes committed to git");
     }
-    
+
     result.push_str(&format!("\nUndo with: refaktor undo {}", plan.id));
 
     Ok(result)
 }
 
-fn load_plan_from_source(
+fn load_plan_from_source_with_tracking(
     plan_path: Option<PathBuf>,
     plan_id: Option<String>,
     refaktor_dir: &Path,
-) -> Result<Plan> {
+) -> Result<(Plan, Option<PathBuf>)> {
     match (plan_path, plan_id) {
         (Some(path), None) => {
-            // Load from specific file path
+            // Load from specific file path - don't delete afterwards
             let plan_content = fs::read_to_string(&path)
                 .with_context(|| format!("Failed to read plan from {}", path.display()))?;
-            serde_json::from_str(&plan_content)
-                .with_context(|| format!("Failed to parse plan from {}", path.display()))
+            let plan = serde_json::from_str(&plan_content)
+                .with_context(|| format!("Failed to parse plan from {}", path.display()))?;
+            Ok((plan, None))
         },
         (None, Some(id)) => {
-            // Load from ID in plans directory
+            // Load from ID in plans directory - don't delete afterwards
             let plans_dir = refaktor_dir.join("plans");
             let plan_file = plans_dir.join(format!("{}.json", id));
             if !plan_file.exists() {
@@ -70,22 +86,25 @@ fn load_plan_from_source(
             }
             let plan_content = fs::read_to_string(&plan_file)
                 .with_context(|| format!("Failed to read plan {}", id))?;
-            serde_json::from_str(&plan_content)
-                .with_context(|| format!("Failed to parse plan {}", id))
+            let plan = serde_json::from_str(&plan_content)
+                .with_context(|| format!("Failed to parse plan {}", id))?;
+            Ok((plan, None))
         },
-        (Some(_), Some(_)) => {
-            Err(anyhow!("Cannot specify both plan_path and plan_id"))
-        },
+        (Some(_), Some(_)) => Err(anyhow!("Cannot specify both plan_path and plan_id")),
         (None, None) => {
-            // Default: load most recent plan
+            // Default: load most recent plan - DELETE this file after success
             let plan_file = refaktor_dir.join("plan.json");
             if !plan_file.exists() {
-                return Err(anyhow!("No plan specified and no default plan found at {}", plan_file.display()));
+                return Err(anyhow!(
+                    "No plan specified and no default plan found at {}",
+                    plan_file.display()
+                ));
             }
-            let plan_content = fs::read_to_string(&plan_file)
-                .context("Failed to read default plan")?;
-            serde_json::from_str(&plan_content)
-                .context("Failed to parse default plan")
-        }
+            let plan_content =
+                fs::read_to_string(&plan_file).context("Failed to read default plan")?;
+            let plan =
+                serde_json::from_str(&plan_content).context("Failed to parse default plan")?;
+            Ok((plan, Some(plan_file)))
+        },
     }
 }

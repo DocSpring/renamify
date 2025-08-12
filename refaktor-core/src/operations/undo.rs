@@ -1,12 +1,12 @@
-use anyhow::{anyhow, Result};
 use crate::{undo_refactoring, History};
+use anyhow::{anyhow, Result};
 use std::path::Path;
 
 /// High-level undo operation - equivalent to `refaktor undo` command
 pub fn undo_operation(id: &str, working_dir: Option<&Path>) -> Result<String> {
     let current_dir = working_dir.unwrap_or_else(|| Path::new("."));
     let refaktor_dir = current_dir.join(".refaktor");
-    
+
     // Handle "latest" shortcut
     let actual_id = if id == "latest" {
         let history = History::load(&refaktor_dir)?;
@@ -25,7 +25,7 @@ pub fn undo_operation(id: &str, working_dir: Option<&Path>) -> Result<String> {
     };
 
     undo_refactoring(&actual_id, &refaktor_dir)?;
-    
+
     Ok(format!("Successfully undid refactoring '{}'", actual_id))
 }
 
@@ -33,8 +33,8 @@ pub fn undo_operation(id: &str, working_dir: Option<&Path>) -> Result<String> {
 pub fn redo_operation(id: &str, working_dir: Option<&Path>) -> Result<String> {
     let current_dir = working_dir.unwrap_or_else(|| Path::new("."));
     let refaktor_dir = current_dir.join(".refaktor");
-    
+
     crate::redo_refactoring(id, &refaktor_dir)?;
-    
+
     Ok(format!("Successfully redid refactoring '{}'", id))
 }

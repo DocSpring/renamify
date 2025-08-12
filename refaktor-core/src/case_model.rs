@@ -560,12 +560,6 @@ mod tests {
         let styles = vec![Style::Camel, Style::Pascal, Style::Kebab];
         let map = generate_variant_map("old_name", "new_name", Some(&styles));
 
-        // Debug: print the map
-        eprintln!("Map with excluded Snake style:");
-        for (k, v) in &map {
-            eprintln!("  '{}' -> '{}'", k, v);
-        }
-
         // Should NOT include the original snake_case since Snake is not in styles
         assert!(
             !map.contains_key("old_name"),

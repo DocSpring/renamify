@@ -14,7 +14,6 @@ mod rename;
 mod status;
 mod undo;
 
-
 /// Smart search & replace for code and files with case-aware transformations
 #[derive(Parser, Debug)]
 #[command(name = "refaktor")]
@@ -114,6 +113,10 @@ enum Commands {
         /// Preview output format (defaults from config if not specified)
         #[arg(long, value_enum)]
         preview: Option<PreviewArg>,
+
+        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
+        #[arg(long)]
+        fixed_table_width: bool,
 
         /// Output path for the plan
         #[arg(long, default_value = ".refaktor/plan.json")]
@@ -230,6 +233,10 @@ enum Commands {
         /// Preview output format (defaults from config if not specified)
         #[arg(long, value_enum)]
         preview: Option<PreviewArg>,
+
+        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
+        #[arg(long)]
+        fixed_table_width: bool,
     },
 
     /// Initialize refaktor in the current repository
@@ -459,6 +466,7 @@ fn main() {
             only_styles,
             exclude_match,
             preview,
+            fixed_table_width,
             plan_out,
             dry_run,
         } => {
@@ -482,6 +490,7 @@ fn main() {
                 only_styles,
                 exclude_match,
                 Some(format),
+                fixed_table_width,
                 plan_out,
                 dry_run,
                 use_color,
@@ -502,6 +511,7 @@ fn main() {
             only_styles,
             exclude_match,
             preview,
+            fixed_table_width,
         } => {
             // Use preview format from CLI arg or config default
             let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
@@ -523,6 +533,7 @@ fn main() {
                 only_styles,
                 exclude_match,
                 Some(format),
+                fixed_table_width,
                 PathBuf::from(".refaktor/plan.json"),
                 true, // Always dry-run
                 use_color,
@@ -621,8 +632,6 @@ fn main() {
         },
     }
 }
-
-
 
 fn is_refaktor_ignored() -> Result<bool> {
     // Check if .refaktor is already ignored in any ignore file

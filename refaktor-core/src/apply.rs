@@ -109,23 +109,25 @@ fn generate_comprehensive_patch(
     // Generate BOTH forward and reverse patches for debugging and clarity
     let forward_patch_path = backup_base.join("forward.patch");
     let reverse_patch_path = backup_base.join("reverse.patch");
-    let patch_path = backup_base.join("refactoring.patch"); // Keep for compatibility
-    
+
     let mut forward_patch_content = String::new();
     let mut reverse_patch_content = String::new();
 
     // Add headers to both patches
     let timestamp = chrono::Local::now().to_rfc3339();
-    
+
     // Forward patch header (old -> new)
     forward_patch_content.push_str(&format!("# Refaktor forward patch for plan {}", plan.id));
     forward_patch_content.push_str(&format!("\n# Created: {}\n", timestamp));
     forward_patch_content.push_str(&format!("# Old: {} -> New: {}\n\n", plan.old, plan.new));
-    
-    // Reverse patch header (new -> old) 
+
+    // Reverse patch header (new -> old)
     reverse_patch_content.push_str(&format!("# Refaktor reverse patch for plan {}", plan.id));
     reverse_patch_content.push_str(&format!("\n# Created: {}\n", timestamp));
-    reverse_patch_content.push_str(&format!("# New: {} -> Old: {} (for undo)\n\n", plan.new, plan.old));
+    reverse_patch_content.push_str(&format!(
+        "# New: {} -> Old: {} (for undo)\n\n",
+        plan.new, plan.old
+    ));
 
     // Process each file that had content changes
     for (original_path, original_content) in original_contents {
@@ -157,32 +159,29 @@ fn generate_comprehensive_patch(
         })?;
 
         // Generate FORWARD diff (old -> new) using diffy
-        let forward_patch = diffy::create_patch(original_content.as_str(), current_content.as_str());
+        let forward_patch =
+            diffy::create_patch(original_content.as_str(), current_content.as_str());
         let forward_diff_str = forward_patch.to_string();
 
         // Generate REVERSE diff (new -> old) using diffy
-        let reverse_patch = diffy::create_patch(current_content.as_str(), original_content.as_str());
+        let reverse_patch =
+            diffy::create_patch(current_content.as_str(), original_content.as_str());
         let reverse_diff_str = reverse_patch.to_string();
 
         // If there are actual differences, add to both patches
         if !forward_diff_str.is_empty() && forward_diff_str != "--- original\n+++ modified\n" {
-            // Forward patch: old -> new
-            let forward_lines: Vec<&str> = forward_diff_str.lines().collect();
-            forward_patch_content.push_str(&format!("--- {}\n", original_path.display()));
-            forward_patch_content.push_str(&format!("+++ {}\n", current_path.display()));
-            for line in forward_lines.iter().skip(2) {
-                forward_patch_content.push_str(line);
-                forward_patch_content.push('\n');
-            }
+            // Replace diffy's generic headers with actual file paths
+            let forward_with_paths =
+                replace_patch_headers(&forward_diff_str, original_path, &current_path);
+            let reverse_with_paths =
+                replace_patch_headers(&reverse_diff_str, &current_path, original_path);
 
-            // Reverse patch: new -> old (for undo)
-            let reverse_lines: Vec<&str> = reverse_diff_str.lines().collect();
-            reverse_patch_content.push_str(&format!("--- {}\n", current_path.display()));
-            reverse_patch_content.push_str(&format!("+++ {}\n", original_path.display()));
-            for line in reverse_lines.iter().skip(2) {
-                reverse_patch_content.push_str(line);
-                reverse_patch_content.push('\n');
-            }
+            forward_patch_content.push_str(&forward_with_paths);
+            reverse_patch_content.push_str(&reverse_with_paths);
+
+            // Add newline to separate different file patches
+            forward_patch_content.push('\n');
+            reverse_patch_content.push('\n');
         }
     }
 
@@ -202,7 +201,7 @@ fn generate_comprehensive_patch(
         forward_patch_content.push_str(&format!("rename from {}\n", from.display()));
         forward_patch_content.push_str(&format!("rename to {}\n", to.display()));
         forward_patch_content.push_str("\n");
-        
+
         // Add rename-only entry to reverse patch (reversed)
         reverse_patch_content.push_str(&format!(
             "diff --git a/{} b/{}\n",
@@ -214,12 +213,69 @@ fn generate_comprehensive_patch(
         reverse_patch_content.push_str("\n");
     }
 
-    // Write all three patches
+    // Write both patches
     fs::write(&forward_patch_path, &forward_patch_content)?;
     fs::write(&reverse_patch_path, &reverse_patch_content)?;
-    fs::write(&patch_path, &reverse_patch_content)?; // refactoring.patch is the REVERSE patch for undo
 
-    Ok(patch_path)
+    Ok(reverse_patch_path)
+}
+
+/// Convert an absolute path to a relative path from the current working directory
+/// If the path is already relative, return it as-is
+fn make_path_relative(path: &Path) -> PathBuf {
+    if path.is_relative() {
+        return path.to_path_buf();
+    }
+
+    // Try to get the current directory and make the path relative to it
+    match std::env::current_dir() {
+        Ok(current_dir) => {
+            // Use pathdiff crate if available, or implement simple relative path logic
+            match path.strip_prefix(&current_dir) {
+                Ok(relative) => relative.to_path_buf(),
+                Err(_) => {
+                    // If the path is not under the current directory, return the original path
+                    // This maintains compatibility but isn't ideal
+                    path.to_path_buf()
+                },
+            }
+        },
+        Err(_) => {
+            // If we can't get the current directory, return the original path
+            path.to_path_buf()
+        },
+    }
+}
+
+/// Replace diffy's generic patch headers with actual file paths
+/// Converts absolute paths to relative paths for better portability
+fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> String {
+    let mut result = String::new();
+    let lines: Vec<&str> = patch_str.lines().collect();
+
+    // Convert paths to relative paths for better portability
+    let from_relative = make_path_relative(from_path);
+    let to_relative = make_path_relative(to_path);
+
+    for (i, line) in lines.iter().enumerate() {
+        if line.starts_with("--- ") {
+            // Replace "--- original" with actual from path (relative)
+            result.push_str(&format!("--- {}", from_relative.display()));
+        } else if line.starts_with("+++ ") {
+            // Replace "+++ modified" with actual to path (relative)
+            result.push_str(&format!("+++ {}", to_relative.display()));
+        } else {
+            // Keep all other lines as-is (including hunk headers and content)
+            result.push_str(line);
+        }
+
+        // Add newline after each line except the last one
+        if i < lines.len() - 1 {
+            result.push('\n');
+        }
+    }
+
+    result
 }
 
 /// Create a backup of a file or directory (for renames only)
@@ -281,30 +337,10 @@ fn apply_content_edits_with_content(
     // Apply replacements (in reverse order to maintain positions)
     let mut modified = original_content.to_string();
 
-    // Debug Train-Case replacements
-    if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() {
-        eprintln!("\n=== Applying replacements to {} ===", path.display());
-        eprintln!("Total replacements: {}", replacements.len());
-        for (before, after, start, end) in replacements {
-            if before.contains('-') && before.chars().next().map_or(false, |c| c.is_uppercase()) {
-                eprintln!(
-                    "  Train-Case: '{}' -> '{}' at [{}, {}]",
-                    before, after, start, end
-                );
-            }
-        }
-    }
-
     for (before, after, start, end) in replacements.iter().rev() {
         // Validate the replacement matches expected content
         let actual = &original_content[*start..*end];
         if actual != before {
-            if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() {
-                eprintln!("ERROR: Content mismatch!");
-                eprintln!("  Expected: '{}'", before);
-                eprintln!("  Found: '{}'", actual);
-                eprintln!("  Position: [{}, {}]", start, end);
-            }
             return Err(anyhow!(
                 "Content mismatch in {}: expected '{}', found '{}'",
                 path.display(),
@@ -834,10 +870,10 @@ mod tests {
         let expected_patch = options
             .backup_dir
             .join("test_plan_456")
-            .join("refactoring.patch");
+            .join("reverse.patch");
         assert!(
             expected_patch.exists(),
-            "Comprehensive patch should exist at {:?}",
+            "Reverse patch should exist at {:?}",
             expected_patch
         );
         // The patch should contain the changes
@@ -988,5 +1024,120 @@ mod tests {
 
         #[cfg(target_os = "linux")]
         assert!(!is_ci); // Linux is typically case-sensitive
+    }
+
+    #[test]
+    fn test_replace_patch_headers() {
+        use std::path::PathBuf;
+
+        let diffy_patch = "--- original\n+++ modified\n@@ -1,3 +1,3 @@\n-old content\n+new content\n\\ No newline at end of file\n";
+
+        let result = replace_patch_headers(
+            diffy_patch,
+            &PathBuf::from("/path/to/old.rs"),
+            &PathBuf::from("/path/to/new.rs"),
+        );
+
+        // Since these paths are not under the current directory, they should remain absolute
+        let expected = "--- /path/to/old.rs
++++ /path/to/new.rs
+@@ -1,3 +1,3 @@
+-old content
++new content
+\\ No newline at end of file";
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_replace_patch_headers_with_newline_markers() {
+        use std::path::PathBuf;
+
+        let diffy_patch = "--- original\n+++ modified\n@@ -1 +1 @@\n-old\n\\ No newline at end of file\n+new\n\\ No newline at end of file\n";
+
+        let result = replace_patch_headers(
+            diffy_patch,
+            &PathBuf::from("file.txt"),
+            &PathBuf::from("file.txt"),
+        );
+
+        let expected = "--- file.txt
++++ file.txt
+@@ -1 +1 @@
+-old
+\\ No newline at end of file
++new
+\\ No newline at end of file";
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_replace_patch_headers_multiple_hunks() {
+        use std::path::PathBuf;
+
+        let diffy_patch = "--- original\n+++ modified\n@@ -1,2 +1,2 @@\n-line1\n-line2\n+new1\n+new2\n@@ -5,1 +5,1 @@\n-line5\n+new5\n";
+
+        let result = replace_patch_headers(
+            diffy_patch,
+            &PathBuf::from("src/lib.rs"),
+            &PathBuf::from("src/lib.rs"),
+        );
+
+        let expected = "--- src/lib.rs
++++ src/lib.rs
+@@ -1,2 +1,2 @@
+-line1
+-line2
++new1
++new2
+@@ -5,1 +5,1 @@
+-line5
++new5";
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_make_path_relative() {
+        use std::env;
+
+        // Test relative paths remain relative
+        let relative = PathBuf::from("src/lib.rs");
+        assert_eq!(make_path_relative(&relative), PathBuf::from("src/lib.rs"));
+
+        // Test absolute path conversion
+        if let Ok(current_dir) = env::current_dir() {
+            let test_file = current_dir.join("test.rs");
+            let relative_result = make_path_relative(&test_file);
+            assert_eq!(relative_result, PathBuf::from("test.rs"));
+
+            let nested_file = current_dir.join("src").join("lib.rs");
+            let relative_nested = make_path_relative(&nested_file);
+            assert_eq!(relative_nested, PathBuf::from("src/lib.rs"));
+        }
+    }
+
+    #[test]
+    fn test_replace_patch_headers_converts_absolute_to_relative() {
+        use std::env;
+
+        let diffy_patch = "--- original\n+++ modified\n@@ -1 +1 @@\n-old\n+new\n";
+
+        // Test with absolute paths under current directory
+        if let Ok(current_dir) = env::current_dir() {
+            let from_path = current_dir.join("src").join("old.rs");
+            let to_path = current_dir.join("src").join("new.rs");
+
+            let result = replace_patch_headers(diffy_patch, &from_path, &to_path);
+
+            let expected = "--- src/old.rs
++++ src/new.rs
+@@ -1 +1 @@
+-old
++new";
+
+            assert_eq!(result, expected);
+        }
     }
 }
