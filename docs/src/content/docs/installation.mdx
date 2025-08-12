@@ -84,8 +84,9 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
 
 ## Package Managers
 
-*Coming soon*
+Coming soon: Install via Cargo, Homebrew, Chocolatey, or Linux package managers.
 
+{/* 
 ```bash
 # Cargo
 cargo install refaktor
@@ -98,7 +99,7 @@ choco install refaktor
 
 # Arch Linux
 yay -S refaktor
-```
+``` */}
 
 ## Build from Source
 
@@ -112,11 +113,3 @@ cd refaktor
 cargo build --release
 cp ./target/release/refaktor /usr/local/bin/
 ```
-
-## Verify Installation
-
-```bash
-refaktor --version
-```
-
-You should see the version number, confirming the installation was successful.
