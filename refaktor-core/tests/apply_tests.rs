@@ -389,3 +389,244 @@ fn test_apply_with_git_commit() {
     let log = String::from_utf8_lossy(&output.stdout);
     assert!(log.contains("refaktor: rename old_name -> new_name"));
 }
+
+#[test]
+fn test_apply_with_both_renames_and_content_changes() {
+    // This test covers the critical case where files are renamed AND have content changes
+    // This is the most complex scenario and has revealed bugs in the past
+    let temp_dir = TempDir::new().unwrap();
+
+    // Case 1: File that gets renamed AND has content changes
+    let old_file1 = temp_dir.path().join("old_name.rs");
+    fs::write(
+        &old_file1,
+        "fn old_name() {\n    println!(\"old_name\");\n}",
+    )
+    .unwrap();
+
+    // Case 2: File that only has content changes (no rename)
+    let stable_file = temp_dir.path().join("stable.rs");
+    fs::write(&stable_file, "use old_name;\nfn main() { old_name(); }").unwrap();
+
+    // Case 3: Directory that gets renamed containing a file with content changes
+    let old_dir = temp_dir.path().join("old_name_dir");
+    fs::create_dir(&old_dir).unwrap();
+    let nested_file = old_dir.join("nested.rs");
+    fs::write(&nested_file, "mod old_name;\nuse old_name::*;").unwrap();
+
+    // Case 4: File that gets renamed but has NO content changes
+    let old_file2 = temp_dir.path().join("old_name.txt");
+    fs::write(&old_file2, "This file has no content changes").unwrap();
+
+    // Create a comprehensive plan
+    let mut plan = create_test_plan("test_both", "old_name", "new_name");
+
+    // Add renames
+    plan.renames.push(Rename {
+        from: old_file1.clone(),
+        to: temp_dir.path().join("new_name.rs"),
+        kind: RenameKind::File,
+        coercion_applied: None,
+    });
+
+    plan.renames.push(Rename {
+        from: old_dir.clone(),
+        to: temp_dir.path().join("new_name_dir"),
+        kind: RenameKind::Dir,
+        coercion_applied: None,
+    });
+
+    plan.renames.push(Rename {
+        from: old_file2.clone(),
+        to: temp_dir.path().join("new_name.txt"),
+        kind: RenameKind::File,
+        coercion_applied: None,
+    });
+
+    // Add content changes for the file that will be renamed
+    plan.matches.push(MatchHunk {
+        file: old_file1.clone(), // Using original path
+        line: 1,
+        col: 3,
+        variant: "old_name".to_string(),
+        before: "old_name".to_string(),
+        after: "new_name".to_string(),
+        start: 3,
+        end: 11,
+        line_before: None,
+        line_after: None,
+        coercion_applied: None,
+    });
+
+    plan.matches.push(MatchHunk {
+        file: old_file1.clone(), // Same file, different location
+        line: 2,
+        col: 14,
+        variant: "old_name".to_string(),
+        before: "old_name".to_string(),
+        after: "new_name".to_string(),
+        start: 30,
+        end: 38,
+        line_before: None,
+        line_after: None,
+        coercion_applied: None,
+    });
+
+    // Add content changes for the stable file (not renamed)
+    // "use old_name;\nfn main() { old_name(); }"
+    // Position 4-12 for first old_name
+    // Position 26-34 for second old_name
+    plan.matches.push(MatchHunk {
+        file: stable_file.clone(),
+        line: 1,
+        col: 4,
+        variant: "old_name".to_string(),
+        before: "old_name".to_string(),
+        after: "new_name".to_string(),
+        start: 4,
+        end: 12,
+        line_before: None,
+        line_after: None,
+        coercion_applied: None,
+    });
+
+    plan.matches.push(MatchHunk {
+        file: stable_file.clone(),
+        line: 2,
+        col: 13,
+        variant: "old_name".to_string(),
+        before: "old_name".to_string(),
+        after: "new_name".to_string(),
+        start: 26,
+        end: 34,
+        line_before: None,
+        line_after: None,
+        coercion_applied: None,
+    });
+
+    // Add content changes for the file inside the directory that will be renamed
+    plan.matches.push(MatchHunk {
+        file: nested_file.clone(), // Using original path
+        line: 1,
+        col: 4,
+        variant: "old_name".to_string(),
+        before: "old_name".to_string(),
+        after: "new_name".to_string(),
+        start: 4,
+        end: 12,
+        line_before: None,
+        line_after: None,
+        coercion_applied: None,
+    });
+
+    plan.matches.push(MatchHunk {
+        file: nested_file.clone(),
+        line: 2,
+        col: 4,
+        variant: "old_name".to_string(),
+        before: "old_name".to_string(),
+        after: "new_name".to_string(),
+        start: 18,
+        end: 26,
+        line_before: None,
+        line_after: None,
+        coercion_applied: None,
+    });
+
+    // Apply the plan
+    let options = ApplyOptions {
+        backup_dir: temp_dir.path().join(".refaktor/backups"),
+        create_backups: true,
+        atomic: true,
+        ..Default::default()
+    };
+
+    let result = apply_plan(&plan, &options);
+
+    // The apply should succeed
+    assert!(result.is_ok(), "Apply failed: {:?}", result);
+
+    // Verify all renames happened
+    assert!(!old_file1.exists(), "old_name.rs should not exist");
+    assert!(!old_file2.exists(), "old_name.txt should not exist");
+    assert!(!old_dir.exists(), "old_name_dir should not exist");
+
+    let new_file1 = temp_dir.path().join("new_name.rs");
+    let new_file2 = temp_dir.path().join("new_name.txt");
+    let new_dir = temp_dir.path().join("new_name_dir");
+    let new_nested = new_dir.join("nested.rs");
+
+    assert!(new_file1.exists(), "new_name.rs should exist");
+    assert!(new_file2.exists(), "new_name.txt should exist");
+    assert!(new_dir.exists(), "new_name_dir should exist");
+    assert!(new_nested.exists(), "nested.rs should exist in new dir");
+
+    // Verify content changes in renamed file
+    let content1 = fs::read_to_string(&new_file1).unwrap();
+    assert!(
+        content1.contains("fn new_name()"),
+        "Function should be renamed"
+    );
+    assert!(
+        content1.contains("println!(\"new_name\")"),
+        "String should be renamed"
+    );
+    assert!(!content1.contains("old_name"), "No old_name should remain");
+
+    // Verify content in file that was renamed but had no content changes
+    let content2 = fs::read_to_string(&new_file2).unwrap();
+    assert_eq!(
+        content2, "This file has no content changes",
+        "Content should be unchanged"
+    );
+
+    // Verify content changes in stable file (not renamed)
+    let stable_content = fs::read_to_string(&stable_file).unwrap();
+    assert!(
+        stable_content.contains("use new_name;"),
+        "Import should be renamed"
+    );
+    assert!(
+        stable_content.contains("new_name()"),
+        "Function call should be renamed"
+    );
+    assert!(
+        !stable_content.contains("old_name"),
+        "No old_name should remain"
+    );
+
+    // Verify content changes in file inside renamed directory
+    let nested_content = fs::read_to_string(&new_nested).unwrap();
+    assert!(
+        nested_content.contains("mod new_name;"),
+        "Module should be renamed"
+    );
+    assert!(
+        nested_content.contains("use new_name::*"),
+        "Use statement should be renamed"
+    );
+    assert!(
+        !nested_content.contains("old_name"),
+        "No old_name should remain"
+    );
+
+    // Verify backup/diff files were created
+    let backup_dir = temp_dir.path().join(".refaktor/backups").join("test_both");
+    assert!(backup_dir.exists(), "Backup directory should exist");
+
+    // Check for diff files (only for files with content changes)
+    let diff1 = backup_dir.join("old_name.rs.diff");
+    let diff2 = backup_dir.join("stable.rs.diff");
+    let diff3 = backup_dir.join("nested.rs.diff");
+
+    assert!(diff1.exists(), "Diff for old_name.rs should exist");
+    assert!(diff2.exists(), "Diff for stable.rs should exist");
+    assert!(diff3.exists(), "Diff for nested.rs should exist");
+
+    // The file that was only renamed (no content changes) should NOT have a diff
+    let no_diff = backup_dir.join("old_name.txt.diff");
+    assert!(
+        !no_diff.exists(),
+        "No diff should exist for file without content changes"
+    );
+}

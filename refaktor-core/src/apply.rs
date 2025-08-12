@@ -290,11 +290,12 @@ fn create_diff_backup_with_content(
     );
     let diff_path = backup_base.join(diff_filename);
 
-    // Read current content
+    // Read current content from the current path (which may be renamed)
     let current_content = fs::read_to_string(current_path).with_context(|| {
         format!(
-            "Failed to read current content from {}",
-            current_path.display()
+            "Failed to read current content from {} (was: {})",
+            current_path.display(),
+            original_path.display()
         )
     })?;
 
@@ -477,16 +478,14 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
-    // STEP 0: Store original content for files that will be modified
+    // STEP 1: Store original content BEFORE any changes for diff generation
     let mut original_contents: HashMap<PathBuf, String> = HashMap::new();
     if options.create_backups {
-        // Collect all files that will have content changes
         let mut files_with_content_changes: HashSet<&Path> = HashSet::new();
         for hunk in &plan.matches {
             files_with_content_changes.insert(&hunk.file);
         }
 
-        // Store original content before any changes
         for file_path in files_with_content_changes {
             if let Ok(content) = fs::read_to_string(file_path) {
                 original_contents.insert(file_path.to_path_buf(), content);
@@ -494,27 +493,8 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
-    // STEP 1: Apply renames first
-    // Sort renames by depth (deepest first) for proper ordering
-    let mut renames = plan.renames.clone();
-    renames.sort_by_key(|r| std::cmp::Reverse(r.from.components().count()));
-
-    for rename in &renames {
-        let is_dir = rename.kind == crate::scanner::RenameKind::Dir;
-
-        if let Err(e) = perform_rename(&rename.from, &rename.to, is_dir, &mut state) {
-            state.log(&format!("Error performing rename: {}", e))?;
-
-            if options.atomic {
-                rollback(&mut state)?;
-            }
-
-            return Err(e);
-        }
-    }
-
-    // STEP 2: Apply content edits after renames
-    // Group content edits by file (using post-rename paths)
+    // STEP 2: Apply content edits FIRST (before any renames)
+    // Group content edits by file
     let mut edits_by_file: BTreeMap<PathBuf, Vec<_>> = BTreeMap::new();
 
     // Debug Train-Case patterns in plan
@@ -536,22 +516,8 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
-    // Map original file paths to their new locations after renames
-    // Clone the data to avoid borrowing issues
-    let rename_map: HashMap<PathBuf, PathBuf> = state
-        .renames_performed
-        .iter()
-        .map(|(from, to)| (from.clone(), to.clone()))
-        .collect();
-
     for hunk in &plan.matches {
-        // Find the current path of the file (may have been renamed)
-        let current_path = rename_map
-            .get(&hunk.file)
-            .cloned()
-            .unwrap_or_else(|| hunk.file.clone());
-
-        edits_by_file.entry(current_path).or_default().push((
+        edits_by_file.entry(hunk.file.clone()).or_default().push((
             hunk.before.clone(),
             hunk.after.clone(),
             hunk.start,
@@ -559,27 +525,16 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         ));
     }
 
-    // Apply content edits to files at their new locations
-    for (current_path, edits) in edits_by_file {
-        // Find the original path to get the pre-stored content
-        let original_path = state
-            .renames_performed
-            .iter()
-            .find(|(_, to)| to == &current_path)
-            .map(|(from, _)| from)
-            .unwrap_or(&current_path);
+    // Apply content edits to files at their ORIGINAL locations (before renames)
+    for (path, edits) in edits_by_file {
+        // Read the file content
+        let file_content = fs::read_to_string(&path)
+            .with_context(|| format!("Failed to read {}", path.display()))?;
 
-        // Get the original content that we stored before renames
-        let original_content = original_contents
-            .get(original_path)
-            .ok_or_else(|| anyhow!("Original content not found for {}", original_path.display()))?;
-
-        if let Err(e) =
-            apply_content_edits_with_content(&current_path, original_content, &edits, &mut state)
-        {
+        if let Err(e) = apply_content_edits_with_content(&path, &file_content, &edits, &mut state) {
             state.log(&format!(
                 "Error applying edits to {}: {}",
-                current_path.display(),
+                path.display(),
                 e
             ))?;
 
@@ -591,34 +546,71 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
-    // STEP 3: Generate diffs after all changes are complete
+    // STEP 3: Apply renames AFTER content edits
+    // Sort renames by depth (deepest first) for proper ordering
+    let mut renames = plan.renames.clone();
+    renames.sort_by_key(|r| std::cmp::Reverse(r.from.components().count()));
+
+    for rename in &renames {
+        let is_dir = rename.kind == crate::scanner::RenameKind::Dir;
+
+        if let Err(e) = perform_rename(&rename.from, &rename.to, is_dir, &mut state) {
+            state.log(&format!("Error performing rename: {}", e))?;
+
+            if options.atomic {
+                rollback(&mut state)?;
+            }
+
+            return Err(e);
+        }
+    }
+
+    // STEP 4: Generate diffs after all changes are complete
     if options.create_backups {
         state.log("Creating diff backups after all changes")?;
 
         for (original_path, original_content) in &original_contents {
-            // Find the current path for this file (may have been renamed)
-            let current_path = rename_map
-                .get(original_path)
-                .cloned()
-                .unwrap_or_else(|| original_path.clone());
-
             // Only create diff if the file was actually modified
-            if state.content_edits_applied.contains(&current_path) {
-                if let Err(e) = create_diff_backup_with_content(
-                    original_path,
-                    &current_path,
-                    original_content,
-                    &options.backup_dir,
-                    &plan.id,
-                ) {
-                    state.log(&format!(
-                        "Failed to create diff backup for {}: {}",
-                        current_path.display(),
-                        e
-                    ))?;
-                    if !options.force {
-                        return Err(e);
+            if !state.content_edits_applied.contains(original_path) {
+                continue;
+            }
+
+            // Find the current path for this file (may have been renamed)
+            // Check if the file itself was renamed
+            let current_path = if let Some((_, to)) = state
+                .renames_performed
+                .iter()
+                .find(|(from, _)| from == original_path)
+            {
+                to.clone()
+            } else {
+                // Check if any parent directory was renamed
+                let mut current = original_path.to_path_buf();
+                for (from, to) in &state.renames_performed {
+                    // Check if this is a directory rename that affects our file
+                    if let Ok(relative) = original_path.strip_prefix(from) {
+                        current = to.join(relative);
+                        break;
                     }
+                }
+                current
+            };
+
+            // Create diff showing the content changes
+            if let Err(e) = create_diff_backup_with_content(
+                original_path,
+                &current_path,
+                original_content,
+                &options.backup_dir,
+                &plan.id,
+            ) {
+                state.log(&format!(
+                    "Failed to create diff backup for {}: {}",
+                    current_path.display(),
+                    e
+                ))?;
+                if !options.force {
+                    return Err(e);
                 }
             }
         }
