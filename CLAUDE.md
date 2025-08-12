@@ -218,6 +218,17 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - When running test commands with refaktor, use: `./target/debug/refaktor plan ... --dry-run`
 - This prevents the creation of `.refaktor/plan.json` files during testing
 
+### CI Self-Referential Testing
+
+- **Use "renamed_refactoring_tool" NOT the alternative protected string in tests**
+- The alternative protected string is only allowed in files matching `.rfignore` entries:
+  - `.github/workflows/`
+  - `docs/src/content/docs/index.mdx`
+  - `docs/src/assets/case-studies/`
+  - `docs/src/content/docs/case-studies/`
+- All other test files should use "renamed_refactoring_tool" as the target replacement string
+- This prevents CI failures when refaktor tests itself and ensures clean self-referential testing
+
 ## DO NOT REDIRECT STDERR
 
 "2>&1" causes problems in Claude Code. DO NOT USE IT.
