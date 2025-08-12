@@ -14,7 +14,7 @@ cd refaktor
 cargo build
 
 # Use refaktor to rename itself to smart_search_and_replace
-./target/release/refaktor rename refaktor smart_search_and_replace --yes
+./target/release/refaktor rename refaktor smart_search_and_replace --preview-format table --yes
 
 # Remove the old binary, run tests, and rebuild with the new name
 rm -rf target
@@ -22,7 +22,7 @@ cargo test
 cargo build
 
 # Now use the new smart_search_and_replace binary to rename itself back to refaktor
-./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --yes
+./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --preview-format table --yes
 
 # Back to the original
 rm -rf target
