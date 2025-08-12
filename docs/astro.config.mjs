@@ -7,11 +7,15 @@ import starlightImageZoom from "starlight-image-zoom";
 export default defineConfig({
   site: "https://docspring.github.io",
   base: "/refaktor",
+
   integrations: [
     starlight({
       title: "Refaktor",
       description:
         "Smart search & replace for code and files with case-aware transformations",
+      editLink: {
+        baseUrl: "https://github.com/DocSpring/refaktor/edit/main/docs",
+      },
       plugins: [starlightImageZoom()],
       components: {
         Footer: "./src/components/Footer.astro",
