@@ -243,7 +243,10 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         // Extract individual file patches
         let individual_patches = extract_individual_patches(&patch_content)?;
 
+        let total_patches = individual_patches.len();
         let mut files_processed = 0;
+        let mut failed_patches = Vec::new();
+
         for (original_path, modified_path, patch_content) in individual_patches {
             // The modified_path (from +++ line) tells us where the file should be after applying this reverse patch
             // Since renames have already been reversed, the file should be at the modified_path location
@@ -252,14 +255,23 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
             // Apply patch to the current path (where the file actually is now)
             if let Err(e) = apply_single_patch(current_path, &patch_content) {
                 eprintln!(
-                    "  WARNING: Failed to apply patch to {}: {}",
+                    "  ERROR: Failed to apply patch to {}: {}",
                     current_path.display(),
                     e
                 );
-                // Continue with other files instead of failing completely
+                failed_patches.push(format!("{}: {}", current_path.display(), e));
             } else {
                 files_processed += 1;
             }
+        }
+
+        // If any patches failed, return an error
+        if !failed_patches.is_empty() {
+            return Err(anyhow!(
+                "Failed to apply {} out of {} patches",
+                failed_patches.len(),
+                total_patches
+            ));
         }
     } else {
         // Fallback to old method for backward compatibility
