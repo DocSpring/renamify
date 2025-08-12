@@ -39,6 +39,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Wait for CI
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: CI
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+      - name: Wait for E2E
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: E2E Tests
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
