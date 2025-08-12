@@ -68,16 +68,17 @@ Create a refactoring plan to replace identifiers across a codebase with case-awa
 - `renameFiles`: Whether to rename files (default: true)
 - `renameDirs`: Whether to rename directories (default: true)
 
-**Example:**
-```typescript
-await refaktor_plan({
-  old: "user_name",
-  new: "customer_name",
-  includes: ["src/**/*.ts"],
-  excludes: ["node_modules/**"],
-  styles: ["snake", "camel", "pascal"],
-  previewFormat: "summary"
-})
+**Example Usage (by AI agent):**
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "user_name",
+  "new": "customer_name",
+  "includes": ["src/**/*.ts"],
+  "excludes": ["node_modules/**"],
+  "styles": ["snake", "camel", "pascal"],
+  "previewFormat": "summary"
+}
 ```
 
 ### `refaktor_apply`
@@ -89,12 +90,13 @@ Apply a refactoring plan to make the actual changes.
 - `atomic`: Apply changes atomically (default: true)
 - `commit`: Create a git commit after applying (default: false)
 
-**Example:**
-```typescript
-await refaktor_apply({
-  atomic: true,
-  commit: true
-})
+**Example Usage (by AI agent):**
+```
+Tool: refaktor_apply
+Arguments: {
+  "atomic": true,
+  "commit": true
+}
 ```
 
 ### `refaktor_undo`
@@ -103,11 +105,12 @@ Undo a previously applied refactoring.
 **Parameters:**
 - `id` (required): History ID to undo
 
-**Example:**
-```typescript
-await refaktor_undo({
-  id: "abc123def456"
-})
+**Example Usage (by AI agent):**
+```
+Tool: refaktor_undo
+Arguments: {
+  "id": "abc123def456"
+}
 ```
 
 ### `refaktor_redo`
@@ -135,6 +138,8 @@ Preview a plan without applying it.
 
 ## AI Agent Usage Guide
 
+**Note:** The examples below show how AI agents call MCP tools through the MCP protocol. These are not JavaScript function calls - they represent the tool name and arguments that the AI agent sends to the MCP server.
+
 ### Safe Refactoring Workflow
 
 1. **Plan First, Apply Later**
@@ -161,33 +166,39 @@ Preview a plan without applying it.
 ### Best Practices for AI Agents
 
 1. **Start with Dry Runs**
-   ```typescript
-   // Always test first
-   await refaktor_plan({
-     old: "oldName",
-     new: "newName",
-     dryRun: true,
-     previewFormat: "summary"
-   })
+   Always test first by using the dry run option:
+   ```
+   Tool: refaktor_plan
+   Arguments: {
+     "old": "oldName",
+     "new": "newName",
+     "dryRun": true,
+     "previewFormat": "summary"
+   }
    ```
 
 2. **Use Specific Includes**
-   ```typescript
-   // Target specific directories/files
-   await refaktor_plan({
-     old: "oldName",
-     new: "newName",
-     includes: ["src/**/*.ts", "lib/**/*.js"],
-     excludes: ["**/*.test.ts", "node_modules/**"]
-   })
+   Target specific directories/files to avoid unintended changes:
+   ```
+   Tool: refaktor_plan
+   Arguments: {
+     "old": "oldName",
+     "new": "newName",
+     "includes": ["src/**/*.ts", "lib/**/*.js"],
+     "excludes": ["**/*.test.ts", "node_modules/**"]
+   }
    ```
 
 3. **Check Status Before Applying**
-   ```typescript
-   // Always check what's pending
-   await refaktor_status()
-   // Then apply if looks good
-   await refaktor_apply()
+   Always check what's pending before applying changes:
+   ```
+   Tool: refaktor_status
+   Arguments: {}
+   ```
+   Then if everything looks good:
+   ```
+   Tool: refaktor_apply
+   Arguments: {}
    ```
 
 4. **Handle Errors Gracefully**
@@ -198,35 +209,39 @@ Preview a plan without applying it.
 ### Common Scenarios
 
 #### Rename a React Component
-```typescript
-await refaktor_plan({
-  old: "UserProfile",
-  new: "CustomerProfile",
-  includes: ["src/**/*.tsx", "src/**/*.ts"],
-  styles: ["pascal", "camel"],
-  renameFiles: true
-})
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "UserProfile",
+  "new": "CustomerProfile",
+  "includes": ["src/**/*.tsx", "src/**/*.ts"],
+  "styles": ["pascal", "camel"],
+  "renameFiles": true
+}
 ```
 
 #### Update Database Schema Names
-```typescript
-await refaktor_plan({
-  old: "user_accounts",
-  new: "customer_accounts",
-  includes: ["migrations/**/*.sql", "models/**/*.js"],
-  styles: ["snake"],
-  renameFiles: false  // Don't rename migration files
-})
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "user_accounts",
+  "new": "customer_accounts",
+  "includes": ["migrations/**/*.sql", "models/**/*.js"],
+  "styles": ["snake"],
+  "renameFiles": false
+}
+Note: renameFiles is false to preserve migration file names
 ```
 
 #### Refactor API Endpoints
-```typescript
-await refaktor_plan({
-  old: "get-user",
-  new: "get-customer",
-  includes: ["api/**/*.js", "tests/**/*.js"],
-  styles: ["kebab", "camel", "snake"]
-})
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "get-user",
+  "new": "get-customer",
+  "includes": ["api/**/*.js", "tests/**/*.js"],
+  "styles": ["kebab", "camel", "snake"]
+}
 ```
 
 ## Development
