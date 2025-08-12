@@ -1,5 +1,5 @@
 {
-  "name": "@refaktor/mcp-server",
+  "name": "@docspring/refaktor-mcp",
   "version": "0.1.0",
   "description": "MCP (Model Context Protocol) server for Refaktor - smart case-aware search and replace",
   "main": "dist/index.js",
@@ -45,6 +45,19 @@
   },
   "files": [
     "dist",
-    "README.md"
-  ]
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DocSpring/refaktor.git",
+    "directory": "refaktor-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/DocSpring/refaktor/issues"
+  },
+  "homepage": "https://github.com/DocSpring/refaktor#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

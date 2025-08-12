@@ -1,0 +1,201 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # macOS builds
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            name: refaktor-macos-amd64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            name: refaktor-macos-arm64
+          
+          # Linux builds
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            name: refaktor-linux-amd64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            name: refaktor-linux-arm64
+            use-cross: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross (for cross-compilation)
+        if: matrix.use-cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build binary
+        run: |
+          if [ "${{ matrix.use-cross }}" = "true" ]; then
+            cross build --release --target ${{ matrix.target }} --bin refaktor
+          else
+            cargo build --release --target ${{ matrix.target }} --bin refaktor
+          fi
+
+      - name: Create archive
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ../../../${{ matrix.name }}.tar.gz refaktor
+          cd ../../../
+          echo "ASSET_PATH=${{ matrix.name }}.tar.gz" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ env.ASSET_PATH }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          echo "## What's Changed" > changelog.md
+          echo "" >> changelog.md
+          
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "")
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "### Commits since $PREV_TAG" >> changelog.md
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..$TAG >> changelog.md
+          else
+            echo "### Initial Release" >> changelog.md
+            echo "- First release of Refaktor" >> changelog.md
+          fi
+          
+          echo "" >> changelog.md
+          echo "## Installation" >> changelog.md
+          echo "" >> changelog.md
+          echo "### macOS (Intel)" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/refaktor-macos-amd64.tar.gz | tar xz" >> changelog.md
+          echo "sudo mv refaktor /usr/local/bin/" >> changelog.md
+          echo '```' >> changelog.md
+          echo "" >> changelog.md
+          echo "### macOS (Apple Silicon)" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/refaktor-macos-arm64.tar.gz | tar xz" >> changelog.md
+          echo "sudo mv refaktor /usr/local/bin/" >> changelog.md
+          echo '```' >> changelog.md
+          echo "" >> changelog.md
+          echo "### Linux (x86_64)" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/refaktor-linux-amd64.tar.gz | tar xz" >> changelog.md
+          echo "sudo mv refaktor /usr/local/bin/" >> changelog.md
+          echo '```' >> changelog.md
+          echo "" >> changelog.md
+          echo "### Linux (ARM64)" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/refaktor-linux-arm64.tar.gz | tar xz" >> changelog.md
+          echo "sudo mv refaktor /usr/local/bin/" >> changelog.md
+          echo '```' >> changelog.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Refaktor ${{ steps.tag.outputs.tag }}
+          body_path: changelog.md
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
+          files: |
+            artifacts/**/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    name: Publish MCP Server to npm
+    needs: release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        working-directory: refaktor-mcp
+        run: pnpm install
+
+      - name: Build
+        working-directory: refaktor-mcp
+        run: pnpm build
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update package version
+        working-directory: refaktor-mcp
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${TAG#v}"  # Remove 'v' prefix
+          npm version $VERSION --no-git-tag-version
+
+      - name: Publish to npm
+        working-directory: refaktor-mcp
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
