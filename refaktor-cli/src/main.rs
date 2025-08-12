@@ -386,6 +386,7 @@ enum PreviewFormatArg {
     Table,
     Diff,
     Json,
+    Summary,
     None,
 }
 
@@ -395,6 +396,7 @@ impl PreviewFormatArg {
             "table" => Some(Self::Table),
             "diff" => Some(Self::Diff),
             "json" => Some(Self::Json),
+            "summary" => Some(Self::Summary),
             "none" => Some(Self::None),
             _ => None,
         }
@@ -407,6 +409,7 @@ impl From<PreviewFormatArg> for PreviewFormat {
             PreviewFormatArg::Table => Self::Table,
             PreviewFormatArg::Diff => Self::Diff,
             PreviewFormatArg::Json => Self::Json,
+            PreviewFormatArg::Summary => Self::Summary,
             PreviewFormatArg::None => Self::Table, // Default to table if None is somehow converted
         }
     }
