@@ -145,6 +145,14 @@ fn test_json_format_snapshot() {
 }
 
 #[test]
+fn test_summary_format_snapshot() {
+    let plan = create_sample_plan();
+    let output = render_plan_with_fixed_width(&plan, PreviewFormat::Summary, Some(false), true);
+    let normalized = normalize_paths(&output);
+    insta::assert_snapshot!(normalized);
+}
+
+#[test]
 fn test_empty_plan_table_snapshot() {
     let plan = Plan {
         id: "empty".to_string(),

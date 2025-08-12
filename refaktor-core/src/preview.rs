@@ -23,6 +23,7 @@ pub enum PreviewFormat {
     Table,
     Diff,
     Json,
+    Summary,
 }
 
 impl std::str::FromStr for PreviewFormat {
@@ -33,6 +34,7 @@ impl std::str::FromStr for PreviewFormat {
             "table" => Ok(Self::Table),
             "diff" => Ok(Self::Diff),
             "json" => Ok(Self::Json),
+            "summary" => Ok(Self::Summary),
             _ => Err(format!("Invalid preview format: {}", s)),
         }
     }
@@ -72,6 +74,7 @@ pub fn render_plan_with_fixed_width(
         PreviewFormat::Table => render_table_with_fixed_width(plan, use_color, fixed_width),
         PreviewFormat::Diff => render_diff(plan, use_color),
         PreviewFormat::Json => render_json(plan),
+        PreviewFormat::Summary => render_summary(plan),
     }
 }
 
@@ -404,6 +407,101 @@ fn render_json(plan: &Plan) -> String {
     serde_json::to_string_pretty(plan).unwrap_or_else(|_| "null".to_string())
 }
 
+/// Render plan as AI-friendly summary format
+fn render_summary(plan: &Plan) -> String {
+    use std::fmt::Write;
+    let mut output = String::new();
+    
+    // Header with basic info
+    writeln!(output, "PLAN SUMMARY").unwrap();
+    writeln!(output, "Old: {}", plan.old).unwrap();
+    writeln!(output, "New: {}", plan.new).unwrap();
+    writeln!(output, "Total matches: {}", plan.stats.total_matches).unwrap();
+    writeln!(output, "Files affected: {}", plan.stats.files_with_matches).unwrap();
+    writeln!(output, "Renames: {}", plan.renames.len()).unwrap();
+    writeln!(output).unwrap();
+    
+    // Content changes grouped by file
+    if !plan.matches.is_empty() {
+        writeln!(output, "CONTENT CHANGES").unwrap();
+        
+        // Group matches by file
+        let mut file_stats: HashMap<&Path, HashMap<String, usize>> = HashMap::new();
+        for hunk in &plan.matches {
+            *file_stats
+                .entry(&hunk.file)
+                .or_insert_with(HashMap::new)
+                .entry(hunk.variant.clone())
+                .or_insert(0) += 1;
+        }
+        
+        // Sort files for deterministic output
+        let mut sorted_files: Vec<_> = file_stats.keys().copied().collect();
+        sorted_files.sort();
+        
+        for file in sorted_files {
+            let variant_counts = &file_stats[&file];
+            let total_matches: usize = variant_counts.values().sum();
+            
+            // Make path relative for cleaner display
+            let file_str = match std::env::current_dir()
+                .ok()
+                .and_then(|cwd| file.strip_prefix(cwd).ok())
+            {
+                Some(relative_path) => relative_path.display().to_string(),
+                None => file.display().to_string(),
+            };
+            
+            write!(output, "{}: {} matches", file_str, total_matches).unwrap();
+            
+            // List variants with counts
+            let mut variants: Vec<_> = variant_counts.iter().collect();
+            variants.sort_by_key(|(v, _)| v.as_str());
+            
+            write!(output, " [").unwrap();
+            for (i, (variant, count)) in variants.iter().enumerate() {
+                if i > 0 {
+                    write!(output, ", ").unwrap();
+                }
+                write!(output, "{}: {}", variant, count).unwrap();
+            }
+            writeln!(output, "]").unwrap();
+        }
+        writeln!(output).unwrap();
+    }
+    
+    // File and directory renames
+    if !plan.renames.is_empty() {
+        writeln!(output, "RENAMES").unwrap();
+        for rename in &plan.renames {
+            let kind = match rename.kind {
+                RenameKind::File => "file",
+                RenameKind::Dir => "dir",
+            };
+            
+            // Make paths relative for cleaner display
+            let from_str = match std::env::current_dir()
+                .ok()
+                .and_then(|cwd| rename.from.strip_prefix(cwd).ok())
+            {
+                Some(relative_path) => relative_path.display().to_string(),
+                None => rename.from.display().to_string(),
+            };
+            let to_str = match std::env::current_dir()
+                .ok()
+                .and_then(|cwd| rename.to.strip_prefix(cwd).ok())
+            {
+                Some(relative_path) => relative_path.display().to_string(),
+                None => rename.to.display().to_string(),
+            };
+            
+            writeln!(output, "{}: {} -> {}", kind, from_str, to_str).unwrap();
+        }
+    }
+    
+    output
+}
+
 /// Write plan preview to stdout
 pub fn write_preview(plan: &Plan, format: PreviewFormat, use_color: Option<bool>) -> Result<()> {
     let output = render_plan(plan, format, use_color);
@@ -485,7 +583,9 @@ mod tests {
         assert_eq!(PreviewFormat::from_str("table"), Ok(PreviewFormat::Table));
         assert_eq!(PreviewFormat::from_str("diff"), Ok(PreviewFormat::Diff));
         assert_eq!(PreviewFormat::from_str("json"), Ok(PreviewFormat::Json));
+        assert_eq!(PreviewFormat::from_str("summary"), Ok(PreviewFormat::Summary));
         assert_eq!(PreviewFormat::from_str("TABLE"), Ok(PreviewFormat::Table));
+        assert_eq!(PreviewFormat::from_str("SUMMARY"), Ok(PreviewFormat::Summary));
         assert!(PreviewFormat::from_str("invalid").is_err());
     }
 
@@ -577,6 +677,28 @@ mod tests {
         assert_eq!(parsed.id, plan.id);
         assert_eq!(parsed.matches.len(), plan.matches.len());
         assert_eq!(parsed.renames.len(), plan.renames.len());
+    }
+
+    #[test]
+    fn test_render_summary() {
+        let plan = create_test_plan();
+        let result = render_summary(&plan);
+
+        // Check that summary contains expected sections
+        assert!(result.contains("PLAN SUMMARY"));
+        assert!(result.contains("Old: old_name"));
+        assert!(result.contains("New: new_name"));
+        assert!(result.contains("Total matches: 2"));
+        assert!(result.contains("Files affected: 1"));
+        
+        // Check content changes section
+        assert!(result.contains("CONTENT CHANGES"));
+        assert!(result.contains("src/main.rs: 2 matches"));
+        assert!(result.contains("[oldName: 1, old_name: 1]"));
+        
+        // Check renames section
+        assert!(result.contains("RENAMES"));
+        assert!(result.contains("file: old_name.txt -> new_name.txt"));
     }
 
     #[test]
