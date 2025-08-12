@@ -11,10 +11,6 @@ The Refaktor MCP Server enables AI assistants to perform intelligent, case-aware
 
 ## Quick Start
 
-```bash
-npx @refaktor/mcp-server
-```
-
 Add this to your AI assistant's MCP configuration:
 
 ```json
@@ -39,21 +35,14 @@ The **Model Context Protocol (MCP)** is an open standard that enables AI assista
 
 ## Why Use the MCP Server?
 
-### AI-Native Integration
-Purpose-built for AI agents with structured outputs and clear feedback
-
-### Safe by Default
-Plan-first workflow ensures you review changes before applying
-
-### Case Intelligence
-Automatically handles all naming conventions in a single operation
-
-### Atomic Operations
-All changes succeed together or roll back completely
+- Purpose-built for AI agents with structured outputs and clear feedback
+- Plan-first workflow ensures you review changes before applying
+- Automatically handles all naming conventions in a single operation
+- All changes succeed together or roll back completely
 
 ## Key Features
 
-### 🤖 Designed for AI Agents
+### 🤖 Designed for AI Agents (by an AI Agent!)
 
 The MCP Server provides structured, predictable outputs that AI agents can easily parse and understand:
 
@@ -87,13 +76,13 @@ Every refactoring operation includes multiple safety layers:
 
 The MCP Server provides 7 specialized tools:
 
-- **refaktor_plan** - Create a refactoring plan with case-aware transformations
-- **refaktor_apply** - Execute a plan to make the actual changes
-- **refaktor_undo** - Revert a previously applied refactoring
-- **refaktor_redo** - Re-apply an undone refactoring
-- **refaktor_history** - View past refactoring operations
-- **refaktor_status** - Check current state and pending plans
-- **refaktor_preview** - Review a plan in different formats
+- [**refaktor_plan**](/refaktor/mcp/tools#refaktor_plan) - Create a refactoring plan with case-aware transformations
+- [**refaktor_apply**](/refaktor/mcp/tools#refaktor_apply) - Execute a plan to make the actual changes
+- [**refaktor_undo**](/refaktor/mcp/tools#refaktor_undo) - Revert a previously applied refactoring
+- [**refaktor_redo**](/refaktor/mcp/tools#refaktor_redo) - Re-apply an undone refactoring
+- [**refaktor_history**](/refaktor/mcp/tools#refaktor_history) - View past refactoring operations
+- [**refaktor_status**](/refaktor/mcp/tools#refaktor_status) - Check current state and pending plans
+- [**refaktor_preview**](/refaktor/mcp/tools#refaktor_preview) - Review a plan in different formats
 
 ## Installation Steps
 
