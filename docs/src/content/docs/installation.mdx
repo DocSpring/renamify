@@ -3,15 +3,33 @@ title: Installation
 description: How to install Refaktor
 ---
 
-{/* ## Homebrew (macOS)
+## Quick Install
 
-*Coming soon*
+The easiest way to install Refaktor on Linux or macOS:
 
 ```bash
-brew install refaktor
-``` */}
+curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
+```
 
-## Download Binary
+Or if you need sudo:
+
+```bash
+curl -fsSL https://docspring.github.io/refaktor/install.sh | sudo bash
+```
+
+To install without sudo to `~/.local/bin`:
+
+```bash
+curl -fsSL https://docspring.github.io/refaktor/install.sh | bash -s -- --local
+```
+
+The install script will:
+- Detect your operating system and architecture
+- Download the appropriate binary
+- Install it to `/usr/local/bin` (or `~/.local/bin` with `--local`)
+- Verify the installation
+
+## Manual Installation
 
 ### Linux
 
