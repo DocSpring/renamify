@@ -1,6 +1,10 @@
 # Refaktor MCP Server
 
-MCP (Model Context Protocol) server for Refaktor - enabling AI agents to perform smart, case-aware search and replace operations across codebases.
+MCP (Model Context Protocol) server for Refaktor - enabling AI agents to perform intelligent, case-aware refactoring operations across codebases.
+
+[![npm version](https://badge.fury.io/js/@refaktor%2Fmcp-server.svg)](https://www.npmjs.com/package/@refaktor/mcp-server)
+
+Refaktor understands different naming conventions and can rename identifiers and files in a single atomic operation. This MCP server makes it available to AI assistants like Claude, Cursor, and other MCP-compatible tools.
 
 ## Installation
 
@@ -8,19 +12,19 @@ MCP (Model Context Protocol) server for Refaktor - enabling AI agents to perform
 
 1. **Refaktor CLI** must be installed and available in your PATH:
    ```bash
-   # Download from GitHub releases or build from source
-   cargo install refaktor
+   # Quick install (Linux/macOS)
+   curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
+   
+   # Or download from GitHub releases
+   # Or see: https://docspring.github.io/refaktor/installation
    ```
 
 2. **Node.js 18+** is required
 
-### Install MCP Server
+### Using the MCP Server
 
-```bash
-npm install -g @refaktor/mcp-server
-```
+The MCP server is designed to be used with AI assistants via npx (no installation needed):
 
-Or use directly with npx:
 ```bash
 npx @refaktor/mcp-server
 ```
@@ -34,23 +38,25 @@ Add to your MCP client configuration (e.g., for Claude Desktop or Cursor):
   "mcpServers": {
     "refaktor": {
       "command": "npx",
-      "args": ["@refaktor/mcp-server"]
+      "args": ["-y", "@refaktor/mcp-server"]
     }
   }
 }
 ```
 
-Or if installed globally:
+### Supported AI Assistants
 
-```json
-{
-  "mcpServers": {
-    "refaktor": {
-      "command": "refaktor-mcp"
-    }
-  }
-}
-```
+- **Claude Desktop** - Anthropic's AI assistant
+- **Cursor** - AI-powered code editor  
+- **Continue** - Open-source AI code assistant
+- **Any MCP-compatible client** - Following the MCP specification
+
+## Features
+
+- **Case-Aware Transformations**: Automatically handles snake_case, camelCase, PascalCase, kebab-case, and more
+- **File and Directory Renaming**: Renames files and directories that match your patterns
+- **Safe Operations**: Plan-first workflow with atomic operations and full undo/redo support
+- **AI-Optimized Output**: Summary format designed for AI agents to easily parse and understand
 
 ## Available Tools
 
@@ -135,6 +141,10 @@ Preview a plan without applying it.
 - `planId`: Plan ID to preview
 - `planPath`: Path to plan file to preview
 - `format`: Preview format - `table`, `diff`, `json`, or `summary`
+
+## Documentation
+
+For comprehensive documentation, visit: https://docspring.github.io/refaktor/mcp/
 
 ## AI Agent Usage Guide
 
