@@ -4,7 +4,7 @@ This guide explains how to publish the Refaktor MCP Server to npm.
 
 ## NPM Publishing Setup
 
-The MCP server is published to npm as `@docspring/refaktor-mcp` as part of the main Refaktor release process.
+The MCP server is published to npm as `@refaktor/mcp-server` as part of the main Refaktor release process.
 
 ### Prerequisites
 
@@ -98,9 +98,9 @@ npm publish --access public
 
 ## Package Information
 
-- **Package Name**: `@docspring/refaktor-mcp`
+- **Package Name**: `@refaktor/mcp-server`
 - **Registry**: https://registry.npmjs.org
-- **Installation**: `npx @docspring/refaktor-mcp`
+- **Installation**: `npx @refaktor/mcp-server`
 - **Repository**: https://github.com/DocSpring/refaktor/tree/main/refaktor-mcp
 
 ## Version Management

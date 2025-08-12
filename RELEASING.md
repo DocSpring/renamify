@@ -5,6 +5,7 @@ This guide explains how to create a new release of Refaktor.
 ## GitHub Releases Overview
 
 GitHub releases work by:
+
 1. Creating a git tag (e.g., `v1.0.0`)
 2. Pushing the tag to GitHub
 3. GitHub Actions automatically builds binaries for all platforms
@@ -13,6 +14,7 @@ GitHub releases work by:
 ## Prerequisites
 
 1. Ensure you have an NPM account and are logged in:
+
    ```bash
    npm login
    ```
@@ -27,11 +29,13 @@ GitHub releases work by:
 ### Option 1: Automated Release (Recommended)
 
 1. Update version numbers in:
+
    - `refaktor-cli/Cargo.toml`
    - `refaktor-core/Cargo.toml`
    - `refaktor-mcp/package.json`
 
 2. Commit the version changes:
+
    ```bash
    git add -A
    git commit -m "Bump version to v1.0.0"
@@ -39,6 +43,7 @@ GitHub releases work by:
    ```
 
 3. Create and push a tag:
+
    ```bash
    git tag v1.0.0
    git push origin v1.0.0
@@ -72,11 +77,13 @@ For testing release builds locally:
 ## Version Numbering
 
 We follow Semantic Versioning (SemVer):
+
 - **Major** (1.0.0): Breaking changes
 - **Minor** (0.1.0): New features, backward compatible
 - **Patch** (0.0.1): Bug fixes, backward compatible
 
 Pre-release versions:
+
 - Alpha: `v1.0.0-alpha.1`
 - Beta: `v1.0.0-beta.1`
 - Release Candidate: `v1.0.0-rc.1`
@@ -84,6 +91,7 @@ Pre-release versions:
 ## Platform Support
 
 The release workflow builds for:
+
 - **macOS Intel** (x86_64-apple-darwin)
 - **macOS Apple Silicon** (aarch64-apple-darwin)
 - **Linux x86_64** (x86_64-unknown-linux-gnu)
@@ -92,6 +100,7 @@ The release workflow builds for:
 ## Release Artifacts
 
 Each release includes:
+
 - `refaktor-macos-amd64.tar.gz` - macOS Intel binary
 - `refaktor-macos-arm64.tar.gz` - macOS Apple Silicon binary
 - `refaktor-linux-amd64.tar.gz` - Linux x86_64 binary
@@ -100,11 +109,12 @@ Each release includes:
 
 ## NPM Package
 
-The MCP server is published to npm as `@docspring/refaktor-mcp`.
+The MCP server is published to npm as `@refaktor/mcp-server`.
 
 Users can install it with:
+
 ```bash
-npx @docspring/refaktor-mcp
+npx @refaktor/mcp-server
 ```
 
 ## Troubleshooting
@@ -112,6 +122,7 @@ npx @docspring/refaktor-mcp
 ### Build Failures
 
 If the release build fails:
+
 1. Check the GitHub Actions logs for errors
 2. Ensure all tests pass locally
 3. Verify Cargo.toml versions match
@@ -119,6 +130,7 @@ If the release build fails:
 ### NPM Publishing Issues
 
 If npm publishing fails:
+
 1. Verify the NPM_TOKEN secret is set correctly
 2. Check that the package name is available
 3. Ensure package.json is valid
@@ -126,12 +138,14 @@ If npm publishing fails:
 ### Cross-Compilation Issues
 
 For Linux ARM64 builds from x86_64:
+
 - The workflow uses `cross` for cross-compilation
 - This requires Docker to be available in the CI environment
 
 ## Post-Release
 
 After a successful release:
+
 1. Update the documentation if needed
 2. Announce the release (optional)
 3. Start working on the next version!
