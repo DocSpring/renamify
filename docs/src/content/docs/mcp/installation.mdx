@@ -74,9 +74,11 @@ curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
     ### Build from Source (Alternative)
     ```powershell
     # Install Rust for Windows from https://win.rustup.rs/
-    # Then install Refaktor
-    cargo install refaktor
-    refaktor --version
+    # Clone and build from source
+    git clone https://github.com/DocSpring/refaktor.git
+    cd refaktor
+    cargo build --release
+    # Copy target/release/refaktor.exe to your PATH
     ```
   </TabItem>
 </Tabs>
