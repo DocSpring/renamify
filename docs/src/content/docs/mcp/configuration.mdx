@@ -1,0 +1,457 @@
+---
+title: MCP Server Configuration
+description: Configure the Refaktor MCP Server for your environment
+---
+
+import { Code, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
+
+# MCP Server Configuration
+
+Learn how to configure the Refaktor MCP Server for different AI assistants and customize its behavior.
+
+## Basic Configuration
+
+The minimal configuration for any MCP client:
+
+```json
+{
+  "mcpServers": {
+    "refaktor": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"]
+    }
+  }
+}
+```
+
+## Advanced Configuration Options
+
+### Custom Refaktor Binary Path
+
+If `refaktor` is not in your PATH, you can specify a custom location:
+
+```json
+{
+  "mcpServers": {
+    "refaktor": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"],
+      "env": {
+        "REFAKTOR_PATH": "/custom/path/to/refaktor"
+      }
+    }
+  }
+}
+```
+
+### Working Directory
+
+Specify a default working directory for refactoring operations:
+
+```json
+{
+  "mcpServers": {
+    "refaktor": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"],
+      "cwd": "/path/to/your/project"
+    }
+  }
+}
+```
+
+### Logging and Debugging
+
+Enable debug logging for troubleshooting:
+
+```json
+{
+  "mcpServers": {
+    "refaktor": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"],
+      "env": {
+        "DEBUG": "refaktor:*",
+        "LOG_LEVEL": "debug"
+      }
+    }
+  }
+}
+```
+
+## Client-Specific Configurations
+
+<Tabs>
+  <TabItem label="Claude Desktop">
+    ### Claude Desktop
+    
+    Location: Platform-specific configuration file
+    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+    - **Linux**: `~/.config/Claude/claude_desktop_config.json`
+    
+    Full configuration example:
+    ```json
+    {
+      "mcpServers": {
+        "refaktor": {
+          "command": "npx",
+          "args": ["-y", "@refaktor/mcp-server"],
+          "env": {
+            "REFAKTOR_PATH": "/usr/local/bin/refaktor"
+          }
+        }
+      }
+    }
+    ```
+  </TabItem>
+  
+  <TabItem label="Cursor">
+    ### Cursor
+    
+    Location: Cursor settings file
+    - Access via: Settings → Features → MCP → Edit Configuration
+    
+    ```json
+    {
+      "mcp": {
+        "servers": {
+          "refaktor": {
+            "command": "npx",
+            "args": ["-y", "@refaktor/mcp-server"],
+            "enabled": true
+          }
+        }
+      }
+    }
+    ```
+  </TabItem>
+  
+  <TabItem label="Continue">
+    ### Continue
+    
+    Location: `~/.continue/config.json`
+    
+    ```json
+    {
+      "models": [...],
+      "mcpServers": [
+        {
+          "name": "refaktor",
+          "command": "npx",
+          "args": ["-y", "@refaktor/mcp-server"],
+          "description": "Smart case-aware refactoring"
+        }
+      ]
+    }
+    ```
+  </TabItem>
+  
+  <TabItem label="VS Code Extension">
+    ### VS Code with MCP Extension
+    
+    If using a generic MCP extension for VS Code:
+    
+    1. Install an MCP client extension
+    2. Open VS Code settings (Cmd/Ctrl + ,)
+    3. Search for MCP configuration
+    4. Add server configuration:
+    
+    ```json
+    {
+      "mcp.servers": {
+        "refaktor": {
+          "command": "npx",
+          "args": ["-y", "@refaktor/mcp-server"]
+        }
+      }
+    }
+    ```
+  </TabItem>
+</Tabs>
+
+## Environment Variables
+
+The MCP Server respects these environment variables:
+
+<CardGrid>
+  <Card title="REFAKTOR_PATH">
+    **Type:** String  
+    **Default:** `refaktor` (searches PATH)  
+    **Description:** Path to the refaktor binary
+  </Card>
+  
+  <Card title="DEBUG">
+    **Type:** String  
+    **Default:** (none)  
+    **Description:** Enable debug output with `refaktor:*`
+  </Card>
+  
+  <Card title="LOG_LEVEL">
+    **Type:** String  
+    **Default:** `info`  
+    **Description:** Logging level: `error`, `warn`, `info`, `debug`
+  </Card>
+  
+  <Card title="NO_COLOR">
+    **Type:** Boolean  
+    **Default:** `false`  
+    **Description:** Disable colored output
+  </Card>
+</CardGrid>
+
+## Default Tool Behaviors
+
+You can configure default behaviors for the MCP tools:
+
+### Default Preview Format
+
+The MCP Server defaults to `summary` format for AI agents. To change:
+
+```json
+{
+  "env": {
+    "REFAKTOR_DEFAULT_PREVIEW": "table"  // or "diff", "json"
+  }
+}
+```
+
+### Auto-commit Behavior
+
+To always create git commits after applying changes:
+
+```json
+{
+  "env": {
+    "REFAKTOR_AUTO_COMMIT": "true"
+  }
+}
+```
+
+### Dry Run by Default
+
+For extra safety, make all operations dry-run by default:
+
+```json
+{
+  "env": {
+    "REFAKTOR_DEFAULT_DRY_RUN": "true"
+  }
+}
+```
+
+## Project-Specific Configuration
+
+You can create a `.refaktor/config.json` file in your project root:
+
+```json
+{
+  "defaults": {
+    "styles": ["snake", "camel", "pascal", "kebab"],
+    "excludes": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      ".git/**"
+    ],
+    "renameFiles": true,
+    "renameDirs": true,
+    "atomic": true
+  },
+  "mcp": {
+    "previewFormat": "summary",
+    "autoCommit": false,
+    "commitMessage": "refactor: {old} → {new}"
+  }
+}
+```
+
+## Multiple Projects Configuration
+
+Configure different settings for different projects:
+
+```json
+{
+  "mcpServers": {
+    "refaktor-project1": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"],
+      "cwd": "/path/to/project1",
+      "env": {
+        "REFAKTOR_AUTO_COMMIT": "true"
+      }
+    },
+    "refaktor-project2": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"],
+      "cwd": "/path/to/project2",
+      "env": {
+        "REFAKTOR_DEFAULT_DRY_RUN": "true"
+      }
+    }
+  }
+}
+```
+
+## Performance Tuning
+
+### Memory Limits
+
+For large codebases, increase Node.js memory limit:
+
+```json
+{
+  "env": {
+    "NODE_OPTIONS": "--max-old-space-size=4096"
+  }
+}
+```
+
+### Parallel Processing
+
+Enable parallel file processing:
+
+```json
+{
+  "env": {
+    "REFAKTOR_PARALLEL": "true",
+    "REFAKTOR_WORKERS": "4"
+  }
+}
+```
+
+## Security Considerations
+
+### Restricted Mode
+
+Limit refactoring to specific directories:
+
+```json
+{
+  "env": {
+    "REFAKTOR_ALLOWED_PATHS": "/home/user/projects,/home/user/work",
+    "REFAKTOR_RESTRICT_MODE": "true"
+  }
+}
+```
+
+### Read-Only Mode
+
+Enable read-only mode for planning without applying:
+
+```json
+{
+  "env": {
+    "REFAKTOR_READ_ONLY": "true"
+  }
+}
+```
+
+## Troubleshooting Configuration
+
+### Verify Configuration
+
+Test your configuration with a simple request to your AI assistant:
+
+> "Can you list the available Refaktor tools?"
+
+The assistant should respond with the 7 available tools.
+
+### Debug Mode
+
+Enable comprehensive debugging:
+
+```json
+{
+  "env": {
+    "DEBUG": "*",
+    "LOG_LEVEL": "debug",
+    "REFAKTOR_VERBOSE": "true"
+  }
+}
+```
+
+### Common Issues
+
+**Tools not appearing:**
+- Check JSON syntax is valid
+- Ensure paths use forward slashes (even on Windows)
+- Restart your AI assistant after changes
+
+**Permission errors:**
+- Ensure the refaktor binary is executable
+- Check file system permissions for your project
+
+**Binary not found:**
+- Use absolute paths in REFAKTOR_PATH
+- Verify the binary exists at the specified location
+
+## Configuration Templates
+
+### Development Environment
+
+```json
+{
+  "mcpServers": {
+    "refaktor-dev": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"],
+      "env": {
+        "LOG_LEVEL": "debug",
+        "REFAKTOR_DEFAULT_DRY_RUN": "true",
+        "REFAKTOR_AUTO_COMMIT": "false"
+      }
+    }
+  }
+}
+```
+
+### Production Environment
+
+```json
+{
+  "mcpServers": {
+    "refaktor-prod": {
+      "command": "refaktor-mcp",
+      "env": {
+        "LOG_LEVEL": "error",
+        "REFAKTOR_AUTO_COMMIT": "true",
+        "REFAKTOR_RESTRICT_MODE": "true",
+        "REFAKTOR_ALLOWED_PATHS": "/var/www/app"
+      }
+    }
+  }
+}
+```
+
+### CI/CD Environment
+
+```json
+{
+  "mcpServers": {
+    "refaktor-ci": {
+      "command": "npx",
+      "args": ["-y", "@refaktor/mcp-server"],
+      "env": {
+        "REFAKTOR_READ_ONLY": "true",
+        "REFAKTOR_DEFAULT_PREVIEW": "json",
+        "CI": "true"
+      }
+    }
+  }
+}
+```
+
+## Next Steps
+
+<CardGrid>
+  <Card title="Tools Reference" icon="document" href="/refaktor/mcp/tools">
+    Detailed documentation for each MCP tool
+  </Card>
+  <Card title="Usage Examples" icon="rocket" href="/refaktor/mcp/examples">
+    Real-world refactoring scenarios
+  </Card>
+  <Card title="AI Agent Guide" icon="robot" href="/refaktor/mcp/ai-guide">
+    Best practices for AI-assisted refactoring
+  </Card>
+</CardGrid>

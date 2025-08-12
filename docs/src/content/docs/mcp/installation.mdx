@@ -1,0 +1,326 @@
+---
+title: MCP Server Installation
+description: Step-by-step guide to install and set up the Refaktor MCP Server
+---
+
+import { Tabs, TabItem, Steps, Card, CardGrid } from '@astrojs/starlight/components';
+
+# MCP Server Installation
+
+This guide will help you install and configure the Refaktor MCP Server for use with AI assistants.
+
+## Prerequisites
+
+Before installing the MCP Server, you need:
+
+<CardGrid>
+  <Card title="Refaktor CLI" icon="terminal">
+    The core Refaktor command-line tool must be installed and accessible
+  </Card>
+  <Card title="Node.js 18+" icon="node">
+    Required to run the MCP Server (check with `node --version`)
+  </Card>
+</CardGrid>
+
+## Step 1: Install Refaktor CLI
+
+<Tabs>
+  <TabItem label="macOS/Linux">
+    ### Option A: Install from GitHub Releases (Recommended)
+    ```bash
+    # Download the latest release for your platform
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-$(uname -s)-$(uname -m).tar.gz | tar xz
+    
+    # Move to a directory in your PATH
+    sudo mv refaktor /usr/local/bin/
+    
+    # Verify installation
+    refaktor --version
+    ```
+    
+    ### Option B: Build from Source with Cargo
+    ```bash
+    # Install Rust if you haven't already
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    
+    # Install Refaktor
+    cargo install refaktor
+    
+    # Verify installation
+    refaktor --version
+    ```
+  </TabItem>
+  
+  <TabItem label="Windows">
+    ### Option A: Install from GitHub Releases (Recommended)
+    
+    1. Download the latest Windows release from [GitHub Releases](https://github.com/DocSpring/refaktor/releases)
+    2. Extract the archive to a folder (e.g., `C:\Program Files\refaktor`)
+    3. Add the folder to your PATH environment variable
+    4. Open a new terminal and verify:
+    ```powershell
+    refaktor --version
+    ```
+    
+    ### Option B: Build from Source with Cargo
+    ```powershell
+    # Install Rust for Windows
+    # Download and run: https://win.rustup.rs/
+    
+    # Install Refaktor
+    cargo install refaktor
+    
+    # Verify installation
+    refaktor --version
+    ```
+  </TabItem>
+</Tabs>
+
+## Step 2: Install the MCP Server
+
+You have two options for installing the MCP Server:
+
+### Option A: Global Installation (Recommended)
+
+```bash
+# Install globally with npm
+npm install -g @refaktor/mcp-server
+
+# Or with pnpm
+pnpm add -g @refaktor/mcp-server
+
+# Or with yarn
+yarn global add @refaktor/mcp-server
+```
+
+### Option B: Use with npx (No Installation)
+
+You can use the MCP Server directly with npx without installing:
+```bash
+# This will be used in your MCP configuration
+npx @refaktor/mcp-server
+```
+
+## Step 3: Configure Your AI Assistant
+
+<Tabs>
+  <TabItem label="Claude Desktop">
+    ### Claude Desktop Configuration
+    
+    1. Open Claude Desktop settings
+    2. Navigate to the Developer section
+    3. Add the following to your MCP servers configuration:
+    
+    ```json
+    {
+      "mcpServers": {
+        "refaktor": {
+          "command": "npx",
+          "args": ["-y", "@refaktor/mcp-server"]
+        }
+      }
+    }
+    ```
+    
+    Or if you installed globally:
+    ```json
+    {
+      "mcpServers": {
+        "refaktor": {
+          "command": "refaktor-mcp"
+        }
+      }
+    }
+    ```
+    
+    4. Restart Claude Desktop for the changes to take effect
+  </TabItem>
+  
+  <TabItem label="Cursor">
+    ### Cursor Configuration
+    
+    1. Open Cursor settings (Cmd/Ctrl + ,)
+    2. Search for "MCP" in settings
+    3. Edit the MCP configuration file
+    4. Add the Refaktor server:
+    
+    ```json
+    {
+      "mcpServers": {
+        "refaktor": {
+          "command": "npx",
+          "args": ["-y", "@refaktor/mcp-server"]
+        }
+      }
+    }
+    ```
+    
+    5. Reload Cursor window (Cmd/Ctrl + R)
+  </TabItem>
+  
+  <TabItem label="Continue">
+    ### Continue Configuration
+    
+    1. Open your Continue configuration file (`~/.continue/config.json`)
+    2. Add the MCP server to the `mcpServers` section:
+    
+    ```json
+    {
+      "mcpServers": [
+        {
+          "name": "refaktor",
+          "command": "npx",
+          "args": ["-y", "@refaktor/mcp-server"]
+        }
+      ]
+    }
+    ```
+    
+    3. Restart Continue or reload the configuration
+  </TabItem>
+  
+  <TabItem label="Other MCP Clients">
+    ### Generic MCP Client Configuration
+    
+    For any MCP-compatible client, use these connection details:
+    
+    **Command:** `npx`  
+    **Arguments:** `["-y", "@refaktor/mcp-server"]`
+    
+    Or if installed globally:
+    
+    **Command:** `refaktor-mcp`  
+    **Arguments:** `[]`
+    
+    The server communicates via standard input/output (stdio) following the MCP protocol.
+  </TabItem>
+</Tabs>
+
+## Step 4: Verify Installation
+
+<Steps>
+1. **Check Refaktor CLI**
+   ```bash
+   refaktor --version
+   # Should output: refaktor x.y.z
+   ```
+
+2. **Check Node.js version**
+   ```bash
+   node --version
+   # Should output: v18.x.x or higher
+   ```
+
+3. **Test MCP Server directly (optional)**
+   ```bash
+   # This should start the server (Ctrl+C to exit)
+   npx @refaktor/mcp-server
+   ```
+
+4. **Test in your AI assistant**
+   Ask your AI assistant: "Can you check if the Refaktor MCP tools are available?"
+   
+   The assistant should list the 7 available Refaktor tools:
+   - refaktor_plan
+   - refaktor_apply
+   - refaktor_undo
+   - refaktor_redo
+   - refaktor_history
+   - refaktor_status
+   - refaktor_preview
+</Steps>
+
+## Troubleshooting
+
+### "Refaktor CLI is not available"
+
+This error means the MCP Server cannot find the `refaktor` binary:
+
+1. **Verify installation:**
+   ```bash
+   which refaktor  # On macOS/Linux
+   where refaktor  # On Windows
+   ```
+
+2. **Check PATH environment variable:**
+   ```bash
+   echo $PATH  # On macOS/Linux
+   echo %PATH%  # On Windows
+   ```
+
+3. **Ensure the refaktor binary is in a PATH directory**
+
+### "Command not found: refaktor-mcp"
+
+If you see this error with global installation:
+
+1. **Check global npm/pnpm bin directory is in PATH:**
+   ```bash
+   npm config get prefix
+   # Add <prefix>/bin to your PATH
+   ```
+
+2. **Try using npx instead:**
+   ```json
+   {
+     "command": "npx",
+     "args": ["-y", "@refaktor/mcp-server"]
+   }
+   ```
+
+### MCP Server not appearing in AI assistant
+
+1. **Restart your AI assistant application**
+2. **Check the configuration file location**
+3. **Verify JSON syntax is correct**
+4. **Check application logs for MCP errors**
+
+### Permission errors on macOS/Linux
+
+If you get permission errors when moving the binary:
+
+```bash
+# Use sudo for system directories
+sudo mv refaktor /usr/local/bin/
+
+# Or use a user directory instead
+mkdir -p ~/.local/bin
+mv refaktor ~/.local/bin/
+# Add ~/.local/bin to your PATH in ~/.bashrc or ~/.zshrc
+```
+
+## Platform-Specific Notes
+
+### macOS
+
+- If you use Homebrew, you can create a custom formula for easier updates
+- Apple Silicon (M1/M2) users should download the `aarch64` version
+- Intel Mac users should download the `x86_64` version
+
+### Linux
+
+- Most distributions work with the standard Linux binary
+- For Alpine Linux or musl-based systems, build from source
+- Add to `/usr/local/bin` or `~/.local/bin` depending on your preference
+
+### Windows
+
+- Run terminals as Administrator if installing to system directories
+- Use PowerShell or Windows Terminal for best compatibility
+- Consider using WSL2 for a more Unix-like experience
+
+## Next Steps
+
+Now that you have the MCP Server installed, learn how to use it:
+
+<CardGrid>
+  <Card title="Configuration" icon="setting" href="/refaktor/mcp/configuration">
+    Customize the MCP Server settings
+  </Card>
+  <Card title="Tools Reference" icon="document" href="/refaktor/mcp/tools">
+    Learn about each available tool
+  </Card>
+  <Card title="Usage Examples" icon="rocket" href="/refaktor/mcp/examples">
+    See real-world refactoring examples
+  </Card>
+</CardGrid>

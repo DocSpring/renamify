@@ -1,0 +1,477 @@
+---
+title: AI Agent Guide
+description: Best practices for AI assistants using the Refaktor MCP Server
+---
+
+import { Card, CardGrid, Steps, Aside } from '@astrojs/starlight/components';
+
+# AI Agent Guide
+
+A comprehensive guide for AI assistants to effectively use the Refaktor MCP Server for intelligent, safe refactoring operations.
+
+## Core Principles for AI Agents
+
+<CardGrid>
+  <Card title="Plan First, Execute Second" icon="document">
+    Always create a plan before applying changes. Never skip directly to apply.
+  </Card>
+  <Card title="Start Narrow, Expand Gradually" icon="magnifier">
+    Begin with specific directories and expand scope only when confident.
+  </Card>
+  <Card title="Communicate Clearly" icon="comment">
+    Explain what you're doing and why. Show summaries before applying.
+  </Card>
+  <Card title="Handle Errors Gracefully" icon="warning">
+    When things go wrong, explain the issue and provide solutions.
+  </Card>
+</CardGrid>
+
+## The Golden Workflow
+
+<Steps>
+1. **Understand the request**
+   - Identify the old and new identifiers
+   - Determine the scope (whole project vs specific directories)
+   - Note any special requirements
+
+2. **Create a plan**
+   ```
+   Tool: refaktor_plan
+   Arguments: {
+     "old": "identifier",
+     "new": "replacement",
+     "includes": ["appropriate/**/*.ext"],
+     "previewFormat": "summary"
+   }
+   ```
+
+3. **Present the summary to the user**
+   - Show the number of files and replacements
+   - List the variants found
+   - Mention any files that will be renamed
+
+4. **Get user confirmation**
+   - Wait for explicit approval before applying
+   - Offer to show different preview formats if requested
+
+5. **Apply the changes**
+   ```
+   Tool: refaktor_apply
+   Arguments: {
+     "atomic": true
+   }
+   ```
+
+6. **Report the results**
+   - Confirm successful application
+   - Mention the number of changes made
+   - Suggest next steps if applicable
+</Steps>
+
+## Understanding User Intent
+
+### Interpreting Refactoring Requests
+
+| User Says | You Should |
+|-----------|------------|
+| "Rename X to Y" | Create a plan for all case variants |
+| "Update X to Y in tests only" | Use `includes: ["**/test/**", "**/*.test.*"]` |
+| "Change X to Y everywhere" | Use broad includes, minimal excludes |
+| "Carefully rename X to Y" | Use dry-run first, show diff preview |
+| "Fix the naming of X" | Ask for clarification on the new name |
+
+### Scope Detection
+
+**Explicit Scope:**
+- "in the src folder" → `includes: ["src/**/*"]`
+- "only TypeScript files" → `includes: ["**/*.ts", "**/*.tsx"]`
+- "except tests" → `excludes: ["**/*.test.*", "**/test/**"]`
+
+**Implicit Scope:**
+- React component → Focus on `.jsx`, `.tsx` files
+- Database table → Include migrations, models, queries
+- API endpoint → Include routes, controllers, tests, docs
+
+## Case Style Intelligence
+
+### Detecting the Right Styles
+
+Based on the identifier pattern, intelligently select case styles:
+
+```javascript
+// For "UserAccount" (PascalCase detected)
+{
+  "styles": ["pascal", "camel", "snake", "kebab"]
+}
+
+// For "get_user_data" (snake_case detected)
+{
+  "styles": ["snake", "camel", "pascal", "screaming"]
+}
+
+// For "api-endpoint" (kebab-case detected)
+{
+  "styles": ["kebab", "snake", "camel"]
+}
+```
+
+### Language-Specific Conventions
+
+<CardGrid>
+  <Card title="JavaScript/TypeScript">
+    Primary: `camel`, `pascal`  
+    Files: `kebab`, `camel`
+  </Card>
+  <Card title="Python">
+    Primary: `snake`  
+    Classes: `pascal`
+  </Card>
+  <Card title="Go">
+    Primary: `camel`, `pascal`  
+    Packages: lowercase
+  </Card>
+  <Card title="Rust">
+    Primary: `snake`  
+    Types: `pascal`
+  </Card>
+</CardGrid>
+
+## Smart Include/Exclude Patterns
+
+### Default Excludes to Always Use
+
+```json
+{
+  "excludes": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".git/**",
+    "vendor/**",
+    "*.min.js",
+    "package-lock.json",
+    "yarn.lock"
+  ]
+}
+```
+
+### Project Type Detection
+
+**React/Next.js Project:**
+```json
+{
+  "includes": ["src/**/*.{jsx,tsx,js,ts}", "pages/**/*.{jsx,tsx}"],
+  "excludes": ["public/**", ".next/**"]
+}
+```
+
+**Node.js Backend:**
+```json
+{
+  "includes": ["src/**/*.js", "lib/**/*.js", "routes/**/*.js"],
+  "excludes": ["client/**", "frontend/**"]
+}
+```
+
+**Python Project:**
+```json
+{
+  "includes": ["**/*.py"],
+  "excludes": ["venv/**", "__pycache__/**", "*.pyc"]
+}
+```
+
+## Communication Templates
+
+### Initial Response
+
+```
+I'll help you rename [old] to [new] across your codebase. Let me create a 
+refactoring plan that will handle all case variations automatically.
+
+[Creating plan...]
+```
+
+### Presenting Results
+
+```
+I've created a refactoring plan (ID: rf_20240115_123456) with the following changes:
+
+📊 Summary:
+• Files to modify: 12
+• Total replacements: 47
+• Variants found: UserAccount (15), userAccount (18), user_account (14)
+• Files to rename: 2
+
+The plan will update all variations of "UserAccount" to "CustomerAccount" 
+maintaining the appropriate case style in each context.
+
+Would you like me to apply these changes?
+```
+
+### Error Handling
+
+```
+I encountered an issue while applying the refactoring:
+
+❌ Error: Conflicts detected in 2 files
+The files have been modified since the plan was created.
+
+Here's how we can proceed:
+1. Create a fresh plan with the current file state
+2. Review the conflicting files manually
+3. Undo any partial changes if needed
+
+Which option would you prefer?
+```
+
+## Advanced Techniques
+
+### 1. Progressive Refactoring
+
+For large changes, break them into stages:
+
+```
+Stage 1: Core library files
+Tool: refaktor_plan
+Arguments: {
+  "old": "OldSystem",
+  "new": "NewSystem",
+  "includes": ["lib/core/**/*.js"]
+}
+
+Stage 2: API layer
+Tool: refaktor_plan
+Arguments: {
+  "old": "OldSystem",
+  "new": "NewSystem",
+  "includes": ["api/**/*.js"]
+}
+
+Stage 3: Frontend
+Tool: refaktor_plan
+Arguments: {
+  "old": "OldSystem",
+  "new": "NewSystem",
+  "includes": ["frontend/**/*.jsx"]
+}
+```
+
+### 2. Safety Checks
+
+Before applying changes in production:
+
+<Steps>
+1. Check git status with `refaktor_status`
+2. Create plan with `dryRun: true` first
+3. Review with `format: "diff"` if requested
+4. Apply with `atomic: true` always
+5. Consider `commit: true` for automatic git commit
+</Steps>
+
+### 3. Intelligent Fallbacks
+
+When a refactoring fails:
+
+```javascript
+// First attempt: Specific includes
+{
+  "includes": ["src/**/*.ts"],
+  "excludes": ["**/*.test.ts"]
+}
+
+// If no matches: Broaden the search
+{
+  "includes": ["**/*.ts", "**/*.js"],
+  "excludes": ["node_modules/**"]
+}
+
+// If still no matches: Check without file restrictions
+{
+  "includes": ["**/*"],
+  "excludes": ["node_modules/**", ".git/**"]
+}
+```
+
+## Common Pitfalls to Avoid
+
+<Aside type="caution">
+**Never:**
+- Apply without showing the plan summary first
+- Use overly broad patterns like replacing "data" everywhere
+- Ignore error messages about conflicts
+- Forget to exclude node_modules and build directories
+- Assume the user wants all case styles (ask if uncertain)
+</Aside>
+
+## Response Patterns
+
+### For Simple Renames
+
+```
+User: "Rename getUserData to fetchUserInfo"
+
+AI: I'll rename getUserData to fetchUserInfo. Creating a plan:
+
+[Tool execution]
+
+Found 23 occurrences across 8 files. This includes getUserData, 
+get_user_data, and related variations. Shall I apply these changes?
+```
+
+### For Complex Refactoring
+
+```
+User: "Refactor our authentication system from Auth to Security"
+
+AI: I'll help refactor your authentication system from Auth to Security. 
+This is a significant change, so let me break it down:
+
+First, let me scan for all Auth-related code:
+
+[Tool execution]
+
+I found Auth used in 45 files with 234 total occurrences including:
+- Auth, AuthContext, AuthProvider (React components)
+- useAuth, withAuth (hooks and HOCs)
+- auth, authState, isAuthenticated (variables)
+- Files: auth.js, auth-utils.js, AuthContext.tsx
+
+This is a large refactoring. Would you like me to:
+1. Apply all changes at once
+2. Start with core files first
+3. See a detailed preview before proceeding
+```
+
+### For Unclear Requests
+
+```
+User: "Fix the user thing"
+
+AI: I'd like to help fix the user-related code. Could you clarify what 
+specifically needs to be renamed? For example:
+- Are you looking to rename "User" to something else?
+- Is there a specific user-related function or variable?
+- Should I search for user-related code to show you what's there?
+```
+
+## Performance Optimization
+
+### For Large Codebases (>10,000 files)
+
+1. **Use specific includes:**
+   ```json
+   {
+     "includes": ["src/**/*.js"],  // Better
+     "includes": ["**/*"]          // Avoid
+   }
+   ```
+
+2. **Exclude unnecessary directories:**
+   ```json
+   {
+     "excludes": [
+       "node_modules/**",
+       "coverage/**",
+       ".next/**",
+       "out/**"
+     ]
+   }
+   ```
+
+3. **Consider file type specific searches:**
+   ```json
+   {
+     "includes": ["**/*.ts"],  // Just TypeScript
+     "renameFiles": false      // Skip file renames if not needed
+   }
+   ```
+
+## Testing the Agent Workflow
+
+When developing or testing AI agent integrations:
+
+### Test Scenarios
+
+1. **Basic rename:** `oldFunction` → `newFunction`
+2. **Multi-case:** `UserAccount` → `CustomerProfile`
+3. **With conflicts:** Modify files between plan and apply
+4. **Large scope:** Rename across 100+ files
+5. **No matches:** Try to rename something that doesn't exist
+6. **Partial matches:** Identifier appears in some but not all files
+
+### Expected Behaviors
+
+✅ **Good agent behavior:**
+- Always shows plan summary before applying
+- Handles errors with helpful suggestions
+- Uses appropriate includes/excludes
+- Explains what's happening at each step
+
+❌ **Poor agent behavior:**
+- Applies changes without user confirmation
+- Uses overly broad patterns by default
+- Doesn't explain errors clearly
+- Forgets to exclude node_modules
+
+## Integration Checklist
+
+For AI developers integrating Refaktor MCP:
+
+<Steps>
+1. ✓ Install MCP Server and verify tools are available
+2. ✓ Implement the golden workflow (plan → preview → apply)
+3. ✓ Add appropriate error handling for all tools
+4. ✓ Include default excludes (node_modules, etc.)
+5. ✓ Show summaries in user-friendly format
+6. ✓ Wait for user confirmation before applying
+7. ✓ Handle conflicts and errors gracefully
+8. ✓ Provide undo information when things go wrong
+9. ✓ Test with various identifier patterns and case styles
+10. ✓ Document any custom behaviors or limitations
+</Steps>
+
+## Quick Reference
+
+### Tool Priority Order
+
+1. `refaktor_plan` - Always first
+2. `refaktor_preview` - Optional, for detailed review
+3. `refaktor_apply` - After user confirmation
+4. `refaktor_undo` - If something goes wrong
+5. `refaktor_history` - To check past operations
+6. `refaktor_status` - For system state checks
+7. `refaktor_redo` - To reapply undone changes
+
+### Default Settings
+
+```json
+{
+  "atomic": true,           // Always use atomic operations
+  "previewFormat": "summary",  // Best for AI agents
+  "commit": false,          // Let user decide
+  "dryRun": false,         // Unless explicitly testing
+  "renameFiles": true,     // Include file renames
+  "renameDirs": true      // Include directory renames
+}
+```
+
+## Support and Resources
+
+<CardGrid>
+  <Card title="Tools Reference" icon="document" href="/refaktor/mcp/tools">
+    Detailed documentation for each MCP tool
+  </Card>
+  <Card title="Usage Examples" icon="rocket" href="/refaktor/mcp/examples">
+    Real-world refactoring scenarios
+  </Card>
+  <Card title="Installation" icon="download" href="/refaktor/mcp/installation">
+    Setup guide for different platforms
+  </Card>
+</CardGrid>
+
+---
+
+<Aside type="tip">
+**Remember:** The goal is to make refactoring safe, predictable, and efficient. Always prioritize clarity and safety over speed.
+</Aside>

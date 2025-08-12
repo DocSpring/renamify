@@ -1,0 +1,201 @@
+---
+title: MCP Server Overview
+description: Use Refaktor with AI assistants through the Model Context Protocol
+---
+
+import { Card, CardGrid, LinkCard, Steps } from '@astrojs/starlight/components';
+
+# MCP Server Overview
+
+The Refaktor MCP Server enables AI assistants like Claude, Cursor, and other MCP-compatible tools to perform intelligent, case-aware refactoring operations on your codebase.
+
+## What is MCP?
+
+The **Model Context Protocol (MCP)** is an open standard that enables AI assistants to securely connect to external tools and data sources. The Refaktor MCP Server implements this protocol, allowing AI agents to:
+
+- **Plan refactorings** with full case-awareness across your codebase
+- **Preview changes** in AI-friendly formats before applying
+- **Execute refactorings** atomically with built-in safety features
+- **Manage history** with unlimited undo/redo capabilities
+
+## Why Use the MCP Server?
+
+<CardGrid>
+  <Card title="AI-Native Integration" icon="robot">
+    Purpose-built for AI agents with structured outputs and clear feedback
+  </Card>
+  <Card title="Safe by Default" icon="shield">
+    Plan-first workflow ensures you review changes before applying
+  </Card>
+  <Card title="Case Intelligence" icon="brain">
+    Automatically handles all naming conventions in a single operation
+  </Card>
+  <Card title="Atomic Operations" icon="atom">
+    All changes succeed together or roll back completely
+  </Card>
+</CardGrid>
+
+## Key Features
+
+### 🤖 Designed for AI Agents
+
+The MCP Server provides structured, predictable outputs that AI agents can easily parse and understand:
+
+- **Summary format** optimized for AI consumption
+- **Clear error messages** with actionable guidance
+- **Consistent response patterns** across all tools
+- **Helpful context** added to every operation
+
+### 🔄 Case-Aware Transformations
+
+When you rename `getUserName` to `fetchUserProfile`, the MCP Server automatically handles:
+
+- `getUserName` → `fetchUserProfile` (camelCase)
+- `get_user_name` → `fetch_user_profile` (snake_case)
+- `GetUserName` → `FetchUserProfile` (PascalCase)
+- `GET_USER_NAME` → `FETCH_USER_PROFILE` (SCREAMING_SNAKE)
+- `get-user-name.js` → `fetch-user-profile.js` (file names)
+- `user-name/` → `user-profile/` (directories)
+
+### 🛡️ Safety Features
+
+Every refactoring operation includes multiple safety layers:
+
+1. **Preview before apply** - See exactly what will change
+2. **Atomic operations** - All changes succeed or none are applied
+3. **Full history tracking** - Every operation can be undone
+4. **Git integration** - Optional automatic commits
+5. **Conflict detection** - Identifies and reports merge conflicts
+
+## Available Tools
+
+The MCP Server provides 7 specialized tools:
+
+<CardGrid>
+  <Card title="refaktor_plan">
+    Create a refactoring plan with case-aware transformations
+  </Card>
+  <Card title="refaktor_apply">
+    Execute a plan to make the actual changes
+  </Card>
+  <Card title="refaktor_undo">
+    Revert a previously applied refactoring
+  </Card>
+  <Card title="refaktor_redo">
+    Re-apply an undone refactoring
+  </Card>
+  <Card title="refaktor_history">
+    View past refactoring operations
+  </Card>
+  <Card title="refaktor_status">
+    Check current state and pending plans
+  </Card>
+  <Card title="refaktor_preview">
+    Review a plan in different formats
+  </Card>
+</CardGrid>
+
+## Quick Start
+
+<Steps>
+1. **Install the Refaktor CLI**
+   ```bash
+   cargo install refaktor
+   # or download from GitHub releases
+   ```
+
+2. **Install the MCP Server**
+   ```bash
+   npm install -g @refaktor/mcp-server
+   ```
+
+3. **Configure your AI assistant**
+   Add to your MCP configuration (e.g., Claude Desktop or Cursor):
+   ```json
+   {
+     "mcpServers": {
+       "refaktor": {
+         "command": "npx",
+         "args": ["@refaktor/mcp-server"]
+       }
+     }
+   }
+   ```
+
+4. **Start refactoring!**
+   Ask your AI assistant to use Refaktor for renaming operations
+</Steps>
+
+## Example Workflow
+
+Here's how an AI agent typically uses the MCP Server:
+
+```
+User: "Rename all instances of UserAccount to CustomerAccount in the src folder"
+
+AI: I'll help you rename UserAccount to CustomerAccount. Let me start by creating a plan:
+
+Tool: refaktor_plan
+Arguments: {
+  "old": "UserAccount",
+  "new": "CustomerAccount",
+  "includes": ["src/**/*"],
+  "previewFormat": "summary"
+}
+
+Result:
+Created plan: rf_20240115_123456
+Summary:
+  Files to modify: 12
+  Total replacements: 47
+  Variants found: UserAccount (15), userAccount (18), user_account (8), USER_ACCOUNT (6)
+  Files to rename: 3
+  
+The plan shows 47 replacements across 12 files. Would you like me to apply these changes?
+
+User: "Yes, apply the changes"
+
+AI: I'll apply the refactoring plan now:
+
+Tool: refaktor_apply
+Arguments: {
+  "atomic": true
+}
+
+Result: Successfully applied 47 replacements across 12 files and renamed 3 files
+```
+
+## Integration Support
+
+The Refaktor MCP Server works with:
+
+- **[Claude Desktop](https://claude.ai)** - Anthropic's AI assistant
+- **[Cursor](https://cursor.sh)** - AI-powered code editor
+- **[Continue](https://continue.dev)** - Open-source AI code assistant
+- **Any MCP-compatible client** - Following the MCP specification
+
+## Next Steps
+
+<LinkCard
+  title="Installation Guide"
+  href="/refaktor/mcp/installation"
+  description="Step-by-step setup instructions for different platforms"
+/>
+
+<LinkCard
+  title="Configuration"
+  href="/refaktor/mcp/configuration"
+  description="Configure the MCP Server for your environment"
+/>
+
+<LinkCard
+  title="Tools Reference"
+  href="/refaktor/mcp/tools"
+  description="Detailed documentation for each MCP tool"
+/>
+
+<LinkCard
+  title="Usage Examples"
+  href="/refaktor/mcp/examples"
+  description="Real-world refactoring scenarios and patterns"
+/>

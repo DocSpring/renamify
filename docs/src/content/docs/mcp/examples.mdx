@@ -1,0 +1,533 @@
+---
+title: MCP Usage Examples
+description: Real-world examples of using the Refaktor MCP Server
+---
+
+import { Code, Steps, Card, CardGrid } from '@astrojs/starlight/components';
+
+# MCP Usage Examples
+
+Learn how to use the Refaktor MCP Server through practical, real-world scenarios.
+
+## Basic Refactoring Examples
+
+### Example 1: Rename a React Component
+
+**Scenario:** Rename `UserProfile` component to `CustomerProfile` across your React application.
+
+**AI Agent Conversation:**
+
+```
+User: "Rename the UserProfile component to CustomerProfile throughout the codebase"
+
+AI: I'll help you rename UserProfile to CustomerProfile. Let me create a refactoring plan:
+
+Tool: refaktor_plan
+Arguments: {
+  "old": "UserProfile",
+  "new": "CustomerProfile",
+  "includes": ["src/**/*.tsx", "src/**/*.ts", "src/**/*.jsx", "src/**/*.js"],
+  "excludes": ["node_modules/**", "dist/**"],
+  "styles": ["pascal", "camel"],
+  "previewFormat": "summary"
+}
+
+Result:
+Created plan: rf_20240115_100123
+
+Summary:
+  Files to modify: 8
+  Total replacements: 23
+  Variants found:
+    UserProfile (12)
+    userProfile (11)
+  Files to rename: 2
+    src/components/UserProfile.tsx → src/components/CustomerProfile.tsx
+    src/components/UserProfile.test.tsx → src/components/CustomerProfile.test.tsx
+
+The refactoring will update 8 files with 23 replacements and rename 2 files. 
+Shall I apply these changes?
+
+User: "Yes, apply the changes"
+
+AI: Applying the refactoring now:
+
+Tool: refaktor_apply
+Arguments: {
+  "atomic": true
+}
+
+Result: Successfully applied 23 replacements across 8 files and renamed 2 files.
+
+The UserProfile component has been successfully renamed to CustomerProfile throughout your codebase!
+```
+
+### Example 2: Update Database Schema Names
+
+**Scenario:** Migrate database schema from `user_accounts` to `customer_accounts`.
+
+```
+User: "Change all references from user_accounts table to customer_accounts"
+
+AI: I'll help rename the database table references. Creating a plan:
+
+Tool: refaktor_plan
+Arguments: {
+  "old": "user_accounts",
+  "new": "customer_accounts",
+  "includes": [
+    "migrations/**/*.sql",
+    "src/models/**/*.js",
+    "src/queries/**/*.ts"
+  ],
+  "styles": ["snake", "camel", "pascal"],
+  "renameFiles": false,
+  "previewFormat": "summary"
+}
+
+Result:
+Created plan: rf_20240115_101545
+
+Summary:
+  Files to modify: 15
+  Total replacements: 67
+  Variants found:
+    user_accounts (42)
+    userAccounts (18)
+    UserAccounts (7)
+    
+Note: File renaming is disabled to preserve migration file names.
+
+Would you like me to apply these database schema changes?
+```
+
+### Example 3: API Endpoint Refactoring
+
+**Scenario:** Update API endpoints from `/api/get-user` pattern to `/api/fetch-customer`.
+
+```
+User: "Replace all get-user API endpoints with fetch-customer"
+
+AI: I'll refactor the API endpoints from get-user to fetch-customer:
+
+Tool: refaktor_plan
+Arguments: {
+  "old": "get-user",
+  "new": "fetch-customer",
+  "includes": [
+    "src/api/**/*.js",
+    "src/services/**/*.ts",
+    "tests/**/*.test.js",
+    "docs/**/*.md"
+  ],
+  "styles": ["kebab", "camel", "snake"],
+  "previewFormat": "summary"
+}
+
+Result:
+Created plan: rf_20240115_102234
+
+Summary:
+  Files to modify: 12
+  Total replacements: 38
+  Variants found:
+    get-user (15)
+    getUser (18)
+    get_user (5)
+  Files to rename: 1
+    src/api/routes/get-user.js → src/api/routes/fetch-customer.js
+```
+
+## Advanced Workflows
+
+### Workflow 1: Safe Production Refactoring
+
+**Scenario:** Refactor production code with maximum safety.
+
+<Steps>
+1. **Check current status**
+   ```
+   Tool: refaktor_status
+   Arguments: {}
+   ```
+
+2. **Create dry-run plan**
+   ```
+   Tool: refaktor_plan
+   Arguments: {
+     "old": "legacyFunction",
+     "new": "modernFunction",
+     "includes": ["src/**/*.js"],
+     "dryRun": true,
+     "previewFormat": "diff"
+   }
+   ```
+
+3. **Review the diff output carefully**
+
+4. **Create actual plan if satisfied**
+   ```
+   Tool: refaktor_plan
+   Arguments: {
+     "old": "legacyFunction",
+     "new": "modernFunction",
+     "includes": ["src/**/*.js"],
+     "dryRun": false
+   }
+   ```
+
+5. **Apply with git commit**
+   ```
+   Tool: refaktor_apply
+   Arguments: {
+     "atomic": true,
+     "commit": true
+   }
+   ```
+
+6. **Verify the changes**
+   ```
+   Tool: refaktor_history
+   Arguments: {
+     "limit": 1
+   }
+   ```
+</Steps>
+
+### Workflow 2: Incremental Migration
+
+**Scenario:** Migrate a large codebase in stages.
+
+```
+User: "I need to rename Product to Item but only in the backend first"
+
+AI: I'll help you rename Product to Item in the backend only. Let's do this incrementally:
+
+Step 1 - Backend models and database:
+
+Tool: refaktor_plan
+Arguments: {
+  "old": "Product",
+  "new": "Item",
+  "includes": [
+    "backend/models/**/*.js",
+    "backend/migrations/**/*.sql"
+  ],
+  "previewFormat": "summary"
+}
+
+Result: Created plan with 45 replacements in 8 files
+
+Step 2 - Backend API routes:
+
+Tool: refaktor_plan
+Arguments: {
+  "old": "Product",
+  "new": "Item",
+  "includes": [
+    "backend/routes/**/*.js",
+    "backend/controllers/**/*.js"
+  ],
+  "previewFormat": "summary"
+}
+
+Result: Created plan with 67 replacements in 12 files
+
+Would you like me to apply the backend model changes first?
+```
+
+### Workflow 3: Test-Driven Refactoring
+
+**Scenario:** Ensure tests pass after refactoring.
+
+```
+User: "Rename calculatePrice to computeCost and make sure tests still pass"
+
+AI: I'll rename calculatePrice to computeCost and verify the tests. Here's my approach:
+
+Tool: refaktor_plan
+Arguments: {
+  "old": "calculatePrice",
+  "new": "computeCost",
+  "includes": ["src/**/*.js", "tests/**/*.test.js"],
+  "previewFormat": "summary"
+}
+
+Result:
+Created plan: rf_20240115_110234
+  Files to modify: 15 (including 5 test files)
+  Total replacements: 42
+
+Now applying the changes:
+
+Tool: refaktor_apply
+Arguments: {
+  "atomic": true
+}
+
+Result: Successfully applied 42 replacements
+
+Let me run the tests to verify everything works:
+
+[AI would then run: npm test]
+
+The refactoring is complete and all tests are passing!
+```
+
+## Pattern-Specific Examples
+
+### Python Class Migration
+
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "DataProcessor",
+  "new": "DataTransformer",
+  "includes": ["**/*.py"],
+  "excludes": ["venv/**", "__pycache__/**"],
+  "styles": ["pascal", "snake"],
+  "previewFormat": "summary"
+}
+```
+
+### Go Package Rename
+
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "userservice",
+  "new": "customerservice",
+  "includes": ["**/*.go", "go.mod"],
+  "styles": ["camel", "pascal", "snake"],
+  "previewFormat": "summary"
+}
+```
+
+### TypeScript Interface Update
+
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "IUserData",
+  "new": "ICustomerData",
+  "includes": ["src/**/*.ts", "src/**/*.tsx"],
+  "excludes": ["**/*.d.ts"],
+  "styles": ["pascal"],
+  "previewFormat": "summary"
+}
+```
+
+### Configuration File Updates
+
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "MAX_USERS",
+  "new": "MAX_CUSTOMERS",
+  "includes": [
+    "**/*.env",
+    "**/*.json",
+    "**/*.yaml",
+    "**/*.yml",
+    "config/**/*"
+  ],
+  "styles": ["screaming", "snake"],
+  "renameFiles": false
+}
+```
+
+## Error Recovery Examples
+
+### Handling Conflicts
+
+```
+User: "Apply the refactoring plan"
+
+AI: Let me apply the refactoring:
+
+Tool: refaktor_apply
+Arguments: {}
+
+Result: Error: Conflicts detected in 2 files:
+  - src/api/users.js: Content changed since plan creation
+  - src/models/user.js: File deleted
+
+The files have changed since the plan was created. Let me create a fresh plan:
+
+Tool: refaktor_plan
+Arguments: {
+  "old": "User",
+  "new": "Customer",
+  "includes": ["src/**/*.js"],
+  "previewFormat": "summary"
+}
+
+Result: Created new plan: rf_20240115_113045
+  Files to modify: 10 (was 12 - 2 files no longer exist)
+
+Shall I apply the updated plan?
+```
+
+### Rolling Back Changes
+
+```
+User: "The refactoring broke something, please undo it"
+
+AI: I'll immediately undo the last refactoring:
+
+Tool: refaktor_history
+Arguments: {
+  "limit": 1
+}
+
+Result: Last operation: rf_20240115_114523 [APPLIED]
+
+Tool: refaktor_undo
+Arguments: {
+  "id": "rf_20240115_114523"
+}
+
+Result: Successfully undone refactoring rf_20240115_114523
+  ✓ Reverted 85 replacements in 20 files
+  ✓ Restored 3 renamed files
+
+The refactoring has been completely rolled back. Your code is now in its previous state.
+```
+
+## Best Practices Examples
+
+### 1. Scoped Refactoring
+
+Instead of refactoring everything at once, scope your changes:
+
+```
+# Good: Specific scope
+Tool: refaktor_plan
+Arguments: {
+  "old": "oldName",
+  "new": "newName",
+  "includes": ["src/components/**/*.tsx"],
+  "excludes": ["**/*.test.tsx"]
+}
+
+# Risky: Too broad
+Tool: refaktor_plan
+Arguments: {
+  "old": "data",
+  "new": "information",
+  "includes": ["**/*"]
+}
+```
+
+### 2. Test Before Production
+
+Always test on a subset first:
+
+```
+# Step 1: Test on a small directory
+Tool: refaktor_plan
+Arguments: {
+  "old": "Widget",
+  "new": "Component",
+  "includes": ["src/ui/sample/**/*"],
+  "dryRun": true
+}
+
+# Step 2: If good, expand to full directory
+Tool: refaktor_plan
+Arguments: {
+  "old": "Widget",
+  "new": "Component",
+  "includes": ["src/ui/**/*"]
+}
+```
+
+### 3. Preserve Special Files
+
+Exclude files that shouldn't change:
+
+```
+Tool: refaktor_plan
+Arguments: {
+  "old": "config",
+  "new": "settings",
+  "includes": ["**/*.js"],
+  "excludes": [
+    "package-lock.json",
+    "yarn.lock",
+    "**/vendor/**",
+    "**/third-party/**"
+  ]
+}
+```
+
+## Language-Specific Examples
+
+<CardGrid>
+  <Card title="JavaScript/TypeScript">
+    ```json
+    {
+      "includes": ["**/*.{js,jsx,ts,tsx,mjs}"],
+      "styles": ["camel", "pascal"]
+    }
+    ```
+  </Card>
+  
+  <Card title="Python">
+    ```json
+    {
+      "includes": ["**/*.py"],
+      "excludes": ["venv/**", "*.pyc"],
+      "styles": ["snake", "pascal"]
+    }
+    ```
+  </Card>
+  
+  <Card title="Go">
+    ```json
+    {
+      "includes": ["**/*.go", "go.mod"],
+      "styles": ["camel", "pascal"]
+    }
+    ```
+  </Card>
+  
+  <Card title="Rust">
+    ```json
+    {
+      "includes": ["**/*.rs", "Cargo.toml"],
+      "styles": ["snake", "pascal"]
+    }
+    ```
+  </Card>
+  
+  <Card title="Java">
+    ```json
+    {
+      "includes": ["**/*.java"],
+      "styles": ["camel", "pascal"]
+    }
+    ```
+  </Card>
+  
+  <Card title="Ruby">
+    ```json
+    {
+      "includes": ["**/*.rb"],
+      "excludes": ["vendor/**"],
+      "styles": ["snake", "pascal"]
+    }
+    ```
+  </Card>
+</CardGrid>
+
+## Next Steps
+
+<CardGrid>
+  <Card title="AI Agent Guide" icon="robot" href="/refaktor/mcp/ai-guide">
+    Best practices for AI-assisted refactoring
+  </Card>
+  <Card title="Tools Reference" icon="document" href="/refaktor/mcp/tools">
+    Detailed documentation for each tool
+  </Card>
+</CardGrid>
