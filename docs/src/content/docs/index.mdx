@@ -3,7 +3,7 @@ title: Refaktor
 description: Smart search & replace for code and files with case-aware transformations
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <Card>
 <div style="font-size: 1.35rem;">
@@ -64,32 +64,8 @@ refaktor rename getUserName fetchUserProfile src/ tests/
 
 ## Demo
 
-Watch Refaktor rename itself to `smart_search_and_replace`, then use the renamed binary to change it back:
-
-```bash
-# Clone and build
-git clone https://github.com/DocSpring/refaktor
-cd refaktor
-cargo build
-
-# Use refaktor to rename itself to smart_search_and_replace
-./target/release/refaktor rename refaktor smart_search_and_replace --yes
-
-# Run tests and rebuild with the new name
-rm -rf target
-cargo test
-cargo build
-
-# Now use smart_search_and_replace to rename itself back to refaktor
-./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --yes
-
-# Back to the original
-rm -rf target
-cargo test
-cargo build
-./target/release/refaktor --help
-```
-
-This demonstrates what Refaktor can do: rename entire projects including all code references, 
-file names, and directory names - all while maintaining perfect consistency across 
-different naming conventions.
+<LinkCard
+  title="See Refaktor in Action"
+  href="/refaktor/demo"
+  description="Watch Refaktor rename itself, then use the renamed binary to change it back."
+/>

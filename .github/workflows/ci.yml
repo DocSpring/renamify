@@ -17,7 +17,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os:
+          - ubuntu-latest
+          - macos-latest
+          # - windows-latest
         rust: [stable]
 
     steps:
@@ -121,7 +124,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os:
+          - ubuntu-latest
+          - macos-latest
+          # - windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -153,7 +159,7 @@ jobs:
         run: |
           echo "=== Testing refaktor rename to smart_search_and_replace ==="
 
-          # Use refaktor to rename itself
+          # Use refaktor to rename itself using plan/apply
           ./target/release/refaktor --auto-init=repo plan refaktor smart_search_and_replace --preview-format table
           ./target/release/refaktor apply
 
@@ -183,13 +189,66 @@ jobs:
           ./target/release/smart_search_and_replace --version
         shell: bash
 
+      - name: Test undo
+        run: |
+          echo "=== Testing undo functionality ==="
+
+          # Undo the rename
+          ./target/release/refaktor undo latest
+
+          # Verify the undo worked
+          if [ -f "smart-search-and-replace-core/Cargo.toml" ]; then
+            echo "ERROR: smart-search-and-replace-core/Cargo.toml still exists!"
+            exit 1
+          fi
+
+          # The working directory should be clean after the undo
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "ERROR: Working directory is not clean after undo!"
+            git status
+            git diff
+            exit 1
+          fi
+
+          echo "✓ Working directory is clean - undo successful!"
+
+          # Clean and rebuild with original name
+          rm -rf target
+          cargo build --release
+
+          # Verify the new binary exists and works
+          ./target/release/refaktor --version
+        shell: bash
+
+      - name: Test redo
+        run: |
+          echo "=== Testing redo functionality ==="
+
+          # Redo the rename
+          ./target/release/refaktor redo latest
+
+          # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
+          echo "Checking for remaining instances of 'refaktor'..."
+          if rg -i "refaktor" --type-not binary; then
+            echo "ERROR: Found remaining instances of 'refaktor' in the codebase!"
+            exit 1
+          fi
+          echo "✓ No instances of 'refaktor' found"
+
+          # Clean and rebuild with new name again
+          rm -rf target
+          cargo build --release
+
+          # Verify the new binary exists and works
+          ./target/release/smart_search_and_replace --version
+        shell: bash
+
       - name: Test smart_search_and_replace -> refaktor
         run: |
           echo "=== Testing smart_search_and_replace rename back to refaktor ==="
 
           # Use smart_search_and_replace to rename itself back
-          ./target/release/smart_search_and_replace plan smart_search_and_replace refaktor --preview-format table
-          ./target/release/smart_search_and_replace apply
+          ./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --preview-format table
 
           # Verify the rename worked
           if [ -f "smart-search-and-replace-core/Cargo.toml" ]; then

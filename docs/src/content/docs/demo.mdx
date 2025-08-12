@@ -1,0 +1,41 @@
+---
+title: Demo
+description: Watch Refaktor rename itself, then use the renamed binary to change it back
+---
+
+Watch Refaktor rename itself to `smart_search_and_replace`, then use the renamed binary to change it back:
+
+```bash
+# Clone and build
+git clone https://github.com/DocSpring/refaktor
+cd refaktor
+cargo build
+
+# Use refaktor to rename itself to smart_search_and_replace
+./target/release/refaktor rename refaktor smart_search_and_replace --yes
+
+# Remove the old binary, run tests, and rebuild with the new name
+rm -rf target
+cargo test
+cargo build
+
+# Now use the new smart_search_and_replace binary to rename itself back to refaktor
+./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --yes
+
+# Back to the original
+rm -rf target
+cargo test
+cargo build
+./target/release/refaktor --help
+
+git status
+# On branch main
+# Your branch is up to date with 'origin/main'.
+
+# nothing to commit, working tree clean
+
+```
+
+You can use Refaktor to rename entire projects including all code references, 
+file names, and directory names - all while maintaining perfect consistency across 
+different naming conventions.
