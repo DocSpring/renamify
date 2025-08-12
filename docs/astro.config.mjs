@@ -37,7 +37,7 @@ export default defineConfig({
           ],
         },
         {
-          label: "🤖 MCP Server",
+          label: "MCP Server",
           items: [
             { label: "Overview", slug: "mcp/overview" },
             { label: "Installation", slug: "mcp/installation" },
