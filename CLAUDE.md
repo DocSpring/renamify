@@ -58,7 +58,7 @@ They should be mentioned in any package files, copyright notices, etc.
 - Apply: update file contents, then rename files and directories, all atomically
 - Undo and redo: `.refaktor/history.json` with checksums
 - Conflicts: re-validate hunks, auto-resolve simple formatting shifts, stop on real conflicts unless forced
-- Respect `.gitignore` by default, allow include and exclude globs
+- Respect ignore files by default (`.gitignore`, `.ignore`, `.rgignore`, `.rfignore`), allow include and exclude globs
 - Exclude binary files by default
 
 ## Non-goals for v1
@@ -107,11 +107,12 @@ Binary: `refaktor`
 Commands:
 
 - `refaktor plan <old> <new> [opts]`
-  - `--include` `--exclude` `--respect-gitignore` (default true)
+  - `--include` `--exclude` `--respect-gitignore` (default true, respects all ignore files)
   - `--rename-files` `--rename-dirs` (default true)
   - `--styles=<list>`
   - `--preview-format table|diff|json`
   - `--plan-out`
+  - `-u/-uu/-uuu` (unrestricted levels to control ignore file handling)
 - `refaktor apply [--plan PATH | --id ID] [--atomic true] [--commit]`
 - `refaktor undo <id>`
 - `refaktor redo <id>`
@@ -140,7 +141,7 @@ Exit codes:
 1. Detect input case of `<old>` and `<new>`
 2. Generate all `old_variant -> new_variant` mappings
 3. Build a combined regex or Aho-Corasick automaton with boundary heuristics
-4. One walk of the repo using `ignore` with `.gitignore` honored
+4. One walk of the repo using `ignore` with ignore files honored (`.gitignore`, `.ignore`, `.rgignore`, `.rfignore`)
 5. For each match, capture file, line, byte range, and preview text
 6. For file and directory names, detect and schedule renames with depth ordering
 7. Emit `plan.json` and fast summary stats
@@ -150,6 +151,20 @@ Boundary rules
 - Avoid partial token matches inside larger identifiers unless intended
 - Handle camel and Pascal transitions by checking case transitions in code
 - Post-filter to enforce boundaries where the regex engine cannot
+
+## Ignore file handling
+
+Refaktor respects multiple ignore file formats:
+- `.gitignore` - Standard Git ignore patterns
+- `.ignore` - Generic ignore file (compatible with ripgrep)
+- `.rgignore` - Ripgrep-specific ignore patterns
+- `.rfignore` - Refaktor-specific ignore patterns (useful for excluding files from refactoring without affecting Git)
+
+The unrestricted levels (`-u` flag) control ignore behavior:
+- Level 0 (default): Respects all ignore files, skips hidden files
+- Level 1 (`-u`): Ignores `.gitignore` but respects `.ignore`, `.rgignore`, `.rfignore`
+- Level 2 (`-uu`): Ignores all ignore files, shows hidden files
+- Level 3 (`-uuu`): Same as level 2, plus treats binary files as text
 
 ## Apply engine
 

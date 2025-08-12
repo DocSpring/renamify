@@ -13,6 +13,7 @@ Smart search & replace for code and files with case-aware transformations and bu
 - Plan / apply workflow for safety during large refactorings
 - Built-in undo/redo with history tracking (separate to git history)
   - Perform a large refactor safely without needing to commit anything first
+- Respects ignore files (`.gitignore`, `.ignore`, `.rgignore`, `.rfignore`)
 - Cross-platform support (Linux, macOS, Windows)
 
 ## Demo
@@ -42,6 +43,23 @@ cargo build --release
 ```
 
 This demonstrates Refaktor's power: it can rename entire projects including all code references, file names, and directory names - all while maintaining perfect consistency across different naming conventions.
+
+## Ignore Files
+
+Refaktor respects various ignore files to skip files and directories during scanning:
+
+- `.gitignore` - Standard Git ignore patterns
+- `.ignore` - Generic ignore file (like ripgrep)
+- `.rgignore` - Ripgrep-specific ignore patterns
+- `.rfignore` - Refaktor-specific ignore patterns
+
+You can control how ignore files are handled using the `-u` flag:
+- Default: Respects all ignore files and skips hidden files
+- `-u`: Ignores `.gitignore` but respects other ignore files
+- `-uu`: Ignores all ignore files and shows hidden files
+- `-uuu`: Same as `-uu` plus treats binary files as text
+
+The `.rfignore` file is useful when you want to exclude files specifically from refaktor operations without affecting Git or other tools.
 
 ## Build Status
 

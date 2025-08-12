@@ -25,9 +25,9 @@ struct Cli {
 
     /// Reduce the level of "smart" filtering. Can be repeated up to 3 times.
     /// -u: Don't respect .gitignore files
-    /// -uu: Don't respect any ignore files, show hidden files  
+    /// -uu: Don't respect any ignore files (.gitignore, .ignore, .rgignore, .rfignore), show hidden files
     /// -uuu: Same as -uu, plus treat binary files as text
-    #[arg(short = 'u', long = "unrestricted", global = true, action = clap::ArgAction::Count)]
+    #[arg(short = 'u', long = "unrestricted", global = true, action = clap::ArgAction::Count, verbatim_doc_comment)]
     unrestricted: u8,
 
     /// Run as if started in <path> instead of the current working directory
@@ -69,7 +69,7 @@ enum Commands {
         #[arg(long, value_delimiter = ',')]
         exclude: Vec<String>,
 
-        /// Respect .gitignore files
+        /// Respect ignore files (.gitignore, .ignore, .rgignore, .rfignore)
         #[arg(long, default_value_t = true)]
         respect_gitignore: bool,
 
@@ -145,13 +145,13 @@ enum Commands {
 
     /// Undo a previous refactoring
     Undo {
-        /// History ID to undo
+        /// History ID to undo (use 'latest' for the most recent non-revert entry)
         id: String,
     },
 
     /// Redo a previously undone refactoring
     Redo {
-        /// History ID to redo
+        /// History ID to redo (use 'latest' for the most recent reverted entry)
         id: String,
     },
 
@@ -185,7 +185,7 @@ enum Commands {
         #[arg(long, value_delimiter = ',')]
         exclude: Vec<String>,
 
-        /// Respect .gitignore files
+        /// Respect ignore files (.gitignore, .ignore, .rgignore, .rfignore)
         #[arg(long, default_value_t = true)]
         respect_gitignore: bool,
 

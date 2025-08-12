@@ -1053,7 +1053,6 @@ fn test_affected_files_not_empty() {
     );
 
     // Verify the file path is in affected_files
-    let test_file_path = temp_dir.path().join("test.rs");
     let has_test_file = affected_files.keys().any(|k| k.ends_with("test.rs"));
     assert!(has_test_file, "test.rs should be in affected_files");
 }

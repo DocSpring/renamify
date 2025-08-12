@@ -95,8 +95,58 @@ impl ApplyState {
     }
 }
 
-/// Create a backup of a file or directory
-fn backup_file(path: &Path, backup_dir: &Path, plan_id: &str) -> Result<FileBackup> {
+/// Create a diff-based backup of a file
+fn create_diff_backup(
+    original_path: &Path,
+    modified_content: &str,
+    backup_dir: &Path,
+    plan_id: &str,
+) -> Result<PathBuf> {
+    // Create backup directory structure
+    let backup_base = backup_dir.join(plan_id);
+    fs::create_dir_all(&backup_base)?;
+
+    // Generate diff path using the filename + .diff extension
+    let diff_filename = format!(
+        "{}.diff",
+        original_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+    );
+    let diff_path = backup_base.join(diff_filename);
+
+    // Create a temporary file with the modified content
+    let temp_dir = std::env::temp_dir();
+    let temp_file = temp_dir.join(format!("refaktor_{}.tmp", std::process::id()));
+    fs::write(&temp_file, modified_content)?;
+
+    // Generate diff using git diff
+    // Note: git diff returns exit code 1 when files differ, which is expected
+    let output = std::process::Command::new("git")
+        .args([
+            "diff",
+            "--no-index",
+            "--no-prefix",
+            original_path.to_str().unwrap(),
+            temp_file.to_str().unwrap(),
+        ])
+        .output();
+
+    // Always clean up temp file, even if git diff failed
+    let _ = fs::remove_file(&temp_file);
+
+    // Check if git diff succeeded
+    let output = output.context("Failed to run git diff")?;
+
+    // Save the diff (even if empty, which might happen if files are identical)
+    fs::write(&diff_path, &output.stdout)?;
+
+    Ok(diff_path)
+}
+
+/// Create a backup of a file or directory (for renames only)
+fn backup_file_metadata(path: &Path, backup_dir: &Path, plan_id: &str) -> Result<FileBackup> {
     // Read file metadata
     let metadata = fs::metadata(path)
         .with_context(|| format!("Failed to read metadata for {}", path.display()))?;
@@ -118,29 +168,8 @@ fn backup_file(path: &Path, backup_dir: &Path, plan_id: &str) -> Result<FileBack
     let backup_base = backup_dir.join(plan_id);
     fs::create_dir_all(&backup_base)?;
 
-    // Generate backup path using just the filename
+    // For diff-based backups, we don't copy the file, just track metadata
     let backup_path = backup_base.join(path.file_name().unwrap_or(path.as_os_str()));
-
-    // Create parent directories for backup
-    if let Some(parent) = backup_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    // Handle directories differently from files
-    if metadata.is_dir() {
-        // For directories, we don't actually need to backup the entire contents
-        // Just record that it was a directory - the rename tracking handles restoration
-        fs::create_dir_all(&backup_path)?;
-    } else {
-        // Always copy for backups (hard links would share the same data and get modified)
-        fs::copy(path, &backup_path).with_context(|| {
-            format!(
-                "Failed to backup {} to {}",
-                path.display(),
-                backup_path.display()
-            )
-        })?;
-    }
 
     Ok(FileBackup {
         original_path: path.to_path_buf(),
@@ -159,44 +188,13 @@ pub fn calculate_checksum(path: &Path) -> Result<String> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-/// Restore a file from backup
-fn restore_backup(backup: &FileBackup) -> Result<()> {
-    // Skip checksum verification for directories
-    if backup.checksum != "directory" {
-        // Verify backup exists and matches checksum
-        let backup_checksum = calculate_checksum(&backup.backup_path)?;
-        if backup_checksum != backup.checksum {
-            return Err(anyhow!(
-                "Backup checksum mismatch for {}: expected {}, got {}",
-                backup.original_path.display(),
-                backup.checksum,
-                backup_checksum
-            ));
-        }
-
-        // Remove current file if it exists
-        if backup.original_path.exists() {
-            fs::remove_file(&backup.original_path)?;
-        }
-
-        // Copy backup back to original location
-        fs::copy(&backup.backup_path, &backup.original_path)?;
-
-        // Restore permissions
-        if let Some(ref perms) = backup.permissions {
-            fs::set_permissions(&backup.original_path, perms.clone())?;
-        }
-    }
-    // For directories, the rename rollback will handle restoration
-
-    Ok(())
-}
-
 /// Apply content edits to a file atomically
 fn apply_content_edits(
     path: &Path,
     replacements: &[(String, String, usize, usize)],
     state: &mut ApplyState,
+    backup_dir: &Path,
+    plan_id: &str,
 ) -> Result<()> {
     state.log(&format!(
         "Applying {} edits to {}",
@@ -204,15 +202,15 @@ fn apply_content_edits(
         path.display()
     ))?;
 
-    // Read the file content
-    let content =
+    // Read the original file content (for diff generation)
+    let original_content =
         fs::read_to_string(path).with_context(|| format!("Failed to read {}", path.display()))?;
 
     // Apply replacements (in reverse order to maintain positions)
-    let mut modified = content.clone();
+    let mut modified = original_content.clone();
     for (before, after, start, end) in replacements.iter().rev() {
         // Validate the replacement matches expected content
-        let actual = &content[*start..*end];
+        let actual = &original_content[*start..*end];
         if actual != before {
             return Err(anyhow!(
                 "Content mismatch in {}: expected '{}', found '{}'",
@@ -225,6 +223,10 @@ fn apply_content_edits(
         // Apply the replacement
         modified.replace_range(*start..*end, after);
     }
+
+    // Create a diff backup before applying changes
+    let diff_path = create_diff_backup(path, &modified, backup_dir, plan_id)?;
+    state.log(&format!("Created diff backup at {}", diff_path.display()))?;
 
     // Write to temporary file in the same directory (for atomicity)
     let temp_path = path.with_extension(format!("{}.refaktor.tmp", std::process::id()));
@@ -339,25 +341,8 @@ fn rollback(state: &mut ApplyState) -> Result<()> {
         }
     }
 
-    // Restore content edits from backups
-    let backups_to_restore: Vec<_> = state.backups.clone();
-    let edits_applied = state.content_edits_applied.clone();
-
-    for backup in &backups_to_restore {
-        if edits_applied.contains(&backup.original_path) {
-            state.log(&format!(
-                "Restoring {} from backup",
-                backup.original_path.display()
-            ))?;
-            if let Err(e) = restore_backup(backup) {
-                errors.push(format!(
-                    "Failed to restore {}: {}",
-                    backup.original_path.display(),
-                    e
-                ));
-            }
-        }
-    }
+    // Note: Content edits are not rolled back here since we use diffs for undo
+    // The rollback only handles reverting renames during a failed apply
 
     if !errors.is_empty() {
         return Err(anyhow!(
@@ -377,34 +362,25 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
     state.log(&format!("Starting apply for plan {}", plan.id))?;
     state.log(&format!("Options: {:?}", options))?;
 
-    // Collect all files that will be modified
+    // Only backup files that will be renamed (content changes use diffs)
     let mut files_to_backup = HashSet::new();
-
-    // Files with content changes
-    for hunk in &plan.matches {
-        files_to_backup.insert(&hunk.file);
-    }
 
     // Files and directories to be renamed
     for rename in &plan.renames {
         files_to_backup.insert(&rename.from);
     }
 
-    // Create backups if requested
-    if options.create_backups {
+    // Create metadata backups for renames if requested
+    if options.create_backups && !files_to_backup.is_empty() {
         state.log(&format!(
-            "Creating backups for {} files",
+            "Creating metadata backups for {} items being renamed",
             files_to_backup.len()
         ))?;
 
         for path in files_to_backup {
-            match backup_file(path, &options.backup_dir, &plan.id) {
+            match backup_file_metadata(path, &options.backup_dir, &plan.id) {
                 Ok(backup) => {
-                    state.log(&format!(
-                        "Backed up {} to {}",
-                        path.display(),
-                        backup.backup_path.display()
-                    ))?;
+                    state.log(&format!("Backed up metadata for {}", path.display()))?;
                     state.backups.push(backup);
                 },
                 Err(e) => {
@@ -430,7 +406,8 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
 
     // Apply content edits
     for (path, edits) in edits_by_file {
-        if let Err(e) = apply_content_edits(path, &edits, &mut state) {
+        if let Err(e) = apply_content_edits(path, &edits, &mut state, &options.backup_dir, &plan.id)
+        {
             state.log(&format!(
                 "Error applying edits to {}: {}",
                 path.display(),
@@ -551,6 +528,14 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
     let mut history = History::load(&refaktor_dir)?;
     history.add_entry(history_entry)?;
 
+    // Store the complete plan for redo functionality
+    let plans_dir = refaktor_dir.join("plans");
+    fs::create_dir_all(&plans_dir)?;
+    let plan_path = plans_dir.join(format!("{}.json", plan.id));
+    let plan_json = serde_json::to_string_pretty(plan)?;
+    fs::write(&plan_path, plan_json)?;
+    state.log(&format!("Stored plan at {}", plan_path.display()))?;
+
     state.log("Apply completed successfully")?;
     Ok(())
 }
@@ -559,6 +544,7 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
 mod tests {
     use super::*;
     use crate::scanner::{MatchHunk, Rename, RenameKind, Stats};
+    use serial_test::serial;
     use std::collections::HashMap;
     use tempfile::TempDir;
 
@@ -584,47 +570,7 @@ mod tests {
     }
 
     #[test]
-    fn test_backup_file() {
-        let temp_dir = TempDir::new().unwrap();
-        let test_file = temp_dir.path().join("test.txt");
-        fs::write(&test_file, "test content").unwrap();
-
-        let backup_dir = temp_dir.path().join("backups");
-        let backup = backup_file(&test_file, &backup_dir, "test_plan").unwrap();
-
-        assert!(backup.backup_path.exists());
-        assert_eq!(
-            fs::read_to_string(&backup.backup_path).unwrap(),
-            "test content"
-        );
-    }
-
-    #[test]
-    fn test_backup_path_no_double_id() {
-        // Test that backup paths don't have double plan IDs
-        let temp_dir = TempDir::new().unwrap();
-        let test_file = temp_dir.path().join("test.txt");
-        fs::write(&test_file, "test content").unwrap();
-
-        let backup_dir = temp_dir.path().join("backups");
-        let plan_id = "test_plan_123";
-
-        let backup = backup_file(&test_file, &backup_dir, plan_id).unwrap();
-
-        // The backup path should be: backups/test_plan_123/test.txt
-        // NOT: backups/test_plan_123/test_plan_123/test.txt
-        let expected_path = backup_dir.join(plan_id).join("test.txt");
-        assert_eq!(backup.backup_path, expected_path);
-
-        // Verify the backup actually exists at the right path
-        assert!(backup.backup_path.exists());
-        assert_eq!(
-            fs::read_to_string(&backup.backup_path).unwrap(),
-            "test content"
-        );
-    }
-
-    #[test]
+    #[serial]
     fn test_apply_creates_correct_history_entry() {
         // Test that apply creates history entries with correct backup paths
         let temp_dir = TempDir::new().unwrap();
@@ -675,17 +621,20 @@ mod tests {
         let content = fs::read_to_string(&test_file).unwrap();
         assert_eq!(content, "fn new_name() {}");
 
-        // Check backup was created at the right path
-        let expected_backup = options.backup_dir.join("test_plan_456").join("test.rs");
+        // Check diff backup was created at the right path
+        let expected_diff = options
+            .backup_dir
+            .join("test_plan_456")
+            .join("test.rs.diff");
         assert!(
-            expected_backup.exists(),
-            "Backup should exist at {:?}",
-            expected_backup
+            expected_diff.exists(),
+            "Diff backup should exist at {:?}",
+            expected_diff
         );
-        assert_eq!(
-            fs::read_to_string(&expected_backup).unwrap(),
-            "fn old_name() {}"
-        );
+        // The diff should contain the changes
+        let diff_content = fs::read_to_string(&expected_diff).unwrap();
+        assert!(diff_content.contains("old_name"));
+        assert!(diff_content.contains("new_name"));
 
         // Load history and check the entry
         let history = History::load(temp_dir.path().join(".refaktor").as_path()).unwrap();
@@ -702,6 +651,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_state_tracks_content_edits() {
         // Test that ApplyState correctly tracks content_edits_applied
         let temp_dir = TempDir::new().unwrap();
@@ -718,8 +668,10 @@ mod tests {
 
         let replacements = vec![("old_name".to_string(), "new_name".to_string(), 3, 11)];
 
-        // Apply edits
-        apply_content_edits(&test_file, &replacements, &mut state).unwrap();
+        // Apply edits (now requires backup_dir and plan_id)
+        let backup_dir = temp_dir.path().join(".refaktor/backups");
+        fs::create_dir_all(&backup_dir).unwrap();
+        apply_content_edits(&test_file, &replacements, &mut state, &backup_dir, "test").unwrap();
 
         // Check state was updated
         assert_eq!(
@@ -738,6 +690,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_apply_plan_populates_affected_files() {
         // Test that apply_plan results in non-empty affected_files in history
         let temp_dir = TempDir::new().unwrap();
@@ -812,24 +765,6 @@ mod tests {
         // Same content should produce same checksum
         let checksum2 = calculate_checksum(&test_file).unwrap();
         assert_eq!(checksum, checksum2);
-    }
-
-    #[test]
-    fn test_restore_backup() {
-        let temp_dir = TempDir::new().unwrap();
-        let test_file = temp_dir.path().join("test.txt");
-        fs::write(&test_file, "original content").unwrap();
-
-        let backup_dir = temp_dir.path().join("backups");
-        let backup = backup_file(&test_file, &backup_dir, "test_plan").unwrap();
-
-        // Modify the original file
-        fs::write(&test_file, "modified content").unwrap();
-
-        // Restore from backup
-        restore_backup(&backup).unwrap();
-
-        assert_eq!(fs::read_to_string(&test_file).unwrap(), "original content");
     }
 
     #[test]

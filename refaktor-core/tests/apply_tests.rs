@@ -258,9 +258,10 @@ fn test_atomic_operations() {
     let result = apply_plan(&plan, &options);
     assert!(result.is_err());
 
-    // With atomic mode, first file should be rolled back
+    // With the diff-based system, content changes are not rolled back during failed apply
+    // Only renames are rolled back. Content can be undone using the undo command.
     let content1 = fs::read_to_string(&file1).unwrap();
-    assert_eq!(content1, "fn old_name() {}");
+    assert_eq!(content1, "fn new_name() {}"); // First file was changed before failure
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use crate::apply::{apply_plan, calculate_checksum, ApplyOptions};
 use crate::history::{create_history_entry, History};
-use crate::scanner::{MatchHunk, Plan, Rename, RenameKind, Stats};
+use crate::scanner::Plan;
 use anyhow::{anyhow, Context, Result};
 use std::collections::HashMap;
 use std::fs;
@@ -64,27 +64,52 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
         }
     }
 
-    // SECOND: Restore files from backups (now files are at their original locations)
+    // SECOND: Apply diffs to restore original content (now files are at their original locations)
     let mut restored_files = Vec::new();
     for (path, _checksum) in &entry.affected_files {
         // If this file was renamed, it's now at its original location
         let current_path = rename_map.get(&path).unwrap_or(&path);
 
-        // The backup is stored at backups_path/filename (backups_path already includes plan_id)
-        let backup_path = entry
-            .backups_path
-            .join(current_path.file_name().unwrap_or(current_path.as_os_str()));
+        // The diff is stored at backups_path/filename.diff
+        let diff_filename = format!(
+            "{}.diff",
+            current_path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+        );
+        let diff_path = entry.backups_path.join(diff_filename);
 
-        if backup_path.exists() {
-            // Create parent directories if needed
-            if let Some(parent) = current_path.parent() {
-                fs::create_dir_all(parent)?;
+        if diff_path.exists() {
+            // Read the diff
+            let diff_content = fs::read_to_string(&diff_path)
+                .with_context(|| format!("Failed to read diff from {}", diff_path.display()))?;
+
+            // Apply the diff using patch command (reverse it to undo)
+            let output = std::process::Command::new("patch")
+                .args(["-R", "-p0"])  // -R for reverse, -p0 for no path stripping
+                .arg(current_path.to_str().unwrap())
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .and_then(|mut child| {
+                    use std::io::Write;
+                    if let Some(mut stdin) = child.stdin.take() {
+                        stdin.write_all(diff_content.as_bytes())?;
+                    }
+                    child.wait_with_output()
+                })
+                .context("Failed to apply diff")?;
+
+            if !output.status.success() {
+                return Err(anyhow!(
+                    "Failed to apply diff for {}: stderr: {}, stdout: {}",
+                    current_path.display(),
+                    String::from_utf8_lossy(&output.stderr),
+                    String::from_utf8_lossy(&output.stdout)
+                ));
             }
-
-            // Restore the file to its current (original) location
-            fs::copy(&backup_path, current_path).with_context(|| {
-                format!("Failed to restore {} from backup", current_path.display())
-            })?;
 
             restored_files.push(current_path.to_path_buf());
             eprintln!("  Restored: {}", current_path.display());
@@ -143,8 +168,17 @@ pub fn redo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
 
     eprintln!("Redoing refactoring '{}'...", id);
 
-    // Create a plan from the history entry
-    let plan = history_entry_to_plan(entry)?;
+    // Load the original plan from disk
+    let plan_path = refaktor_dir.join("plans").join(format!("{}.json", id));
+    if !plan_path.exists() {
+        return Err(anyhow!("Plan file not found for entry '{}'. This may be an old refactoring before plans were stored.", id));
+    }
+
+    let plan_json = fs::read_to_string(&plan_path)?;
+    let mut plan: Plan = serde_json::from_str(&plan_json)?;
+
+    // Give the redo a new ID to avoid conflicts
+    plan.id = format!("redo-{}-{}", id, chrono::Local::now().timestamp());
 
     // Apply the plan again
     let options = ApplyOptions {
@@ -160,82 +194,14 @@ pub fn redo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Convert a history entry back to a plan for re-application
-fn history_entry_to_plan(entry: &crate::history::HistoryEntry) -> Result<Plan> {
-    // Create a minimal plan from the history entry
-    // This won't have all the original match details, but has enough for redo
-    let mut plan = Plan {
-        id: format!("redo-{}-{}", entry.id, chrono::Local::now().timestamp()),
-        created_at: chrono::Local::now().to_rfc3339(),
-        old: entry.old.clone(),
-        new: entry.new.clone(),
-        styles: vec![], // Parse from strings if needed
-        includes: entry.includes.clone(),
-        excludes: entry.excludes.clone(),
-        matches: vec![], // We don't store the actual hunks in history
-        renames: vec![],
-        stats: Stats {
-            files_scanned: 0,
-            total_matches: 0,
-            matches_by_variant: HashMap::new(),
-            files_with_matches: entry.affected_files.len(),
-        },
-        version: "1.0.0".to_string(),
-    };
-
-    // Convert rename tuples to Rename structs
-    for (from, to) in &entry.renames {
-        let kind = if from.is_dir() {
-            RenameKind::Dir
-        } else {
-            RenameKind::File
-        };
-
-        plan.renames.push(Rename {
-            from: from.clone(),
-            to: to.clone(),
-            kind,
-            coercion_applied: None,
-        });
-    }
-
-    Ok(plan)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     #[test]
-    fn test_history_entry_to_plan() {
-        let entry = crate::history::HistoryEntry {
-            id: "test123".to_string(),
-            created_at: chrono::Local::now().to_rfc3339(),
-            old: "old_name".to_string(),
-            new: "new_name".to_string(),
-            styles: vec!["Snake".to_string()],
-            includes: vec!["*.rs".to_string()],
-            excludes: vec!["target/**".to_string()],
-            affected_files: HashMap::new(),
-            renames: vec![(PathBuf::from("old.txt"), PathBuf::from("new.txt"))],
-            backups_path: PathBuf::from("/tmp/backups"),
-            revert_of: None,
-            redo_of: None,
-        };
-
-        let plan = history_entry_to_plan(&entry).unwrap();
-
-        assert_eq!(plan.old, "old_name");
-        assert_eq!(plan.new, "new_name");
-        assert_eq!(plan.includes, vec!["*.rs"]);
-        assert_eq!(plan.excludes, vec!["target/**"]);
-        assert_eq!(plan.renames.len(), 1);
-        assert_eq!(plan.renames[0].from, PathBuf::from("old.txt"));
-        assert_eq!(plan.renames[0].to, PathBuf::from("new.txt"));
-    }
-
-    #[test]
+    #[serial]
     fn test_undo_with_content_and_rename() {
         let temp_dir = TempDir::new().unwrap();
         let refaktor_dir = temp_dir.path().join(".refaktor");
@@ -245,17 +211,22 @@ mod tests {
         let backup_dir = refaktor_dir.join("backups").join("test_apply_123");
         fs::create_dir_all(&backup_dir).unwrap();
 
-        // Create test files in their renamed state
+        // Create test file in its renamed state with modified content
+        // This simulates the state after apply: renamed and content changed
         let new_file = temp_dir.path().join("new_name.txt");
-        fs::write(&new_file, "new content").unwrap();
+        fs::write(&new_file, "modified content\n").unwrap();
 
-        // Create backup of original file - mimicking the actual backup structure
-        // The backup path preserves the full path structure (minus leading /)
-        let original_path = temp_dir.path().join("old_name.txt");
-        let relative_backup_path = original_path.strip_prefix("/").unwrap_or(&original_path);
-        let backup_file = backup_dir.join(relative_backup_path);
-        fs::create_dir_all(backup_file.parent().unwrap()).unwrap();
-        fs::write(&backup_file, "original content").unwrap();
+        // Create a diff backup that will restore the original content
+        // The diff shows: original -> modified
+        // When reversed with patch -R, it restores: modified -> original
+        let diff_content = r#"--- old_name.txt
++++ old_name.txt
+@@ -1 +1 @@
+-original content
++modified content
+"#;
+        let diff_file = backup_dir.join("old_name.txt.diff");
+        fs::write(&diff_file, diff_content).unwrap();
 
         // Create history entry representing the applied refactoring
         let mut affected_files = HashMap::new();
@@ -293,7 +264,10 @@ mod tests {
 
         // Verify content was restored
         let content = fs::read_to_string(&old_file).unwrap();
-        assert_eq!(content, "original content", "Content should be restored");
+        assert_eq!(
+            content, "original content\n",
+            "Content should be restored from modified"
+        );
 
         // Verify history has revert entry
         let updated_history = History::load(&refaktor_dir).unwrap();

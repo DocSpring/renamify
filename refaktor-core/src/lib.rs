@@ -79,7 +79,8 @@ pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> Wa
                 .ignore(true)
                 .parents(true)
                 .hidden(true)  // true = skip hidden files
-                .add_custom_ignore_filename(".rgignore");
+                .add_custom_ignore_filename(".rgignore")
+                .add_custom_ignore_filename(".rfignore");
         },
         1 => {
             // -u: Don't respect .gitignore, but respect others, skip hidden
@@ -87,10 +88,11 @@ pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> Wa
                 .git_ignore(false)  // Don't respect .gitignore
                 .git_global(true)   // Still respect global gitignore
                 .git_exclude(true)  // Still respect .git/info/exclude
-                .ignore(true)       // Still respect .ignore/.rgignore
+                .ignore(true)       // Still respect .ignore/.rgignore/.rfignore
                 .parents(true)      // Still check parent dirs
                 .hidden(true)       // Still skip hidden files
-                .add_custom_ignore_filename(".rgignore");
+                .add_custom_ignore_filename(".rgignore")
+                .add_custom_ignore_filename(".rfignore");
         },
         2 | 3 => {
             // -uu/-uuu: Don't respect any ignore files, show hidden
