@@ -1,0 +1,195 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { RefaktorService } from './refaktor-service';
+import { execa } from 'execa';
+
+// Mock execa
+vi.mock('execa');
+const mockedExeca = vi.mocked(execa);
+
+describe('RefaktorService', () => {
+  let service: RefaktorService;
+
+  beforeEach(() => {
+    service = new RefaktorService();
+    vi.clearAllMocks();
+  });
+
+  describe('checkAvailability', () => {
+    it('should return true when refaktor is available', async () => {
+      mockedExeca.mockResolvedValueOnce({ stdout: 'refaktor 0.1.0' } as any);
+      const result = await service.checkAvailability();
+      expect(result).toBe(true);
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', ['--version']);
+    });
+
+    it('should return false when refaktor is not available', async () => {
+      mockedExeca.mockRejectedValueOnce(new Error('Command not found'));
+      const result = await service.checkAvailability();
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('plan', () => {
+    it('should create a basic plan', async () => {
+      const mockOutput = 'PLAN SUMMARY\nOld: oldName\nNew: newName\nTotal matches: 5';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      const result = await service.plan({
+        old: 'oldName',
+        new: 'newName',
+      });
+
+      expect(result).toBe(mockOutput);
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', ['plan', 'oldName', 'newName']);
+    });
+
+    it('should handle all plan options', async () => {
+      const mockOutput = 'Plan created';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      await service.plan({
+        old: 'oldName',
+        new: 'newName',
+        includes: ['src/**/*.ts', 'lib/**/*.js'],
+        excludes: ['node_modules/**', 'dist/**'],
+        styles: ['snake', 'camel', 'pascal'],
+        previewFormat: 'summary',
+        dryRun: true,
+        renameFiles: false,
+        renameDirs: false,
+      });
+
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', [
+        'plan',
+        'oldName',
+        'newName',
+        '--include', 'src/**/*.ts',
+        '--include', 'lib/**/*.js',
+        '--exclude', 'node_modules/**',
+        '--exclude', 'dist/**',
+        '--styles', 'snake,camel,pascal',
+        '--preview-format', 'summary',
+        '--dry-run',
+        '--no-rename-files',
+        '--no-rename-dirs',
+      ]);
+    });
+
+    it('should handle plan errors', async () => {
+      const errorMessage = 'No matches found';
+      const error = new Error('Command failed') as any;
+      error.stderr = errorMessage;
+      mockedExeca.mockRejectedValueOnce(error);
+
+      await expect(service.plan({ old: 'foo', new: 'bar' })).rejects.toThrow(
+        `Refaktor plan failed: ${errorMessage}`
+      );
+    });
+  });
+
+  describe('apply', () => {
+    it('should apply with plan ID', async () => {
+      const mockOutput = 'Applied 10 changes';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      const result = await service.apply({ planId: 'abc123' });
+
+      expect(result).toBe(mockOutput);
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', ['apply', '--id', 'abc123']);
+    });
+
+    it('should apply with plan path', async () => {
+      const mockOutput = 'Applied changes';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      await service.apply({ planPath: '/path/to/plan.json' });
+
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', [
+        'apply',
+        '--plan', '/path/to/plan.json',
+      ]);
+    });
+
+    it('should handle apply options', async () => {
+      mockedExeca.mockResolvedValueOnce({ stdout: 'Applied' } as any);
+
+      await service.apply({
+        atomic: false,
+        commit: true,
+      });
+
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', [
+        'apply',
+        '--no-atomic',
+        '--commit',
+      ]);
+    });
+  });
+
+  describe('undo', () => {
+    it('should undo a refactoring', async () => {
+      const mockOutput = 'Undone successfully';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      const result = await service.undo('history123');
+
+      expect(result).toBe(mockOutput);
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', ['undo', 'history123']);
+    });
+
+    it('should handle undo errors', async () => {
+      const error = new Error('Command failed') as any;
+      error.stderr = 'History entry not found';
+      mockedExeca.mockRejectedValueOnce(error);
+
+      await expect(service.undo('invalid')).rejects.toThrow(
+        'Refaktor undo failed: History entry not found'
+      );
+    });
+  });
+
+  describe('redo', () => {
+    it('should redo a refactoring', async () => {
+      const mockOutput = 'Redone successfully';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      const result = await service.redo('history123');
+
+      expect(result).toBe(mockOutput);
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', ['redo', 'history123']);
+    });
+  });
+
+  describe('history', () => {
+    it('should get history without limit', async () => {
+      const mockOutput = 'History entries...';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      const result = await service.history();
+
+      expect(result).toBe(mockOutput);
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', ['history']);
+    });
+
+    it('should get history with limit', async () => {
+      const mockOutput = 'Limited history';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      await service.history(5);
+
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', ['history', '--limit', '5']);
+    });
+  });
+
+  describe('status', () => {
+    it('should get status', async () => {
+      const mockOutput = 'Status: 1 pending plan';
+      mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as any);
+
+      const result = await service.status();
+
+      expect(result).toBe(mockOutput);
+      expect(mockedExeca).toHaveBeenCalledWith('refaktor', ['status']);
+    });
+  });
+});
