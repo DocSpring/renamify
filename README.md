@@ -54,6 +54,7 @@ Refaktor respects various ignore files to skip files and directories during scan
 - `.rfignore` - Refaktor-specific ignore patterns
 
 You can control how ignore files are handled using the `-u` flag:
+
 - Default: Respects all ignore files and skips hidden files
 - `-u`: Ignores `.gitignore` but respects other ignore files
 - `-uu`: Ignores all ignore files and shows hidden files
@@ -99,8 +100,12 @@ MIT License - Copyright (c) 2025 DocSpring
 
 ---
 
-<div align="center">
-  <strong>Refaktor is supported by <a href="https://docspring.com">DocSpring</a></strong>
-  <br>
-  <sub>DocSpring is a powerful API for filling out and generating PDFs</sub>
-</div>
+## Supported By
+
+<a href="https://docspring.com">
+  <img src="https://docspring.com/assets/logo-text-1e09b5522ee8602e08f1e3c4851e1657b14bd49e2e633618c344b4dc23fcbf79.svg" alt="DocSpring Logo" width="200">
+</a>
+
+Refaktor is supported by [DocSpring](https://docspring.com).
+
+DocSpring is a powerful API for filling out and generating PDFs.

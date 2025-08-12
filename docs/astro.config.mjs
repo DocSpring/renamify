@@ -13,6 +13,9 @@ export default defineConfig({
       description:
         "Smart search & replace for code and files with case-aware transformations",
       plugins: [starlightImageZoom()],
+      components: {
+        Footer: "./src/components/Footer.astro",
+      },
       social: [
         {
           icon: "github",
