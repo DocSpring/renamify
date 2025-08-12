@@ -6,6 +6,19 @@ Smart search & replace for code and files with case-aware transformations and bu
 - Extension for VS Code and Cursor _(coming soon)_
 - MCP server for AI integrations _(coming soon)_
 
+## Help Wanted
+
+- If you're a Windows user, we'd love your help to get everything working on Windows!
+- MCP Server and VS Code + Cursor extensions are on our roadmap.
+  - If you're interested in helping us build these, please open an issue and let us know! (So we don't duplicate the effort.)
+- Contribute tests to help us get to >= 95% test coverage
+- Contribute fixes or improvements to the documentation. We got AI to write a lot of it and AI really likes making stuff up.
+- Please try out Refaktor and let us know if you have any feedback. Feel free to open issues:
+  - Found a bug?
+  - Not enough options?
+  - Too many options?
+  - Missing a feature?
+
 ## Features
 
 - Case-aware transformations (snake_case, kebab-case, camelCase, PascalCase, UPPER_SNAKE_CASE)
@@ -87,12 +100,18 @@ cargo test
 
 ### Code Coverage
 
-The `refaktor-core` library maintains at least 95% code coverage:
+The `refaktor-core` library maintains at least 85% code coverage:
 
 ```bash
 cargo install cargo-llvm-cov --version 0.6.15
 cargo llvm-cov --package refaktor-core
 ```
+
+### Contributing
+
+- Open an issue if you find a bug or have a feature request
+- If you open a PR, ensure your changes have solid test coverage
+- Run `cargo fmt` and `cargo clippy` to ensure your code is formatted correctly and passes linting
 
 ## License
 
