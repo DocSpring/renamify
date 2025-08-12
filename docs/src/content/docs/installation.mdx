@@ -3,14 +3,19 @@ title: Installation
 description: How to install Refaktor
 ---
 
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
 ## Quick Install
 
 Install Refaktor on Linux or macOS:
 
 ```bash
-# User-local install (default, no sudo needed)
 curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
+```
 
+### Alternative Install Options
+
+```bash
 # System-wide install
 curl -fsSL https://docspring.github.io/refaktor/install.sh | bash -s -- --system
 
@@ -21,58 +26,61 @@ curl -fsSL https://docspring.github.io/refaktor/install.sh | bash -s -- --prefix
 curl -fsSL https://docspring.github.io/refaktor/install.sh | bash -s -- --uninstall
 ```
 
-The install script:
-- Defaults to `~/.local/bin` (no sudo required)
-- Detects your OS and architecture automatically
-- Creates the directory if it doesn't exist
-- Provides shell-specific PATH instructions if needed
-- On macOS with Homebrew, suggests `brew install refaktor` (coming soon)
+The install script defaults to `~/.local/bin` (no sudo required) and detects your OS and architecture automatically.
 
-## Manual Installation
+## Download Binary
 
-### Linux
-
-#### x86_64 / amd64
-```bash
-curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-amd64.tar.gz | tar xz
-sudo mv refaktor /usr/local/bin/refaktor
-sudo chmod 755 /usr/local/bin/refaktor
-```
-
-#### arm64
-```bash
-curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-arm64.tar.gz | tar xz
-sudo mv refaktor /usr/local/bin/refaktor
-sudo chmod 755 /usr/local/bin/refaktor
-```
-
-### macOS
-
-#### Intel (x86_64)
-```bash
-curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-amd64.tar.gz | tar xz
-sudo mv refaktor /usr/local/bin/refaktor
-sudo chmod 755 /usr/local/bin/refaktor
-```
-
-#### Apple Silicon (arm64)
-```bash
-curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-arm64.tar.gz | tar xz
-sudo mv refaktor /usr/local/bin/refaktor
-sudo chmod 755 /usr/local/bin/refaktor
-```
-
-### Windows
-
-*Coming soon - Windows builds will be available in a future release*
-
-## Install Script
-
-*Coming soon*
-
-```bash
-curl -fsSL https://install.refaktor.dev | sh
-```
+<Tabs>
+  <TabItem label="Linux">
+    ### x86_64 / amd64
+    ```bash
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-amd64.tar.gz | tar xz
+    sudo mv refaktor /usr/local/bin/refaktor
+    sudo chmod 755 /usr/local/bin/refaktor
+    refaktor --version
+    ```
+    
+    ### arm64
+    ```bash
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-arm64.tar.gz | tar xz
+    sudo mv refaktor /usr/local/bin/refaktor
+    sudo chmod 755 /usr/local/bin/refaktor
+    refaktor --version
+    ```
+  </TabItem>
+  
+  <TabItem label="macOS">
+    ### Intel (x86_64)
+    ```bash
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-amd64.tar.gz | tar xz
+    sudo mv refaktor /usr/local/bin/refaktor
+    sudo chmod 755 /usr/local/bin/refaktor
+    refaktor --version
+    ```
+    
+    ### Apple Silicon (arm64)
+    ```bash
+    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-arm64.tar.gz | tar xz
+    sudo mv refaktor /usr/local/bin/refaktor
+    sudo chmod 755 /usr/local/bin/refaktor
+    refaktor --version
+    ```
+  </TabItem>
+  
+  <TabItem label="Windows">
+    *Coming soon - Windows builds will be available in a future release*
+    
+    ### Build from Source (Alternative)
+    ```powershell
+    # Install Rust for Windows from https://win.rustup.rs/
+    # Clone and build from source
+    git clone https://github.com/DocSpring/refaktor.git
+    cd refaktor
+    cargo build --release
+    # Copy target/release/refaktor.exe to your PATH
+    ```
+  </TabItem>
+</Tabs>
 
 ## Package Managers
 
@@ -81,6 +89,9 @@ curl -fsSL https://install.refaktor.dev | sh
 ```bash
 # Cargo
 cargo install refaktor
+
+# Homebrew (macOS)
+brew install refaktor
 
 # Chocolatey (Windows)
 choco install refaktor
@@ -105,7 +116,7 @@ cp ./target/release/refaktor /usr/local/bin/
 ## Verify Installation
 
 ```bash
-refaktor --help
+refaktor --version
 ```
 
-You should see the help output showing available commands and options.
+You should see the version number, confirming the installation was successful.
