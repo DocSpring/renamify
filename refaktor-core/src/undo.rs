@@ -88,8 +88,9 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
                 .with_context(|| format!("Failed to read diff from {}", diff_path.display()))?;
 
             // Apply the diff using patch command (reverse it to undo)
+            // Use --fuzz=3 for lenient matching, allowing context to be off by several lines
             let output = std::process::Command::new("patch")
-                .args(["-R", "-p0"])  // -R for reverse, -p0 for no path stripping
+                .args(["-R", "-p0", "--fuzz=3"])  // -R for reverse, -p0 for no path stripping, --fuzz=3 for lenient matching
                 .arg(current_path.to_str().unwrap())
                 .stdin(std::process::Stdio::piped())
                 .stdout(std::process::Stdio::piped())

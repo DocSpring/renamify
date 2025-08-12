@@ -188,13 +188,12 @@ pub fn calculate_checksum(path: &Path) -> Result<String> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-/// Apply content edits to a file atomically
-fn apply_content_edits(
+/// Apply content edits to a file atomically without creating backup
+fn apply_content_edits_with_content(
     path: &Path,
+    original_content: &str,
     replacements: &[(String, String, usize, usize)],
     state: &mut ApplyState,
-    backup_dir: &Path,
-    plan_id: &str,
 ) -> Result<()> {
     state.log(&format!(
         "Applying {} edits to {}",
@@ -202,12 +201,8 @@ fn apply_content_edits(
         path.display()
     ))?;
 
-    // Read the original file content (for diff generation)
-    let original_content =
-        fs::read_to_string(path).with_context(|| format!("Failed to read {}", path.display()))?;
-
     // Apply replacements (in reverse order to maintain positions)
-    let mut modified = original_content.clone();
+    let mut modified = original_content.to_string();
 
     // Debug Train-Case replacements
     if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() {
@@ -245,10 +240,6 @@ fn apply_content_edits(
         modified.replace_range(*start..*end, after);
     }
 
-    // Create a diff backup before applying changes
-    let diff_path = create_diff_backup(path, &modified, backup_dir, plan_id)?;
-    state.log(&format!("Created diff backup at {}", diff_path.display()))?;
-
     // Write to temporary file in the same directory (for atomicity)
     let temp_path = path.with_extension(format!("{}.refaktor.tmp", std::process::id()));
 
@@ -275,6 +266,78 @@ fn apply_content_edits(
     state.log(&format!("Successfully applied edits to {}", path.display()))?;
 
     Ok(())
+}
+
+/// Create a diff backup using stored original content
+fn create_diff_backup_with_content(
+    original_path: &Path,
+    current_path: &Path,
+    original_content: &str,
+    backup_dir: &Path,
+    plan_id: &str,
+) -> Result<PathBuf> {
+    // Create backup directory structure
+    let backup_base = backup_dir.join(plan_id);
+    fs::create_dir_all(&backup_base)?;
+
+    // Generate diff path using the original filename + .diff extension
+    let diff_filename = format!(
+        "{}.diff",
+        original_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+    );
+    let diff_path = backup_base.join(diff_filename);
+
+    // Read current content
+    let current_content = fs::read_to_string(current_path).with_context(|| {
+        format!(
+            "Failed to read current content from {}",
+            current_path.display()
+        )
+    })?;
+
+    // Create temporary files for git diff
+    let temp_dir = std::env::temp_dir();
+    let temp_original = temp_dir.join(format!("refaktor_orig_{}.tmp", std::process::id()));
+    let temp_current = temp_dir.join(format!("refaktor_curr_{}.tmp", std::process::id()));
+
+    fs::write(&temp_original, original_content)?;
+    fs::write(&temp_current, &current_content)?;
+
+    // Generate diff using git diff
+    let output = std::process::Command::new("git")
+        .args([
+            "diff",
+            "--no-index",
+            "--no-prefix",
+            temp_original.to_str().unwrap(),
+            temp_current.to_str().unwrap(),
+        ])
+        .output();
+
+    // Clean up temp files
+    let _ = fs::remove_file(&temp_original);
+    let _ = fs::remove_file(&temp_current);
+
+    let output = output.context("Failed to run git diff")?;
+
+    // Replace temp paths with original path in diff
+    let diff_content = String::from_utf8_lossy(&output.stdout)
+        .replace(
+            &temp_original.to_string_lossy().to_string(),
+            &original_path.to_string_lossy(),
+        )
+        .replace(
+            &temp_current.to_string_lossy().to_string(),
+            &original_path.to_string_lossy(),
+        );
+
+    // Save the diff
+    fs::write(&diff_path, diff_content)?;
+
+    Ok(diff_path)
 }
 
 /// Check if filesystem is case-insensitive
@@ -414,8 +477,45 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
-    // Group content edits by file
-    let mut edits_by_file: BTreeMap<&Path, Vec<_>> = BTreeMap::new();
+    // STEP 0: Store original content for files that will be modified
+    let mut original_contents: HashMap<PathBuf, String> = HashMap::new();
+    if options.create_backups {
+        // Collect all files that will have content changes
+        let mut files_with_content_changes: HashSet<&Path> = HashSet::new();
+        for hunk in &plan.matches {
+            files_with_content_changes.insert(&hunk.file);
+        }
+
+        // Store original content before any changes
+        for file_path in files_with_content_changes {
+            if let Ok(content) = fs::read_to_string(file_path) {
+                original_contents.insert(file_path.to_path_buf(), content);
+            }
+        }
+    }
+
+    // STEP 1: Apply renames first
+    // Sort renames by depth (deepest first) for proper ordering
+    let mut renames = plan.renames.clone();
+    renames.sort_by_key(|r| std::cmp::Reverse(r.from.components().count()));
+
+    for rename in &renames {
+        let is_dir = rename.kind == crate::scanner::RenameKind::Dir;
+
+        if let Err(e) = perform_rename(&rename.from, &rename.to, is_dir, &mut state) {
+            state.log(&format!("Error performing rename: {}", e))?;
+
+            if options.atomic {
+                rollback(&mut state)?;
+            }
+
+            return Err(e);
+        }
+    }
+
+    // STEP 2: Apply content edits after renames
+    // Group content edits by file (using post-rename paths)
+    let mut edits_by_file: BTreeMap<PathBuf, Vec<_>> = BTreeMap::new();
 
     // Debug Train-Case patterns in plan
     if std::env::var("REFAKTOR_DEBUG_TRAIN_CASE").is_ok() {
@@ -436,8 +536,22 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
+    // Map original file paths to their new locations after renames
+    // Clone the data to avoid borrowing issues
+    let rename_map: HashMap<PathBuf, PathBuf> = state
+        .renames_performed
+        .iter()
+        .map(|(from, to)| (from.clone(), to.clone()))
+        .collect();
+
     for hunk in &plan.matches {
-        edits_by_file.entry(&hunk.file).or_default().push((
+        // Find the current path of the file (may have been renamed)
+        let current_path = rename_map
+            .get(&hunk.file)
+            .cloned()
+            .unwrap_or_else(|| hunk.file.clone());
+
+        edits_by_file.entry(current_path).or_default().push((
             hunk.before.clone(),
             hunk.after.clone(),
             hunk.start,
@@ -445,13 +559,27 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         ));
     }
 
-    // Apply content edits
-    for (path, edits) in edits_by_file {
-        if let Err(e) = apply_content_edits(path, &edits, &mut state, &options.backup_dir, &plan.id)
+    // Apply content edits to files at their new locations
+    for (current_path, edits) in edits_by_file {
+        // Find the original path to get the pre-stored content
+        let original_path = state
+            .renames_performed
+            .iter()
+            .find(|(_, to)| to == &current_path)
+            .map(|(from, _)| from)
+            .unwrap_or(&current_path);
+
+        // Get the original content that we stored before renames
+        let original_content = original_contents
+            .get(original_path)
+            .ok_or_else(|| anyhow!("Original content not found for {}", original_path.display()))?;
+
+        if let Err(e) =
+            apply_content_edits_with_content(&current_path, original_content, &edits, &mut state)
         {
             state.log(&format!(
                 "Error applying edits to {}: {}",
-                path.display(),
+                current_path.display(),
                 e
             ))?;
 
@@ -463,22 +591,36 @@ pub fn apply_plan(plan: &Plan, options: &ApplyOptions) -> Result<()> {
         }
     }
 
-    // Sort renames by depth (deepest first) for proper ordering
-    let mut renames = plan.renames.clone();
-    renames.sort_by_key(|r| std::cmp::Reverse(r.from.components().count()));
+    // STEP 3: Generate diffs after all changes are complete
+    if options.create_backups {
+        state.log("Creating diff backups after all changes")?;
 
-    // Apply renames
-    for rename in &renames {
-        let is_dir = rename.kind == crate::scanner::RenameKind::Dir;
+        for (original_path, original_content) in &original_contents {
+            // Find the current path for this file (may have been renamed)
+            let current_path = rename_map
+                .get(original_path)
+                .cloned()
+                .unwrap_or_else(|| original_path.clone());
 
-        if let Err(e) = perform_rename(&rename.from, &rename.to, is_dir, &mut state) {
-            state.log(&format!("Error performing rename: {}", e))?;
-
-            if options.atomic {
-                rollback(&mut state)?;
+            // Only create diff if the file was actually modified
+            if state.content_edits_applied.contains(&current_path) {
+                if let Err(e) = create_diff_backup_with_content(
+                    original_path,
+                    &current_path,
+                    original_content,
+                    &options.backup_dir,
+                    &plan.id,
+                ) {
+                    state.log(&format!(
+                        "Failed to create diff backup for {}: {}",
+                        current_path.display(),
+                        e
+                    ))?;
+                    if !options.force {
+                        return Err(e);
+                    }
+                }
             }
-
-            return Err(e);
         }
     }
 
@@ -710,10 +852,10 @@ mod tests {
 
         let replacements = vec![("old_name".to_string(), "new_name".to_string(), 3, 11)];
 
-        // Apply edits (now requires backup_dir and plan_id)
-        let backup_dir = temp_dir.path().join(".refaktor/backups");
-        fs::create_dir_all(&backup_dir).unwrap();
-        apply_content_edits(&test_file, &replacements, &mut state, &backup_dir, "test").unwrap();
+        // Apply edits with pre-read content
+        let original_content = fs::read_to_string(&test_file).unwrap();
+        apply_content_edits_with_content(&test_file, &original_content, &replacements, &mut state)
+            .unwrap();
 
         // Check state was updated
         assert_eq!(
