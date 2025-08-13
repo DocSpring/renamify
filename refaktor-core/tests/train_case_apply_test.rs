@@ -42,7 +42,8 @@ fn test_train_case_patterns_are_replaced_in_apply() {
     };
 
     // Create the plan
-    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let mut plan =
+        scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print matches found
     println!("\n=== Matches found in plan ===");

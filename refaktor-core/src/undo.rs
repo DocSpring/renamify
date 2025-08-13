@@ -690,6 +690,347 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
+    fn test_undo_preserves_file_permissions_with_patches() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create backup directory
+        let backup_dir = refaktor_dir.join("backups").join("test_perms");
+        fs::create_dir_all(&backup_dir).unwrap();
+
+        // Create reverse patches directory
+        let reverse_patches_dir = backup_dir.join("reverse_patches");
+        fs::create_dir_all(&reverse_patches_dir).unwrap();
+
+        // Create plans directory
+        let plans_dir = refaktor_dir.join("plans");
+        fs::create_dir_all(&plans_dir).unwrap();
+
+        // Create test file with executable permissions
+        let test_file = temp_dir.path().join("script.sh");
+        fs::write(&test_file, "#!/bin/bash\necho 'new content'\n").unwrap();
+
+        // Set executable permissions (755)
+        let mut perms = fs::metadata(&test_file).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&test_file, perms.clone()).unwrap();
+
+        // Verify permissions were set
+        let original_mode = fs::metadata(&test_file).unwrap().permissions().mode();
+        assert_eq!(
+            original_mode & 0o777,
+            0o755,
+            "File should have 755 permissions"
+        );
+
+        // Create a reverse patch that will restore the original content
+        let reverse_patch = r"--- script.sh
++++ script.sh
+@@ -1,2 +1,2 @@
+ #!/bin/bash
+-echo 'new content'
++echo 'old content'
+";
+        // Create a hash for the patch file name
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(reverse_patch.as_bytes());
+        let hash = format!("{:x}", hasher.finalize());
+        let patch_file = reverse_patches_dir.join(format!("{}.patch", hash));
+        fs::write(&patch_file, reverse_patch).unwrap();
+
+        // Create a plan file for the undo to use
+        let plan = crate::scanner::Plan {
+            id: "test_perms".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old".to_string(),
+            new: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![crate::scanner::MatchHunk {
+                file: test_file.clone(),
+                line: 2,
+                col: 0,
+                variant: "old".to_string(),
+                before: "old".to_string(),
+                after: "new".to_string(),
+                start: 0,
+                end: 3,
+                line_before: None,
+                line_after: None,
+                coercion_applied: None,
+                original_file: Some(test_file.clone()),
+                renamed_file: None,
+                patch_hash: Some(hash),
+            }],
+            renames: vec![],
+            stats: crate::scanner::Stats {
+                files_scanned: 1,
+                total_matches: 1,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 1,
+            },
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        };
+        let plan_path = plans_dir.join("test_perms.json");
+        fs::write(&plan_path, serde_json::to_string(&plan).unwrap()).unwrap();
+
+        // Create history entry
+        let mut affected_files = HashMap::new();
+        affected_files.insert(test_file.clone(), "checksum123".to_string());
+
+        let entry = crate::history::HistoryEntry {
+            id: "test_perms".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old".to_string(),
+            new: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files,
+            renames: vec![],
+            backups_path: backup_dir,
+            revert_of: None,
+            redo_of: None,
+        };
+
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let mut history = History::load(&refaktor_dir).unwrap();
+        history.add_entry(entry).unwrap();
+        history.save().unwrap();
+
+        // Perform undo
+        undo_refactoring("test_perms", &refaktor_dir).unwrap();
+
+        // Verify content was restored
+        let content = fs::read_to_string(&test_file).unwrap();
+        assert!(
+            content.contains("old content"),
+            "Content should be restored"
+        );
+
+        // Verify permissions were preserved
+        let restored_mode = fs::metadata(&test_file).unwrap().permissions().mode();
+        assert_eq!(
+            restored_mode & 0o777,
+            0o755,
+            "File permissions should be preserved after undo"
+        );
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_undo_with_renames_and_patches_preserves_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let temp_dir = TempDir::new().unwrap();
+        let refaktor_dir = temp_dir.path().join(".refaktor");
+        fs::create_dir_all(&refaktor_dir).unwrap();
+
+        // Create backup directory
+        let backup_dir = refaktor_dir.join("backups").join("test_complex");
+        fs::create_dir_all(&backup_dir).unwrap();
+
+        // Create reverse patches directory
+        let reverse_patches_dir = backup_dir.join("reverse_patches");
+        fs::create_dir_all(&reverse_patches_dir).unwrap();
+
+        // Create plans directory
+        let plans_dir = refaktor_dir.join("plans");
+        fs::create_dir_all(&plans_dir).unwrap();
+
+        // Create a directory with an executable script inside (simulating renamed state)
+        let new_dir = temp_dir.path().join("new_scripts");
+        fs::create_dir(&new_dir).unwrap();
+
+        let renamed_file = new_dir.join("new_script.sh");
+        fs::write(&renamed_file, "#!/bin/bash\necho 'new content'\n").unwrap();
+
+        // Set executable permissions (755)
+        let mut perms = fs::metadata(&renamed_file).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&renamed_file, perms.clone()).unwrap();
+
+        // Create another executable that only has content changes (no rename)
+        let modified_file = temp_dir.path().join("build.sh");
+        fs::write(&modified_file, "#!/bin/bash\nmake new\n").unwrap();
+        let mut perms2 = fs::metadata(&modified_file).unwrap().permissions();
+        perms2.set_mode(0o755);
+        fs::set_permissions(&modified_file, perms2).unwrap();
+
+        // Create reverse patches
+        let patch1 = r"--- old_scripts/old_script.sh
++++ old_scripts/old_script.sh
+@@ -1,2 +1,2 @@
+ #!/bin/bash
+-echo 'new content'
++echo 'old content'
+";
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(patch1.as_bytes());
+        let hash1 = format!("{:x}", hasher.finalize());
+        fs::write(reverse_patches_dir.join(format!("{}.patch", hash1)), patch1).unwrap();
+
+        let patch2 = r"--- build.sh
++++ build.sh
+@@ -1,2 +1,2 @@
+ #!/bin/bash
+-make new
++make old
+";
+        let mut hasher2 = Sha256::new();
+        hasher2.update(patch2.as_bytes());
+        let hash2 = format!("{:x}", hasher2.finalize());
+        fs::write(reverse_patches_dir.join(format!("{}.patch", hash2)), patch2).unwrap();
+
+        // Create a plan with both renames and content changes
+        let old_dir = temp_dir.path().join("old_scripts");
+        let old_file = old_dir.join("old_script.sh");
+
+        let plan = crate::scanner::Plan {
+            id: "test_complex".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old".to_string(),
+            new: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![
+                crate::scanner::MatchHunk {
+                    file: old_file.clone(),
+                    line: 2,
+                    col: 0,
+                    variant: "old".to_string(),
+                    before: "old".to_string(),
+                    after: "new".to_string(),
+                    start: 0,
+                    end: 3,
+                    line_before: None,
+                    line_after: None,
+                    coercion_applied: None,
+                    original_file: Some(old_file.clone()),
+                    renamed_file: Some(renamed_file.clone()),
+                    patch_hash: Some(hash1),
+                },
+                crate::scanner::MatchHunk {
+                    file: modified_file.clone(),
+                    line: 2,
+                    col: 0,
+                    variant: "old".to_string(),
+                    before: "old".to_string(),
+                    after: "new".to_string(),
+                    start: 0,
+                    end: 3,
+                    line_before: None,
+                    line_after: None,
+                    coercion_applied: None,
+                    original_file: Some(modified_file.clone()),
+                    renamed_file: None,
+                    patch_hash: Some(hash2),
+                },
+            ],
+            renames: vec![
+                crate::scanner::Rename {
+                    from: old_dir.clone(),
+                    to: new_dir.clone(),
+                    kind: crate::scanner::RenameKind::Dir,
+                    coercion_applied: None,
+                },
+                crate::scanner::Rename {
+                    from: old_file.clone(),
+                    to: renamed_file.clone(),
+                    kind: crate::scanner::RenameKind::File,
+                    coercion_applied: None,
+                },
+            ],
+            stats: crate::scanner::Stats {
+                files_scanned: 2,
+                total_matches: 2,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 2,
+            },
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        };
+
+        let plan_path = plans_dir.join("test_complex.json");
+        fs::write(&plan_path, serde_json::to_string(&plan).unwrap()).unwrap();
+
+        // Create history entry
+        let mut affected_files = HashMap::new();
+        affected_files.insert(renamed_file.clone(), "checksum1".to_string());
+        affected_files.insert(modified_file.clone(), "checksum2".to_string());
+
+        let entry = crate::history::HistoryEntry {
+            id: "test_complex".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old".to_string(),
+            new: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files,
+            renames: vec![
+                (old_dir.clone(), new_dir.clone()),
+                (old_file.clone(), renamed_file.clone()),
+            ],
+            backups_path: backup_dir,
+            revert_of: None,
+            redo_of: None,
+        };
+
+        let history_path = refaktor_dir.join("history.json");
+        fs::write(&history_path, "[]").unwrap();
+        let mut history = History::load(&refaktor_dir).unwrap();
+        history.add_entry(entry).unwrap();
+        history.save().unwrap();
+
+        // Perform undo
+        undo_refactoring("test_complex", &refaktor_dir).unwrap();
+
+        // Verify renames were undone
+        assert!(!new_dir.exists(), "New directory should not exist");
+        assert!(old_dir.exists(), "Old directory should be restored");
+        assert!(old_file.exists(), "Old file should be restored");
+
+        // Verify content was restored
+        let content1 = fs::read_to_string(&old_file).unwrap();
+        assert!(
+            content1.contains("old content"),
+            "Content should be restored in renamed file"
+        );
+
+        let content2 = fs::read_to_string(&modified_file).unwrap();
+        assert!(
+            content2.contains("make old"),
+            "Content should be restored in modified file"
+        );
+
+        // THIS IS THE KEY TEST - Verify permissions were preserved for both files
+        let mode1 = fs::metadata(&old_file).unwrap().permissions().mode();
+        assert_eq!(
+            mode1 & 0o777,
+            0o755,
+            "Renamed file permissions should be preserved after undo"
+        );
+
+        let mode2 = fs::metadata(&modified_file).unwrap().permissions().mode();
+        assert_eq!(
+            mode2 & 0o777,
+            0o755,
+            "Modified file permissions should be preserved after undo"
+        );
+    }
+
+    #[test]
     fn test_undo_case_insensitive_rename() {
         let temp_dir = TempDir::new().unwrap();
         let refaktor_dir = temp_dir.path().join(".refaktor");

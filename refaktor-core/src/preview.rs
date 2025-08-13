@@ -554,9 +554,10 @@ mod tests {
                     line_before: Some("let old_name = 42;".to_string()),
                     line_after: Some("let new_name = 42;".to_string()),
                     coercion_applied: None,
-                original_file: None,
-                renamed_file: None,
-                patch_hash: None,                },
+                    original_file: None,
+                    renamed_file: None,
+                    patch_hash: None,
+                },
                 MatchHunk {
                     file: PathBuf::from("src/main.rs"),
                     line: 20,
@@ -569,9 +570,10 @@ mod tests {
                     line_before: Some("return oldName;".to_string()),
                     line_after: Some("return newName;".to_string()),
                     coercion_applied: None,
-                original_file: None,
-                renamed_file: None,
-                patch_hash: None,                },
+                    original_file: None,
+                    renamed_file: None,
+                    patch_hash: None,
+                },
             ],
             renames: vec![Rename {
                 from: PathBuf::from("old_name.txt"),
@@ -586,7 +588,8 @@ mod tests {
                 files_with_matches: 1,
             },
             version: "1.0.0".to_string(),
-            created_directories: None,        }
+            created_directories: None,
+        }
     }
 
     #[test]
@@ -673,7 +676,8 @@ mod tests {
                 files_with_matches: 1,
             },
             version: "1.0.0".to_string(),
-            created_directories: None,        };
+            created_directories: None,
+        };
 
         let result = render_diff(&plan, false);
 
@@ -738,7 +742,8 @@ mod tests {
                 files_with_matches: 0,
             },
             version: "1.0.0".to_string(),
-            created_directories: None,        };
+            created_directories: None,
+        };
 
         let table = render_table(&plan, false, true);
         assert!(table.contains("TOTALS"));
