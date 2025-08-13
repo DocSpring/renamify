@@ -4,7 +4,7 @@ use tempfile::TempDir;
 
 #[test]
 fn test_hyphenated_capitalized_replacement() {
-    // Test that "Refaktor-specific" becomes "RenamedRefactoringTool-specific"
+    // Test that "Tool-specific" becomes "NewToolName-specific"
     // when capitalized word appears in hyphenated context
 
     let temp_dir = TempDir::new().unwrap();
@@ -16,11 +16,11 @@ fn test_hyphenated_capitalized_replacement() {
         &test_file,
         r#"# Documentation
 
-- `.rfignore` - Refaktor-specific ignore patterns (useful for excluding files from refactoring without affecting Git)
-- Use Refaktor-compatible tools for better integration
-- The Refaktor-engine processes files efficiently
-- Try refaktor-specific settings (lowercase should remain kebab)
-- Run Refaktor-CLI for command-line usage
+- `.rfignore` - Tool-specific ignore patterns (useful for excluding files from refactoring without affecting Git)
+- Use Tool-compatible tools for better integration
+- The Tool-engine processes files efficiently
+- Try tool-specific settings (lowercase should remain kebab)
+- Run Tool-CLI for command-line usage
 "#,
     )
     .unwrap();
@@ -43,7 +43,7 @@ fn test_hyphenated_capitalized_replacement() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "tool", "new_tool_name", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== All matches found ===");
@@ -52,11 +52,11 @@ fn test_hyphenated_capitalized_replacement() {
     }
 
     // Should find and replace:
-    // - "Refaktor-specific" -> "RenamedRefactoringTool-specific" (appears once in line 2)
-    // - "Refaktor-compatible" -> "RenamedRefactoringTool-compatible"
-    // - "Refaktor-engine" -> "RenamedRefactoringTool-engine"
-    // - "refaktor-specific" -> "renamed-refactoring-tool-specific"
-    // - "Refaktor-CLI" -> "Renamed-Refactoring-Tool-CLI" (Train case)
+    // - "Tool-specific" -> "NewToolName-specific" (appears once in line 2)
+    // - "Tool-compatible" -> "NewToolName-compatible"
+    // - "Tool-engine" -> "NewToolName-engine"
+    // - "tool-specific" -> "new-tool-name-specific"
+    // - "Tool-CLI" -> "New-Tool-Name-CLI" (Train case)
 
     assert!(
         plan.matches.len() >= 5,
@@ -68,51 +68,52 @@ fn test_hyphenated_capitalized_replacement() {
     let has_pascal_specific = plan
         .matches
         .iter()
-        .any(|m| m.before == "Refaktor-specific" && m.after == "RenamedRefactoringTool-specific");
+        .any(|m| m.before == "Tool-specific" && m.after == "NewToolName-specific");
     assert!(
         has_pascal_specific,
-        "Should replace 'Refaktor-specific' with 'RenamedRefactoringTool-specific'"
+        "Should replace 'Tool-specific' with 'NewToolName-specific'"
     );
 
-    let has_pascal_compatible = plan.matches.iter().any(|m| {
-        m.before == "Refaktor-compatible" && m.after == "RenamedRefactoringTool-compatible"
-    });
+    let has_pascal_compatible = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "Tool-compatible" && m.after == "NewToolName-compatible");
     assert!(
         has_pascal_compatible,
-        "Should replace 'Refaktor-compatible' with 'RenamedRefactoringTool-compatible'"
+        "Should replace 'Tool-compatible' with 'NewToolName-compatible'"
     );
 
     let has_pascal_engine = plan
         .matches
         .iter()
-        .any(|m| m.before == "Refaktor-engine" && m.after == "RenamedRefactoringTool-engine");
+        .any(|m| m.before == "Tool-engine" && m.after == "NewToolName-engine");
     assert!(
         has_pascal_engine,
-        "Should replace 'Refaktor-engine' with 'RenamedRefactoringTool-engine'"
+        "Should replace 'Tool-engine' with 'NewToolName-engine'"
     );
 
     let has_kebab_specific = plan
         .matches
         .iter()
-        .any(|m| m.before == "refaktor-specific" && m.after == "renamed-refactoring-tool-specific");
+        .any(|m| m.before == "tool-specific" && m.after == "new-tool-name-specific");
     assert!(
         has_kebab_specific,
-        "Should replace 'refaktor-specific' with 'renamed-refactoring-tool-specific'"
+        "Should replace 'tool-specific' with 'new-tool-name-specific'"
     );
 
     let has_train_cli = plan
         .matches
         .iter()
-        .any(|m| m.before == "Refaktor-CLI" && m.after == "Renamed-Refactoring-Tool-CLI");
+        .any(|m| m.before == "Tool-CLI" && m.after == "New-Tool-Name-CLI");
     assert!(
         has_train_cli,
-        "Should replace 'Refaktor-CLI' with 'Renamed-Refactoring-Tool-CLI'"
+        "Should replace 'Tool-CLI' with 'New-Tool-Name-CLI'"
     );
 }
 
 #[test]
 fn test_train_case_replacement() {
-    // Test that Train-Case style enables "Renamed-Refactoring-Tool-Specific" replacements
+    // Test that Train-Case style enables "New-Tool-Name-Specific" replacements
 
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
@@ -123,9 +124,9 @@ fn test_train_case_replacement() {
         &test_file,
         r#"# Train-Case Examples
 
-- Refaktor-Specific-Settings for configuration
-- Use Refaktor-Core-Engine for processing
-- The Refaktor-Based-Solution works well
+- Tool-Specific-Settings for configuration
+- Use Tool-Core-Engine for processing
+- The Tool-Based-Solution works well
 "#,
     )
     .unwrap();
@@ -148,7 +149,7 @@ fn test_train_case_replacement() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "tool", "new_tool_name", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== Train-Case matches found ===");
@@ -157,34 +158,34 @@ fn test_train_case_replacement() {
     }
 
     // With Train-Case enabled, should replace:
-    // - "Refaktor-Specific-Settings" -> "Renamed-Refactoring-Tool-Specific-Settings"
-    // - "Refaktor-Core-Engine" -> "Renamed-Refactoring-Tool-Core-Engine"
-    // - "Refaktor-Based-Solution" -> "Renamed-Refactoring-Tool-Based-Solution"
+    // - "Tool-Specific-Settings" -> "New-Tool-Name-Specific-Settings"
+    // - "Tool-Core-Engine" -> "New-Tool-Name-Core-Engine"
+    // - "Tool-Based-Solution" -> "New-Tool-Name-Based-Solution"
 
     let has_train_specific = plan.matches.iter().any(|m| {
-        m.before == "Refaktor-Specific-Settings"
-            && m.after == "Renamed-Refactoring-Tool-Specific-Settings"
+        m.before == "Tool-Specific-Settings" && m.after == "New-Tool-Name-Specific-Settings"
     });
     assert!(
         has_train_specific,
-        "Should replace 'Refaktor-Specific-Settings' with 'Renamed-Refactoring-Tool-Specific-Settings'"
+        "Should replace 'Tool-Specific-Settings' with 'New-Tool-Name-Specific-Settings'"
     );
 
-    let has_train_core = plan.matches.iter().any(|m| {
-        m.before == "Refaktor-Core-Engine" && m.after == "Renamed-Refactoring-Tool-Core-Engine"
-    });
+    let has_train_core = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "Tool-Core-Engine" && m.after == "New-Tool-Name-Core-Engine");
     assert!(
         has_train_core,
-        "Should replace 'Refaktor-Core-Engine' with 'Renamed-Refactoring-Tool-Core-Engine'"
+        "Should replace 'Tool-Core-Engine' with 'New-Tool-Name-Core-Engine'"
     );
 
-    let has_train_based = plan.matches.iter().any(|m| {
-        m.before == "Refaktor-Based-Solution"
-            && m.after == "Renamed-Refactoring-Tool-Based-Solution"
-    });
+    let has_train_based = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "Tool-Based-Solution" && m.after == "New-Tool-Name-Based-Solution");
     assert!(
         has_train_based,
-        "Should replace 'Refaktor-Based-Solution' with 'Renamed-Refactoring-Tool-Based-Solution'"
+        "Should replace 'Tool-Based-Solution' with 'New-Tool-Name-Based-Solution'"
     );
 }
 
@@ -201,10 +202,10 @@ fn test_mixed_hyphenated_patterns() {
         &test_file,
         r#"Various patterns:
 - REFAKTOR-SPECIFIC (screaming snake in hyphenated context)
-- refaktor-Specific (mixed case - unusual)
-- Refaktor-specific-Tool (Pascal followed by lowercase in hyphenated)
-- refaktor-CLI-version (kebab with acronym)
-- The-Refaktor-Tool (Train-Case context)
+- tool-Specific (mixed case - unusual)
+- Tool-specific-Tool (Pascal followed by lowercase in hyphenated)
+- tool-CLI-version (kebab with acronym)
+- The-Tool-Tool (Train-Case context)
 "#,
     )
     .unwrap();
@@ -227,7 +228,7 @@ fn test_mixed_hyphenated_patterns() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "tool", "new_tool_name", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== Mixed hyphenated matches found ===");
@@ -241,4 +242,87 @@ fn test_mixed_hyphenated_patterns() {
         "Should find at least 5 matches in mixed patterns, found {}",
         plan.matches.len()
     );
+}
+
+#[test]
+fn test_four_component_pascal_case() {
+    // Test replacement of 4-component PascalCase identifiers
+    let temp_dir = TempDir::new().unwrap();
+    let root = temp_dir.path().to_path_buf();
+
+    let test_file = root.join("code.rs");
+    std::fs::write(
+        &test_file,
+        r#"// Test with 4-component PascalCase names
+use FooBarBazQux;
+use FooBarBazQuxClient;
+use FooBarBazQux::Engine;
+
+struct FooBarBazQuxConfig {
+    settings: FooBarBazQuxSettings,
+}
+
+// Also test hyphenated versions
+const CONFIG: &str = "FooBarBazQux-config";
+let client = "FooBarBazQux-client-v2";
+
+// And snake_case versions
+let foo_bar_baz_qux = init();
+use foo_bar_baz_qux_utils;
+"#,
+    )
+    .unwrap();
+
+    let options = PlanOptions {
+        exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None,
+        rename_files: false,
+        rename_dirs: false,
+        rename_root: false,
+        plan_out: PathBuf::from("plan.json"),
+        coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
+    };
+
+    let plan = scan_repository(&root, "FooBarBazQux", "AlphaBetaGammaDelta", &options).unwrap();
+
+    println!("\n=== Four-component PascalCase matches ===");
+    for m in &plan.matches {
+        println!("'{}' -> '{}'", m.before, m.after);
+    }
+
+    // Check PascalCase replacement
+    let has_pascal = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "FooBarBazQux" && m.after == "AlphaBetaGammaDelta");
+    assert!(has_pascal, "Should replace PascalCase FooBarBazQux");
+
+    // Check PascalCase with suffix
+    let has_pascal_client = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "FooBarBazQuxClient" && m.after == "AlphaBetaGammaDeltaClient");
+    assert!(has_pascal_client, "Should replace FooBarBazQuxClient");
+
+    // Check snake_case replacement
+    let has_snake = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "foo_bar_baz_qux" && m.after == "alpha_beta_gamma_delta");
+    assert!(has_snake, "Should replace snake_case foo_bar_baz_qux");
+
+    // Check hyphenated PascalCase
+    let has_hyphen_pascal = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "FooBarBazQux-config" && m.after == "AlphaBetaGammaDelta-config");
+    assert!(has_hyphen_pascal, "Should replace FooBarBazQux-config");
 }
