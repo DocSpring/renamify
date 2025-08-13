@@ -2,9 +2,17 @@
 set -euo pipefail
 
 # Faster: build debug for the loop, build release once at the end
-export CARGO_TARGET_DIR=/tmp/refaktor-target
-
+export CARGO_TARGET_DIR=/tmp/refaktor-e2e-target
 WORKDIR=./refaktor-e2e-test
+
+if [ -z "${CI:-}" ]; then
+  RUSTC_WRAPPER="$(command -v sccache)"
+  if [ -z "$RUSTC_WRAPPER" ]; then
+    echo "sscache not found. Please install it."
+  fi
+  SCCACHE_DIR="${SCCACHE_DIR:-$HOME/.cache/sccache}"
+  export RUSTC_WRAPPER SCCACHE_DIR
+fi
 
 if [ -d "$WORKDIR" ]; then
   echo "Removing existing $WORKDIR"
@@ -89,15 +97,30 @@ echo "✓ No instances of 'refaktor' found"
 
 echo "=== Build debug for awesome_file_renaming_tool and check ==="
 cargo build
-DEBUG_SSAR="$CARGO_TARGET_DIR/debug/awesome_file_renaming_tool"
-"$DEBUG_SSAR" --version
+DEBUG_AFRT="$CARGO_TARGET_DIR/debug/awesome_file_renaming_tool"
+"$DEBUG_AFRT" --version
 
 echo "=== Running tests with new name ==="
-cargo test
+# Have to skip the snapshot test that renames itself again since the snapshot changes
+cargo test -- --skip test_root_directory_rename_handling
+
+echo "=== Running $DEBUG_AFRT init to add .awesome_file_renaming_tool/ to .gitignore"
+"$DEBUG_AFRT" init
+
+if ! rg .awesome_file_renaming_tool/ .gitignore; then 
+  echo "ERROR: Did not find .awesome_file_renaming_tool/ in .gitignore!"
+  cat .gitignore
+  exit 1
+fi
+echo "✓ Found .awesome_file_renaming_tool/ in .gitignore"
+
+echo "=== Committing change to .gitignore"
+git add .gitignore
+git commit -m "Added .awesome_file_renaming_tool/ to .gitignore"
 
 echo "=== Testing awesome_file_renaming_tool rename back to refaktor ==="
 # Use awesome_file_renaming_tool to rename itself back
-"$DEBUG_SSAR" rename awesome_file_renaming_tool refaktor --preview summary
+"$DEBUG_AFRT" rename awesome_file_renaming_tool refaktor --preview summary --yes
 
 # Verify the rename worked
 if [ -f "awesome-file-renaming-tool-core/Cargo.toml" ]; then
@@ -111,7 +134,7 @@ fi
 
 # Verify no instances of "awesome_file_renaming_tool" or "awesome-file-renaming-tool" remain
 echo "Checking for remaining instances of 'awesome_file_renaming_tool' or 'awesome-file-renaming-tool'..."
-if rg -i "(awesome_file_renaming_tool|awesome-file-renaming-tool|smartsearchandreplace)"; then
+if rg -i "(awesome_file_renaming_tool|awesome-file-renaming-tool|awesomefilerenamingtool)"; then
   echo "ERROR: Found remaining instances of 'awesome_file_renaming_tool' in the codebase!"
   exit 1
 fi
