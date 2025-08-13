@@ -52,7 +52,7 @@ fn test_hyphenated_capitalized_replacement() {
     // - "Refaktor-compatible" -> "RenamedRefactoringTool-compatible"
     // - "Refaktor-engine" -> "RenamedRefactoringTool-engine"
     // - "refaktor-specific" -> "renamed-refactoring-tool-specific"
-    // - "Refaktor-CLI" -> "RenamedRefactoringTool-CLI"
+    // - "Refaktor-CLI" -> "Renamed-Refactoring-Tool-CLI" (Train case)
 
     assert!(
         plan.matches.len() >= 5,
@@ -96,13 +96,13 @@ fn test_hyphenated_capitalized_replacement() {
         "Should replace 'refaktor-specific' with 'renamed-refactoring-tool-specific'"
     );
 
-    let has_pascal_cli = plan
+    let has_train_cli = plan
         .matches
         .iter()
-        .any(|m| m.before == "Refaktor-CLI" && m.after == "RenamedRefactoringTool-CLI");
+        .any(|m| m.before == "Refaktor-CLI" && m.after == "Renamed-Refactoring-Tool-CLI");
     assert!(
-        has_pascal_cli,
-        "Should replace 'Refaktor-CLI' with 'RenamedRefactoringTool-CLI'"
+        has_train_cli,
+        "Should replace 'Refaktor-CLI' with 'Renamed-Refactoring-Tool-CLI'"
     );
 }
 

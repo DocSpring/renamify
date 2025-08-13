@@ -91,8 +91,8 @@ fn test_rename_command_with_train_case_patterns() {
     );
 
     assert!(
-        updated_content.contains("SmartSearchAndReplace-CLI"),
-        "Should contain 'SmartSearchAndReplace-CLI' after replacement"
+        updated_content.contains("Smart-Search-And-Replace-CLI"),
+        "Should contain 'Smart-Search-And-Replace-CLI' after replacement"
     );
 
     assert!(

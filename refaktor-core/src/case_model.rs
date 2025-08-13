@@ -108,10 +108,24 @@ pub fn detect_style(s: &str) -> Option<Style> {
 }
 
 fn is_train_case(s: &str) -> bool {
+    let acronym_set = crate::acronym::AcronymSet::default();
+
     s.split('-').all(|word| {
-        !word.is_empty()
-            && word.bytes().next().is_some_and(|b| b.is_ascii_uppercase())
-            && word.bytes().skip(1).all(|b| b.is_ascii_lowercase())
+        if word.is_empty() {
+            return false;
+        }
+
+        // Check if it's Title case (First upper, rest lower)
+        let is_title = word.bytes().next().is_some_and(|b| b.is_ascii_uppercase())
+            && word.bytes().skip(1).all(|b| b.is_ascii_lowercase());
+
+        // Check if it's a known acronym (all uppercase)
+        let is_acronym = word.len() >= 2
+            && word.bytes().all(|b| b.is_ascii_uppercase())
+            && acronym_set.is_acronym(word);
+
+        // Accept either Title case or known acronym
+        is_title || is_acronym
     })
 }
 
@@ -124,32 +138,71 @@ fn is_title_case(s: &str) -> bool {
 }
 
 pub fn parse_to_tokens(s: &str) -> TokenModel {
+    parse_to_tokens_with_acronyms(s, &crate::acronym::AcronymSet::default())
+}
+
+pub fn parse_to_tokens_with_acronyms(
+    s: &str,
+    acronym_set: &crate::acronym::AcronymSet,
+) -> TokenModel {
     let mut tokens = Vec::new();
     let bytes = s.as_bytes();
     let mut current = Vec::new();
 
-    for i in 0..bytes.len() {
+    let mut i = 0;
+    while i < bytes.len() {
         let b = bytes[i];
 
         if b == b'_' || b == b'-' || b == b'.' || b == b' ' {
+            // Delimiter: finish current token and continue
             if !current.is_empty() {
                 tokens.push(Token::new(
                     std::str::from_utf8(&current).unwrap_or_default(),
                 ));
                 current.clear();
             }
+            i += 1;
         } else if b.is_ascii_alphabetic() || b.is_ascii_digit() {
+            // Handle special case for acronyms at the start of a new token
+            if current.is_empty() && b.is_ascii_uppercase() {
+                // Look ahead to find the end of consecutive uppercase letters
+                let mut j = i;
+                while j < bytes.len() && bytes[j].is_ascii_uppercase() {
+                    j += 1;
+                }
+
+                // Check if this uppercase sequence is a known acronym
+                if j > i + 1 {
+                    // At least 2 uppercase letters
+                    let potential_acronym = std::str::from_utf8(&bytes[i..j]).unwrap_or("");
+                    if acronym_set.is_acronym(potential_acronym) {
+                        // It's a known acronym, consume it as one token
+                        tokens.push(Token::new(potential_acronym));
+                        i = j;
+                        continue;
+                    }
+                }
+
+                // Not an acronym, but if followed by lowercase, take just the uppercase part
+                // This handles cases like "URLParser" -> "URL" + "Parser"
+                if j < bytes.len() && bytes[j].is_ascii_lowercase() && j > i + 1 {
+                    // Multiple uppercase letters followed by lowercase
+                    // Take all but the last uppercase letter as one token (e.g., "UR" from "URLParser")
+                    if j > i + 2 {
+                        let acronym_part = std::str::from_utf8(&bytes[i..j - 1]).unwrap_or("");
+                        tokens.push(Token::new(acronym_part));
+                        i = j - 1;
+                        continue;
+                    }
+                }
+            }
+
+            // Standard case boundary detection
             if i > 0 && !current.is_empty() {
                 let prev = bytes[i - 1];
-
                 let should_split = (prev.is_ascii_lowercase() && b.is_ascii_uppercase())
                     || (prev.is_ascii_alphabetic() && b.is_ascii_digit())
-                    || (prev.is_ascii_digit() && b.is_ascii_alphabetic())
-                    || (i > 0
-                        && prev.is_ascii_uppercase()
-                        && b.is_ascii_uppercase()
-                        && i + 1 < bytes.len()
-                        && bytes[i + 1].is_ascii_lowercase());
+                    || (prev.is_ascii_digit() && b.is_ascii_alphabetic());
 
                 if should_split {
                     tokens.push(Token::new(
@@ -158,7 +211,12 @@ pub fn parse_to_tokens(s: &str) -> TokenModel {
                     current.clear();
                 }
             }
+
             current.push(b);
+            i += 1;
+        } else {
+            // Skip non-alphanumeric, non-delimiter characters (treat as if they don't exist)
+            i += 1;
         }
     }
 
@@ -223,12 +281,24 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
             .collect::<Vec<_>>()
             .join(" "),
 
-        Style::Train => model
-            .tokens
-            .iter()
-            .map(|t| capitalize_first(&t.text))
-            .collect::<Vec<_>>()
-            .join("-"),
+        Style::Train => {
+            let acronym_set = crate::acronym::AcronymSet::default();
+            model
+                .tokens
+                .iter()
+                .map(|t| {
+                    // If the token is a known acronym in uppercase, preserve it
+                    if t.text.bytes().all(|b| b.is_ascii_uppercase())
+                        && acronym_set.is_acronym(&t.text)
+                    {
+                        t.text.clone()
+                    } else {
+                        capitalize_first(&t.text)
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("-")
+        },
 
         Style::ScreamingTrain => model
             .tokens
@@ -364,6 +434,8 @@ mod tests {
     #[test]
     fn test_parse_acronym() {
         let tokens = parse_to_tokens("XMLHttpRequest");
+        // With acronym-aware tokenization, XML stays together but Http gets split
+        // because HTTP is an acronym but "Http" in mixed case is not
         assert_eq!(tokens.tokens.len(), 3);
         assert_eq!(tokens.tokens[0].text, "XML");
         assert_eq!(tokens.tokens[1].text, "Http");

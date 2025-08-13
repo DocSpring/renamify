@@ -1,4 +1,5 @@
-use crate::case_model::{parse_to_tokens, to_style, Style, Token, TokenModel};
+use crate::acronym::{classify_hyphen_container, AcronymSet, HyphenContainerStyle};
+use crate::case_model::{detect_style, parse_to_tokens, to_style, Style, Token, TokenModel};
 use std::collections::BTreeMap;
 
 /// Represents a compound match where the pattern was found within a larger identifier

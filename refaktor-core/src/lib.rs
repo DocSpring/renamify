@@ -10,6 +10,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 
+pub mod acronym;
 pub mod apply;
 pub mod case_model;
 pub mod coercion;
