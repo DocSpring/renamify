@@ -42,9 +42,9 @@ DEBUG_REFAKTOR="$CARGO_TARGET_DIR/debug/refaktor"
 
 ensure_working_directory_is_clean "after initial build"
 
-echo "=== Testing refaktor rename to smart_search_and_replace ==="
+echo "=== Testing refaktor rename to awesome_file_renaming_tool ==="
 # Use refaktor to rename itself using plan/apply
-"$DEBUG_REFAKTOR" plan refaktor smart_search_and_replace --preview summary
+"$DEBUG_REFAKTOR" plan refaktor awesome_file_renaming_tool --preview summary
 "$DEBUG_REFAKTOR" apply
 
 # Verify no instances of "refaktor" remain in the codebase (case-insensitive)
@@ -59,8 +59,8 @@ if [ -d "refaktor-core" ]; then
   echo "ERROR: refaktor-core directory still exists!"
   exit 1
 fi
-if [ ! -f "smart-search-and-replace-core/Cargo.toml" ]; then
-  echo "ERROR: smart-search-and-replace-core/Cargo.toml not found!"
+if [ ! -f "awesome-file-renaming-tool-core/Cargo.toml" ]; then
+  echo "ERROR: awesome-file-renaming-tool-core/Cargo.toml not found!"
   exit 1
 fi
 echo "✓ No instances of 'refaktor' found"
@@ -69,8 +69,8 @@ echo "=== Testing undo functionality ==="
 "$DEBUG_REFAKTOR" undo latest
 
 # Verify the undo worked
-if [ -f "smart-search-and-replace-core/Cargo.toml" ]; then
-  echo "ERROR: smart-search-and-replace-core/Cargo.toml still exists!"
+if [ -f "awesome-file-renaming-tool-core/Cargo.toml" ]; then
+  echo "ERROR: awesome-file-renaming-tool-core/Cargo.toml still exists!"
   exit 1
 fi
 ensure_working_directory_is_clean "after undo"
@@ -87,21 +87,21 @@ if rg -i "refaktor"; then
 fi
 echo "✓ No instances of 'refaktor' found"
 
-echo "=== Build debug for smart_search_and_replace and check ==="
+echo "=== Build debug for awesome_file_renaming_tool and check ==="
 cargo build
-DEBUG_SSAR="$CARGO_TARGET_DIR/debug/smart_search_and_replace"
+DEBUG_SSAR="$CARGO_TARGET_DIR/debug/awesome_file_renaming_tool"
 "$DEBUG_SSAR" --version
 
 echo "=== Running tests with new name ==="
 cargo test
 
-echo "=== Testing smart_search_and_replace rename back to refaktor ==="
-# Use smart_search_and_replace to rename itself back
-"$DEBUG_SSAR" rename smart_search_and_replace refaktor --preview summary
+echo "=== Testing awesome_file_renaming_tool rename back to refaktor ==="
+# Use awesome_file_renaming_tool to rename itself back
+"$DEBUG_SSAR" rename awesome_file_renaming_tool refaktor --preview summary
 
 # Verify the rename worked
-if [ -f "smart-search-and-replace-core/Cargo.toml" ]; then
-  echo "ERROR: smart-search-and-replace-core/Cargo.toml still exists!"
+if [ -f "awesome-file-renaming-tool-core/Cargo.toml" ]; then
+  echo "ERROR: awesome-file-renaming-tool-core/Cargo.toml still exists!"
   exit 1
 fi
 if [ ! -f "refaktor-core/Cargo.toml" ]; then
@@ -109,13 +109,13 @@ if [ ! -f "refaktor-core/Cargo.toml" ]; then
   exit 1
 fi
 
-# Verify no instances of "smart_search_and_replace" or "smart-search-and-replace" remain
-echo "Checking for remaining instances of 'smart_search_and_replace' or 'smart-search-and-replace'..."
-if rg -i "(smart_search_and_replace|smart-search-and-replace|smartsearchandreplace)"; then
-  echo "ERROR: Found remaining instances of 'smart_search_and_replace' in the codebase!"
+# Verify no instances of "awesome_file_renaming_tool" or "awesome-file-renaming-tool" remain
+echo "Checking for remaining instances of 'awesome_file_renaming_tool' or 'awesome-file-renaming-tool'..."
+if rg -i "(awesome_file_renaming_tool|awesome-file-renaming-tool|smartsearchandreplace)"; then
+  echo "ERROR: Found remaining instances of 'awesome_file_renaming_tool' in the codebase!"
   exit 1
 fi
-echo "✓ No instances of 'smart_search_and_replace' found"
+echo "✓ No instances of 'awesome_file_renaming_tool' found"
 
 echo "=== Final release build and verification ==="
 cargo build --release
