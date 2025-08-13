@@ -350,7 +350,7 @@ fn test_apply_command_missing_plan() {
     let temp_dir = TempDir::new().unwrap();
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["apply", "--plan", "nonexistent.json"])
+        .args(["apply", "nonexistent.json"])
         .assert()
         .failure()
         .stderr(predicate::str::contains("Failed to read plan"));
@@ -393,10 +393,10 @@ fn test_apply_command_with_plan() {
     let plan_path = refaktor_dir.child("plan.json");
     plan_path.write_str(plan_json).unwrap();
 
-    // Apply the plan
+    // Apply the plan using file path as positional argument
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["apply", "--plan", ".refaktor/plan.json"])
+        .args(["apply", ".refaktor/plan.json"])
         .assert()
         .success()
         .stdout(predicate::str::contains("Applied"));
@@ -493,10 +493,10 @@ fn test_apply_command_with_custom_plan_path_keeps_file() {
     // Verify custom plan file exists before apply
     assert!(custom_plan_file.exists());
 
-    // Apply the plan using custom path
+    // Apply the plan using custom path as positional argument
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["apply", "--plan", "custom_plan.json"])
+        .args(["apply", "custom_plan.json"])
         .assert()
         .success()
         .stderr(predicate::str::contains("Plan applied successfully!"));

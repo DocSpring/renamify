@@ -70,7 +70,7 @@ fn load_plan_from_source_with_tracking(
 ) -> Result<(Plan, Option<PathBuf>)> {
     match (plan_path, plan_id) {
         (Some(path), _) => {
-            // --plan flag provided: load from specific file path - don't delete afterwards
+            // External call with explicit path - don't delete afterwards
             let plan_content = fs::read_to_string(&path)
                 .with_context(|| format!("Failed to read plan from {}", path.display()))?;
             let plan = serde_json::from_str(&plan_content)

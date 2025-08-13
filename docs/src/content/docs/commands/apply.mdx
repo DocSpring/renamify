@@ -8,13 +8,15 @@ The `apply` command executes a previously generated plan, making all the planned
 ## Usage
 
 ```bash
-refaktor apply [OPTIONS]
+refaktor apply [ID] [OPTIONS]
 ```
+
+## Arguments
+
+- `[ID]` - Plan ID, file path, or "latest" (optional - defaults to .refaktor/plan.json)
 
 ## Options
 
-- `--plan <PATH>` - Path to plan file (default: .refaktor/plan.json)
-- `--id <ID>` - History ID to apply
 - `--atomic` - Apply changes atomically (default: true)
 - `--commit` - Create a git commit after applying
 - `--force-with-conflicts` - Apply even if conflicts are detected
@@ -35,20 +37,32 @@ When you run `apply`, Refaktor:
 
 ### Basic Apply
 ```bash
-# Apply the default plan
+# Apply the default plan at .refaktor/plan.json
 refaktor apply
+
+# Explicitly apply the latest/default plan
+refaktor apply latest
 ```
 
-### Apply Specific Plan
+### Apply by Plan ID
 ```bash
-# Apply a plan from a custom location
-refaktor apply --plan ./my-refactor-plan.json
+# Apply a specific plan from history
+refaktor apply abc123def456
+
+# Apply from a file path
+refaktor apply ./my-refactor-plan.json
+
+# Apply from a custom location
+refaktor apply ./backups/old-plan.json
 ```
 
 ### Apply with Git Commit
 ```bash
 # Apply changes and create a git commit
 refaktor apply --commit
+
+# Apply specific plan with commit
+refaktor apply abc123def456 --commit
 ```
 
 ### Force Apply (Dangerous)

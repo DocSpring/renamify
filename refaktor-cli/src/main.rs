@@ -132,10 +132,6 @@ enum Commands {
         /// Plan ID or path to apply (optional - defaults to .refaktor/plan.json)
         id: Option<String>,
 
-        /// Path to plan file (overrides ID if both provided)
-        #[arg(long)]
-        plan: Option<PathBuf>,
-
         /// Apply changes atomically
         #[arg(long, default_value_t = true)]
         atomic: bool,
@@ -541,11 +537,10 @@ fn main() {
 
         Commands::Apply {
             id,
-            plan,
             atomic: _,
             commit,
             force_with_conflicts,
-        } => apply::handle_apply(plan, id, commit, force_with_conflicts),
+        } => apply::handle_apply(id, commit, force_with_conflicts),
 
         Commands::Undo { id } => undo::handle_undo(&id),
 

@@ -5,7 +5,7 @@ description: Watch Refaktor rename itself, then use the renamed binary to change
 
 import { LinkCard } from '@astrojs/starlight/components';
 
-Watch Refaktor rename itself to `smart_search_and_replace`, then use the renamed binary to change it back:
+Watch Refaktor rename itself to `awesome_file_renaming_tool`, then use the renamed binary to change it back:
 
 ```bash
 # Clone and build
@@ -13,16 +13,16 @@ git clone https://github.com/DocSpring/refaktor
 cd refaktor
 cargo build --release
 
-# Use refaktor to rename itself to smart_search_and_replace
-./target/release/refaktor rename refaktor smart_search_and_replace --preview table --yes
+# Use refaktor to rename itself to awesome_file_renaming_tool
+./target/release/refaktor rename refaktor awesome_file_renaming_tool --preview table --yes
 
 # Remove the old binary, run tests, and rebuild with the new name
 rm -rf target
 cargo test
 cargo build --release
 
-# Now use the new smart_search_and_replace binary to rename itself back to refaktor
-./target/release/smart_search_and_replace rename smart_search_and_replace refaktor --preview table --yes
+# Now use the new renamed binary to rename itself back to refaktor
+./target/release/awesome_file_renaming_tool rename awesome_file_renaming_tool refaktor --preview table --yes
 
 # Back to the original
 rm -rf target
