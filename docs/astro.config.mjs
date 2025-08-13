@@ -32,7 +32,7 @@ export default defineConfig({
           label: "Getting Started",
           items: [
             { label: "Installation", slug: "installation" },
-            { label: "Demo", slug: "demo" },
+            { label: "Self-Hosting Demo", slug: "self-hosting-demo" },
             { label: "Quick Start", slug: "quick-start" },
           ],
         },

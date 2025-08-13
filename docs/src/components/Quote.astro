@@ -1,0 +1,141 @@
+---
+export interface Props {
+  author?: string;
+  source?: string;
+  sourceUrl?: string;
+}
+
+const { author, source, sourceUrl } = Astro.props;
+---
+
+<figure class="quote-container">
+  <blockquote class="quote-content">
+    <svg class="quote-mark quote-mark-left" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+      <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+    </svg>
+    <slot />
+    <svg class="quote-mark quote-mark-right" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+      <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+    </svg>
+  </blockquote>
+  {(author || source) && (
+    <figcaption class="quote-footer">
+      <cite>
+        {sourceUrl ? (
+          <a href={sourceUrl} class="quote-source-link" target="_blank" rel="noopener noreferrer">
+            {author && <span class="quote-author">— {author}</span>}
+            {author && source && ', '}
+            {source && <span class="quote-source">{source}</span>}
+          </a>
+        ) : (
+          <>
+            {author && <span class="quote-author">— {author}</span>}
+            {author && source && ', '}
+            {source && <span class="quote-source">{source}</span>}
+          </>
+        )}
+      </cite>
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .quote-container {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--sl-color-gray-6);
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--sl-color-accent);
+    position: relative;
+  }
+
+  .quote-content {
+    margin: 0;
+    padding: 0 3.5rem;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: var(--sl-color-text);
+    font-style: italic;
+    position: relative;
+  }
+
+  .quote-mark {
+    position: absolute;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: var(--sl-color-gray-4);
+    opacity: 0.4;
+  }
+
+  .quote-mark-left {
+    top: 0;
+    left: 0;
+    transform: scaleX(-1);
+  }
+
+  .quote-mark-right {
+    bottom: 0;
+    right: 0;
+  }
+
+  .quote-footer {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--sl-color-gray-5);
+    font-size: 0.9rem;
+    color: var(--sl-color-gray-3);
+    text-align: right;
+  }
+
+  .quote-author {
+    font-weight: 500;
+  }
+
+  .quote-source {
+    font-style: italic;
+  }
+
+  a.quote-source-link {
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  a.quote-source-link:hover {
+    text-decoration: underline;
+    color: var(--sl-color-gray-2);
+  }
+
+  /* Dark mode adjustments */
+  :global([data-theme="dark"]) .quote-container {
+    background: var(--sl-color-gray-5);
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .quote-container {
+      padding: 1rem;
+    }
+
+    .quote-content {
+      padding: 0 1.5rem;
+      font-size: 1rem;
+    }
+
+    .quote-mark {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .quote-mark-left {
+      left: -0.5rem;
+      transform: scaleX(-1);
+    }
+
+    .quote-mark-right {
+      right: -0.5rem;
+    }
+  }
+</style>

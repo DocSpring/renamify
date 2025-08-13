@@ -1,11 +1,23 @@
 ---
-title: Demo
-description: Watch Refaktor rename itself, then use the renamed binary to change it back
+title: Self-Hosting Demo
+description: Watch Refaktor rename itself, run the test suite using the new name, then rename itself back
 ---
 
 import { LinkCard } from '@astrojs/starlight/components';
+import Quote from '../../components/Quote.astro';
 
-Watch Refaktor rename itself to `awesome_file_renaming_tool`, then use the renamed binary to change it back:
+<Quote 
+  author="Wikipedia"
+  source="Self-hosting (compilers)"
+  sourceUrl="https://en.wikipedia.org/wiki/Self-hosting_(compilers)"
+>
+  In computer programming, self-hosting is the use of a program as part of the toolchain or operating 
+  system that produces new versions of that same program—for example, a compiler that can compile 
+  its own source code.
+</Quote>  
+
+Watch Refaktor rename itself to `awesome_file_renaming_tool`, run the test suite with the new name, 
+then use the renamed binary to change itself back:
 
 ```bash
 # Clone and build
@@ -37,18 +49,17 @@ git status
 # nothing to commit, working tree clean
 ```
 
-You can use Refaktor to rename entire projects including all code references, 
-file names, and directory names - all while maintaining perfect consistency across 
-different naming conventions.
+You can use Refaktor to rename an entire project including all code references, 
+comments, documentation, file names, and directory names, all while maintaining 
+perfect consistency across different naming conventions.
 <br/>
 
 ---
 
 <br/>
 
-:::note
-We have an end-to-end integration test that runs through all these steps on CI.
-:::
+
+P.S. We run all these steps on CI as an end-to-end integration test:
 
 <LinkCard
   title="scripts/e2e-test.sh"
