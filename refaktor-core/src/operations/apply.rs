@@ -69,8 +69,8 @@ fn load_plan_from_source_with_tracking(
     refaktor_dir: &Path,
 ) -> Result<(Plan, Option<PathBuf>)> {
     match (plan_path, plan_id) {
-        (Some(path), None) => {
-            // Load from specific file path - don't delete afterwards
+        (Some(path), _) => {
+            // --plan flag provided: load from specific file path - don't delete afterwards
             let plan_content = fs::read_to_string(&path)
                 .with_context(|| format!("Failed to read plan from {}", path.display()))?;
             let plan = serde_json::from_str(&plan_content)
@@ -78,19 +78,40 @@ fn load_plan_from_source_with_tracking(
             Ok((plan, None))
         },
         (None, Some(id)) => {
-            // Load from ID in plans directory - don't delete afterwards
-            let plans_dir = refaktor_dir.join("plans");
-            let plan_file = plans_dir.join(format!("{}.json", id));
-            if !plan_file.exists() {
-                return Err(anyhow!("Plan file not found: {}", plan_file.display()));
+            // Positional argument provided - determine what it is
+            if id.ends_with(".json") || Path::new(&id).exists() {
+                // It's a file path
+                let path = PathBuf::from(id);
+                let plan_content = fs::read_to_string(&path)
+                    .with_context(|| format!("Failed to read plan from {}", path.display()))?;
+                let plan = serde_json::from_str(&plan_content)
+                    .with_context(|| format!("Failed to parse plan from {}", path.display()))?;
+                Ok((plan, None))
+            } else if id == "latest" {
+                // "latest" means use the default plan.json
+                let plan_file = refaktor_dir.join("plan.json");
+                if !plan_file.exists() {
+                    return Err(anyhow!("No default plan found at {}", plan_file.display()));
+                }
+                let plan_content =
+                    fs::read_to_string(&plan_file).context("Failed to read default plan")?;
+                let plan =
+                    serde_json::from_str(&plan_content).context("Failed to parse default plan")?;
+                Ok((plan, Some(plan_file)))
+            } else {
+                // It's a plan ID - load from plans directory
+                let plans_dir = refaktor_dir.join("plans");
+                let plan_file = plans_dir.join(format!("{}.json", id));
+                if !plan_file.exists() {
+                    return Err(anyhow!("Plan file not found: {}", plan_file.display()));
+                }
+                let plan_content = fs::read_to_string(&plan_file)
+                    .with_context(|| format!("Failed to read plan {}", id))?;
+                let plan = serde_json::from_str(&plan_content)
+                    .with_context(|| format!("Failed to parse plan {}", id))?;
+                Ok((plan, None))
             }
-            let plan_content = fs::read_to_string(&plan_file)
-                .with_context(|| format!("Failed to read plan {}", id))?;
-            let plan = serde_json::from_str(&plan_content)
-                .with_context(|| format!("Failed to parse plan {}", id))?;
-            Ok((plan, None))
         },
-        (Some(_), Some(_)) => Err(anyhow!("Cannot specify both plan_path and plan_id")),
         (None, None) => {
             // Default: load most recent plan - DELETE this file after success
             let plan_file = refaktor_dir.join("plan.json");

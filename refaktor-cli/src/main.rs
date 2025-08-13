@@ -129,13 +129,12 @@ enum Commands {
 
     /// Apply a refactoring plan
     Apply {
-        /// Path to plan file
-        #[arg(long, conflicts_with = "id")]
-        plan: Option<PathBuf>,
-
-        /// History ID to apply
-        #[arg(long, conflicts_with = "plan")]
+        /// Plan ID or path to apply (optional - defaults to .refaktor/plan.json)
         id: Option<String>,
+
+        /// Path to plan file (overrides ID if both provided)
+        #[arg(long)]
+        plan: Option<PathBuf>,
 
         /// Apply changes atomically
         #[arg(long, default_value_t = true)]
@@ -541,8 +540,8 @@ fn main() {
         },
 
         Commands::Apply {
-            plan,
             id,
+            plan,
             atomic: _,
             commit,
             force_with_conflicts,
