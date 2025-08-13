@@ -4,7 +4,7 @@ set -euo pipefail
 # Faster: build debug for the loop, build release once at the end
 export CARGO_TARGET_DIR=/tmp/refaktor-target
 
-WORKDIR=/tmp/refaktor-e2e-test
+WORKDIR=./refaktor-e2e-test
 
 if [ -d "$WORKDIR" ]; then
   echo "Removing existing $WORKDIR"

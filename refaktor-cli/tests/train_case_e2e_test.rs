@@ -5,26 +5,26 @@ use predicates::prelude::*;
 
 #[test]
 fn test_rename_command_with_train_case_patterns() {
-    // E2E test for Train-Case patterns like "Refaktor-Core-Engine"
+    // E2E test for Train-Case patterns like "Rename-Tool-Core-Engine"
     let temp_dir = TempDir::new().unwrap();
 
     // Create test file with Train-Case patterns in various contexts
     let test_content = r#"# Documentation
 
 ## Configuration
-- Refaktor-Specific-Settings for configuration
-- Use Refaktor-Core-Engine for processing  
-- The Refaktor-Based-Solution works well
+- Rename-Tool-Specific-Settings for configuration
+- Use Rename-Tool-Core-Engine for processing  
+- The Rename-Tool-Based-Solution works well
 
 ## In String Literals
-    // - "Refaktor-Specific-Settings" -> "Smart-Search-And-Replace-Specific-Settings"
-    // - "Refaktor-Core-Engine" -> "Smart-Search-And-Replace-Core-Engine"
-    // - "Refaktor-Based-Solution" -> "Smart-Search-And-Replace-Based-Solution"
+    // - "Rename-Tool-Specific-Settings" -> "Smart-Search-And-Replace-Specific-Settings"
+    // - "Rename-Tool-Core-Engine" -> "Smart-Search-And-Replace-Core-Engine"
+    // - "Rename-Tool-Based-Solution" -> "Smart-Search-And-Replace-Based-Solution"
 
 ## Mixed Patterns
-- refaktor-specific (lowercase kebab)
-- Refaktor-CLI (mixed)
-- REFAKTOR-DEBUG (screaming)
+- rename-tool-specific (lowercase kebab)
+- Rename-Tool-CLI (mixed)
+- RENAME-TOOL-DEBUG (screaming)
 "#;
 
     temp_dir.child("test.md").write_str(test_content).unwrap();
@@ -32,7 +32,7 @@ fn test_rename_command_with_train_case_patterns() {
     // Run rename command with -y to auto-approve
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["rename", "refaktor", "smart_search_and_replace", "-y"])
+        .args(["rename", "rename_tool", "smart_search_and_replace", "-y"])
         .assert()
         .success()
         .stdout(predicate::str::contains("Applied"));
@@ -45,8 +45,8 @@ fn test_rename_command_with_train_case_patterns() {
 
     // Verify Train-Case patterns were replaced
     assert!(
-        !updated_content.contains("Refaktor-Core-Engine"),
-        "Should not contain 'Refaktor-Core-Engine' after replacement"
+        !updated_content.contains("Rename-Tool-Core-Engine"),
+        "Should not contain 'Rename-Tool-Core-Engine' after replacement"
     );
 
     assert!(
@@ -55,8 +55,8 @@ fn test_rename_command_with_train_case_patterns() {
     );
 
     assert!(
-        !updated_content.contains("Refaktor-Specific-Settings"),
-        "Should not contain 'Refaktor-Specific-Settings' after replacement"
+        !updated_content.contains("Rename-Tool-Specific-Settings"),
+        "Should not contain 'Rename-Tool-Specific-Settings' after replacement"
     );
 
     assert!(
@@ -65,8 +65,8 @@ fn test_rename_command_with_train_case_patterns() {
     );
 
     assert!(
-        !updated_content.contains("Refaktor-Based-Solution"),
-        "Should not contain 'Refaktor-Based-Solution' after replacement"
+        !updated_content.contains("Rename-Tool-Based-Solution"),
+        "Should not contain 'Rename-Tool-Based-Solution' after replacement"
     );
 
     assert!(
@@ -76,8 +76,8 @@ fn test_rename_command_with_train_case_patterns() {
 
     // Check other case variants too
     assert!(
-        !updated_content.contains("refaktor-specific"),
-        "Should not contain 'refaktor-specific' after replacement"
+        !updated_content.contains("rename-tool-specific"),
+        "Should not contain 'rename-tool-specific' after replacement"
     );
 
     assert!(
@@ -86,8 +86,8 @@ fn test_rename_command_with_train_case_patterns() {
     );
 
     assert!(
-        !updated_content.contains("Refaktor-CLI"),
-        "Should not contain 'Refaktor-CLI' after replacement"
+        !updated_content.contains("Rename-Tool-CLI"),
+        "Should not contain 'Rename-Tool-CLI' after replacement"
     );
 
     assert!(
@@ -96,8 +96,8 @@ fn test_rename_command_with_train_case_patterns() {
     );
 
     assert!(
-        !updated_content.contains("REFAKTOR-DEBUG"),
-        "Should not contain 'REFAKTOR-DEBUG' after replacement"
+        !updated_content.contains("RENAME-TOOL-DEBUG"),
+        "Should not contain 'RENAME-TOOL-DEBUG' after replacement"
     );
 
     assert!(
@@ -116,15 +116,15 @@ fn test_plan_and_apply_with_train_case_patterns() {
     temp_dir
         .child("docs/README.md")
         .write_str(
-            r#"# Refaktor-Core-Engine Documentation
+            r#"# Rename-Tool-Core-Engine Documentation
 
-The Refaktor-Core-Engine is the main processing unit.
+The Rename-Tool-Core-Engine is the main processing unit.
 
-## Refaktor-Specific-Settings
+## Rename-Tool-Specific-Settings
 
-Configure using Refaktor-Specific-Settings:
-- Setting 1: Refaktor-Based-Solution
-- Setting 2: Use Refaktor-Core-Engine
+Configure using Rename-Tool-Specific-Settings:
+- Setting 1: Rename-Tool-Based-Solution
+- Setting 2: Use Rename-Tool-Core-Engine
 "#,
         )
         .unwrap();
@@ -132,11 +132,11 @@ Configure using Refaktor-Specific-Settings:
     temp_dir
         .child("test.rs")
         .write_str(
-            r#"// Tests for Refaktor-Core-Engine
+            r#"// Tests for Rename-Tool-Core-Engine
 fn test_refaktor() {
-    let engine = "Refaktor-Core-Engine";
-    let settings = "Refaktor-Specific-Settings";
-    println!("Using Refaktor-Based-Solution");
+    let engine = "Rename-Tool-Core-Engine";
+    let settings = "Rename-Tool-Specific-Settings";
+    println!("Using Rename-Tool-Based-Solution");
 }
 "#,
         )
@@ -145,12 +145,12 @@ fn test_refaktor() {
     // First create a plan
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["plan", "refaktor", "smart_search_and_replace"])
+        .args(["plan", "rename_tool", "smart_search_and_replace"])
         .assert()
         .success()
         .stdout(predicate::str::contains("docs/README.md"))
         .stdout(predicate::str::contains("test.rs"))
-        .stdout(predicate::str::contains("Refaktor-Core-Engine"));
+        .stdout(predicate::str::contains("Rename-Tool-Core-Engine"));
 
     // Then apply the plan
     let mut cmd = Command::cargo_bin("refaktor").unwrap();
@@ -191,12 +191,12 @@ fn test_refaktor() {
 
     // Ensure no old patterns remain
     assert!(
-        !readme_content.contains("Refaktor-"),
-        "README should not contain any 'Refaktor-' patterns"
+        !readme_content.contains("Rename-Tool-"),
+        "README should not contain any 'Rename-Tool-' patterns"
     );
     assert!(
-        !test_content.contains("Refaktor-"),
-        "test.rs should not contain any 'Refaktor-' patterns"
+        !test_content.contains("Rename-Tool-"),
+        "test.rs should not contain any 'Rename-Tool-' patterns"
     );
 }
 
@@ -206,10 +206,10 @@ fn test_undo_train_case_replacements() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create a file with Train-Case patterns
-    let original_content = r#"# Refaktor-Core-Engine
+    let original_content = r#"# Rename-Tool-Core-Engine
 
-Using Refaktor-Specific-Settings for configuration.
-The Refaktor-Based-Solution is working.
+Using Rename-Tool-Specific-Settings for configuration.
+The Rename-Tool-Based-Solution is working.
 "#;
 
     temp_dir
@@ -224,7 +224,7 @@ The Refaktor-Based-Solution is working.
     // Apply rename using the core rename operation directly
     use refaktor_core::rename_operation;
     rename_operation(
-        "refaktor",
+        "rename_tool",
         "smart_search_and_replace",
         vec![], // paths (empty = current dir)
         vec![], // include
@@ -251,7 +251,7 @@ The Refaktor-Based-Solution is working.
     // Verify changes were applied
     let changed_content = std::fs::read_to_string("doc.md").unwrap();
     assert!(changed_content.contains("Smart-Search-And-Replace-Core-Engine"));
-    assert!(!changed_content.contains("Refaktor-Core-Engine"));
+    assert!(!changed_content.contains("Rename-Tool-Core-Engine"));
 
     // Undo the changes using the core undo operation directly
     use refaktor_core::undo_operation;
@@ -266,9 +266,9 @@ The Refaktor-Based-Solution is working.
         restored_content, original_content,
         "Content should be restored to original after undo"
     );
-    assert!(restored_content.contains("Refaktor-Core-Engine"));
-    assert!(restored_content.contains("Refaktor-Specific-Settings"));
-    assert!(restored_content.contains("Refaktor-Based-Solution"));
+    assert!(restored_content.contains("Rename-Tool-Core-Engine"));
+    assert!(restored_content.contains("Rename-Tool-Specific-Settings"));
+    assert!(restored_content.contains("Rename-Tool-Based-Solution"));
 }
 
 #[test]
@@ -276,7 +276,7 @@ fn test_screaming_train_exclusion_fallback() {
     let temp_dir = TempDir::new().unwrap();
 
     let test_content = r#"# Test File
-- REFAKTOR-DEBUG pattern here
+- RENAME-TOOL-DEBUG pattern here
 "#;
 
     temp_dir.child("test.md").write_str(test_content).unwrap();
@@ -286,7 +286,7 @@ fn test_screaming_train_exclusion_fallback() {
     cmd.current_dir(temp_dir.path())
         .args([
             "rename",
-            "refaktor",
+            "rename_tool",
             "smart_search_and_replace",
             "--exclude-styles",
             "screaming-train",
@@ -305,11 +305,11 @@ fn test_screaming_train_exclusion_fallback() {
         updated_content
     );
 
-    // When ScreamingTrain is excluded, no other style can handle REFAKTOR-DEBUG
+    // When ScreamingTrain is excluded, no other style can handle RENAME-TOOL-DEBUG
     // so it should remain unchanged (this is correct behavior)
     assert!(
-        updated_content.contains("REFAKTOR-DEBUG"),
-        "Should still contain original 'REFAKTOR-DEBUG' when ScreamingTrain is excluded (no other style can handle it)"
+        updated_content.contains("RENAME-TOOL-DEBUG"),
+        "Should still contain original 'RENAME-TOOL-DEBUG' when ScreamingTrain is excluded (no other style can handle it)"
     );
 
     // Should NOT use ScreamingTrain style since it's excluded
