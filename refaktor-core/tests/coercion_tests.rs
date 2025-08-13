@@ -122,7 +122,7 @@ fn test_end_to_end_coercion_with_files() {
         coerce_separators: CoercionMode::Auto, // Enable coercion
     };
 
-    let mut plan = scan_repository(
+    let plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "renamed_refactoring_tool",
@@ -221,7 +221,7 @@ fn test_coercion_disabled() {
         coerce_separators: CoercionMode::Off, // Disable coercion
     };
 
-    let mut plan = scan_repository(
+    let plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "renamed_refactoring_tool",
@@ -286,7 +286,7 @@ let config = refaktor.config.load();
         coerce_separators: CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(
+    let plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "renamed_refactoring_tool",
@@ -384,7 +384,7 @@ let regex_pattern = r"refaktor[_-](\w+)";
         coerce_separators: CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(
+    let plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "renamed_refactoring_tool",
@@ -484,7 +484,7 @@ let nested = refaktor::core::pattern::Match;
         coerce_separators: CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(
+    let plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "renamed_refactoring_tool",
@@ -538,7 +538,7 @@ let snake_case_var = refaktor_core; let camelVar = refaktorService;
         coerce_separators: CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(
+    let plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "renamed_refactoring_tool",
@@ -615,7 +615,7 @@ refaktor = { path = "../refaktor" }
         coerce_separators: CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(
+    let plan = scan_repository(
         temp_dir.path(),
         "refaktor",
         "renamed_refactoring_tool",

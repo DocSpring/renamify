@@ -32,7 +32,7 @@ fn test_diff_merging_same_line() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(&root, "preview_format", "foo_bar", &options).unwrap();
+    let plan = scan_repository(&root, "preview_format", "foo_bar", &options).unwrap();
 
     // Render as diff
     let diff_output = refaktor_core::preview::render_plan(

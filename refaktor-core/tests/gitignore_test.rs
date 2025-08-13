@@ -42,7 +42,7 @@ fn test_gitignore_target_directory_is_never_scanned() {
         ..Default::default()
     };
 
-    let mut plan = scan_repository(repo_path, "refaktor", "renamed", &options).unwrap();
+    let plan = scan_repository(repo_path, "refaktor", "renamed", &options).unwrap();
 
     // Verify that only src/main.rs was matched, not anything in target/
     // Note: src/main.rs has 2 occurrences of "refaktor" in it
@@ -102,7 +102,7 @@ fn test_gitignore_with_unrestricted_level_3_still_respects_target() {
         ..Default::default()
     };
 
-    let mut plan = scan_repository(repo_path, "refaktor", "renamed", &options).unwrap();
+    let plan = scan_repository(repo_path, "refaktor", "renamed", &options).unwrap();
 
     // With -uuu, it WILL scan target/ unfortunately
     // This test documents the current behavior
@@ -157,7 +157,7 @@ fn test_git_repository_respects_gitignore() {
         ..Default::default()
     };
 
-    let mut plan = scan_repository(repo_path, "refaktor", "renamed", &options).unwrap();
+    let plan = scan_repository(repo_path, "refaktor", "renamed", &options).unwrap();
 
     // Should only match src/main.rs, not the ignored files
     assert_eq!(plan.matches.len(), 1, "Should only match non-ignored files");

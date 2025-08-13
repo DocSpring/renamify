@@ -300,7 +300,7 @@ fn test_skip_symlinks() {
             to: temp_dir.path().join("new_link.txt"),
             kind: RenameKind::File,
             coercion_applied: None,
-    });
+        });
 
         let options = ApplyOptions {
             backup_dir: temp_dir.path().join(".backups"),
@@ -697,28 +697,61 @@ fn test_apply_with_both_renames_and_content_changes() {
     let backup_dir = temp_dir.path().join(".refaktor/backups").join("test_both");
     assert!(backup_dir.exists(), "Backup directory should exist");
 
-    // Check for reverse patch file
-    let patch_file = backup_dir.join("reverse.patch");
-    assert!(patch_file.exists(), "Reverse patch should exist");
+    // Check for reverse patches directory
+    let reverse_patches_dir = backup_dir.join("reverse_patches");
+    assert!(
+        reverse_patches_dir.exists(),
+        "Reverse patches directory should exist"
+    );
 
-    // The patch should contain all the changes
-    let patch_content = fs::read_to_string(&patch_file).unwrap();
+    // Check that patch files were created
+    let entries: Vec<_> = fs::read_dir(&reverse_patches_dir)
+        .unwrap()
+        .filter_map(Result::ok)
+        .collect();
+    assert!(!entries.is_empty(), "Should have at least one patch file");
+
+    // Read all patch files and check they contain the expected changes
+    let mut found_old_name = false;
+    let mut found_new_name = false;
+    let mut found_stable = false;
+
+    for entry in entries {
+        let patch_content = fs::read_to_string(entry.path()).unwrap();
+        if patch_content.contains("old_name.rs") {
+            found_old_name = true;
+        }
+        if patch_content.contains("new_name.rs") {
+            found_new_name = true;
+        }
+        if patch_content.contains("stable.rs") {
+            found_stable = true;
+        }
+    }
+
     assert!(
-        patch_content.contains("old_name.rs"),
-        "Patch should contain old_name.rs"
+        found_old_name,
+        "At least one patch should contain old_name.rs"
     );
     assert!(
-        patch_content.contains("new_name.rs"),
-        "Patch should contain new_name.rs"
+        found_new_name,
+        "At least one patch should contain new_name.rs"
     );
-    assert!(
-        patch_content.contains("stable.rs"),
-        "Patch should contain stable.rs"
-    );
-    assert!(
-        patch_content.contains("nested.rs"),
-        "Patch should contain nested.rs"
-    );
+    assert!(found_stable, "At least one patch should contain stable.rs");
+
+    // Check for nested.rs in patches
+    let mut found_nested = false;
+    for entry in fs::read_dir(&reverse_patches_dir)
+        .unwrap()
+        .filter_map(Result::ok)
+    {
+        let patch_content = fs::read_to_string(entry.path()).unwrap();
+        if patch_content.contains("nested.rs") {
+            found_nested = true;
+            break;
+        }
+    }
+    assert!(found_nested, "At least one patch should contain nested.rs");
 
     // Case 5 verifications: File renamed inside renamed directory
     let new_service_dir = temp_dir.path().join("new_name_service");
@@ -749,13 +782,27 @@ fn test_apply_with_both_renames_and_content_changes() {
         "Old property name should not exist"
     );
 
-    // Verify the service file changes are in the comprehensive patch
+    // Verify the service file changes are in the patches
+    let mut found_old_service = false;
+    let mut found_new_service = false;
+    for entry in fs::read_dir(&reverse_patches_dir)
+        .unwrap()
+        .filter_map(Result::ok)
+    {
+        let patch_content = fs::read_to_string(entry.path()).unwrap();
+        if patch_content.contains("old_name-service.ts") {
+            found_old_service = true;
+        }
+        if patch_content.contains("new_name-service.ts") {
+            found_new_service = true;
+        }
+    }
     assert!(
-        patch_content.contains("old_name-service.ts"),
-        "Patch should contain service file changes"
+        found_old_service,
+        "At least one patch should contain old_name-service.ts"
     );
     assert!(
-        patch_content.contains("new_name-service.ts"),
-        "Patch should contain renamed service file"
+        found_new_service,
+        "At least one patch should contain new_name-service.ts"
     );
 }

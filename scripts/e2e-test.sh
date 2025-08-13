@@ -86,6 +86,9 @@ cargo build
 DEBUG_SSAR="$CARGO_TARGET_DIR/debug/smart_search_and_replace"
 "$DEBUG_SSAR" --version
 
+echo "=== Running tests with new name ==="
+cargo test
+
 echo "=== Testing smart_search_and_replace rename back to refaktor ==="
 # Use smart_search_and_replace to rename itself back
 "$DEBUG_SSAR" rename smart_search_and_replace refaktor --preview summary
@@ -102,7 +105,7 @@ fi
 
 # Verify no instances of "smart_search_and_replace" or "smart-search-and-replace" remain
 echo "Checking for remaining instances of 'smart_search_and_replace' or 'smart-search-and-replace'..."
-if rg "(smart_search_and_replace|smart-search-and-replace|smartsearchandreplace)"; then
+if rg -i "(smart_search_and_replace|smart-search-and-replace|smartsearchandreplace)"; then
   echo "ERROR: Found remaining instances of 'smart_search_and_replace' in the codebase!"
   exit 1
 fi

@@ -377,10 +377,10 @@ fn test_apply_undo_file_and_dir_rename() {
         coercion_applied: None,
     });
 
-    // File rename (using old path, will be adjusted during apply)
+    // File rename - should use the new directory path
     plan.renames.push(Rename {
         from: old_file.clone(),
-        to: old_dir.join("new_name.txt"),
+        to: temp_dir.path().join("new_name_dir").join("new_name.txt"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
@@ -439,10 +439,10 @@ fn test_apply_undo_all_changes() {
         coercion_applied: None,
     });
 
-    // File rename (inside the directory)
+    // File rename - should use the new directory path
     plan.renames.push(Rename {
         from: old_file.clone(),
-        to: old_dir.join("new_name.rs"),
+        to: temp_dir.path().join("new_name_dir").join("new_name.rs"),
         kind: RenameKind::File,
         coercion_applied: None,
     });

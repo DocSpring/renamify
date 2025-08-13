@@ -40,7 +40,8 @@ fn create_sample_plan() -> Plan {
                 coercion_applied: None,
                 original_file: None,
                 renamed_file: None,
-                patch_hash: None,            },
+                patch_hash: None,
+            },
             MatchHunk {
                 file: PathBuf::from("src/models/user.rs"),
                 line: 25,
@@ -55,7 +56,8 @@ fn create_sample_plan() -> Plan {
                 coercion_applied: None,
                 original_file: None,
                 renamed_file: None,
-                patch_hash: None,            },
+                patch_hash: None,
+            },
             MatchHunk {
                 file: PathBuf::from("src/api/handlers.rs"),
                 line: 42,
@@ -70,7 +72,8 @@ fn create_sample_plan() -> Plan {
                 coercion_applied: None,
                 original_file: None,
                 renamed_file: None,
-                patch_hash: None,            },
+                patch_hash: None,
+            },
             MatchHunk {
                 file: PathBuf::from("src/api/handlers.rs"),
                 line: 50,
@@ -85,7 +88,8 @@ fn create_sample_plan() -> Plan {
                 coercion_applied: None,
                 original_file: None,
                 renamed_file: None,
-                patch_hash: None,            },
+                patch_hash: None,
+            },
         ],
         renames: vec![
             Rename {
@@ -163,7 +167,7 @@ fn test_summary_format_snapshot() {
 
 #[test]
 fn test_empty_plan_table_snapshot() {
-    let mut plan = Plan {
+    let plan = Plan {
         id: "empty".to_string(),
         created_at: "0".to_string(),
         old: "old".to_string(),
@@ -189,7 +193,7 @@ fn test_empty_plan_table_snapshot() {
 
 #[test]
 fn test_empty_plan_diff_snapshot() {
-    let mut plan = Plan {
+    let plan = Plan {
         id: "empty".to_string(),
         created_at: "0".to_string(),
         old: "old".to_string(),
@@ -222,7 +226,7 @@ fn test_root_directory_rename_handling() {
 
     // Note: In a real scenario, the scanner would filter out root directory renames
     // For this test, we're only including the non-root rename to match actual behavior
-    let mut plan = Plan {
+    let plan = Plan {
         id: "root-test".to_string(),
         created_at: "1234567890".to_string(),
         old: "refaktor".to_string(),
@@ -242,9 +246,10 @@ fn test_root_directory_rename_handling() {
             line_before: Some("# Refaktor".to_string()),
             line_after: Some("# Smart Search And Replace".to_string()),
             coercion_applied: None,
-                original_file: None,
-                renamed_file: None,
-                patch_hash: None,        }],
+            original_file: None,
+            renamed_file: None,
+            patch_hash: None,
+        }],
         renames: vec![
             // Only regular directory rename - root directory rename is filtered out
             Rename {

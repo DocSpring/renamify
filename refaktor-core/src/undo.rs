@@ -2,10 +2,10 @@ use crate::apply::{apply_plan, calculate_checksum, ApplyOptions};
 use crate::history::{create_history_entry, History};
 use crate::scanner::Plan;
 use anyhow::{anyhow, Context, Result};
+use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use sha2::{Sha256, Digest};
 
 /// Apply a single patch to a file
 fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
@@ -26,7 +26,6 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
 
     Ok(())
 }
-
 
 /// Undo a previously applied refactoring
 pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
@@ -56,7 +55,10 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
     // Load the plan to get patch information
     let plan_path = refaktor_dir.join("plans").join(format!("{}.json", id));
     if !plan_path.exists() {
-        return Err(anyhow!("Plan file not found for entry '{}'. Cannot undo without plan.", id));
+        return Err(anyhow!(
+            "Plan file not found for entry '{}'. Cannot undo without plan.",
+            id
+        ));
     }
     let plan_json = fs::read_to_string(&plan_path)?;
     let plan: Plan = serde_json::from_str(&plan_json)?;
@@ -64,18 +66,71 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
     // Check for individual reverse patches directory
     let reverse_patches_dir = entry.backups_path.join("reverse_patches");
     if !reverse_patches_dir.exists() {
-        return Err(anyhow!("No reverse patches found for entry '{}'. Cannot undo.", id));
+        return Err(anyhow!(
+            "No reverse patches found for entry '{}'. Cannot undo.",
+            id
+        ));
     }
     // STEP 1: Reverse renames first (new locations back to old)
     // Process renames in reverse order, deepest paths first
-    let mut sorted_renames = entry.renames.clone();
-    sorted_renames.sort_by(|a, b| {
+    // Use the renames from the plan, not from history
+
+    // First, rename directories back (this moves all their contents)
+    let mut dir_mappings = Vec::new();
+    for rename in &plan.renames {
+        if matches!(rename.kind, crate::scanner::RenameKind::Dir) {
+            dir_mappings.push((rename.from.clone(), rename.to.clone()));
+        }
+    }
+
+    // Sort directories by depth (deepest first)
+    dir_mappings.sort_by(|a, b| {
         let a_depth = a.1.components().count();
         let b_depth = b.1.components().count();
         b_depth.cmp(&a_depth)
     });
 
-    for (from, to) in sorted_renames.iter() {
+    for (from, to) in &dir_mappings {
+        if to.exists() {
+            fs::rename(to, from)?;
+        }
+    }
+
+    // Now handle file renames, adjusting paths if they were inside renamed directories
+    let mut file_renames = Vec::new();
+    for rename in &plan.renames {
+        if matches!(rename.kind, crate::scanner::RenameKind::File) {
+            let mut adjusted_from = rename.from.clone();
+            let mut adjusted_to = rename.to.clone();
+
+            // Check if this file was inside a directory that we just renamed
+            for (dir_from, dir_to) in &dir_mappings {
+                // If the file's original paths were inside a renamed directory, adjust them
+                if rename.to.starts_with(dir_to) {
+                    // The file's "to" path was inside a renamed directory
+                    // After undoing the directory rename, the file is now at the original directory location
+                    if let Ok(relative) = rename.to.strip_prefix(dir_to) {
+                        adjusted_to = dir_from.join(relative);
+                    }
+                }
+                if rename.from.starts_with(dir_from) {
+                    // Keep the original "from" path as is
+                    adjusted_from = rename.from.clone();
+                }
+            }
+
+            file_renames.push((adjusted_from, adjusted_to));
+        }
+    }
+
+    // Sort files by depth (deepest first)
+    file_renames.sort_by(|a, b| {
+        let a_depth = a.1.components().count();
+        let b_depth = b.1.components().count();
+        b_depth.cmp(&a_depth)
+    });
+
+    for (from, to) in &file_renames {
         if to.exists() {
             // Handle case-only renames on case-insensitive filesystems
             let case_only = from.to_string_lossy().to_lowercase()
@@ -88,8 +143,7 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
                 )
             {
                 // Two-step rename for case-only changes
-                let temp_name =
-                    to.with_extension(format!("{}.refaktor.tmp", std::process::id()));
+                let temp_name = to.with_extension(format!("{}.refaktor.tmp", std::process::id()));
                 fs::rename(to, &temp_name)?;
                 fs::rename(&temp_name, from)?;
             } else {
@@ -126,10 +180,7 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
             // Save the failed patch as a .rej file for debugging
             let rej_path = file_path.with_extension(format!(
                 "{}.rej",
-                file_path
-                    .extension()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("")
+                file_path.extension().and_then(|s| s.to_str()).unwrap_or("")
             ));
             if let Err(write_err) = fs::write(&rej_path, &patch_content) {
                 eprintln!(
@@ -154,7 +205,7 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
             let b_depth = b.components().count();
             b_depth.cmp(&a_depth)
         });
-        
+
         for dir in sorted_dirs.iter() {
             // Only remove if directory exists, is a directory, and is empty
             if dir.exists() && dir.is_dir() {
@@ -170,10 +221,7 @@ pub fn undo_refactoring(id: &str, refaktor_dir: &Path) -> Result<()> {
 
     // If any patches failed, return an error
     if !failed_patches.is_empty() {
-        return Err(anyhow!(
-            "Failed to apply {} patches",
-            failed_patches.len()
-        ));
+        return Err(anyhow!("Failed to apply {} patches", failed_patches.len()));
     }
 
     // Calculate checksums of affected files and collect reversed renames
@@ -287,22 +335,76 @@ mod tests {
         let backup_dir = refaktor_dir.join("backups").join("test_apply_123");
         fs::create_dir_all(&backup_dir).unwrap();
 
+        // Create reverse patches directory
+        let reverse_patches_dir = backup_dir.join("reverse_patches");
+        fs::create_dir_all(&reverse_patches_dir).unwrap();
+
+        // Create plans directory
+        let plans_dir = refaktor_dir.join("plans");
+        fs::create_dir_all(&plans_dir).unwrap();
+
         // Create test file in its renamed state with modified content
         // This simulates the state after apply: renamed and content changed
         let new_file = temp_dir.path().join("new_name.txt");
         fs::write(&new_file, "modified content\n").unwrap();
 
-        // Create a diff backup that will restore the original content
-        // The diff shows: original -> modified
-        // When reversed with patch -R, it restores: modified -> original
-        let diff_content = r"--- old_name.txt
+        // Create a reverse patch that will restore the original content
+        let reverse_patch = r"--- old_name.txt
 +++ old_name.txt
 @@ -1 +1 @@
--original content
-+modified content
+-modified content
++original content
 ";
-        let diff_file = backup_dir.join("old_name.txt.diff");
-        fs::write(&diff_file, diff_content).unwrap();
+        // Create a hash for the patch file name
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(reverse_patch.as_bytes());
+        let hash = format!("{:x}", hasher.finalize());
+        let patch_file = reverse_patches_dir.join(format!("{}.patch", hash));
+        fs::write(&patch_file, reverse_patch).unwrap();
+
+        // Create a plan file for the undo to use
+        let plan = crate::scanner::Plan {
+            id: "test_apply_123".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "old_name".to_string(),
+            new: "new_name".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![crate::scanner::MatchHunk {
+                file: temp_dir.path().join("old_name.txt"),
+                line: 1,
+                col: 0,
+                variant: "old_name".to_string(),
+                before: "old_name".to_string(),
+                after: "new_name".to_string(),
+                start: 0,
+                end: 8,
+                line_before: None,
+                line_after: None,
+                coercion_applied: None,
+                original_file: Some(temp_dir.path().join("old_name.txt")),
+                renamed_file: None,
+                patch_hash: Some(hash),
+            }],
+            renames: vec![crate::scanner::Rename {
+                from: temp_dir.path().join("old_name.txt"),
+                to: temp_dir.path().join("new_name.txt"),
+                kind: crate::scanner::RenameKind::File,
+                coercion_applied: None,
+            }],
+            stats: crate::scanner::Stats {
+                files_scanned: 1,
+                total_matches: 1,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 1,
+            },
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        };
+        let plan_path = plans_dir.join("test_apply_123.json");
+        fs::write(&plan_path, serde_json::to_string(&plan).unwrap()).unwrap();
 
         // Create history entry representing the applied refactoring
         let mut affected_files = HashMap::new();
@@ -597,6 +699,14 @@ mod tests {
         let backup_dir = refaktor_dir.join("backups").join("test_case");
         fs::create_dir_all(&backup_dir).unwrap();
 
+        // Create reverse patches directory (empty for rename-only test)
+        let reverse_patches_dir = backup_dir.join("reverse_patches");
+        fs::create_dir_all(&reverse_patches_dir).unwrap();
+
+        // Create plans directory
+        let plans_dir = refaktor_dir.join("plans");
+        fs::create_dir_all(&plans_dir).unwrap();
+
         // Create test file with new name (different case)
         let new_file = temp_dir.path().join("NewName.txt");
         fs::write(&new_file, "new content").unwrap();
@@ -623,6 +733,34 @@ mod tests {
             revert_of: None,
             redo_of: None,
         };
+
+        // Create a plan file for the undo to use
+        let plan = crate::scanner::Plan {
+            id: "test_case".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            old: "newname".to_string(),
+            new: "NewName".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![],
+            renames: vec![crate::scanner::Rename {
+                from: temp_dir.path().join("newname.txt"),
+                to: new_file.clone(),
+                kind: crate::scanner::RenameKind::File,
+                coercion_applied: None,
+            }],
+            stats: crate::scanner::Stats {
+                files_scanned: 1,
+                total_matches: 0,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 0,
+            },
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        };
+        let plan_path = plans_dir.join("test_case.json");
+        fs::write(&plan_path, serde_json::to_string(&plan).unwrap()).unwrap();
 
         let history_path = refaktor_dir.join("history.json");
         fs::write(&history_path, "[]").unwrap();

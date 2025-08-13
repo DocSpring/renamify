@@ -37,7 +37,7 @@ let simple = refaktor;
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== All matches found ===");
@@ -130,7 +130,7 @@ fn test_format_string_placeholders_are_replaced() {
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Should find matches for format string placeholders
     // Note: These are exact pattern matches, not compound matches like "refaktor_{}"
@@ -184,7 +184,7 @@ In format string: refaktor_{}.tmp
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Should find occurrences of "refaktor"
     // Note: refaktor_{}.tmp is not matched because {} is not a valid identifier character

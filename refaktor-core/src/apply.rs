@@ -107,8 +107,8 @@ fn generate_reverse_patches(
     let reverse_patches_dir = backup_base.join("reverse_patches");
     fs::create_dir_all(&reverse_patches_dir)?;
 
-    use sha2::{Sha256, Digest};
-    
+    use sha2::{Digest, Sha256};
+
     // Track created directories
     let mut created_dirs = Vec::new();
 
@@ -152,18 +152,18 @@ fn generate_reverse_patches(
             // For reverse patch: current_path -> original_path
             let patch_with_paths =
                 replace_patch_headers(&reverse_diff_str, &current_path, original_path);
-            
+
             // Generate hash for this file's patch
             let relative_path = make_path_relative(original_path);
             let mut hasher = Sha256::new();
             hasher.update(relative_path.to_string_lossy().as_bytes());
             let hash = format!("{:x}", hasher.finalize());
-            
+
             // Save the individual patch
             let patch_filename = format!("{}.patch", hash);
             let patch_path = reverse_patches_dir.join(&patch_filename);
             fs::write(&patch_path, &patch_with_paths)?;
-            
+
             // Update the match entries with the patch hash and file paths
             for match_hunk in &mut plan.matches {
                 if match_hunk.file == *original_path {
@@ -177,7 +177,7 @@ fn generate_reverse_patches(
                 }
             }
         }
-        
+
         // Track any new directories created by renames
         if current_path != *original_path {
             if let Some(parent) = current_path.parent() {
@@ -195,7 +195,7 @@ fn generate_reverse_patches(
             }
         }
     }
-    
+
     // Store created directories in the plan
     if !created_dirs.is_empty() {
         plan.created_directories = Some(created_dirs);
@@ -231,31 +231,63 @@ fn make_path_relative(path: &Path) -> PathBuf {
     }
 }
 
+/// Split a string into lines while preserving whether each line had a trailing newline
+/// Unlike str::lines(), this preserves the exact line ending structure
+fn split_preserving_newlines(s: &str) -> Vec<&str> {
+    if s.is_empty() {
+        return vec![];
+    }
+
+    // Split on \n but keep track of the newlines
+    let mut lines = Vec::new();
+    let mut start = 0;
+
+    for (i, ch) in s.char_indices() {
+        if ch == '\n' {
+            // Include the newline in the line
+            lines.push(&s[start..=i]);
+            start = i + 1;
+        }
+    }
+
+    // Add the last segment if there is one (line without trailing newline)
+    if start < s.len() {
+        lines.push(&s[start..]);
+    }
+
+    lines
+}
+
 /// Replace diffy's generic patch headers with actual file paths
 /// Converts absolute paths to relative paths for better portability
 fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> String {
     let mut result = String::new();
-    let lines: Vec<&str> = patch_str.lines().collect();
+    let lines = split_preserving_newlines(patch_str);
 
     // Convert paths to relative paths for better portability
     let from_relative = make_path_relative(from_path);
     let to_relative = make_path_relative(to_path);
 
-    for (i, line) in lines.iter().enumerate() {
+    for line in lines {
         if line.starts_with("--- ") {
             // Replace "--- original" with actual from path (relative)
-            result.push_str(&format!("--- {}", from_relative.display()));
+            // Check if the original line had a newline
+            if line.ends_with('\n') {
+                result.push_str(&format!("--- {}\n", from_relative.display()));
+            } else {
+                result.push_str(&format!("--- {}", from_relative.display()));
+            }
         } else if line.starts_with("+++ ") {
             // Replace "+++ modified" with actual to path (relative)
-            result.push_str(&format!("+++ {}", to_relative.display()));
+            // Check if the original line had a newline
+            if line.ends_with('\n') {
+                result.push_str(&format!("+++ {}\n", to_relative.display()));
+            } else {
+                result.push_str(&format!("+++ {}", to_relative.display()));
+            }
         } else {
-            // Keep all other lines as-is (including hunk headers and content)
+            // Keep all other lines as-is (including their newlines)
             result.push_str(line);
-        }
-
-        // Add newline after each line except the last one
-        if i < lines.len() - 1 {
-            result.push('\n');
         }
     }
 
@@ -839,7 +871,8 @@ mod tests {
                 files_with_matches: 1,
             },
             version: "1.0.0".to_string(),
-            created_directories: None,        };
+            created_directories: None,
+        };
 
         let options = ApplyOptions {
             backup_dir: temp_dir.path().join(".refaktor/backups"),
@@ -854,18 +887,27 @@ mod tests {
         let content = fs::read_to_string(&test_file).unwrap();
         assert_eq!(content, "fn new_name() {}");
 
-        // Check comprehensive patch was created at the right path
-        let expected_patch = options
+        // Check reverse patches directory was created
+        let reverse_patches_dir = options
             .backup_dir
             .join("test_plan_456")
-            .join("reverse.patch");
+            .join("reverse_patches");
         assert!(
-            expected_patch.exists(),
-            "Reverse patch should exist at {:?}",
-            expected_patch
+            reverse_patches_dir.exists(),
+            "Reverse patches directory should exist at {:?}",
+            reverse_patches_dir
         );
-        // The patch should contain the changes
-        let patch_content = fs::read_to_string(&expected_patch).unwrap();
+
+        // Check that at least one patch file was created
+        let entries: Vec<_> = fs::read_dir(&reverse_patches_dir)
+            .unwrap()
+            .filter_map(Result::ok)
+            .collect();
+        assert!(!entries.is_empty(), "Should have at least one patch file");
+
+        // Read the first patch file and check it contains the changes
+        let patch_file = entries[0].path();
+        let patch_content = fs::read_to_string(&patch_file).unwrap();
         assert!(patch_content.contains("old_name"));
         assert!(patch_content.contains("new_name"));
 
@@ -952,7 +994,8 @@ mod tests {
                 coercion_applied: None,
                 original_file: None,
                 renamed_file: None,
-                patch_hash: None,            }],
+                patch_hash: None,
+            }],
             renames: vec![],
             stats: Stats {
                 files_scanned: 1,
@@ -961,7 +1004,8 @@ mod tests {
                 files_with_matches: 1,
             },
             version: "1.0.0".to_string(),
-            created_directories: None,        };
+            created_directories: None,
+        };
 
         let options = ApplyOptions {
             backup_dir: temp_dir.path().join(".refaktor/backups"),
@@ -1029,12 +1073,14 @@ mod tests {
         );
 
         // Since these paths are not under the current directory, they should remain absolute
+        // The input patch has a trailing newline, so the output should too
         let expected = "--- /path/to/old.rs
 +++ /path/to/new.rs
 @@ -1,3 +1,3 @@
 -old content
 +new content
-\\ No newline at end of file";
+\\ No newline at end of file
+";
 
         assert_eq!(result, expected);
     }
@@ -1051,13 +1097,15 @@ mod tests {
             &PathBuf::from("file.txt"),
         );
 
+        // The input patch has a trailing newline, so the output should too
         let expected = "--- file.txt
 +++ file.txt
 @@ -1 +1 @@
 -old
 \\ No newline at end of file
 +new
-\\ No newline at end of file";
+\\ No newline at end of file
+";
 
         assert_eq!(result, expected);
     }
@@ -1074,6 +1122,7 @@ mod tests {
             &PathBuf::from("src/lib.rs"),
         );
 
+        // The input patch has a trailing newline, so the output should too
         let expected = "--- src/lib.rs
 +++ src/lib.rs
 @@ -1,2 +1,2 @@
@@ -1083,7 +1132,8 @@ mod tests {
 +new2
 @@ -5,1 +5,1 @@
 -line5
-+new5";
++new5
+";
 
         assert_eq!(result, expected);
     }
@@ -1121,11 +1171,13 @@ mod tests {
 
             let result = replace_patch_headers(diffy_patch, &from_path, &to_path);
 
+            // The input patch has a trailing newline, so the output should too
             let expected = "--- src/old.rs
 +++ src/new.rs
 @@ -1 +1 @@
 -old
-+new";
++new
+";
 
             assert_eq!(result, expected);
         }

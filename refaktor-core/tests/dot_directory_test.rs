@@ -37,7 +37,7 @@ temp_dir.child(".refaktor").create_dir_all().unwrap();
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     // Should find all occurrences including .refaktor
 
@@ -109,7 +109,7 @@ coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(
+    let plan = scan_repository(
         &root,
         "refaktor_core",
         "renamed_refactoring_tool_core",
@@ -177,7 +177,7 @@ Commands:
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "refaktor", "renamed_refactoring_tool", &options).unwrap();
 
     println!("Total matches: {}", plan.stats.total_matches);
     for hunk in &plan.matches {
@@ -223,7 +223,7 @@ impl From<PreviewFormatArg> for PreviewFormat {",
         coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
     };
 
-    let mut plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
+    let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();
 
     println!("Total matches: {}", plan.stats.total_matches);
     for hunk in &plan.matches {
