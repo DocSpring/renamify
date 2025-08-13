@@ -17,6 +17,7 @@ pub mod compound_matcher;
 pub mod compound_scanner;
 pub mod config;
 pub mod history;
+pub mod id_resolver;
 pub mod lock;
 pub mod operations;
 pub mod pattern;
@@ -33,6 +34,7 @@ pub use config::Config;
 pub use history::{
     create_history_entry, format_history, get_status, History, HistoryEntry, StatusInfo,
 };
+pub use id_resolver::{resolve_id, OperationType};
 pub use lock::LockFile;
 pub use operations::{
     apply_operation, plan_operation, plan_operation_with_dry_run, redo_operation, rename_operation,
