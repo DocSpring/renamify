@@ -163,36 +163,34 @@ pub fn parse_to_tokens_with_acronyms(
             }
             i += 1;
         } else if b.is_ascii_alphabetic() || b.is_ascii_digit() {
-            // Handle special case for acronyms at the start of a new token
-            if current.is_empty() && b.is_ascii_uppercase() {
-                // Look ahead to find the end of consecutive uppercase letters
-                let mut j = i;
-                while j < bytes.len() && bytes[j].is_ascii_uppercase() {
-                    j += 1;
+            // Check for known acronyms at the start of a new token
+            if current.is_empty() {
+                // Use trie to find longest matching acronym
+                if let Some(acronym) = acronym_set.find_longest_match(s, i) {
+                    tokens.push(Token::new(acronym));
+                    i += acronym.len();
+                    continue;
                 }
 
-                // Check if this uppercase sequence is a known acronym
-                if j > i + 1 {
-                    // At least 2 uppercase letters
-                    let potential_acronym = std::str::from_utf8(&bytes[i..j]).unwrap_or("");
-                    if acronym_set.is_acronym(potential_acronym) {
-                        // It's a known acronym, consume it as one token
-                        tokens.push(Token::new(potential_acronym));
-                        i = j;
-                        continue;
+                // Handle uppercase sequences that might be acronyms
+                if b.is_ascii_uppercase() {
+                    // Look ahead to find the end of consecutive uppercase letters
+                    let mut j = i;
+                    while j < bytes.len() && bytes[j].is_ascii_uppercase() {
+                        j += 1;
                     }
-                }
 
-                // Not an acronym, but if followed by lowercase, take just the uppercase part
-                // This handles cases like "URLParser" -> "URL" + "Parser"
-                if j < bytes.len() && bytes[j].is_ascii_lowercase() && j > i + 1 {
-                    // Multiple uppercase letters followed by lowercase
-                    // Take all but the last uppercase letter as one token (e.g., "UR" from "URLParser")
-                    if j > i + 2 {
-                        let acronym_part = std::str::from_utf8(&bytes[i..j - 1]).unwrap_or("");
-                        tokens.push(Token::new(acronym_part));
-                        i = j - 1;
-                        continue;
+                    // If followed by lowercase and multiple uppercase, split appropriately
+                    // This handles cases like "URLParser" -> "URL" + "Parser"
+                    if j < bytes.len() && bytes[j].is_ascii_lowercase() && j > i + 1 {
+                        // Multiple uppercase letters followed by lowercase
+                        // Take all but the last uppercase letter as one token
+                        if j > i + 2 {
+                            let acronym_part = std::str::from_utf8(&bytes[i..j - 1]).unwrap_or("");
+                            tokens.push(Token::new(acronym_part));
+                            i = j - 1;
+                            continue;
+                        }
                     }
                 }
             }

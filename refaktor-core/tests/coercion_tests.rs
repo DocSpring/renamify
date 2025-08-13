@@ -7,50 +7,50 @@ use std::fs;
 use tempfile::TempDir;
 
 #[test]
-fn test_coercion_refaktor_core_to_renamed_refactoring_tool_core() {
+fn test_coercion_oldtool_core_to_newtool_core() {
     // This is the critical test case from the user's feedback
-    let result = apply_coercion("refaktor-core", "refaktor", "renamed_refactoring_tool");
+    let result = apply_coercion("oldtool-core", "oldtool", "newtool");
 
     assert!(result.is_some());
     let (coerced, reason) = result.unwrap();
-    assert_eq!(coerced, "renamed-refactoring-tool-core");
+    assert_eq!(coerced, "newtool-core");
     assert!(reason.contains("Kebab"));
 }
 
 #[test]
 fn test_coercion_various_container_styles() {
     // Test kebab-case container
-    let result = apply_coercion("refaktor-lib", "refaktor", "renamed_refactoring_tool");
+    let result = apply_coercion("oldtool-lib", "oldtool", "newtool");
     assert!(result.is_some());
     let (coerced, _) = result.unwrap();
-    assert_eq!(coerced, "renamed-refactoring-tool-lib");
+    assert_eq!(coerced, "newtool-lib");
 
     // Test snake_case container
-    let result = apply_coercion("refaktor_core", "refaktor", "renamed_refactoring_tool");
+    let result = apply_coercion("oldtool_core", "oldtool", "newtool");
     assert!(result.is_some());
     let (coerced, _) = result.unwrap();
-    assert_eq!(coerced, "renamed_refactoring_tool_core");
+    assert_eq!(coerced, "newtool_core");
 
     // Test PascalCase container
-    let result = apply_coercion("RefaktorCore", "Refaktor", "RenamedRefactoringTool");
+    let result = apply_coercion("OldtoolCore", "Oldtool", "Newtool");
     assert!(result.is_some());
     let (coerced, _) = result.unwrap();
-    assert_eq!(coerced, "RenamedRefactoringToolCore");
+    assert_eq!(coerced, "NewtoolCore");
 
     // Test camelCase container
-    let result = apply_coercion("refaktorCore", "refaktor", "renamedRefactoringTool");
+    let result = apply_coercion("oldtoolCore", "oldtool", "newtool");
     assert!(result.is_some());
     let (coerced, _) = result.unwrap();
-    assert_eq!(coerced, "renamedRefactoringToolCore");
+    assert_eq!(coerced, "newtoolCore");
 
     // Test SCREAMING_SNAKE_CASE container
-    let result = apply_coercion("REFAKTOR_CORE", "REFAKTOR", "RENAMED_REFACTORING_TOOL");
+    let result = apply_coercion("OLDTOOL_CORE", "OLDTOOL", "NEWTOOL");
     assert!(result.is_some());
     let (coerced, _) = result.unwrap();
-    assert_eq!(coerced, "RENAMED_REFACTORING_TOOL_CORE");
+    assert_eq!(coerced, "NEWTOOL_CORE");
 
     // Test dot.case container (should only work when enabled)
-    let result = apply_coercion("refaktor.core", "refaktor", "renamed_refactoring_tool");
+    let result = apply_coercion("oldtool.core", "oldtool", "newtool");
     // For now this should be None since dot-case is risky
     assert!(result.is_none());
 }
@@ -58,13 +58,13 @@ fn test_coercion_various_container_styles() {
 #[test]
 fn test_coercion_partial_matches() {
     // Test when old pattern is part of a larger identifier
-    let result = apply_coercion("my-refaktor-lib", "refaktor", "renamed_refactoring_tool");
+    let result = apply_coercion("my-oldtool-lib", "oldtool", "newtool");
     assert!(result.is_some());
     let (coerced, _) = result.unwrap();
-    assert_eq!(coerced, "my-renamed-refactoring-tool-lib");
+    assert_eq!(coerced, "my-newtool-lib");
 
     // Test with multiple occurrences
-    let result = apply_coercion("refaktor-to-refaktor", "refaktor", "tool");
+    let result = apply_coercion("oldtool-to-oldtool", "oldtool", "tool");
     assert!(result.is_some());
     let (coerced, _) = result.unwrap();
     assert_eq!(coerced, "tool-to-tool");
@@ -73,11 +73,11 @@ fn test_coercion_partial_matches() {
 #[test]
 fn test_coercion_no_container_style() {
     // Test when there's no clear container style (should not coerce)
-    let result = apply_coercion("refaktor", "refaktor", "renamed_refactoring_tool");
+    let result = apply_coercion("oldtool", "oldtool", "newtool");
     assert!(result.is_none());
 
     // Test mixed style containers (should not coerce)
-    let result = apply_coercion("refaktor-core_lib", "refaktor", "renamed_refactoring_tool");
+    let result = apply_coercion("oldtool-core_lib", "oldtool", "newtool");
     assert!(result.is_none());
 }
 
@@ -87,29 +87,33 @@ fn test_end_to_end_coercion_with_files() {
 
     // Create test files with various naming patterns
     fs::write(
-        temp_dir.path().join("refaktor-core.rs"),
-        "use refaktor_lib::RefaktorEngine;\nfn refaktor_main() {}",
+        temp_dir.path().join("oldtool-core.rs"),
+        "use oldtool_lib::OldtoolEngine;\nfn oldtool_main() {}",
     )
     .unwrap();
 
     fs::write(
-        temp_dir.path().join("refaktor_utils.py"),
-        "def refaktor_helper(): pass",
+        temp_dir.path().join("oldtool_utils.py"),
+        "def oldtool_helper(): pass",
     )
     .unwrap();
 
     fs::write(
-        temp_dir.path().join("RefaktorService.java"),
-        "class RefaktorService {}",
+        temp_dir.path().join("OldtoolService.java"),
+        "class OldtoolService {}",
     )
     .unwrap();
 
     // Create directories
-    fs::create_dir(temp_dir.path().join("refaktor-plugins")).unwrap();
-    fs::create_dir(temp_dir.path().join("refaktor_tests")).unwrap();
+    fs::create_dir(temp_dir.path().join("oldtool-plugins")).unwrap();
+    fs::create_dir(temp_dir.path().join("oldtool_tests")).unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -122,13 +126,7 @@ fn test_end_to_end_coercion_with_files() {
         coerce_separators: CoercionMode::Auto, // Enable coercion
     };
 
-    let plan = scan_repository(
-        temp_dir.path(),
-        "refaktor",
-        "renamed_refactoring_tool",
-        &options,
-    )
-    .unwrap();
+    let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
 
     // Check file renames are coerced properly
     let file_renames: Vec<_> = plan
@@ -137,30 +135,30 @@ fn test_end_to_end_coercion_with_files() {
         .filter(|r| r.kind == RenameKind::File)
         .collect();
 
-    // refaktor-core.rs should become renamed-refactoring-tool-core.rs (kebab style)
+    // oldtool-core.rs should become newtool-core.rs (kebab style)
     assert!(
         file_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "refaktor-core.rs"
-                && r.to.file_name().unwrap() == "renamed-refactoring-tool-core.rs"),
+            .any(|r| r.from.file_name().unwrap() == "oldtool-core.rs"
+                && r.to.file_name().unwrap() == "newtool-core.rs"),
         "kebab-case file should be coerced to kebab-case"
     );
 
-    // refaktor_utils.py should become renamed_refactoring_tool_utils.py (snake style)
+    // oldtool_utils.py should become newtool_utils.py (snake style)
     assert!(
         file_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "refaktor_utils.py"
-                && r.to.file_name().unwrap() == "renamed_refactoring_tool_utils.py"),
+            .any(|r| r.from.file_name().unwrap() == "oldtool_utils.py"
+                && r.to.file_name().unwrap() == "newtool_utils.py"),
         "snake_case file should be coerced to snake_case"
     );
 
-    // RefaktorService.java should become RenamedRefactoringToolService.java (pascal style)
+    // OldtoolService.java should become NewtoolService.java (pascal style)
     assert!(
         file_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "RefaktorService.java"
-                && r.to.file_name().unwrap() == "RenamedRefactoringToolService.java"),
+            .any(|r| r.from.file_name().unwrap() == "OldtoolService.java"
+                && r.to.file_name().unwrap() == "NewtoolService.java"),
         "PascalCase file should be coerced to PascalCase"
     );
 
@@ -171,21 +169,21 @@ fn test_end_to_end_coercion_with_files() {
         .filter(|r| r.kind == RenameKind::Dir)
         .collect();
 
-    // refaktor-plugins should become renamed-refactoring-tool-plugins
+    // oldtool-plugins should become newtool-plugins
     assert!(
         dir_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "refaktor-plugins"
-                && r.to.file_name().unwrap() == "renamed-refactoring-tool-plugins"),
+            .any(|r| r.from.file_name().unwrap() == "oldtool-plugins"
+                && r.to.file_name().unwrap() == "newtool-plugins"),
         "kebab-case directory should be coerced to kebab-case"
     );
 
-    // refaktor_tests should become renamed_refactoring_tool_tests
+    // oldtool_tests should become newtool_tests
     assert!(
         dir_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "refaktor_tests"
-                && r.to.file_name().unwrap() == "renamed_refactoring_tool_tests"),
+            .any(|r| r.from.file_name().unwrap() == "oldtool_tests"
+                && r.to.file_name().unwrap() == "newtool_tests"),
         "snake_case directory should be coerced to snake_case"
     );
 
@@ -205,10 +203,14 @@ fn test_end_to_end_coercion_with_files() {
 fn test_coercion_disabled() {
     let temp_dir = TempDir::new().unwrap();
 
-    fs::write(temp_dir.path().join("refaktor-core.rs"), "test").unwrap();
+    fs::write(temp_dir.path().join("oldtool-core.rs"), "test").unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -221,15 +223,9 @@ fn test_coercion_disabled() {
         coerce_separators: CoercionMode::Off, // Disable coercion
     };
 
-    let plan = scan_repository(
-        temp_dir.path(),
-        "refaktor",
-        "renamed_refactoring_tool",
-        &options,
-    )
-    .unwrap();
+    let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
 
-    // Without coercion, should get renamed_refactoring_tool-core.rs (mixed style)
+    // Without coercion, should get newtool-core.rs (mixed style)
     let file_renames: Vec<_> = plan
         .renames
         .iter()
@@ -238,8 +234,8 @@ fn test_coercion_disabled() {
 
     assert!(
         file_renames.iter().any(
-            |r| r.from.file_name().unwrap() == "refaktor-core.rs"
-                && r.to.file_name().unwrap() == "renamed_refactoring_tool-core.rs" // Mixed style without coercion
+            |r| r.from.file_name().unwrap() == "oldtool-core.rs"
+                && r.to.file_name().unwrap() == "newtool-core.rs" // Mixed style without coercion
         ),
         "Without coercion should produce mixed style"
     );
@@ -264,16 +260,20 @@ fn test_coercion_in_content_matches() {
     fs::write(
         temp_dir.path().join("code.rs"),
         r"
-use refaktor_core::RefaktorEngine;
-use my_refaktor_lib::utils;  
-let refaktor-service = RefaktorService::new();
-let config = refaktor.config.load();
+use oldtool_core::OldtoolEngine;
+use my_oldtool_lib::utils;  
+let oldtool-service = OldtoolService::new();
+let config = oldtool.config.load();
 ",
     )
     .unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -286,13 +286,7 @@ let config = refaktor.config.load();
         coerce_separators: CoercionMode::Auto,
     };
 
-    let plan = scan_repository(
-        temp_dir.path(),
-        "refaktor",
-        "renamed_refactoring_tool",
-        &options,
-    )
-    .unwrap();
+    let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
 
     // Check that content matches are coerced based on their container context
     let content_matches = &plan.matches;
@@ -314,7 +308,7 @@ let config = refaktor.config.load();
         .count();
 
     // We expect some matches to be coerced based on their context
-    // (like refaktor_core should use snake_case for the replacement)
+    // (like oldtool_core should use snake_case for the replacement)
     assert!(
         coerced_matches > 0,
         "Some content matches should have coercion applied"
@@ -323,10 +317,10 @@ let config = refaktor.config.load();
     // Check specific coercions
     let snake_case_match = content_matches
         .iter()
-        .find(|m| m.before.contains("refaktor_core") && m.coercion_applied.is_some());
+        .find(|m| m.before.contains("oldtool_core") && m.coercion_applied.is_some());
     if let Some(m) = snake_case_match {
         assert!(
-            m.after.contains("renamed_refactoring_tool_core"),
+            m.after.contains("newtool_core"),
             "snake_case context should produce snake_case replacement"
         );
     }
@@ -341,37 +335,41 @@ fn test_comprehensive_coercion_edge_cases() {
         temp_dir.path().join("edge_cases.rs"),
         r#"
 // Clean contexts that SHOULD get coercion
-use refaktor_core::Engine;
-let refaktor-utils = RefaktorService::new();
-const REFAKTOR_CONFIG = RefaktorKey<T>::new();
-let url = "https://github.com/user/refaktor-project";
-let path = "src/refaktor/main.rs";
-let namespace = refaktor::core::apply();
-let env_var = process.env.REFAKTOR_DEBUG;
-let css_class = ".refaktor-button:hover";
-let db_column = user_refaktor_settings_id;
-let config_key = app.refaktor.enabled;
-let package = "@scope/refaktor-utils";
+use oldtool_core::Engine;
+let oldtool-utils = OldtoolService::new();
+const OLDTOOL_CONFIG = OldtoolKey<T>::new();
+let url = "https://github.com/user/oldtool-project";
+let path = "src/oldtool/main.rs";
+let namespace = oldtool::core::apply();
+let env_var = process.env.OLDTOOL_DEBUG;
+let css_class = ".oldtool-button:hover";
+let db_column = user_oldtool_settings_id;
+let config_key = app.oldtool.enabled;
+let package = "@scope/oldtool-utils";
 
 // Mixed contexts that might skip coercion but still do replacement
-let mixed = refaktor_someCAMEL-case;
-let ambiguous = x.refaktor.y;
-let complex_generic = HashMap<RefaktorKey<T>, Vec<RefaktorValue>>;
+let mixed = oldtool_someCAMEL-case;
+let ambiguous = x.oldtool.y;
+let complex_generic = HashMap<OldtoolKey<T>, Vec<OldtoolValue>>;
 
 // String literals and comments (should still be replaced)
-println!("Please use refaktor for this task");
-// The refaktor tool is great
-let docs = "refaktor: smart search and replace";
+println!("Please use oldtool for this task");
+// The oldtool tool is great
+let docs = "oldtool: smart search and replace";
 
 // File extensions and versioning
-let binary = "refaktor-v1.2.3-beta.tar.gz";
-let regex_pattern = r"refaktor[_-](\w+)";
+let binary = "oldtool-v1.2.3-beta.tar.gz";
+let regex_pattern = r"oldtool[_-](\w+)";
 "#,
     )
     .unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -384,13 +382,7 @@ let regex_pattern = r"refaktor[_-](\w+)";
         coerce_separators: CoercionMode::Auto,
     };
 
-    let plan = scan_repository(
-        temp_dir.path(),
-        "refaktor",
-        "renamed_refactoring_tool",
-        &options,
-    )
-    .unwrap();
+    let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
 
     let content_matches = &plan.matches;
     assert!(!content_matches.is_empty(), "Should find many matches");
@@ -441,12 +433,12 @@ let regex_pattern = r"refaktor[_-](\w+)";
     // Check that coerced matches use the right separators
     let has_underscores = content_matches
         .iter()
-        .any(|m| m.after.contains("renamed_refactoring_tool"));
+        .any(|m| m.after.contains("newtool_") || m.after.contains("_newtool"));
     assert!(has_underscores, "Should have snake_case replacements");
 
     let has_hyphens = content_matches
         .iter()
-        .any(|m| m.after.contains("renamed-refactoring-tool"));
+        .any(|m| m.after.contains("newtool-") || m.after.contains("-newtool"));
     assert!(has_hyphens, "Should have kebab-case replacements");
 }
 
@@ -458,20 +450,24 @@ fn test_path_and_namespace_coercion() {
     fs::write(
         temp_dir.path().join("paths.rs"),
         r#"
-use refaktor::core::Engine;
-use refaktor::utils::helper;
-let path1 = "src/refaktor/main.rs";
-let path2 = "./refaktor/config.toml";  
-let path3 = "/usr/bin/refaktor";
-let url = "https://github.com/user/refaktor";
-let module = refaktor::scanner::scan();
-let nested = refaktor::core::pattern::Match;
+use oldtool::core::Engine;
+use oldtool::utils::helper;
+let path1 = "src/oldtool/main.rs";
+let path2 = "./oldtool/config.toml";  
+let path3 = "/usr/bin/oldtool";
+let url = "https://github.com/user/oldtool";
+let module = oldtool::scanner::scan();
+let nested = oldtool::core::pattern::Match;
 "#,
     )
     .unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -484,13 +480,7 @@ let nested = refaktor::core::pattern::Match;
         coerce_separators: CoercionMode::Auto,
     };
 
-    let plan = scan_repository(
-        temp_dir.path(),
-        "refaktor",
-        "renamed_refactoring_tool",
-        &options,
-    )
-    .unwrap();
+    let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
 
     let content_matches = &plan.matches;
 
@@ -514,18 +504,22 @@ fn test_mixed_style_handling() {
         temp_dir.path().join("mixed.rs"),
         r"
 // These have mixed styles in the same identifier - coercion might be skipped
-let weird1 = refaktor_someCAMEL-case;
-let weird2 = refaktor-some_MIXED_Case;
-let weird3 = refaktor.some-weird_MIX;
+let weird1 = oldtool_someCAMEL-case;
+let weird2 = oldtool-some_MIXED_Case;
+let weird3 = oldtool.some-weird_MIX;
 
 // These are on mixed-style lines but individual contexts should still work
-let snake_case_var = refaktor_core; let camelVar = refaktorService;
+let snake_case_var = oldtool_core; let camelVar = oldtoolService;
 ",
     )
     .unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -538,13 +532,7 @@ let snake_case_var = refaktor_core; let camelVar = refaktorService;
         coerce_separators: CoercionMode::Auto,
     };
 
-    let plan = scan_repository(
-        temp_dir.path(),
-        "refaktor",
-        "renamed_refactoring_tool",
-        &options,
-    )
-    .unwrap();
+    let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
 
     // All matches should still do replacement, even if coercion is skipped
     assert!(!plan.matches.is_empty());
@@ -554,9 +542,7 @@ let snake_case_var = refaktor_core; let camelVar = refaktorService;
         // The replacement should contain the new pattern in some form
         let after_lower = m.after.to_lowercase();
         assert!(
-            after_lower.contains("renamedrefactoringtool")
-                || after_lower.contains("renamed_refactoring_tool")
-                || after_lower.contains("renamed-refactoring-tool"),
+            after_lower.contains("newtool"),
             "Expected replacement to contain new pattern, got: {}",
             m.after
         );
@@ -566,20 +552,20 @@ let snake_case_var = refaktor_core; let camelVar = refaktorService;
 #[test]
 fn test_language_specific_defaults() {
     // Test Rust file defaults (should prefer snake_case for modules)
-    let _result = apply_coercion("refaktor.rs", "refaktor", "renamed_refactoring_tool");
+    let _result = apply_coercion("oldtool.rs", "oldtool", "newtool");
     // For now this should be None since we need to implement language-specific logic
     // When implemented, this should prefer snake_case
 
     // Test JavaScript/TypeScript defaults (should prefer kebab-case)
-    let _result = apply_coercion("refaktor.js", "refaktor", "renamed_refactoring_tool");
+    let _result = apply_coercion("oldtool.js", "oldtool", "newtool");
     // When implemented, should prefer kebab-case
 
     // Test Python defaults (should prefer snake_case)
-    let _result = apply_coercion("refaktor.py", "refaktor", "renamed_refactoring_tool");
+    let _result = apply_coercion("oldtool.py", "oldtool", "newtool");
     // When implemented, should prefer snake_case
 
     // Test Java defaults (should prefer PascalCase for classes)
-    let _result = apply_coercion("Refaktor.java", "Refaktor", "RenamedRefactoringTool");
+    let _result = apply_coercion("Oldtool.java", "Oldtool", "Newtool");
     // When implemented, should prefer PascalCase
 }
 
@@ -592,17 +578,21 @@ fn test_cargo_toml_crate_name_coercion() {
         temp_dir.path().join("Cargo.toml"),
         r#"
 [package]
-name = "refaktor-core"
+name = "oldtool-core"
 version = "0.1.0"
 
 [dependencies]
-refaktor = { path = "../refaktor" }
+oldtool = { path = "../oldtool" }
 "#,
     )
     .unwrap();
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -615,13 +605,7 @@ refaktor = { path = "../refaktor" }
         coerce_separators: CoercionMode::Auto,
     };
 
-    let plan = scan_repository(
-        temp_dir.path(),
-        "refaktor",
-        "renamed_refactoring_tool",
-        &options,
-    )
-    .unwrap();
+    let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
 
     // In Cargo.toml, crate names should use hyphens
     let toml_matches: Vec<_> = plan
@@ -632,13 +616,13 @@ refaktor = { path = "../refaktor" }
 
     assert!(!toml_matches.is_empty());
 
-    // The "refaktor-core" name should become "renamed-refactoring-tool-core"
+    // The "oldtool-core" name should become "newtool-core"
     let name_match = toml_matches
         .iter()
-        .find(|m| m.before.contains("refaktor-core"));
+        .find(|m| m.before.contains("oldtool-core"));
     if let Some(m) = name_match {
         assert!(
-            m.after.contains("renamed-refactoring-tool-core"),
+            m.after.contains("newtool-core"),
             "Cargo.toml crate names should use hyphen style"
         );
     }
@@ -647,21 +631,13 @@ refaktor = { path = "../refaktor" }
 #[test]
 fn test_mixed_separators_no_coercion() {
     // Test files/identifiers with mixed separators (should not be coerced)
-    let result = apply_coercion(
-        "refaktor-core_lib.rs",
-        "refaktor",
-        "renamed_refactoring_tool",
-    );
+    let result = apply_coercion("oldtool-core_lib.rs", "oldtool", "newtool");
     assert!(
         result.is_none(),
         "Mixed separator containers should not be coerced"
     );
 
-    let result = apply_coercion(
-        "refaktor_core-service",
-        "refaktor",
-        "renamed_refactoring_tool",
-    );
+    let result = apply_coercion("oldtool_core-service", "oldtool", "newtool");
     assert!(
         result.is_none(),
         "Mixed separator containers should not be coerced"
@@ -673,12 +649,12 @@ fn test_style_memory_consistency() {
     // This test is for future functionality where we remember style choices
     // and apply them consistently across the same basename
 
-    // When we rename "refaktor.rs" -> "renamed_refactoring_tool.rs" (snake_case)
-    // Then other references to "refaktor.rs" should also use snake_case style
+    // When we rename "oldtool.rs" -> "newtool.rs" (snake_case)
+    // Then other references to "oldtool.rs" should also use snake_case style
 
     // For now, just test that the basic style detection is consistent
-    assert_eq!(detect_style("refaktor_core.rs"), Style::Snake);
-    assert_eq!(detect_style("refaktor-core.js"), Style::Kebab);
-    assert_eq!(detect_style("RefaktorCore.java"), Style::Pascal);
-    assert_eq!(detect_style("refaktorCore.ts"), Style::Camel);
+    assert_eq!(detect_style("oldtool_core.rs"), Style::Snake);
+    assert_eq!(detect_style("oldtool-core.js"), Style::Kebab);
+    assert_eq!(detect_style("OldtoolCore.java"), Style::Pascal);
+    assert_eq!(detect_style("oldtoolCore.ts"), Style::Camel);
 }

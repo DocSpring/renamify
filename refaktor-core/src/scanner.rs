@@ -1,3 +1,4 @@
+use crate::acronym::AcronymSet;
 use crate::case_model::{generate_variant_map, Style};
 use crate::pattern::{build_pattern, find_matches, Match};
 use crate::rename::plan_renames;
@@ -27,7 +28,11 @@ pub struct PlanOptions {
     pub rename_root: bool, // Allow renaming the root directory
     pub plan_out: PathBuf,
     pub coerce_separators: CoercionMode,
-    pub exclude_match: Vec<String>, // Specific matches to exclude
+    pub exclude_match: Vec<String>,    // Specific matches to exclude
+    pub no_acronyms: bool,             // Disable acronym detection
+    pub include_acronyms: Vec<String>, // Additional acronyms to recognize
+    pub exclude_acronyms: Vec<String>, // Default acronyms to exclude
+    pub only_acronyms: Vec<String>,    // Replace default list with these acronyms
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -58,6 +63,10 @@ impl Default for PlanOptions {
             plan_out: PathBuf::from(".refaktor/plan.json"),
             coerce_separators: CoercionMode::Auto,
             exclude_match: vec![],
+            no_acronyms: false, // Default: enable acronym detection
+            include_acronyms: vec![],
+            exclude_acronyms: vec![],
+            only_acronyms: vec![],
         }
     }
 }
@@ -139,7 +148,10 @@ pub fn scan_repository_multi(
     new: &str,
     options: &PlanOptions,
 ) -> Result<Plan> {
-    let variant_map = generate_variant_map(old, new, options.styles.as_deref());
+    // Build acronym set from options
+    let acronym_set = build_acronym_set(options);
+    let variant_map =
+        generate_variant_map_with_acronyms(old, new, options.styles.as_deref(), &acronym_set);
     let variants: Vec<String> = variant_map.keys().cloned().collect();
     let pattern = build_pattern(&variants)?;
 
@@ -586,6 +598,88 @@ pub fn write_plan(plan: &Plan, path: &Path) -> Result<()> {
     let writer = BufWriter::new(file);
     serde_json::to_writer_pretty(writer, plan)?;
     Ok(())
+}
+
+/// Build an AcronymSet from PlanOptions
+fn build_acronym_set(options: &PlanOptions) -> AcronymSet {
+    if options.no_acronyms {
+        // Disable acronym detection
+        AcronymSet::disabled()
+    } else if !options.only_acronyms.is_empty() {
+        // Replace default list with custom acronyms
+        AcronymSet::from_list(&options.only_acronyms)
+    } else {
+        // Start with default set
+        let mut set = AcronymSet::default();
+
+        // Add custom acronyms
+        for acronym in &options.include_acronyms {
+            set.add(acronym);
+        }
+
+        // Remove excluded acronyms
+        for acronym in &options.exclude_acronyms {
+            set.remove(acronym);
+        }
+
+        set
+    }
+}
+
+/// Generate variant map with custom acronym configuration
+fn generate_variant_map_with_acronyms(
+    old: &str,
+    new: &str,
+    styles: Option<&[Style]>,
+    acronym_set: &AcronymSet,
+) -> std::collections::BTreeMap<String, String> {
+    // Use the acronym-aware tokenization
+    let old_tokens = crate::case_model::parse_to_tokens_with_acronyms(old, acronym_set);
+    let new_tokens = crate::case_model::parse_to_tokens_with_acronyms(new, acronym_set);
+
+    let default_styles = [
+        Style::Original, // Always include the exact original string
+        Style::Snake,
+        Style::Kebab,
+        Style::Camel,
+        Style::Pascal,
+        Style::ScreamingSnake,
+        Style::Train, // Include Train-Case for patterns like Refaktor-Core-Engine
+        Style::ScreamingTrain, // Include ScreamingTrain for patterns like REFAKTOR-DEBUG
+    ];
+    let styles = styles.unwrap_or(&default_styles);
+
+    let mut map = std::collections::BTreeMap::new();
+
+    // Process styles in order to prioritize Original style
+    for style in styles {
+        if *style == Style::Original {
+            // Add the original pattern directly
+            map.insert(old.to_string(), new.to_string());
+        } else {
+            let old_variant = crate::case_model::to_style(&old_tokens, *style);
+            let new_variant = crate::case_model::to_style(&new_tokens, *style);
+
+            // Only add if not already in map (Original takes priority)
+            if !map.contains_key(&old_variant) {
+                map.insert(old_variant, new_variant);
+            }
+        }
+    }
+
+    // Add case variants (lowercase and uppercase) but only if not already in map
+    let lower_old = old.to_lowercase();
+    let upper_old = old.to_uppercase();
+
+    if lower_old != old && !map.contains_key(&lower_old) {
+        map.insert(lower_old, new.to_lowercase());
+    }
+
+    if upper_old != old && !map.contains_key(&upper_old) {
+        map.insert(upper_old, new.to_uppercase());
+    }
+
+    map
 }
 
 #[cfg(test)]

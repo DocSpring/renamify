@@ -31,6 +31,10 @@ fn getFooBarOption() -> FooBarOption { }",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -111,6 +115,10 @@ match foo_bar_type {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -181,6 +189,10 @@ function setFooBarType(fooBarType) {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -261,6 +273,10 @@ fn getFooBarOption() -> FooBarOption { }",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -326,6 +342,10 @@ fn test_multiple_compounds_same_line() {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -379,6 +399,10 @@ fn test_compound_case_preservation_bug() {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

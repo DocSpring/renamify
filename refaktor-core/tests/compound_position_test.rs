@@ -27,6 +27,10 @@ type FooBarOption = i32;",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -107,6 +111,10 @@ type GetFooBarOption = i32;",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -187,6 +195,10 @@ type LoadFooBar = i32;",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -259,6 +271,10 @@ let fooBar = getFooBar();",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

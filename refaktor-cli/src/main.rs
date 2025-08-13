@@ -125,6 +125,22 @@ enum Commands {
         /// Only show preview, don't write plan (dry-run)
         #[arg(long)]
         dry_run: bool,
+
+        /// Disable acronym detection (treat CLI, API, etc. as regular words)
+        #[arg(long)]
+        no_acronyms: bool,
+
+        /// Additional acronyms to recognize (comma-separated, e.g., "AWS,GCP,K8S")
+        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
+        include_acronyms: Vec<String>,
+
+        /// Default acronyms to exclude (comma-separated, e.g., "ID,UI")
+        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
+        exclude_acronyms: Vec<String>,
+
+        /// Use only these acronyms (replaces default list)
+        #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
+        only_acronyms: Vec<String>,
     },
 
     /// Apply a refactoring plan
@@ -232,6 +248,22 @@ enum Commands {
         /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
         #[arg(long)]
         fixed_table_width: bool,
+
+        /// Disable acronym detection (treat CLI, API, etc. as regular words)
+        #[arg(long)]
+        no_acronyms: bool,
+
+        /// Additional acronyms to recognize (comma-separated, e.g., "AWS,GCP,K8S")
+        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
+        include_acronyms: Vec<String>,
+
+        /// Default acronyms to exclude (comma-separated, e.g., "ID,UI")
+        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
+        exclude_acronyms: Vec<String>,
+
+        /// Use only these acronyms (replaces default list)
+        #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
+        only_acronyms: Vec<String>,
     },
 
     /// Initialize refaktor in the current repository
@@ -338,6 +370,22 @@ enum Commands {
         /// Show preview only, don't apply changes
         #[arg(long)]
         dry_run: bool,
+
+        /// Disable acronym detection (treat CLI, API, etc. as regular words)
+        #[arg(long)]
+        no_acronyms: bool,
+
+        /// Additional acronyms to recognize (comma-separated, e.g., "AWS,GCP,K8S")
+        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
+        include_acronyms: Vec<String>,
+
+        /// Default acronyms to exclude (comma-separated, e.g., "ID,UI")
+        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
+        exclude_acronyms: Vec<String>,
+
+        /// Use only these acronyms (replaces default list)
+        #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
+        only_acronyms: Vec<String>,
     },
 }
 
@@ -464,6 +512,10 @@ fn main() {
             fixed_table_width,
             plan_out,
             dry_run,
+            no_acronyms,
+            include_acronyms,
+            exclude_acronyms,
+            only_acronyms,
         } => {
             // Use preview format from CLI arg or config default
             let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
@@ -489,6 +541,10 @@ fn main() {
                 plan_out,
                 dry_run,
                 use_color,
+                no_acronyms,
+                include_acronyms,
+                exclude_acronyms,
+                only_acronyms,
             )
         },
 
@@ -507,6 +563,10 @@ fn main() {
             exclude_match,
             preview,
             fixed_table_width,
+            no_acronyms,
+            include_acronyms,
+            exclude_acronyms,
+            only_acronyms,
         } => {
             // Use preview format from CLI arg or config default
             let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
@@ -532,6 +592,10 @@ fn main() {
                 PathBuf::from(".refaktor/plan.json"),
                 true, // Always dry-run
                 use_color,
+                no_acronyms,
+                include_acronyms,
+                exclude_acronyms,
+                only_acronyms,
             )
         },
 
@@ -577,6 +641,10 @@ fn main() {
             rename_root,
             no_rename_root,
             dry_run,
+            no_acronyms,
+            include_acronyms,
+            exclude_acronyms,
+            only_acronyms,
         } => {
             // Use preview format from CLI arg or config default
             let format = preview.or_else(|| PreviewArg::from_str(&config.defaults.preview_format));
@@ -602,6 +670,10 @@ fn main() {
                 rename_root,
                 no_rename_root,
                 dry_run,
+                no_acronyms,
+                include_acronyms,
+                exclude_acronyms,
+                only_acronyms,
                 cli.yes,
                 use_color,
             )

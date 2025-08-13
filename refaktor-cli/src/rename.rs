@@ -26,6 +26,10 @@ pub fn handle_rename(
     rename_root: bool,
     no_rename_root: bool,
     dry_run: bool,
+    no_acronyms: bool,
+    include_acronyms: Vec<String>,
+    exclude_acronyms: Vec<String>,
+    only_acronyms: Vec<String>,
     auto_approve: bool,
     use_color: bool,
 ) -> Result<()> {
@@ -64,6 +68,10 @@ pub fn handle_rename(
         rename_root,
         no_rename_root,
         dry_run,
+        no_acronyms,
+        include_acronyms,
+        exclude_acronyms,
+        only_acronyms,
         auto_approve,
         use_color,
     )?;

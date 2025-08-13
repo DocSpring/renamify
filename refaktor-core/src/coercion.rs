@@ -401,10 +401,10 @@ mod tests {
 
     #[test]
     fn test_tokenize() {
-        let tokens = tokenize("refaktor-core");
+        let tokens = tokenize("foo-bar");
         assert_eq!(tokens.len(), 2);
-        assert_eq!(tokens[0].word, "refaktor");
-        assert_eq!(tokens[1].word, "core");
+        assert_eq!(tokens[0].word, "foo");
+        assert_eq!(tokens[1].word, "bar");
 
         let tokens = tokenize("getUserName");
         assert_eq!(tokens.len(), 3);
@@ -465,31 +465,31 @@ mod tests {
     #[test]
     fn test_apply_coercion() {
         // Test kebab-case container
-        let result = apply_coercion("refaktor-core", "refaktor", "renamed_refactoring_tool");
+        let result = apply_coercion("lorem-ipsum", "lorem", "dolor");
         assert_eq!(
             result,
             Some((
-                "renamed-refactoring-tool-core".to_string(),
+                "dolor-ipsum".to_string(),
                 "coerced to Kebab style".to_string()
             ))
         );
 
         // Test snake_case container
-        let result = apply_coercion("refaktor_core", "refaktor", "renamed-refactoring-tool");
+        let result = apply_coercion("lorem_ipsum", "lorem", "dolor");
         assert_eq!(
             result,
             Some((
-                "renamed_refactoring_tool_core".to_string(),
+                "dolor_ipsum".to_string(),
                 "coerced to Snake style".to_string()
             ))
         );
 
         // Test PascalCase container
-        let result = apply_coercion("RefaktorCore", "Refaktor", "renamed_refactoring_tool");
+        let result = apply_coercion("LoremIpsum", "Lorem", "Dolor");
         assert_eq!(
             result,
             Some((
-                "RenamedRefactoringToolCore".to_string(),
+                "DolorIpsum".to_string(),
                 "coerced to Pascal style".to_string()
             ))
         );

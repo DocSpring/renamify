@@ -58,6 +58,10 @@ fn test_plan_command_basic() {
         true,                                // dry_run
         true,                                // fixed_table_width - for consistent test output
         false,                               // use_color
+        false,                               // no_acronyms
+        vec![],                              // include_acronyms
+        vec![],                              // exclude_acronyms
+        vec![],                              // only_acronyms
     )
     .unwrap();
 
@@ -93,6 +97,10 @@ fn test_plan_command_with_styles() {
         true,                                // dry_run
         true,                                // fixed_table_width - for consistent test output
         false,                               // use_color
+        false,                               // no_acronyms
+        vec![],                              // include_acronyms
+        vec![],                              // exclude_acronyms
+        vec![],                              // only_acronyms
     )
     .unwrap();
 
@@ -120,6 +128,10 @@ fn test_plan_command_with_styles() {
         true,                                // dry_run
         true,                                // fixed_table_width - for consistent test output
         false,                               // use_color
+        false,                               // no_acronyms
+        vec![],                              // include_acronyms
+        vec![],                              // exclude_acronyms
+        vec![],                              // only_acronyms
     )
     .unwrap();
 

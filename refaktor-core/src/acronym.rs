@@ -1,30 +1,40 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-/// Default acronyms commonly used in development
+/// Default acronyms commonly used in development  
 pub const DEFAULT_ACRONYMS: &[&str] = &[
-    "2FA", "API", "CLI", "CORS", "CPU", "CSP", "CSV", "CSS", "DB", "DNS", "FTP", "GIF", "GPU",
-    "GUI", "HTML", "HTTP", "HTTPS", "ID", "IDE", "IP", "JSON", "JSONB", "JWT", "MFA", "OAuth",
-    "OTP", "PDF", "PIN", "PNG", "QR", "RAM", "SCSS", "SDK", "SQL", "SSH", "SSL", "SVG", "TCP",
-    "TLS", "TOML", "UI", "UID", "URI", "URL", "UTM", "UUID", "UX", "XML", "XSS", "YAML",
+    "2FA", "API", "CLI", "CORS", "CPU", "CSP", "CSV", "CSS", "DB", "DNS", "EC2", "FTP", "GIF",
+    "GPU", "GUI", "HTML", "HTTP", "HTTPS", "ID", "IDE", "IP", "JSON", "JSONB", "JWT", "K8S", "MFA",
+    "OAuth", "OTP", "PDF", "PIN", "PNG", "QR", "RAM", "S3", "SCSS", "SDK", "SQL", "SSH", "SSL",
+    "SVG", "TCP", "TLS", "TOML", "UDP", "UI", "UID", "URI", "URL", "UTM", "UUID", "UX", "XML",
+    "XSS", "YAML",
 ];
+
+/// Trie node for efficient acronym matching
+#[derive(Debug, Clone, Default)]
+struct TrieNode {
+    is_end: bool,
+    children: HashMap<char, TrieNode>,
+}
 
 /// Manages a set of known acronyms for detection
 #[derive(Debug, Clone)]
 pub struct AcronymSet {
     acronyms: HashSet<String>,
+    trie: TrieNode,
     enabled: bool,
 }
 
 impl Default for AcronymSet {
     fn default() -> Self {
-        let mut acronyms = HashSet::new();
-        for &acronym in DEFAULT_ACRONYMS {
-            acronyms.insert(acronym.to_string());
-        }
-        Self {
-            acronyms,
+        let mut set = Self {
+            acronyms: HashSet::new(),
+            trie: TrieNode::default(),
             enabled: true,
+        };
+        for &acronym in DEFAULT_ACRONYMS {
+            set.add(acronym);
         }
+        set
     }
 }
 
@@ -33,16 +43,31 @@ impl AcronymSet {
     pub fn new() -> Self {
         Self {
             acronyms: HashSet::new(),
+            trie: TrieNode::default(),
             enabled: true,
         }
     }
 
-    /// Create from a specific set of acronyms
-    pub fn from_list(acronyms: Vec<String>) -> Self {
+    /// Create a disabled acronym set (no acronym detection)
+    pub fn disabled() -> Self {
         Self {
-            acronyms: acronyms.into_iter().collect(),
-            enabled: true,
+            acronyms: HashSet::new(),
+            trie: TrieNode::default(),
+            enabled: false,
         }
+    }
+
+    /// Create from a specific set of acronyms
+    pub fn from_list(acronyms: &[String]) -> Self {
+        let mut set = Self {
+            acronyms: HashSet::new(),
+            trie: TrieNode::default(),
+            enabled: true,
+        };
+        for acronym in acronyms {
+            set.add(acronym);
+        }
+        set
     }
 
     /// Add acronyms to the set
@@ -57,6 +82,34 @@ impl AcronymSet {
         for acronym in acronyms {
             self.acronyms.remove(&acronym);
         }
+    }
+
+    /// Add a single acronym to the set
+    pub fn add(&mut self, acronym: &str) {
+        let upper = acronym.to_uppercase();
+        self.acronyms.insert(upper.clone());
+
+        // Also add to trie for efficient matching
+        let mut node = &mut self.trie;
+        for ch in upper.chars() {
+            node = node.children.entry(ch).or_default();
+        }
+        node.is_end = true;
+
+        // Also add lowercase version to trie (for k8s, s3, etc)
+        let lower = acronym.to_lowercase();
+        let mut node = &mut self.trie;
+        for ch in lower.chars() {
+            node = node.children.entry(ch).or_default();
+        }
+        node.is_end = true;
+    }
+
+    /// Remove a single acronym from the set
+    pub fn remove(&mut self, acronym: &str) {
+        self.acronyms.remove(&acronym.to_uppercase());
+        // Note: We don't remove from trie as it's complex and rebuild is simpler
+        // For now, we'll check against the HashSet for final validation
     }
 
     /// Replace the set with only these acronyms
@@ -106,6 +159,45 @@ impl AcronymSet {
 
         // Check if it's in our known set
         self.acronyms.contains(s)
+    }
+
+    /// Find the longest acronym match starting at the given position in text
+    pub fn find_longest_match<'a>(&self, text: &'a str, start_pos: usize) -> Option<&'a str> {
+        if !self.enabled || start_pos >= text.len() {
+            return None;
+        }
+
+        let bytes = text.as_bytes();
+        let mut node = &self.trie;
+        let mut last_match_end = None;
+        let mut i = start_pos;
+
+        while i < bytes.len() {
+            let ch = bytes[i] as char;
+
+            // Check both uppercase and lowercase versions
+            let upper_ch = ch.to_ascii_uppercase();
+            let lower_ch = ch.to_ascii_lowercase();
+
+            // Try to continue in trie
+            if let Some(next_node) = node
+                .children
+                .get(&ch)
+                .or_else(|| node.children.get(&upper_ch))
+                .or_else(|| node.children.get(&lower_ch))
+            {
+                node = next_node;
+                if node.is_end {
+                    // Found a valid acronym ending here
+                    last_match_end = Some(i + 1);
+                }
+                i += 1;
+            } else {
+                break;
+            }
+        }
+
+        last_match_end.map(|end| &text[start_pos..end])
     }
 }
 

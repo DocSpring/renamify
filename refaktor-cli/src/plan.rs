@@ -25,6 +25,10 @@ pub fn handle_plan(
     plan_out: PathBuf,
     dry_run: bool,
     use_color: bool,
+    no_acronyms: bool,
+    include_acronyms: Vec<String>,
+    exclude_acronyms: Vec<String>,
+    only_acronyms: Vec<String>,
 ) -> Result<()> {
     // Validate that --fixed-table-width is only used with table preview
     if fixed_table_width && preview.is_some() && preview != Some(Preview::Table) {
@@ -67,6 +71,10 @@ pub fn handle_plan(
         dry_run,
         fixed_table_width,
         use_color,
+        no_acronyms,
+        include_acronyms,
+        exclude_acronyms,
+        only_acronyms,
     )?;
 
     println!("{}", result);

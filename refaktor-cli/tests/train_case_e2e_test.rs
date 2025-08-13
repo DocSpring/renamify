@@ -243,6 +243,10 @@ The Rename-Tool-Based-Solution is working.
         false,  // rename_root
         false,  // no_rename_root
         false,  // dry_run
+        false,  // no_acronyms
+        vec![], // include_acronyms
+        vec![], // exclude_acronyms
+        vec![], // only_acronyms
         true,   // auto_approve
         true,   // use_color
     )

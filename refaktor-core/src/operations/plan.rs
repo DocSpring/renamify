@@ -41,6 +41,10 @@ pub fn plan_operation(
         false, // dry_run
         false, // fixed_table_width - not applicable for non-dry-run
         use_color,
+        false,  // no_acronyms - use defaults
+        vec![], // include_acronyms
+        vec![], // exclude_acronyms
+        vec![], // only_acronyms
     )
 }
 
@@ -65,6 +69,10 @@ pub fn plan_operation_with_dry_run(
     dry_run: bool,
     fixed_table_width: bool,
     use_color: bool,
+    no_acronyms: bool,
+    include_acronyms: Vec<String>,
+    exclude_acronyms: Vec<String>,
+    only_acronyms: Vec<String>,
 ) -> Result<String> {
     let current_dir = std::env::current_dir().context("Failed to get current directory")?;
 
@@ -103,6 +111,10 @@ pub fn plan_operation_with_dry_run(
         plan_out: plan_out_path.clone(),
         coerce_separators: crate::scanner::CoercionMode::Auto,
         exclude_match,
+        no_acronyms,
+        include_acronyms,
+        exclude_acronyms,
+        only_acronyms,
     };
 
     // Resolve all search paths to absolute paths and canonicalize them
