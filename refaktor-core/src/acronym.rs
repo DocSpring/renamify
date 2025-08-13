@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::OnceLock;
 
 /// Default acronyms commonly used in development  
 pub const DEFAULT_ACRONYMS: &[&str] = &[
@@ -8,6 +9,14 @@ pub const DEFAULT_ACRONYMS: &[&str] = &[
     "SVG", "TCP", "TLS", "TOML", "UDP", "UI", "UID", "URI", "URL", "UTM", "UUID", "UX", "XML",
     "XSS", "YAML",
 ];
+
+// Global default acronym set - initialized once and reused
+static DEFAULT_ACRONYM_SET: OnceLock<AcronymSet> = OnceLock::new();
+
+/// Get the default acronym set (lazily initialized once)
+pub fn get_default_acronym_set() -> &'static AcronymSet {
+    DEFAULT_ACRONYM_SET.get_or_init(|| AcronymSet::default())
+}
 
 /// Trie node for efficient acronym matching
 #[derive(Debug, Clone, Default)]

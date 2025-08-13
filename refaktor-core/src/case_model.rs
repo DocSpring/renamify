@@ -108,7 +108,7 @@ pub fn detect_style(s: &str) -> Option<Style> {
 }
 
 fn is_train_case(s: &str) -> bool {
-    let acronym_set = crate::acronym::AcronymSet::default();
+    let acronym_set = crate::acronym::get_default_acronym_set();
 
     s.split('-').all(|word| {
         if word.is_empty() {
@@ -138,7 +138,7 @@ fn is_title_case(s: &str) -> bool {
 }
 
 pub fn parse_to_tokens(s: &str) -> TokenModel {
-    parse_to_tokens_with_acronyms(s, &crate::acronym::AcronymSet::default())
+    parse_to_tokens_with_acronyms(s, crate::acronym::get_default_acronym_set())
 }
 
 pub fn parse_to_tokens_with_acronyms(
@@ -280,7 +280,7 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
             .join(" "),
 
         Style::Train => {
-            let acronym_set = crate::acronym::AcronymSet::default();
+            let acronym_set = crate::acronym::get_default_acronym_set();
             model
                 .tokens
                 .iter()

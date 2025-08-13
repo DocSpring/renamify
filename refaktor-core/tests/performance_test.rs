@@ -62,8 +62,8 @@ fn test_scan_performance_small_repo() {
 
     // Scanning 100 small files should take less than 1 second
     assert!(
-        duration.as_secs() < 3,
-        "Scanning 100 files took {:?}, expected < 3s. Performance regression detected!",
+        duration.as_secs() < 1,
+        "Scanning 100 files took {:?}, expected < 1s. Performance regression detected!",
         duration
     );
 }
