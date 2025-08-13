@@ -13,6 +13,10 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     let current_content = fs::read_to_string(file_path)
         .with_context(|| format!("Failed to read file: {}", file_path.display()))?;
 
+    // Get original file permissions before modifying
+    let original_metadata = fs::metadata(file_path)?;
+    let original_permissions = original_metadata.permissions();
+
     // Parse and apply the patch using diffy
     let patch = diffy::Patch::from_str(patch_content)
         .map_err(|e| anyhow!("Failed to parse patch: {}", e))?;
@@ -21,8 +25,12 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
         .map_err(|e| anyhow!("Failed to apply patch: {}", e))?;
 
     // Write the result back to the file
-    fs::write(file_path, result)
+    fs::write(file_path, &result)
         .with_context(|| format!("Failed to write file: {}", file_path.display()))?;
+
+    // Restore original permissions
+    fs::set_permissions(file_path, original_permissions)
+        .with_context(|| format!("Failed to restore permissions for: {}", file_path.display()))?;
 
     Ok(())
 }

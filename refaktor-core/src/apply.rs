@@ -372,11 +372,18 @@ fn apply_content_edits_with_content(
     // Write to temporary file in the same directory (for atomicity)
     let temp_path = path.with_extension(format!("{}.refaktor.tmp", std::process::id()));
 
+    // Get original file permissions before writing
+    let original_metadata = fs::metadata(path)?;
+    let original_permissions = original_metadata.permissions();
+
     {
         let mut temp_file = File::create(&temp_path)?;
         temp_file.write_all(modified.as_bytes())?;
         temp_file.sync_all()?; // fsync
     }
+
+    // Set the same permissions on the temp file before renaming
+    fs::set_permissions(&temp_path, original_permissions)?;
 
     // Atomic rename
     fs::rename(&temp_path, path)

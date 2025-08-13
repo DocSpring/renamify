@@ -15,6 +15,14 @@ if [ -d "$CARGO_TARGET_DIR" ]; then
   rm -rf "$CARGO_TARGET_DIR"
 fi
 
+function ensure_working_directory_is_clean() {
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "ERROR: Working directory is not clean at stage: ${1}"
+    git status
+    git diff | head -n 100 
+    exit 1
+  fi
+}
 
 echo "Cloning refaktor to $WORKDIR"
 git clone . "$WORKDIR"
@@ -24,10 +32,15 @@ cd "$WORKDIR"
 cp .rfignore .rgignore
 echo .rgignore >> .git/info/exclude
 
+# Make sure working directory is clean before we start
+ensure_working_directory_is_clean "before test"
+
 echo "=== Initial debug build ==="
 cargo build
 DEBUG_REFAKTOR="$CARGO_TARGET_DIR/debug/refaktor"
 "$DEBUG_REFAKTOR" --version
+
+ensure_working_directory_is_clean "after initial build"
 
 echo "=== Testing refaktor rename to smart_search_and_replace ==="
 # Use refaktor to rename itself using plan/apply
@@ -60,14 +73,7 @@ if [ -f "smart-search-and-replace-core/Cargo.toml" ]; then
   echo "ERROR: smart-search-and-replace-core/Cargo.toml still exists!"
   exit 1
 fi
-
-# The working directory should be clean after the undo
-if [ -n "$(git status --porcelain)" ]; then
-  echo "ERROR: Working directory is not clean after undo!"
-  git status
-  git diff | head -n 100 
-  exit 1
-fi
+ensure_working_directory_is_clean "after undo"
 echo "✓ Working directory is clean - undo successful!"
 
 echo "=== Testing redo functionality ==="
@@ -118,11 +124,5 @@ REL_REFAKTOR="$CARGO_TARGET_DIR/release/refaktor"
 "$REL_REFAKTOR" --version
 "$REL_REFAKTOR" --help
 
-# The working directory should be clean after the round-trip
-if [ -n "$(git status --porcelain)" ]; then
-  echo "ERROR: Working directory is not clean after round-trip!"
-  git status
-  git diff | head -n 100
-  exit 1
-fi
+ensure_working_directory_is_clean "after round-trip"
 echo "✓ Working directory is clean - round-trip successful!"
