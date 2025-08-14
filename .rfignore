@@ -1,3 +1,4 @@
+scripts/e2e-test.sh
 .github/workflows/
 docs/src/content/docs/index.mdx
 docs/src/content/docs/demo.mdx
