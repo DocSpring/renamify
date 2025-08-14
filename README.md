@@ -94,6 +94,16 @@ cargo build
 cargo test
 ```
 
+### Debugging
+
+For debugging tokenization issues, you can set the `DEBUG_TOKENIZE` environment variable to see detailed output of how Refaktor parses identifiers into tokens:
+
+```bash
+DEBUG_TOKENIZE=1 cargo test test_name
+```
+
+This is particularly useful when troubleshooting issues with case conversions or acronym handling.
+
 ### Code Coverage
 
 The `refaktor-core` library maintains at least 85% code coverage:
