@@ -149,9 +149,22 @@ pub fn parse_to_tokens_with_acronyms(
     let bytes = s.as_bytes();
     let mut current = Vec::new();
 
+    let debug = std::env::var("DEBUG_TOKENIZE").is_ok();
+    if debug {
+        eprintln!("=== Tokenizing: '{}' ===", s);
+    }
+
     let mut i = 0;
     while i < bytes.len() {
         let b = bytes[i];
+        if debug {
+            eprintln!(
+                "  [{}] Processing '{}', current = '{}'",
+                i,
+                b as char,
+                std::str::from_utf8(&current).unwrap_or("?")
+            );
+        }
 
         if b == b'_' || b == b'-' || b == b'.' || b == b' ' {
             // Delimiter: finish current token and continue
@@ -166,31 +179,41 @@ pub fn parse_to_tokens_with_acronyms(
             // Check for known acronyms at the start of a new token
             if current.is_empty() {
                 // Use trie to find longest matching acronym
+                // This handles both letter-starting acronyms (API, URL) and digit-starting ones (2FA, 3D)
                 if let Some(acronym) = acronym_set.find_longest_match(s, i) {
-                    tokens.push(Token::new(acronym));
-                    i += acronym.len();
-                    continue;
+                    // Check if the acronym is followed by a digit that should be part of the same token
+                    // For example, "ARM64" should be one token, not "ARM" and "64"
+                    // Also "Arm64" should be one token, not "Arm" and "64"
+                    let next_pos = i + acronym.len();
+                    let should_skip_acronym = next_pos < bytes.len() &&
+                        bytes[next_pos].is_ascii_digit() &&
+                        // Only skip if the acronym doesn't already contain digits
+                        !acronym.bytes().any(|b| b.is_ascii_digit());
+
+                    if !should_skip_acronym {
+                        tokens.push(Token::new(acronym));
+                        i += acronym.len();
+                        continue;
+                    }
+                    // Otherwise, fall through to normal processing
                 }
 
                 // Handle uppercase sequences that might be acronyms
                 if b.is_ascii_uppercase() {
-                    // Look ahead to find the end of consecutive uppercase letters
+                    // Look ahead to find consecutive uppercase letters (potential acronym)
                     let mut j = i;
                     while j < bytes.len() && bytes[j].is_ascii_uppercase() {
                         j += 1;
                     }
 
-                    // If followed by lowercase and multiple uppercase, split appropriately
-                    // This handles cases like "URLParser" -> "URL" + "Parser"
-                    if j < bytes.len() && bytes[j].is_ascii_lowercase() && j > i + 1 {
-                        // Multiple uppercase letters followed by lowercase
-                        // Take all but the last uppercase letter as one token
-                        if j > i + 2 {
-                            let acronym_part = std::str::from_utf8(&bytes[i..j - 1]).unwrap_or("");
-                            tokens.push(Token::new(acronym_part));
-                            i = j - 1;
-                            continue;
-                        }
+                    // If we have multiple uppercase letters followed by lowercase,
+                    // this might be an acronym followed by a word (e.g., "URLParser" -> "URL" + "Parser")
+                    if j > i + 1 && j < bytes.len() && bytes[j].is_ascii_lowercase() {
+                        // Take all but the last uppercase letter as the acronym
+                        let acronym_part = std::str::from_utf8(&bytes[i..j - 1]).unwrap_or("");
+                        tokens.push(Token::new(acronym_part));
+                        i = j - 1; // Continue from the last uppercase letter
+                        continue;
                     }
                 }
             }
@@ -198,11 +221,68 @@ pub fn parse_to_tokens_with_acronyms(
             // Standard case boundary detection
             if i > 0 && !current.is_empty() {
                 let prev = bytes[i - 1];
-                let should_split = (prev.is_ascii_lowercase() && b.is_ascii_uppercase())
-                    || (prev.is_ascii_alphabetic() && b.is_ascii_digit())
-                    || (prev.is_ascii_digit() && b.is_ascii_alphabetic());
+
+                // Check for various split conditions
+                let mut should_split = false;
+
+                // 1. lowercase to uppercase (e.g., "camelCase" -> "camel", "Case")
+                if prev.is_ascii_lowercase() && b.is_ascii_uppercase() {
+                    should_split = true;
+                }
+                // 2. letter to digit - DON'T split (e.g., "project1" -> "project1")
+                //    UNLESS the digit starts a known acronym like "2FA"
+                else if prev.is_ascii_alphabetic() && b.is_ascii_digit() {
+                    // Look ahead to see if this digit starts a known acronym
+                    let mut potential = vec![b];
+                    let mut j = i + 1;
+                    // Collect following characters that could be part of an acronym
+                    while j < bytes.len()
+                        && (bytes[j].is_ascii_uppercase() || bytes[j].is_ascii_digit())
+                    {
+                        potential.push(bytes[j]);
+                        j += 1;
+                    }
+                    if let Ok(potential_str) = std::str::from_utf8(&potential) {
+                        // Only split if this IS a known acronym (like "2FA")
+                        should_split = acronym_set.is_acronym(potential_str);
+                    } else {
+                        should_split = false;
+                    }
+                }
+                // 3. digit to uppercase letter (e.g., "arm64Arch" -> "arm64", "Arch")
+                //    BUT don't split if the digit is part of a known acronym like "2FA"
+                else if prev.is_ascii_digit() && b.is_ascii_uppercase() {
+                    // Check if we're in the middle of a known acronym
+                    // Look back to find where digits started
+                    let mut digit_start = current.len();
+                    while digit_start > 0 && current[digit_start - 1].is_ascii_digit() {
+                        digit_start -= 1;
+                    }
+
+                    // Build the potential acronym from the digits we have + upcoming uppercase
+                    let mut potential = Vec::new();
+                    potential.extend_from_slice(&current[digit_start..]);
+                    let mut j = i;
+                    while j < bytes.len() && bytes[j].is_ascii_uppercase() {
+                        potential.push(bytes[j]);
+                        j += 1;
+                    }
+
+                    if let Ok(potential_str) = std::str::from_utf8(&potential) {
+                        // Only split if this is NOT a known acronym
+                        should_split = !acronym_set.is_acronym(potential_str);
+                    } else {
+                        should_split = true;
+                    }
+                }
 
                 if should_split {
+                    if debug {
+                        eprintln!(
+                            "    -> SPLIT! Pushing token: '{}'",
+                            std::str::from_utf8(&current).unwrap_or("?")
+                        );
+                    }
                     tokens.push(Token::new(
                         std::str::from_utf8(&current).unwrap_or_default(),
                     ));
@@ -443,10 +523,10 @@ mod tests {
     #[test]
     fn test_parse_with_digits() {
         let tokens = parse_to_tokens("user2FA");
-        assert_eq!(tokens.tokens.len(), 3);
+        // "2FA" is a known acronym, so it should be kept together
+        assert_eq!(tokens.tokens.len(), 2);
         assert_eq!(tokens.tokens[0].text, "user");
-        assert_eq!(tokens.tokens[1].text, "2");
-        assert_eq!(tokens.tokens[2].text, "FA");
+        assert_eq!(tokens.tokens[1].text, "2FA");
     }
 
     #[test]
@@ -692,6 +772,231 @@ mod tests {
         assert!(!is_train_case(""));
         assert!(!is_train_case("-"));
         assert!(!is_train_case("hello"));
+    }
+
+    #[test]
+    fn test_mixed_alphanumeric_tokens() {
+        // Test that tokens with mixed letters and numbers stay together
+        let tokens = parse_to_tokens("amd64");
+        assert_eq!(tokens.tokens.len(), 1);
+        assert_eq!(tokens.tokens[0].text, "amd64");
+
+        let tokens = parse_to_tokens("arm64");
+        assert_eq!(tokens.tokens.len(), 1);
+        assert_eq!(tokens.tokens[0].text, "arm64");
+
+        let tokens = parse_to_tokens("project1");
+        assert_eq!(tokens.tokens.len(), 1);
+        assert_eq!(tokens.tokens[0].text, "project1");
+
+        let tokens = parse_to_tokens("project2");
+        assert_eq!(tokens.tokens.len(), 1);
+        assert_eq!(tokens.tokens[0].text, "project2");
+    }
+
+    #[test]
+    fn test_alphanumeric_in_all_styles() {
+        // Test SCREAMING_SNAKE_CASE with alphanumeric
+        let tokens = parse_to_tokens("ARM64_ARCH");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "ARM64");
+        assert_eq!(tokens.tokens[1].text, "ARCH");
+
+        let tokens = parse_to_tokens("ARCH_ARM64");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "ARCH");
+        assert_eq!(tokens.tokens[1].text, "ARM64");
+
+        // Test PascalCase with alphanumeric
+        let tokens = parse_to_tokens("Arm64Arch");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "Arm64");
+        assert_eq!(tokens.tokens[1].text, "Arch");
+
+        let tokens = parse_to_tokens("ArchArm64");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "Arch");
+        assert_eq!(tokens.tokens[1].text, "Arm64");
+
+        // Test camelCase with alphanumeric
+        let tokens = parse_to_tokens("arm64Arch");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "arm64");
+        assert_eq!(tokens.tokens[1].text, "Arch");
+
+        let tokens = parse_to_tokens("archArm64");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "arch");
+        assert_eq!(tokens.tokens[1].text, "Arm64");
+
+        // Test Train-Case with alphanumeric
+        let tokens = parse_to_tokens("Arch-Arm64");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "Arch");
+        assert_eq!(tokens.tokens[1].text, "Arm64");
+
+        let tokens = parse_to_tokens("Arm64-Arch");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "Arm64");
+        assert_eq!(tokens.tokens[1].text, "Arch");
+    }
+
+    #[test]
+    fn test_style_conversion_preserves_alphanumeric() {
+        // Test that converting between styles preserves alphanumeric tokens
+        let tokens = TokenModel::new(vec![Token::new("arch"), Token::new("arm64")]);
+
+        assert_eq!(to_style(&tokens, Style::Snake), "arch_arm64");
+        assert_eq!(to_style(&tokens, Style::Kebab), "arch-arm64");
+        assert_eq!(to_style(&tokens, Style::Pascal), "ArchArm64");
+        assert_eq!(to_style(&tokens, Style::Camel), "archArm64");
+        assert_eq!(to_style(&tokens, Style::ScreamingSnake), "ARCH_ARM64");
+        assert_eq!(to_style(&tokens, Style::Train), "Arch-Arm64");
+        assert_eq!(to_style(&tokens, Style::ScreamingTrain), "ARCH-ARM64");
+        assert_eq!(to_style(&tokens, Style::Dot), "arch.arm64");
+
+        // Test the reverse direction
+        let tokens = TokenModel::new(vec![Token::new("arm64"), Token::new("arch")]);
+
+        assert_eq!(to_style(&tokens, Style::Snake), "arm64_arch");
+        assert_eq!(to_style(&tokens, Style::Kebab), "arm64-arch");
+        assert_eq!(to_style(&tokens, Style::Pascal), "Arm64Arch");
+        assert_eq!(to_style(&tokens, Style::Camel), "arm64Arch");
+        assert_eq!(to_style(&tokens, Style::ScreamingSnake), "ARM64_ARCH");
+        assert_eq!(to_style(&tokens, Style::Train), "Arm64-Arch");
+        assert_eq!(to_style(&tokens, Style::ScreamingTrain), "ARM64-ARCH");
+        assert_eq!(to_style(&tokens, Style::Dot), "arm64.arch");
+    }
+
+    #[test]
+    fn test_kebab_case_preserves_alphanumeric() {
+        // Test that kebab-case variants preserve alphanumeric tokens
+        let tokens = parse_to_tokens("oldname-amd64");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "oldname");
+        assert_eq!(tokens.tokens[1].text, "amd64");
+
+        // Converting to kebab case should preserve "amd64" as one token
+        let new_tokens = TokenModel::new(vec![Token::new("newname"), Token::new("amd64")]);
+        assert_eq!(to_style(&new_tokens, Style::Kebab), "newname-amd64");
+
+        // Test with project numbers
+        let tokens = parse_to_tokens("oldname-project1");
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "oldname");
+        assert_eq!(tokens.tokens[1].text, "project1");
+
+        let new_tokens = TokenModel::new(vec![Token::new("newname"), Token::new("project1")]);
+        assert_eq!(to_style(&new_tokens, Style::Kebab), "newname-project1");
+    }
+
+    #[test]
+    fn test_variant_generation_preserves_alphanumeric() {
+        // Test that variant generation preserves alphanumeric tokens correctly
+        let map = generate_variant_map("oldname-amd64", "newname-amd64", Some(&[Style::Kebab]));
+        assert_eq!(map.get("oldname-amd64"), Some(&"newname-amd64".to_string()));
+
+        let map = generate_variant_map(
+            "oldname-project1",
+            "newname-project1",
+            Some(&[Style::Kebab]),
+        );
+        assert_eq!(
+            map.get("oldname-project1"),
+            Some(&"newname-project1".to_string())
+        );
+
+        // Test with different separators
+        let map = generate_variant_map("oldname_amd64", "newname_amd64", Some(&[Style::Snake]));
+        assert_eq!(map.get("oldname_amd64"), Some(&"newname_amd64".to_string()));
+    }
+
+    #[test]
+    fn test_file_extension_with_alphanumeric() {
+        // Test file names with alphanumeric tokens
+        let tokens = parse_to_tokens("oldname-linux-amd64.tar.gz");
+        // Should parse as: oldname, linux, amd64, tar, gz (extension handling is separate)
+        assert!(tokens.tokens.iter().any(|t| t.text == "amd64"));
+
+        // Ensure amd64 stays as one token, not split into amd and 64
+        assert!(!tokens.tokens.iter().any(|t| t.text == "amd"));
+        assert!(!tokens.tokens.iter().any(|t| t.text == "64"));
+    }
+
+    #[test]
+    fn test_round_trip_alphanumeric_conversion() {
+        // Test that we can convert from one style to another and back without losing information
+
+        // Start with kebab-case
+        let original = "oldname-linux-amd64";
+        let tokens = parse_to_tokens(original);
+        let snake = to_style(&tokens, Style::Snake);
+        assert_eq!(snake, "oldname_linux_amd64");
+        let back_to_kebab = to_style(&parse_to_tokens(&snake), Style::Kebab);
+        assert_eq!(back_to_kebab, original);
+
+        // Start with PascalCase
+        let original = "OldnameLinuxAmd64";
+        let tokens = parse_to_tokens(original);
+        let kebab = to_style(&tokens, Style::Kebab);
+        assert_eq!(kebab, "oldname-linux-amd64");
+        let back_to_pascal = to_style(&parse_to_tokens(&kebab), Style::Pascal);
+        assert_eq!(back_to_pascal, original);
+
+        // Start with SCREAMING_SNAKE_CASE
+        let original = "OLDNAME_LINUX_AMD64";
+        let tokens = parse_to_tokens(original);
+        let camel = to_style(&tokens, Style::Camel);
+        assert_eq!(camel, "oldnameLinuxAmd64");
+        let back_to_screaming = to_style(&parse_to_tokens(&camel), Style::ScreamingSnake);
+        assert_eq!(back_to_screaming, original);
+    }
+
+    #[test]
+    fn test_round_trip_project_number_preservation() {
+        // Critical test: project1 must round-trip correctly through all case styles
+        // This ensures that project1 => workspace1 => project1 works correctly
+
+        // Test with simple numbered project
+        let original = "project1";
+        let tokens = parse_to_tokens(original);
+        assert_eq!(tokens.tokens.len(), 1);
+        assert_eq!(tokens.tokens[0].text, "project1");
+
+        // Round trip through all styles
+        let pascal = to_style(&tokens, Style::Pascal);
+        assert_eq!(pascal, "Project1");
+        let kebab = to_style(&parse_to_tokens(&pascal), Style::Kebab);
+        assert_eq!(kebab, "project1");
+
+        // Test with compound identifier
+        let original = "project1-db";
+        let tokens = parse_to_tokens(original);
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "project1");
+        assert_eq!(tokens.tokens[1].text, "db");
+
+        // Simulate renaming: project1-db => workspace1-db => project1-db
+        let workspace_tokens = vec![Token::new("workspace1"), Token::new("db")];
+        let workspace_kebab = to_style(&TokenModel::new(workspace_tokens), Style::Kebab);
+        assert_eq!(workspace_kebab, "workspace1-db");
+
+        // And back to project
+        let project_tokens = vec![Token::new("project1"), Token::new("db")];
+        let project_kebab = to_style(&TokenModel::new(project_tokens), Style::Kebab);
+        assert_eq!(project_kebab, "project1-db");
+
+        // Test PascalCase round trip
+        let original = "Project1Db";
+        let tokens = parse_to_tokens(original);
+        assert_eq!(tokens.tokens.len(), 2);
+        assert_eq!(tokens.tokens[0].text, "Project1");
+        assert_eq!(tokens.tokens[1].text, "Db");
+
+        let kebab = to_style(&tokens, Style::Kebab);
+        assert_eq!(kebab, "project1-db");
+        let back_to_pascal = to_style(&parse_to_tokens(&kebab), Style::Pascal);
+        assert_eq!(back_to_pascal, "Project1Db");
     }
 
     #[test]

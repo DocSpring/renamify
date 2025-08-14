@@ -4,8 +4,9 @@ use tempfile::TempDir;
 
 #[test]
 fn test_acronym_affects_case_variants() {
-    // Test that acronyms affect how case variants are generated
-    // Using B2B which is not in the default list
+    // Test that alphanumeric sequences like "b2b" are always kept together as single tokens,
+    // regardless of whether they're in the acronym list or not.
+    // This ensures consistent tokenization and round-trip preservation.
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
 
@@ -84,10 +85,13 @@ fn test_acronym_affects_case_variants() {
     for m in &plan_without.matches {
         println!("  {} -> {}", m.before, m.after);
     }
-    // Without B2B as an acronym, it won't match as many variants
-    assert!(
-        plan_without.matches.len() < plan_with.matches.len(),
-        "Should find fewer variants when B2B is not an acronym: with={} without={}",
+    // IMPORTANT: Alphanumeric sequences like "b2b" should always be kept as single tokens
+    // regardless of acronym status. This ensures consistent tokenization and round-trip preservation.
+    // The number of matches should be the same because "b2b" is always one token.
+    assert_eq!(
+        plan_without.matches.len(),
+        plan_with.matches.len(),
+        "Should find the SAME number of variants regardless of acronym status (b2b is always one token): with={} without={}",
         plan_with.matches.len(),
         plan_without.matches.len()
     );

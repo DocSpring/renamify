@@ -3,11 +3,11 @@ use std::sync::OnceLock;
 
 /// Default acronyms commonly used in development  
 pub const DEFAULT_ACRONYMS: &[&str] = &[
-    "2FA", "API", "CLI", "CORS", "CPU", "CSP", "CSV", "CSS", "DB", "DNS", "EC2", "FTP", "GIF",
-    "GPU", "GUI", "HTML", "HTTP", "HTTPS", "ID", "IDE", "IP", "JSON", "JSONB", "JWT", "K8S", "MFA",
-    "OAuth", "OTP", "PDF", "PIN", "PNG", "QR", "RAM", "S3", "SCSS", "SDK", "SQL", "SSH", "SSL",
-    "SVG", "TCP", "TLS", "TOML", "UDP", "UI", "UID", "URI", "URL", "UTM", "UUID", "UX", "XML",
-    "XSS", "YAML",
+    "2FA", "AMD", "AMD64", "API", "ARM", "ARM64", "CLI", "CORS", "CPU", "CSP", "CSV", "CSS", "DB",
+    "DNS", "EC2", "FTP", "GIF", "GPU", "GUI", "HTML", "HTTP", "HTTPS", "ID", "IDE", "IP", "JSON",
+    "JSONB", "JWT", "K8S", "MFA", "OAuth", "OTP", "PDF", "PIN", "PNG", "QR", "RAM", "S3", "SCSS",
+    "SDK", "SQL", "SSH", "SSL", "SVG", "TCP", "TLS", "TOML", "UDP", "UI", "UID", "URI", "URL",
+    "UTM", "UUID", "UX", "XML", "XSS", "YAML",
 ];
 
 // Global default acronym set - initialized once and reused
