@@ -222,15 +222,15 @@ fn test_root_directory_rename_handling() {
     // Test that root directory renames are filtered out from plans by default
     // Root directory renames should not appear in plans unless explicitly allowed
     let mut matches_by_variant = HashMap::new();
-    matches_by_variant.insert("refaktor".to_string(), 1);
+    matches_by_variant.insert("oldtool".to_string(), 1);
 
     // Note: In a real scenario, the scanner would filter out root directory renames
     // For this test, we're only including the non-root rename to match actual behavior
     let plan = Plan {
         id: "root-test".to_string(),
         created_at: "1234567890".to_string(),
-        old: "refaktor".to_string(),
-        new: "renamed_refactoring_tool".to_string(),
+        old: "oldtool".to_string(),
+        new: "newtool".to_string(),
         styles: vec![Style::Snake, Style::Kebab],
         includes: vec![],
         excludes: vec![],
@@ -238,13 +238,13 @@ fn test_root_directory_rename_handling() {
             file: PathBuf::from("README.md"),
             line: 1,
             col: 0,
-            variant: "refaktor".to_string(),
-            before: "refaktor".to_string(),
-            after: "renamed_refactoring_tool".to_string(),
+            variant: "oldtool".to_string(),
+            before: "oldtool".to_string(),
+            after: "newtool".to_string(),
             start: 2,
-            end: 10,
-            line_before: Some("# Refaktor".to_string()),
-            line_after: Some("# Smart Search And Replace".to_string()),
+            end: 9,
+            line_before: Some("# Oldtool".to_string()),
+            line_after: Some("# Newtool".to_string()),
             coercion_applied: None,
             original_file: None,
             renamed_file: None,
@@ -253,8 +253,8 @@ fn test_root_directory_rename_handling() {
         renames: vec![
             // Only regular directory rename - root directory rename is filtered out
             Rename {
-                from: PathBuf::from("/project/refaktor-core"),
-                to: PathBuf::from("/project/renamed-refactoring-tool-core"),
+                from: PathBuf::from("/project/oldtool-core"),
+                to: PathBuf::from("/project/newtool-core"),
                 kind: RenameKind::Dir,
                 coercion_applied: None,
             },
@@ -275,11 +275,11 @@ fn test_root_directory_rename_handling() {
 
     // Verify that the subdirectory rename is in the table
     assert!(
-        normalized.contains("refaktor-core"),
+        normalized.contains("oldtool-core"),
         "Regular directory should appear in table"
     );
     assert!(
-        normalized.contains("renamed-refactoring-tool-core"),
+        normalized.contains("newtool-core"),
         "Regular directory rename should appear in table"
     );
 

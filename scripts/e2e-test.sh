@@ -101,8 +101,7 @@ DEBUG_AFRT="$CARGO_TARGET_DIR/debug/awesome_file_renaming_tool"
 "$DEBUG_AFRT" --version
 
 echo "=== Running tests with new name ==="
-# Have to skip the snapshot test that renames itself again since the snapshot changes
-cargo test -- --skip test_root_directory_rename_handling
+cargo test
 
 echo "=== Running $DEBUG_AFRT init to add .awesome_file_renaming_tool/ to .gitignore"
 "$DEBUG_AFRT" init

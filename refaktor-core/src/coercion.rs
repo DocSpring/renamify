@@ -318,8 +318,65 @@ pub fn apply_coercion(
         return None;
     }
 
-    // Detect the container style
+    // Check if the container contains the old pattern
+    let container_lower = container.to_lowercase();
+    let old_pattern_lower = old_pattern.to_lowercase();
+
+    if !container_lower.contains(&old_pattern_lower) {
+        return None;
+    }
+
+    // Detect the container style first
     let container_style = detect_style(container);
+
+    // Special case: If container has a hyphen suffix after the pattern (e.g., FooBar-specific)
+    // and the container has mixed/unknown style, treat this as a partial replacement
+    // But only if the container doesn't have other separator types (underscore, dot)
+    let is_partial_with_suffix = {
+        if container_style == Style::Mixed
+            && container.contains('-')
+            && !container.contains('_')
+            && !container.contains('.')
+        {
+            if let Some(pos) = container_lower.find(&old_pattern_lower) {
+                let end_pos = pos + old_pattern_lower.len();
+                end_pos < container.len() && container.chars().nth(end_pos) == Some('-')
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    };
+
+    if is_partial_with_suffix {
+        // For partial patterns with hyphen suffixes in mixed-style containers,
+        // preserve the original style of the pattern part and keep the suffix as-is
+        let old_tokens = tokenize(old_pattern);
+        let new_tokens = tokenize(new_pattern);
+
+        // Find the style of just the pattern part in the container
+        if let Some(pos) = container_lower.find(&old_pattern_lower) {
+            let pattern_part = &container[pos..pos + old_pattern.len()];
+            let pattern_style = detect_style(pattern_part);
+
+            // Don't coerce if the pattern part has mixed/unknown style
+            if pattern_style == Style::Mixed || pattern_style == Style::Dot {
+                return None;
+            }
+
+            // Render the new pattern in the detected style
+            let coerced_new = render_tokens(&new_tokens, pattern_style);
+
+            // Replace all occurrences (case-insensitive)
+            let result = replace_case_insensitive(container, old_pattern, &coerced_new);
+
+            return Some((
+                result,
+                format!("partial coercion to {:?} style", pattern_style),
+            ));
+        }
+    }
 
     // If container has mixed or unknown style, no coercion
     // Also skip dot-case by default (risky for file extensions)
@@ -330,14 +387,6 @@ pub fn apply_coercion(
     // Tokenize the patterns
     let old_tokens = tokenize(old_pattern);
     let new_tokens = tokenize(new_pattern);
-
-    // Check if the container contains the old pattern
-    let container_lower = container.to_lowercase();
-    let old_pattern_lower = old_pattern.to_lowercase();
-
-    if !container_lower.contains(&old_pattern_lower) {
-        return None;
-    }
 
     // Render the new pattern in the container style
     let coerced_new = render_tokens(&new_tokens, container_style);

@@ -175,10 +175,51 @@ pub fn find_compound_variants(
             }
 
             // No style detected (mixed or unknown style), but Original style is enabled
-            // Special handling for hyphenated identifiers
+            // For hyphenated identifiers where we've already replaced tokens, rebuild with original separators
             let replacement = if identifier.contains('-') {
-                // Handle hyphenated identifiers by replacing each part independently
-                replace_in_hyphenated(identifier, old_pattern, new_pattern)
+                // Rebuild the identifier from the replacement tokens, preserving hyphen positions
+                let original_parts: Vec<&str> = identifier.split('-').collect();
+                let original_first_part = original_parts[0];
+
+                // Check if the first part (before hyphen) was what we replaced
+                let first_part_tokens = parse_to_tokens(original_first_part);
+                if first_part_tokens.tokens.len() == old_tokens.tokens.len()
+                    && tokens_match(&first_part_tokens.tokens, &old_tokens.tokens)
+                {
+                    // The first part matches our pattern, rebuild it from replacement tokens
+                    let mut result_parts = Vec::new();
+
+                    // Rebuild the first part in its original style
+                    if let Some(style) = crate::case_model::detect_style(original_first_part) {
+                        let replacement_model =
+                            TokenModel::new(replacement_tokens[..new_tokens.tokens.len()].to_vec());
+                        result_parts.push(to_style(&replacement_model, style));
+                    } else {
+                        // If no style detected, check the case of the original
+                        let replacement_model =
+                            TokenModel::new(replacement_tokens[..new_tokens.tokens.len()].to_vec());
+                        let style = if original_first_part
+                            .chars()
+                            .next()
+                            .map_or(false, |c| c.is_uppercase())
+                        {
+                            Style::Pascal
+                        } else {
+                            Style::Snake // Default to snake_case for all-lowercase
+                        };
+                        result_parts.push(to_style(&replacement_model, style));
+                    }
+
+                    // Add the remaining parts unchanged
+                    for part in &original_parts[1..] {
+                        result_parts.push(part.to_string());
+                    }
+
+                    result_parts.join("-")
+                } else {
+                    // Fallback to the old hyphenated replacement logic
+                    replace_in_hyphenated(identifier, old_pattern, new_pattern)
+                }
             } else {
                 // Simple case-insensitive replacement for other patterns
                 case_insensitive_replace(identifier, old_pattern, new_pattern)

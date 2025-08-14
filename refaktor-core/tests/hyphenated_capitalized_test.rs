@@ -326,3 +326,112 @@ use foo_bar_baz_qux_utils;
         .any(|m| m.before == "FooBarBazQux-config" && m.after == "AlphaBetaGammaDelta-config");
     assert!(has_hyphen_pascal, "Should replace FooBarBazQux-config");
 }
+
+#[test]
+fn test_pascal_case_with_hyphen_suffix() {
+    // This test verifies that PascalCase patterns with hyphenated suffixes
+    // are properly matched and replaced
+    let temp_dir = TempDir::new().unwrap();
+    let root = temp_dir.path();
+
+    let test_file = root.join("test.md");
+    std::fs::write(
+        &test_file,
+        r#"# Documentation
+
+- FooBarBazQux-specific settings for configuration
+- Use FooBarBazQux-engine for processing
+- The FooBarBazQux-compatible API works well
+- Try foo_bar_baz_qux-specific options (snake_case variant)
+- FooBarBazQux-Specific with capital S (Train-Case style)
+"#,
+    )
+    .unwrap();
+
+    let options = PlanOptions {
+        exclude_match: vec![],
+        no_acronyms: false,
+        include_acronyms: vec![],
+        exclude_acronyms: vec![],
+        only_acronyms: vec![],
+        includes: vec![],
+        excludes: vec![],
+        respect_gitignore: false,
+        unrestricted_level: 0,
+        styles: None,
+        rename_files: false,
+        rename_dirs: false,
+        rename_root: false,
+        plan_out: PathBuf::from("plan.json"),
+        coerce_separators: refaktor_core::scanner::CoercionMode::Auto,
+    };
+
+    // Debug: Let's see what variants are generated
+    let variants = refaktor_core::case_model::generate_variant_map(
+        "foo_bar_baz_qux",
+        "alpha_beta_gamma_delta",
+        None,
+    );
+    println!("\n=== Generated variants ===");
+    for (old, new) in &variants {
+        println!("'{}' -> '{}'", old, new);
+    }
+
+    let plan =
+        scan_repository(&root, "foo_bar_baz_qux", "alpha_beta_gamma_delta", &options).unwrap();
+
+    println!("\n=== PascalCase-hyphenated matches ===");
+    for m in &plan.matches {
+        println!("'{}' -> '{}'", m.before, m.after);
+    }
+
+    // Should find and replace:
+    // - "FooBarBazQux-specific" -> "AlphaBetaGammaDelta-specific"
+    // - "FooBarBazQux-engine" -> "AlphaBetaGammaDelta-engine"
+    // - "FooBarBazQux-compatible" -> "AlphaBetaGammaDelta-compatible"
+    // - "foo_bar_baz_qux-specific" -> "alpha_beta_gamma_delta-specific"
+
+    let has_pascal_specific = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "FooBarBazQux-specific" && m.after == "AlphaBetaGammaDelta-specific");
+    assert!(
+        has_pascal_specific,
+        "Should replace 'FooBarBazQux-specific' with 'AlphaBetaGammaDelta-specific'"
+    );
+
+    let has_pascal_engine = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "FooBarBazQux-engine" && m.after == "AlphaBetaGammaDelta-engine");
+    assert!(
+        has_pascal_engine,
+        "Should replace 'FooBarBazQux-engine' with 'AlphaBetaGammaDelta-engine'"
+    );
+
+    let has_pascal_compatible = plan.matches.iter().any(|m| {
+        m.before == "FooBarBazQux-compatible" && m.after == "AlphaBetaGammaDelta-compatible"
+    });
+    assert!(
+        has_pascal_compatible,
+        "Should replace 'FooBarBazQux-compatible' with 'AlphaBetaGammaDelta-compatible'"
+    );
+
+    let has_snake_specific = plan.matches.iter().any(|m| {
+        m.before == "foo_bar_baz_qux-specific" && m.after == "alpha_beta_gamma_delta-specific"
+    });
+    assert!(
+        has_snake_specific,
+        "Should replace 'foo_bar_baz_qux-specific' with 'alpha_beta_gamma_delta-specific'"
+    );
+
+    // Check Train-Case variant (capitalized suffix)
+    let has_train_specific = plan
+        .matches
+        .iter()
+        .any(|m| m.before == "FooBarBazQux-Specific" && m.after == "AlphaBetaGammaDelta-Specific");
+    println!(
+        "Checking for FooBarBazQux-Specific -> AlphaBetaGammaDelta-Specific: {}",
+        has_train_specific
+    );
+}
