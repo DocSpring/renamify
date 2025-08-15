@@ -11,8 +11,8 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  self-referential-demo:
-    name: Self-Referential Demo
+  self-hosting-demo:
+    name: Self-Hosting Demo
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
