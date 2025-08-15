@@ -1,0 +1,97 @@
+---
+title: Renaming to Renamify
+description: How I used this tool to rename the project to something else
+---
+
+The original name for this took was "Refaktor". I decided that "Renamify" would be a better
+name, because it's more about renaming thing and less about refactoring.
+
+We used a `.rfignore` file to exclude certain files from our end-to-end tests, so I needed to delete that first.
+
+Next, I ran this command:
+
+```bash
+./target/release/refaktor rename refaktor renamify
+```
+
+This renamed almost everything in one shot:
+```diff
+# ...
+
+@@ line 150 @@
+-"$REL_REFAKTOR" --version
++"$REL_RENAMIFY" --version
+
+
+--- /Users/ndbroadbent/code/refaktor/typos.toml
++++ /Users/ndbroadbent/code/refaktor/typos.toml
+@@ line 3 @@
+-extend-identifiers = { refaktor = "refaktor" }
++extend-identifiers = { renamify = "renamify" }
+
+
+=== RENAMES ===
+dir /Users/ndbroadbent/code/refaktor/refaktor-mcp → /Users/ndbroadbent/code/renamify/renamify-mcp
+dir /Users/ndbroadbent/code/refaktor/refaktor-cli → /Users/ndbroadbent/code/renamify/renamify-cli
+dir /Users/ndbroadbent/code/refaktor/refaktor-core → /Users/ndbroadbent/code/renamify/renamify-core
+file /Users/ndbroadbent/code/refaktor/refaktor-mcp/src/refaktor-service.test.ts → /Users/ndbroadbent/code/renamify/renamify-mcp/src/renamify-service.test.ts
+file /Users/ndbroadbent/code/refaktor/refaktor-mcp/src/refaktor-service.ts → /Users/ndbroadbent/code/renamify/renamify-mcp/src/renamify-service.ts
+
+
+Refaktor plan: refaktor -> renamify
+Edits: 117 files, 1922 replacements
+Renames: 5 items
+Apply? [y/N]: y
+Applying changes...
+✓ Applied 1922 replacements across 117 files
+✓ Renamed 5 items
+Undo with: refaktor undo 86f7b48dbb2156c3
+```
+
+Renamify excludes dotfiles by default, so I also had to run it on some 
+specific dotfiles and directories:
+
+
+```bash
+./target/release/refaktor rename refaktor renamify \
+    .github/ .taskmaster/ .gitignore
+```
+
+```diff
+Refaktor plan: refaktor -> renamify
+Edits: 6 files, 153 replacements
+Apply? [y/N]: y
+Applying changes...
+✓ Applied 153 replacements across 6 files
+Undo with: refaktor undo fdc8f0abb4780d92
+```
+
+Finally, I needed to rename the `.rfignore` (For **r**e**f**actor) file to `.rnignore` (for **r**e**n**amify):
+
+```bash
+./target/release/refaktor rename rfignore rnignore
+```
+
+```diff
+# ...
+
+@@ line 184 @@
+-    // So both .gitignore and .rfignore should be respected
++    // So both .gitignore and .rnignore should be respected
+
+=== RENAMES ===
+file /Users/ndbroadbent/code/refaktor/renamify-core/tests/rfignore_test.rs → /Users/ndbroadbent/code/refaktor/renamify-core/tests/rnignore_test.rs
+
+
+Refaktor plan: rfignore -> rnignore
+Edits: 7 files, 38 replacements
+Renames: 1 items
+Apply? [y/N]: y
+Applying changes...
+✓ Applied 38 replacements across 7 files
+✓ Renamed 1 items
+Undo with: refaktor undo 4900704a6a95999e
+```
+
+All that was left to do was rename the GitHub repository and the project directory.
+Then I committed and pushed to the new repo.
