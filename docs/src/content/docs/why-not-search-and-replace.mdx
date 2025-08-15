@@ -1,0 +1,222 @@
+---
+title: Why Not Search and Replace?
+description: Why don't you just use a search and replace, regex, or sed?
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+Refactoring a real codebase is more than find-and-replace. Case styles, separators, acronyms, 
+filenames, and imports all need to change in sync. This page shows concrete failure modes of 
+naive search or regex, and how Refaktor handles them safely.
+
+> TLDR: Refaktor tokenizes identifiers, understands case styles and separators, knows common acronyms, respects boundaries, renames files and directories consistently, previews the plan, and applies changes atomically with undo.
+
+## 1. Case style preservation across variants
+
+Example: rename `acronym` to `inflection_rule`.
+
+Your codebase contains:
+
+```
+acronym_set        # snake_case
+acronymSet         # camelCase
+AcronymSet         # PascalCase
+ACRONYM_SET        # SCREAMING_SNAKE_CASE
+acronym-set        # kebab-case
+Acronym-Set        # Train-Case
+--exclude-acronyms # CLI flag segment
+excludeAcronyms    # mixed-case config key
+```
+
+Naive replace produces broken or mixed results:
+
+```
+inflection_rule_set          # ok
+inflection_ruleSet           # wrong in camel
+Inflection_ruleSet           # broken Pascal
+INFLECTION_RULE_SET          # ok
+inflection_rule-set          # mixed separators
+Inflection_rule-Set          # broken Train
+--exclude-inflection_rules   # wrong plural placement
+excludeInflection_rules      # broken camel suffix
+```
+
+Refaktor produces consistent, style-aware results:
+
+```
+inflection_rule_set
+inflectionRuleSet
+InflectionRuleSet
+INFLECTION_RULE_SET
+inflection-rule-set
+Inflection-Rule-Set
+--exclude-inflection-rules
+excludeInflectionRules
+```
+
+How: we detect the container style, generate the correct target variant for that style, and only replace full tokens, not substrings.
+
+## 2. Compound word boundaries
+
+Example: rename `File` to `Document`.
+
+Input:
+
+```
+FileManager
+TempFileHandler
+file_manager_service
+ProfileImage         # should not change
+FileSystemWatcher
+```
+
+Naive regex can overmatch:
+
+```
+ProfileImage -> ProDocumentImage   # wrong
+```
+
+Refaktor honors token boundaries:
+
+```
+FileManager        -> DocumentManager
+TempFileHandler    -> TempDocumentHandler
+file_manager_service -> document_manager_service
+ProfileImage       -> ProfileImage
+FileSystemWatcher  -> DocumentSystemWatcher
+```
+
+## 3. Acronym intelligence for matching
+
+Acronyms are common: `HTTPSConnection`, `XMLHttpRequest`, `parseURL`, `ID`, `URLParser`.
+
+Refaktor’s tokenizer understands acronym spans for matching:
+
+- `HTMLGenerator` is parsed as `HTML` + `Generator`, so searches for `html_generator` or `HTMLGenerator` both match correctly.
+- `URLParser` matches as `URL` + `Parser`, not `UR` + `LParser`.
+- `Rename-Tool-CLI` is Train-Case with an acronym tail. Searching for `rename_tool` correctly matches the `Rename-Tool` subspan and preserves `-CLI`.
+
+Acronym matching is configurable:
+- `--no-acronyms` disables acronym-aware matching.
+- `--include-acronyms "API,CLI,ID"`
+- `--exclude-acronyms "ID"`
+- `--only-acronyms "API,CLI"`
+
+> Note: snake_case is always lower for matching and rendering. Screaming snake is the uppercase variant. 
+> Acronym options affect matching detection and case inference, not whether snake uses uppercase.
+
+## 4. File and directory renaming with consistency
+
+Refaktor updates file and directory names alongside contents, in the right order, and checks for collisions.
+
+Example: rename `awesome_file_renaming_tool` to `refaktor`.
+
+It handles:
+
+```
+/awesome_file_renaming_tool/                  -> /refaktor/
+/docs/awesome-file-renaming-tool-guide.md     -> /docs/refaktor-guide.md
+awesome_file_renaming_tool.exe                -> refaktor.exe
+AwesomeFileRenamingTool.java                  -> Refaktor.java
+```
+
+And updates common import patterns:
+
+```
+import awesome_file_renaming_tool.core    -> import refaktor.core
+require('awesome-file-renaming-tool')     -> require('refaktor')
+use awesome_file_renaming_tool::scanner;  -> use refaktor::scanner;
+```
+
+Root directory rename is suggested with a ready-to-paste snippet and opt-in flag to perform automatically.
+
+## 5. Hyphenated mixed-style patterns
+
+Real-world examples:
+
+```
+AwesomeFileRenamingTool-specific
+awesome-file-renaming-tool-Guide
+Run-AwesomeFileRenamingTool
+```
+
+Refaktor treats the hyphen as a separator between differently styled segments, replaces only the matching subspan, and preserves each segment’s style. For example:
+
+```
+Rename-Tool-CLI  -> Smart-Search-And-Replace-CLI
+```
+
+This works because the tokenizer classifies the segment as Train-Case with an acronym tail, not as generic “mixed”.
+
+## 6. Special tokens that must be preserved
+
+Refaktor never splits these incorrectly:
+
+- `arm64`, `amd64`
+- `2FA`
+- `K8S`
+- `project1`, `b2b`, `b2c`
+
+These are single tokens with digits and are preserved in style-aware replacements.
+
+## 7. Round-trip preservation
+
+Renames must be reversible without drift:
+
+```
+project1 -> workspace1 -> project1
+b2b_sales -> b2c_sales -> b2b_sales
+ARM64_ARCH -> X86_ARCH -> ARM64_ARCH
+```
+
+Refaktor tracks exact tokenization and case rules so round-trips restore the original.
+We run end-to-end roundtrip tests on CI to ensure we catch any unhandled edgecases.
+
+## 8. Safety and previews
+
+- Ignores binaries and build artifacts by default. (Same rules as ripgrep, same -u, -uu, -uuu flags.)
+- Honors `.gitignore`, `.ignore`, `.rgignore`, and `.rfignore`.
+- Plan and preview before apply.
+- Apply is atomic with rollback and undo history.
+
+---
+
+## Real-world complexity: renaming `URL` to `WebAddress`
+
+Challenges include:
+- `URLParser`, `parseURL`, `HTTPS_URL`, `url_encoder`
+- Plurals like `URLs` vs `WebAddresses`
+- Words that only contain `URL` but are different, like `CURL`
+- Literals and comments, like `https://example.com/url` or `@param {URL}`
+- Constants like `URL_PATTERN`
+- Filenames like `url_utils.js` that should become `web_address_utils.js`
+
+Refaktor handles matching and boundaries so you can review a single plan and apply confidently.
+
+---
+
+## Where to next
+
+<LinkCard
+  title="Case-Aware Transformations"
+  href="/refaktor/features/case-transformations"
+  description="Learn how Refaktor handles different naming conventions automatically"
+/>
+
+<LinkCard
+  title="File and Directory Renaming"
+  href="/refaktor/features/file-renaming"
+  description="Rename files and folders safely with Refaktor"
+/>
+
+<LinkCard
+  title="Safety Features"
+  href="/refaktor/features/safety"
+  description="See how we protect your repo in Refaktor"
+/>
+
+<LinkCard
+  title="Filtering and Ignore Rules"
+  href="/refaktor/features/filtering"
+  description="Control scope with Refaktor"
+/>

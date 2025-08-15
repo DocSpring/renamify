@@ -34,6 +34,10 @@ export default defineConfig({
             { label: "Installation", slug: "installation" },
             { label: "Self-Hosting Demo", slug: "self-hosting-demo" },
             { label: "Quick Start", slug: "quick-start" },
+            {
+              label: "Why Not Search and Replace?",
+              slug: "why-not-search-and-replace",
+            },
           ],
         },
         {
