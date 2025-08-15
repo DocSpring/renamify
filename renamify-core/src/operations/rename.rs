@@ -101,9 +101,8 @@ pub fn rename_operation(
         if !root_renames.is_empty() && !no_rename_root {
             let snippet = generate_root_rename_snippet(&root_renames)?;
             return Ok(format!("Only root directory rename detected. Use --rename-root to perform it or see suggested snippet:\n{}", snippet));
-        } else {
-            return Ok("Nothing to do.".to_string());
         }
+        return Ok("Nothing to do.".to_string());
     }
 
     // Safety checks

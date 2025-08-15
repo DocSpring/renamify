@@ -3,6 +3,7 @@ use crate::scanner::Plan;
 use anyhow::{anyhow, Context, Result};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::fmt::Write as FmtWrite;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -107,8 +108,6 @@ fn generate_reverse_patches(
     let reverse_patches_dir = backup_base.join("reverse_patches");
     fs::create_dir_all(&reverse_patches_dir)?;
 
-    use sha2::{Digest, Sha256};
-
     // Track created directories
     let mut created_dirs = Vec::new();
 
@@ -123,7 +122,7 @@ fn generate_reverse_patches(
             to.clone()
         } else {
             // Check if any parent directory was renamed
-            let mut current = original_path.to_path_buf();
+            let mut current = original_path.clone();
             for (from, to) in &state.renames_performed {
                 if let Ok(relative) = original_path.strip_prefix(from) {
                     current = to.join(relative);
@@ -168,10 +167,10 @@ fn generate_reverse_patches(
             for match_hunk in &mut plan.matches {
                 if match_hunk.file == *original_path {
                     match_hunk.original_file = Some(original_path.clone());
-                    match_hunk.renamed_file = if current_path != *original_path {
-                        Some(current_path.clone())
-                    } else {
+                    match_hunk.renamed_file = if current_path == *original_path {
                         None
+                    } else {
+                        Some(current_path.clone())
                     };
                     match_hunk.patch_hash = Some(hash.clone());
                 }
@@ -232,7 +231,7 @@ fn make_path_relative(path: &Path) -> PathBuf {
 }
 
 /// Split a string into lines while preserving whether each line had a trailing newline
-/// Unlike str::lines(), this preserves the exact line ending structure
+/// Unlike `str::lines()`, this preserves the exact line ending structure
 fn split_preserving_newlines(s: &str) -> Vec<&str> {
     if s.is_empty() {
         return vec![];

@@ -15,7 +15,7 @@ static DEFAULT_ACRONYM_SET: OnceLock<AcronymSet> = OnceLock::new();
 
 /// Get the default acronym set (lazily initialized once)
 pub fn get_default_acronym_set() -> &'static AcronymSet {
-    DEFAULT_ACRONYM_SET.get_or_init(|| AcronymSet::default())
+    DEFAULT_ACRONYM_SET.get_or_init(AcronymSet::default)
 }
 
 /// Trie node for efficient acronym matching
@@ -211,7 +211,7 @@ impl AcronymSet {
 }
 
 /// Token type for classification
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenType {
     Title,   // ^[A-Z][a-z0-9]*$
     Acronym, // ^[A-Z]{2,}$ and in AcronymSet
@@ -268,7 +268,7 @@ pub fn classify_token(token: &str, acronym_set: &AcronymSet) -> TokenType {
 }
 
 /// Container style for hyphenated identifiers
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HyphenContainerStyle {
     TrainCase,            // All Title tokens
     TrainCaseWithAcronym, // Title tokens with trailing Acronym tokens
@@ -362,8 +362,7 @@ pub fn matches_subsequence(
             // Get canonical form based on token type
             let canonical = match token_type {
                 TokenType::Title | TokenType::Acronym => segment_token.to_lowercase(),
-                TokenType::Lower => segment_token.to_string(),
-                TokenType::Other => segment_token.to_string(),
+                TokenType::Lower | TokenType::Other => segment_token.to_string(),
             };
 
             if &canonical != search_token {
