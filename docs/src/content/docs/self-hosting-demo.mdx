@@ -14,33 +14,37 @@ import Quote from '../../components/Quote.astro';
   In computer programming, self-hosting is the use of a program as part of the toolchain or operating 
   system that produces new versions of that same program—for example, a compiler that can compile 
   its own source code.
-</Quote>  
+</Quote>
 
-Watch Refaktor rename the entire project to `awesome_file_renaming_tool`, run the test suite 
-using it's new name, and then use the new binary to change itself back again:
+Refaktor is capable of "self-hosting". It can rename the entire project to `awesome_file_renaming_tool`, 
+run the entire test suite, and then use the newly compiled binary to rename itself back again:
 
 ```bash
 # Clone and build
 git clone https://github.com/DocSpring/refaktor
 cd refaktor
-cargo build --release
+cargo build
 
 # Use refaktor to rename itself to awesome_file_renaming_tool
-./target/release/refaktor rename refaktor awesome_file_renaming_tool --preview table --yes
+./target/debug/refaktor rename refaktor awesome_file_renaming_tool --preview table --yes
 
-# Remove the old binary, run tests, and rebuild with the new name
+# Make sure the old compiled binary is gone
+rm -rf target
+
+# Run the full test suite
+cargo test
+
+# Build the "awesome_file_renaming_tool" binary
+cargo build
+
+# Use the new binary to rename itself back to refaktor
+./target/debug/awesome_file_renaming_tool rename awesome_file_renaming_tool refaktor --preview table --yes
+
+# Back to the original name
 rm -rf target
 cargo test
-cargo build --release
-
-# Now use the new renamed binary to rename itself back to refaktor
-./target/release/awesome_file_renaming_tool rename awesome_file_renaming_tool refaktor --preview table --yes
-
-# Back to the original
-rm -rf target
-cargo test
-cargo build --release
-./target/release/refaktor --help
+cargo build
+./target/debug/refaktor --help
 
 git status
 # On branch main

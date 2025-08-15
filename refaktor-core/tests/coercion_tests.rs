@@ -443,10 +443,10 @@ let regex_pattern = r"oldtool[_-](\w+)";
 }
 
 #[test]
-fn test_path_and_namespace_coercion() {
+fn test_namespace_separator_prevents_coercion() {
     let temp_dir = TempDir::new().unwrap();
 
-    // Test various path and namespace patterns
+    // Test that namespace separators prevent coercion - each identifier is treated independently
     fs::write(
         temp_dir.path().join("paths.rs"),
         r#"
@@ -484,15 +484,21 @@ let nested = oldtool::core::pattern::Match;
 
     let content_matches = &plan.matches;
 
-    // Check that we have some coerced matches for path-like contexts
-    let coerced_count = content_matches
-        .iter()
-        .filter(|m| m.coercion_applied.is_some())
-        .count();
-    assert!(
-        coerced_count > 0,
-        "Should have coerced some path/namespace contexts"
-    );
+    // All "oldtool" matches should be replaced with "newtool" (lowercase)
+    // regardless of context, because separators prevent coercion
+    for m in content_matches {
+        if m.before == "oldtool" {
+            assert_eq!(
+                m.after, "newtool",
+                "Should be 'newtool' not coerced after separator"
+            );
+            // Coercion should NOT be applied when after a separator
+            assert!(
+                m.coercion_applied.is_none(),
+                "Should not have coercion applied after separator"
+            );
+        }
+    }
 }
 
 #[test]

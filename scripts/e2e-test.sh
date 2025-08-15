@@ -144,7 +144,6 @@ cargo build --release
 REL_REFAKTOR="$CARGO_TARGET_DIR/release/refaktor"
 
 "$REL_REFAKTOR" --version
-"$REL_REFAKTOR" --help
 
 ensure_working_directory_is_clean "after round-trip"
 echo "✓ Working directory is clean - round-trip successful!"

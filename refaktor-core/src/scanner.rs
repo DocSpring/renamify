@@ -474,28 +474,56 @@ fn extract_immediate_context(line: &str, match_start: usize, match_end: usize) -
     let mut context_end = char_end;
 
     // Characters that are part of identifiers or compound names
-    let is_identifier_char =
-        |c: char| -> bool { c.is_alphanumeric() || c == '_' || c == '-' || c == '.' };
+    let is_identifier_char = |c: char| -> bool { c.is_alphanumeric() || c == '_' || c == '-' };
 
-    // Characters that indicate we should stop extending context but might be part of a path/namespace
-    let is_path_separator = |c: char| -> bool { c == '/' || c == '\\' || c == ':' || c == '@' };
+    // Characters that act as separators - we should NOT extend past these
+    // This includes: /, \, :, @, ., [, ], (, ), {, }, =, quotes, spaces
+    let is_separator = |c: char| -> bool {
+        matches!(
+            c,
+            '/' | '\\'
+                | ':'
+                | '@'
+                | '.'
+                | '['
+                | ']'
+                | '('
+                | ')'
+                | '{'
+                | '}'
+                | '='
+                | '"'
+                | '\''
+                | '`'
+                | ' '
+                | '\t'
+                | '\n'
+                | '\r'
+                | ','
+                | ';'
+        )
+    };
 
-    // Extend backwards to find the start of the identifier/path chain
+    // Extend backwards to find the start of the immediate identifier
+    // Stop at any separator character
     while context_start > 0 {
         let prev_char = chars[context_start - 1];
-        if is_identifier_char(prev_char) || is_path_separator(prev_char) {
+        if is_identifier_char(prev_char) {
             context_start -= 1;
         } else {
+            // Stop at any separator or other character
             break;
         }
     }
 
-    // Extend forwards to find the end of the identifier/path chain
+    // Extend forwards to find the end of the immediate identifier
+    // Stop at any separator character
     while context_end < chars.len() {
         let next_char = chars[context_end];
-        if is_identifier_char(next_char) || is_path_separator(next_char) {
+        if is_identifier_char(next_char) {
             context_end += 1;
         } else {
+            // Stop at any separator or other character
             break;
         }
     }
