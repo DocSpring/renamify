@@ -114,6 +114,10 @@ fi
 echo "✓ Found .awesome_file_renaming_tool/ in .gitignore"
 
 echo "=== Committing change to .gitignore"
+if [ -n "${CI:-}" ]; then
+  git config --global user.email "e2e.test@example.com"
+  git config --global user.name "refaktor e2e test"
+fi
 git add .gitignore
 git commit -m "Added .awesome_file_renaming_tool/ to .gitignore"
 
