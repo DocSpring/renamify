@@ -22,11 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Wait for CI and E2E
+      - name: Wait for Tests
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.sha }}
-          check-name: CI
+          check-name: "Test on ubuntu-latest"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
@@ -34,7 +34,7 @@ jobs:
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.sha }}
-          check-name: E2E Tests
+          check-name: "Self-Hosting Demo (ubuntu-latest)"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
