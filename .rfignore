@@ -1,6 +1,6 @@
 scripts/e2e-test.sh
 .github/workflows/
 docs/src/content/docs/index.mdx
-docs/src/content/docs/demo.mdx
+docs/src/content/docs/self-hosting-demo.mdx
 docs/src/assets/case-studies/
 docs/src/content/docs/case-studies/
