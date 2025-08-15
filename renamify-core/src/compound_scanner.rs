@@ -43,7 +43,7 @@ fn has_recognizable_case_style(s: &str) -> bool {
     false
 }
 
-/// Check if a string looks like camelCase or PascalCase
+/// Check if a string looks like camelCase or `PascalCase`
 fn is_camel_or_pascal_case(s: &str) -> bool {
     if s.is_empty() {
         return false;
@@ -91,7 +91,7 @@ fn find_all_identifiers(content: &[u8]) -> Vec<(usize, usize, String)> {
 
             for (i, part) in parts.iter().enumerate() {
                 if !part.is_empty() {
-                    identifiers.push((current_pos, current_pos + part.len(), part.to_string()));
+                    identifiers.push((current_pos, current_pos + part.len(), (*part).to_string()));
                 }
                 current_pos += part.len() + 1; // +1 for the dot
 

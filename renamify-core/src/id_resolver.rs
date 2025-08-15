@@ -3,7 +3,7 @@ use anyhow::{anyhow, Result};
 use std::path::Path;
 
 /// Type of operation for ID resolution
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OperationType {
     Undo,
     Redo,

@@ -212,7 +212,7 @@ pub fn find_compound_variants(
                         let style = if original_first_part
                             .chars()
                             .next()
-                            .map_or(false, |c| c.is_uppercase())
+                            .is_some_and(char::is_uppercase)
                         {
                             Style::Pascal
                         } else {
@@ -223,7 +223,7 @@ pub fn find_compound_variants(
 
                     // Add the remaining parts unchanged
                     for part in &original_parts[1..] {
-                        result_parts.push(part.to_string());
+                        result_parts.push((*part).to_string());
                     }
 
                     result_parts.join("-")
@@ -281,7 +281,7 @@ fn replace_in_hyphenated(identifier: &str, old_pattern: &str, new_pattern: &str)
                 let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
                 let replacement = crate::case_model::to_style(&new_tokens, style);
                 replaced_parts.push(replacement);
-            } else if part.chars().next().map_or(false, |c| c.is_uppercase()) {
+            } else if part.chars().next().is_some_and(char::is_uppercase) {
                 // Part starts with uppercase, likely Pascal case
                 // Convert new pattern to Pascal case
                 let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
@@ -324,7 +324,7 @@ fn case_insensitive_replace(identifier: &str, old_pattern: &str, new_pattern: &s
             let replacement = if actual_pattern
                 .chars()
                 .next()
-                .map_or(false, |c| c.is_uppercase())
+                .is_some_and(char::is_uppercase)
             {
                 // Capitalize the new pattern
                 let mut chars = new_pattern.chars();

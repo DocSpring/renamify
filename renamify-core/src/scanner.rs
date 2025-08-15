@@ -628,7 +628,7 @@ pub fn write_plan(plan: &Plan, path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Build an AcronymSet from PlanOptions
+/// Build an `AcronymSet` from `PlanOptions`
 fn build_acronym_set(options: &PlanOptions) -> AcronymSet {
     if options.no_acronyms {
         // Disable acronym detection
@@ -689,9 +689,7 @@ fn generate_variant_map_with_acronyms(
             let new_variant = crate::case_model::to_style(&new_tokens, *style);
 
             // Only add if not already in map (Original takes priority)
-            if !map.contains_key(&old_variant) {
-                map.insert(old_variant, new_variant);
-            }
+            map.entry(old_variant).or_insert(new_variant);
         }
     }
 

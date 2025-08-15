@@ -97,7 +97,9 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
         ]);
     } else {
         // Use TTY detection fallback when no fixed width specified
-        if !io::stdout().is_terminal() {
+        if io::stdout().is_terminal() {
+            table.set_content_arrangement(ContentArrangement::Dynamic);
+        } else {
             table.set_content_arrangement(ContentArrangement::Disabled);
             table.set_constraints(vec![
                 ColumnConstraint::Absolute(Width::Fixed(75)), // File
@@ -105,8 +107,6 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
                 ColumnConstraint::Absolute(Width::Fixed(15)), // Matches
                 ColumnConstraint::Absolute(Width::Fixed(75)), // Variants
             ]);
-        } else {
-            table.set_content_arrangement(ContentArrangement::Dynamic);
         }
     }
 
@@ -439,7 +439,7 @@ fn render_summary(plan: &Plan) -> String {
         for hunk in &plan.matches {
             *file_stats
                 .entry(&hunk.file)
-                .or_insert_with(HashMap::new)
+                .or_default()
                 .entry(hunk.variant.clone())
                 .or_insert(0) += 1;
         }

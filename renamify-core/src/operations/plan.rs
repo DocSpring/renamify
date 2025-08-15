@@ -85,13 +85,13 @@ pub fn plan_operation_with_dry_run(
 
     // Acquire lock (only for non-dry-run operations)
     let renamify_dir = current_dir.join(".renamify");
-    let _lock = if !dry_run {
+    let _lock = if dry_run {
+        None
+    } else {
         Some(
             LockFile::acquire(&renamify_dir)
                 .context("Failed to acquire lock for renamify operation")?,
         )
-    } else {
-        None
     };
 
     // Build styles list
@@ -136,7 +136,9 @@ pub fn plan_operation_with_dry_run(
 
     // Generate preview content
     let preview_content = if let Some(format) = preview_format.as_ref() {
-        if format != "none" {
+        if format == "none" {
+            None
+        } else {
             let preview_format = parse_preview_format(format)?;
             let content = if fixed_table_width {
                 crate::preview::render_plan_with_fixed_width(
@@ -153,8 +155,6 @@ pub fn plan_operation_with_dry_run(
                 println!("{}", content);
             }
             Some(content)
-        } else {
-            None
         }
     } else {
         None
@@ -168,7 +168,7 @@ pub fn plan_operation_with_dry_run(
         let file_message = format!("Plan written to: {}", plan_out_path.display());
         if let Some(content) = preview_content {
             return Ok(format!("{}\n\n{}", content, file_message));
-        } else if preview_format.as_ref().map_or(true, |f| f != "json") {
+        } else if preview_format.as_ref().is_none_or(|f| f != "json") {
             return Ok(file_message);
         }
     }

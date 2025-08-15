@@ -18,16 +18,16 @@ pub enum Style {
 
 impl Style {
     /// Returns the default styles used by renamify
-    pub fn default_styles() -> Vec<Style> {
+    pub fn default_styles() -> Vec<Self> {
         vec![
-            Style::Original,
-            Style::Snake,
-            Style::Kebab,
-            Style::Camel,
-            Style::Pascal,
-            Style::ScreamingSnake,
-            Style::Train,          // Include Train-Case in defaults
-            Style::ScreamingTrain, // Include ScreamingTrain for ALL-CAPS-PATTERNS
+            Self::Original,
+            Self::Snake,
+            Self::Kebab,
+            Self::Camel,
+            Self::Pascal,
+            Self::ScreamingSnake,
+            Self::Train,          // Include Train-Case in defaults
+            Self::ScreamingTrain, // Include ScreamingTrain for ALL-CAPS-PATTERNS
         ]
     }
 }
@@ -475,9 +475,7 @@ pub fn generate_variant_map(
             let new_variant = to_style(&new_tokens, *style);
 
             // Only add if not already in map (Original takes priority)
-            if !map.contains_key(&old_variant) {
-                map.insert(old_variant, new_variant);
-            }
+            map.entry(old_variant).or_insert(new_variant);
         }
     }
 

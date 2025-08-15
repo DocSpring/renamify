@@ -214,7 +214,7 @@ pub fn undo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
             b_depth.cmp(&a_depth)
         });
 
-        for dir in sorted_dirs.iter() {
+        for dir in &sorted_dirs {
             // Only remove if directory exists, is a directory, and is empty
             if dir.exists() && dir.is_dir() {
                 if let Ok(mut entries) = fs::read_dir(dir) {
@@ -237,15 +237,14 @@ pub fn undo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
     let mut reversed_renames = Vec::new();
 
     // Process all original affected files to calculate new checksums
-    for (path, _) in &entry.affected_files {
+    for path in entry.affected_files.keys() {
         // The file should now be at its original location (before the refactoring)
         // Check if it was renamed and is now back at original location
         let original_path = entry
             .renames
             .iter()
             .find(|(_, to)| to == path)
-            .map(|(from, _)| from)
-            .unwrap_or(path);
+            .map_or(path, |(from, _)| from);
 
         if original_path.exists() && original_path.is_file() {
             let checksum = calculate_checksum(original_path)?;
@@ -270,7 +269,7 @@ pub fn undo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
         affected_files,
         renames: reversed_renames,
         backups_path: entry.backups_path.clone(), // Keep same backup path
-        revert_of: Some(entry.id.clone()),
+        revert_of: Some(entry.id),
         redo_of: None,
     };
 

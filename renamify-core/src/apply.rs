@@ -564,11 +564,7 @@ pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
         eprintln!("\n=== Plan matches for Train-Case patterns ===");
         for hunk in &plan.matches {
             if hunk.before.contains('-')
-                && hunk
-                    .before
-                    .chars()
-                    .next()
-                    .map_or(false, |c| c.is_uppercase())
+                && hunk.before.chars().next().is_some_and(char::is_uppercase)
             {
                 eprintln!("  File: {}", hunk.file.display());
                 eprintln!("    Before: '{}'", hunk.before);
