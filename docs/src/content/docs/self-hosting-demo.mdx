@@ -16,8 +16,9 @@ import Quote from '../../components/Quote.astro';
   its own source code.
 </Quote>
 
-Refaktor is capable of "self-hosting". It can rename the entire project to `awesome_file_renaming_tool`, 
-run the entire test suite, and then use the newly compiled binary to rename itself back again:
+
+Watch Refaktor rename itself to `awesome_file_renaming_tool`, then use the new binary to rename itself back again.
+
 
 ```bash
 # Clone and build
@@ -31,7 +32,7 @@ cargo build
 # Make sure the old compiled binary is gone
 rm -rf target
 
-# Run the full test suite
+# Run the full test suite using the new name
 cargo test
 
 # Build the "awesome_file_renaming_tool" binary
@@ -46,6 +47,7 @@ cargo test
 cargo build
 ./target/debug/refaktor --help
 
+# Everything is completely restored. No changes to any files after the round-trip
 git status
 # On branch main
 # Your branch is up to date with 'origin/main'.
@@ -53,15 +55,9 @@ git status
 # nothing to commit, working tree clean
 ```
 
-You can use Refaktor to rename an entire project including all code references, 
-comments, documentation, file names, and directory names, all while maintaining 
-perfect consistency across different naming conventions.
-<br/>
-
 ---
 
 <br/>
-
 
 P.S. We run all these steps on CI as an end-to-end integration test:
 
