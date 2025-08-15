@@ -1,5 +1,0 @@
-# clippy.toml
-too-many-arguments-threshold = 8
-cognitive-complexity-threshold = 30
-too-many-lines-threshold = 200
-msrv = "1.80.0"

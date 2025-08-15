@@ -143,7 +143,7 @@ fn test_format_string_placeholders_are_replaced() {
     // Should find matches for format string placeholders
     // Note: These are exact pattern matches, not compound matches like "renamify_{}"
     assert!(
-        plan.matches.len() >= 1,
+        !plan.matches.is_empty(),
         "Should find at least 1 match for format string placeholders, found {}",
         plan.matches.len()
     );

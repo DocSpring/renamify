@@ -8,7 +8,7 @@ pre-commit:
 
     clippy:
       glob: "*.rs"
-      run: cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::nursery
+      run: cargo clippy --all-targets --all-features
 
     toml-fmt:
       glob: "*.toml"

@@ -78,7 +78,7 @@ pub fn process() {
         .matches
         .iter()
         .filter(|m| {
-            m.before.contains('-') && m.before.chars().next().map_or(false, |c| c.is_uppercase())
+            m.before.contains('-') && m.before.chars().next().is_some_and(|c| c.is_uppercase())
         })
         .collect();
 

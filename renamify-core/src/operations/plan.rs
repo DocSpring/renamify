@@ -5,6 +5,8 @@ use anyhow::{Context, Result};
 use std::path::PathBuf;
 
 /// High-level plan operation - equivalent to `renamify plan` command
+#[allow(clippy::too_many_arguments)]
+#[allow(clippy::needless_pass_by_value)]
 pub fn plan_operation(
     old: &str,
     new: &str,
@@ -14,12 +16,12 @@ pub fn plan_operation(
     unrestricted_level: u8,
     rename_files: bool,
     rename_dirs: bool,
-    exclude_styles: Vec<Style>,
-    include_styles: Vec<Style>,
-    only_styles: Vec<Style>,
+    exclude_styles: &[Style],
+    include_styles: &[Style],
+    only_styles: &[Style],
     exclude_match: Vec<String>,
     plan_out: Option<PathBuf>,
-    preview_format: Option<String>, // "table", "diff", "json", "summary", "none"
+    preview_format: Option<&String>, // "table", "summary", "none"
     use_color: bool,
 ) -> Result<String> {
     plan_operation_with_dry_run(
@@ -50,6 +52,8 @@ pub fn plan_operation(
 
 /// High-level plan operation with full options - supports both plan and dry-run commands
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::fn_params_excessive_bools)]
+#[allow(clippy::needless_pass_by_value)]
 pub fn plan_operation_with_dry_run(
     old: &str,
     new: &str,
@@ -60,12 +64,12 @@ pub fn plan_operation_with_dry_run(
     unrestricted_level: u8,
     rename_files: bool,
     rename_dirs: bool,
-    exclude_styles: Vec<Style>,
-    include_styles: Vec<Style>,
-    only_styles: Vec<Style>,
+    exclude_styles: &[Style],
+    include_styles: &[Style],
+    only_styles: &[Style],
     exclude_match: Vec<String>,
     plan_out: Option<PathBuf>,
-    preview_format: Option<String>, // "table", "diff", "json", "summary", "none"
+    preview_format: Option<&String>, // "table", "diff", "json", "summary", "none"
     dry_run: bool,
     fixed_table_width: bool,
     use_color: bool,
@@ -95,7 +99,11 @@ pub fn plan_operation_with_dry_run(
     };
 
     // Build styles list
-    let styles = build_styles_list(exclude_styles, include_styles, only_styles);
+    let styles = build_styles_list(
+        exclude_styles.to_vec(),
+        include_styles.to_vec(),
+        only_styles.to_vec(),
+    );
 
     let plan_out_path = plan_out.unwrap_or_else(|| PathBuf::from(".renamify/plan.json"));
 
@@ -136,7 +144,7 @@ pub fn plan_operation_with_dry_run(
 
     // Generate preview content
     let preview_content = if let Some(format) = preview_format.as_ref() {
-        if format == "none" {
+        if *format == "none" {
             None
         } else {
             let preview_format = parse_preview_format(format)?;
@@ -168,7 +176,7 @@ pub fn plan_operation_with_dry_run(
         let file_message = format!("Plan written to: {}", plan_out_path.display());
         if let Some(content) = preview_content {
             return Ok(format!("{}\n\n{}", content, file_message));
-        } else if preview_format.as_ref().is_none_or(|f| f != "json") {
+        } else if preview_format.as_ref().is_none_or(|f| *f != "json") {
             return Ok(file_message);
         }
     }
@@ -208,6 +216,7 @@ pub fn plan_operation_with_dry_run(
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn build_styles_list(
     exclude_styles: Vec<Style>,
     include_styles: Vec<Style>,

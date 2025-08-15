@@ -201,12 +201,14 @@ pub fn find_compound_variants(
                     let mut result_parts = Vec::new();
 
                     // Rebuild the first part in its original style
+                    #[allow(clippy::branches_sharing_code)]
                     if let Some(style) = crate::case_model::detect_style(original_first_part) {
                         let replacement_model =
                             TokenModel::new(replacement_tokens[..new_tokens.tokens.len()].to_vec());
                         result_parts.push(to_style(&replacement_model, style));
                     } else {
                         // If no style detected, check the case of the original
+                        #[allow(clippy::branches_sharing_code)]
                         let replacement_model =
                             TokenModel::new(replacement_tokens[..new_tokens.tokens.len()].to_vec());
                         let style = if original_first_part

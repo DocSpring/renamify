@@ -141,6 +141,7 @@ pub fn parse_to_tokens(s: &str) -> TokenModel {
     parse_to_tokens_with_acronyms(s, crate::acronym::get_default_acronym_set())
 }
 
+#[allow(clippy::branches_sharing_code)]
 pub fn parse_to_tokens_with_acronyms(
     s: &str,
     acronym_set: &crate::acronym::AcronymSet,

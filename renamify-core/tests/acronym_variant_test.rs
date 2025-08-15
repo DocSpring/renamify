@@ -253,7 +253,7 @@ fn test_only_acronyms_list() {
     // Search for XML patterns - should work
     let plan_xml = scan_repository(&root, "xmlDoc", "document", &options).unwrap();
     assert!(
-        plan_xml.matches.len() > 0,
+        !plan_xml.matches.is_empty(),
         "Should find XML patterns when XML is in only_acronyms"
     );
 

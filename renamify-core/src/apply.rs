@@ -503,6 +503,7 @@ fn rollback(state: &mut ApplyState) -> Result<()> {
 }
 
 /// Apply a refactoring plan
+#[allow(clippy::too_many_lines)]
 pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
     let mut state = ApplyState::new(plan.id.clone(), options.log_file.clone())?;
 

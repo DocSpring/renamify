@@ -6,6 +6,7 @@ use std::io::{self, IsTerminal, Write as IoWrite};
 use std::path::PathBuf;
 
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::fn_params_excessive_bools)]
 pub fn rename_operation(
     old: &str,
     new: &str,

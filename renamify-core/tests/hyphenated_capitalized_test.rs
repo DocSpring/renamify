@@ -378,7 +378,7 @@ fn test_pascal_case_with_hyphen_suffix() {
     }
 
     let plan =
-        scan_repository(&root, "foo_bar_baz_qux", "alpha_beta_gamma_delta", &options).unwrap();
+        scan_repository(root, "foo_bar_baz_qux", "alpha_beta_gamma_delta", &options).unwrap();
 
     println!("\n=== PascalCase-hyphenated matches ===");
     for m in &plan.matches {

@@ -49,12 +49,12 @@ fn test_plan_command_basic() {
         0,                                   // unrestricted_level
         true,                                // rename_files
         true,                                // rename_dirs
-        vec![],                              // exclude_styles
-        vec![],                              // include_styles
-        vec![],                              // only_styles
+        &[],                                 // exclude_styles
+        &[],                                 // include_styles
+        &[],                                 // only_styles
         vec![],                              // exclude_match
         None,                                // plan_out
-        Some("table".to_string()),           // preview_format
+        Some(&"table".to_string()),          // preview_format
         true,                                // dry_run
         true,                                // fixed_table_width - for consistent test output
         false,                               // use_color
@@ -88,12 +88,12 @@ fn test_plan_command_with_styles() {
         0,                                   // unrestricted_level
         true,                                // rename_files
         true,                                // rename_dirs
-        vec![Style::Kebab, Style::Pascal, Style::ScreamingSnake], // exclude_styles
-        vec![],                              // include_styles
-        vec![],                              // only_styles
+        &[Style::Kebab, Style::Pascal, Style::ScreamingSnake], // exclude_styles
+        &[],                                 // include_styles
+        &[],                                 // only_styles
         vec![],                              // exclude_match
         None,                                // plan_out
-        Some("table".to_string()),           // preview_format
+        Some(&"table".to_string()),          // preview_format
         true,                                // dry_run
         true,                                // fixed_table_width - for consistent test output
         false,                               // use_color
@@ -119,12 +119,12 @@ fn test_plan_command_with_styles() {
         0,                                   // unrestricted_level
         true,                                // rename_files
         true,                                // rename_dirs
-        vec![],                              // exclude_styles
-        vec![Style::Title, Style::Train],    // include_styles
-        vec![],                              // only_styles
+        &[],                                 // exclude_styles
+        &[Style::Title, Style::Train],       // include_styles
+        &[],                                 // only_styles
         vec![],                              // exclude_match
         None,                                // plan_out
-        Some("table".to_string()),           // preview_format
+        Some(&"table".to_string()),          // preview_format
         true,                                // dry_run
         true,                                // fixed_table_width - for consistent test output
         false,                               // use_color

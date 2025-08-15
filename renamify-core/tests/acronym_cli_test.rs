@@ -93,7 +93,7 @@ fn test_include_acronyms_flag() {
 
     // K8SCluster should be found and replaced
     assert!(
-        plan.matches.len() > 0,
+        !plan.matches.is_empty(),
         "K8SCluster should be found with K8S as an acronym"
     );
     assert_eq!(plan.matches[0].before, "K8SCluster");
@@ -101,7 +101,7 @@ fn test_include_acronyms_flag() {
 
     let plan2 = scan_repository(&root, "GCPProvider", "CloudProvider", &options).unwrap();
     assert!(
-        plan2.matches.len() > 0,
+        !plan2.matches.is_empty(),
         "GCPProvider should be found with GCP as an acronym"
     );
 }
@@ -184,7 +184,7 @@ fn test_only_acronyms_flag() {
     // AWSProvider should match
     let plan1 = scan_repository(&root, "AWSProvider", "CloudProvider", &options).unwrap();
     assert!(
-        plan1.matches.len() > 0,
+        !plan1.matches.is_empty(),
         "AWSProvider should match with AWS in only_acronyms"
     );
 
@@ -237,7 +237,7 @@ fn test_acronym_case_insensitive() {
     // Should still work with ApiClient (Api is matched as API)
     let plan = scan_repository(&root, "ApiClient", "InterfaceClient", &options).unwrap();
     assert!(
-        plan.matches.len() > 0,
+        !plan.matches.is_empty(),
         "ApiClient should match even when 'api' is provided in lowercase"
     );
 }
