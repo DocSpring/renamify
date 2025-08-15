@@ -1,6 +1,6 @@
 ---
 title: Basic Refactoring
-description: Common refactoring examples with Refaktor
+description: Common refactoring examples with Renamify
 ---
 
 ## Function Renaming
@@ -9,17 +9,17 @@ Rename a function across your entire codebase:
 
 ```bash
 # Generate a plan and review
-refaktor plan getUserName fetchUserProfile
+renamify plan getUserName fetchUserProfile
 
 # Apply the changes
-refaktor apply
+renamify apply
 ```
 
 Or use the fast-path:
 
 ```bash
 # Plan, preview, confirm, and apply in one command
-refaktor rename getUserName fetchUserProfile
+renamify rename getUserName fetchUserProfile
 ```
 
 ### What Gets Changed
@@ -57,7 +57,7 @@ name = fetch_user_profile(id)
 Rename variables and constants:
 
 ```bash
-refaktor rename apiKey secretKey
+renamify rename apiKey secretKey
 ```
 
 ### What Gets Changed
@@ -80,7 +80,7 @@ const secret_key = config.secret_key;
 Rename React/Vue components:
 
 ```bash
-refaktor rename UserCard ProfileCard
+renamify rename UserCard ProfileCard
 ```
 
 ### What Gets Changed
@@ -105,7 +105,7 @@ import ProfileCard from './ProfileCard';
 Rename classes across multiple files:
 
 ```bash
-refaktor rename DatabaseManager DataManager
+renamify rename DatabaseManager DataManager
 ```
 
 ### What Gets Changed
@@ -132,11 +132,11 @@ If you make a mistake, easily undo:
 
 ```bash
 # See recent operations
-refaktor history
+renamify history
 
 # Undo the last operation  
-refaktor undo abc123-20241201-143022
+renamify undo abc123-20241201-143022
 
 # Or redo if you change your mind
-refaktor redo abc123-20241201-143022
+renamify redo abc123-20241201-143022
 ```

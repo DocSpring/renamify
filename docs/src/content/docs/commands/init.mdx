@@ -1,56 +1,56 @@
 ---
-title: refaktor init
-description: Initialize Refaktor ignore settings
+title: renamify init
+description: Initialize Renamify ignore settings
 ---
 
-The `init` command adds `.refaktor/` to ignore files to prevent tracking of Refaktor's workspace files.
+The `init` command adds `.renamify/` to ignore files to prevent tracking of Renamify's workspace files.
 
 ## Usage
 
 ```bash
-refaktor init [OPTIONS]
+renamify init [OPTIONS]
 ```
 
 ## Options
 
 - `--local` - Add to `.git/info/exclude` instead of `.gitignore`
 - `--global` - Add to global git excludes file
-- `--check` - Check if `.refaktor` is ignored (exit 0 if yes, 1 if no)
+- `--check` - Check if `.renamify` is ignored (exit 0 if yes, 1 if no)
 - `--configure-global` - Configure global excludes file if it doesn't exist (requires `--global`)
 
 ## Examples
 
 ### Initialize Repository Ignore
 ```bash
-# Add .refaktor/ to .gitignore (most common)
-refaktor init
+# Add .renamify/ to .gitignore (most common)
+renamify init
 ```
 
 ### Local-Only Ignore
 ```bash
 # Add to .git/info/exclude (not committed)
-refaktor init --local
+renamify init --local
 ```
 
 ### Global Ignore
 ```bash
 # Add to global git excludes file
-refaktor init --global --configure-global
+renamify init --global --configure-global
 ```
 
 ### Check Status
 ```bash
-# Check if .refaktor is already ignored
-refaktor init --check
+# Check if .renamify is already ignored
+renamify init --check
 echo $?  # 0 if ignored, 1 if not
 ```
 
 ## Auto-Initialization
 
-Refaktor automatically prompts to initialize on first use:
+Renamify automatically prompts to initialize on first use:
 
 ```
-Refaktor uses .refaktor/ for plans, backups, and history.
+Renamify uses .renamify/ for plans, backups, and history.
 Ignore it now?
   [Y] Repo .gitignore   [l] Local .git/info/exclude   [g] Global excludesfile   [n] No
 Choice (Y/l/g/n): Y
@@ -59,15 +59,15 @@ Choice (Y/l/g/n): Y
 ### Disable Auto-Init
 ```bash
 # Prevent automatic initialization prompts
-refaktor --no-auto-init plan old new
+renamify --no-auto-init plan old new
 
 # Force automatic repo initialization
-refaktor --auto-init=repo plan old new
+renamify --auto-init=repo plan old new
 ```
 
 ## Why Initialize?
 
-The `.refaktor/` directory contains:
+The `.renamify/` directory contains:
 - **Plans**: `plan.json` files with refactoring details
 - **Backups**: Complete backups of modified files  
 - **History**: `history.json` with operation records

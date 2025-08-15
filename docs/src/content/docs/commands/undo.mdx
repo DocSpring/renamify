@@ -1,5 +1,5 @@
 ---
-title: refaktor undo
+title: renamify undo
 description: Revert a previously applied refactoring operation
 ---
 
@@ -8,21 +8,21 @@ The `undo` command reverts a previously applied refactoring using the backup sys
 ## Usage
 
 ```bash
-refaktor undo <OPERATION_ID>
+renamify undo <OPERATION_ID>
 ```
 
 ## Arguments
 
-- `<OPERATION_ID>` - The unique ID of the operation to undo (from `refaktor history`)
+- `<OPERATION_ID>` - The unique ID of the operation to undo (from `renamify history`)
 
 ## Examples
 
 ```bash
 # See recent operations
-refaktor history
+renamify history
 
 # Undo a specific operation
-refaktor undo abc123-20241201-143022
+renamify undo abc123-20241201-143022
 ```
 
 ## How It Works
@@ -37,4 +37,4 @@ refaktor undo abc123-20241201-143022
 
 - Uses the same atomic operations as apply
 - Verifies backup integrity before restoration
-- Can be undone with `refaktor redo`
+- Can be undone with `renamify redo`

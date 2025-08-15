@@ -1,6 +1,6 @@
 ---
 title: Quick Start
-description: Get started with Refaktor in minutes
+description: Get started with Renamify in minutes
 ---
 
 ## Basic Renaming
@@ -8,7 +8,7 @@ description: Get started with Refaktor in minutes
 The fastest way to rename something across your codebase:
 
 ```bash
-refaktor rename old_name new_name
+renamify rename old_name new_name
 ```
 
 This will:
@@ -23,7 +23,7 @@ Let's say you want to rename `getUserName` to `fetchUserProfile`:
 
 ```bash
 # Rename with preview and confirmation
-refaktor rename getUserName fetchUserProfile
+renamify rename getUserName fetchUserProfile
 ```
 
 You'll see output like:
@@ -57,10 +57,10 @@ If you make a mistake, you can easily undo:
 
 ```bash
 # See recent operations
-refaktor history
+renamify history
 
 # Undo the last operation
-refaktor undo abc123
+renamify undo abc123
 ```
 
 ## Plan and Apply Workflow
@@ -69,13 +69,13 @@ For large refactors, use the plan/apply workflow for extra safety:
 
 ```bash
 # Step 1: Create a plan
-refaktor plan old_name new_name
+renamify plan old_name new_name
 
 # Step 2: Review the plan file
-cat .refaktor/plan.json
+cat .renamify/plan.json
 
 # Step 3: Apply when ready
-refaktor apply
+renamify apply
 ```
 
 ## Common Options
@@ -84,38 +84,38 @@ refaktor apply
 
 ```bash
 # Only rename in src/ directory
-refaktor rename old_name new_name src/
+renamify rename old_name new_name src/
 
 # Or use include patterns for more control
-refaktor rename old_name new_name --include "src/**"
+renamify rename old_name new_name --include "src/**"
 
 # Exclude test files
-refaktor rename old_name new_name --exclude "**/*test*"
+renamify rename old_name new_name --exclude "**/*test*"
 ```
 
 ### Control What Gets Renamed
 
 ```bash
 # Don't rename files, only content
-refaktor rename old_name new_name --no-rename-files
+renamify rename old_name new_name --no-rename-files
 
 # Don't rename directories
-refaktor rename old_name new_name --no-rename-dirs
+renamify rename old_name new_name --no-rename-dirs
 ```
 
 ### Limit Case Styles
 
 ```bash
 # Only handle camelCase and snake_case
-refaktor rename old_name new_name --only-styles camel,snake
+renamify rename old_name new_name --only-styles camel,snake
 ```
 
 ## Safe Practices
 
-1. **Preview is automatic** - Refaktor shows a preview by default before applying
+1. **Preview is automatic** - Renamify shows a preview by default before applying
 2. **Commit before large refactors** - Makes git-based rollback possible
 3. **Start small** - Try on a subset with `--include` first
-4. **Use undo** - Refaktor's undo is often faster than git reset
+4. **Use undo** - Renamify's undo is often faster than git reset
 
 ## Next Steps
 

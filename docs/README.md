@@ -1,12 +1,12 @@
-# Refaktor Documentation Site
+# Renamify Documentation Site
 
-This directory contains the Refaktor documentation website built with [Starlight](https://starlight.astro.build).
+This directory contains the Renamify documentation website built with [Starlight](https://starlight.astro.build).
 
 ## 📖 Documentation Structure
 
 - **Guide** - User guides and tutorials
 - **Reference** - CLI reference and configuration options
-- **Demo** - Interactive demonstration of Refaktor's capabilities
+- **Demo** - Interactive demonstration of Renamify's capabilities
 - **Case Studies** - Real-world usage examples
 
 ## 🛠️ Development
@@ -36,4 +36,4 @@ Documentation content is written in Markdown/MDX and located in `src/content/doc
 - Live demo with self-hosting testing
 - Real-world case studies
 
-Visit the live documentation at https://docspring.github.io/refaktor/ to learn more about Refaktor.
+Visit the live documentation at https://docspring.github.io/renamify/ to learn more about Renamify.

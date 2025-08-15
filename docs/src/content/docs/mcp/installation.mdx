@@ -1,30 +1,30 @@
 ---
 title: MCP Server Installation
-description: Step-by-step guide to install and set up the Refaktor MCP Server
+description: Step-by-step guide to install and set up the Renamify MCP Server
 ---
 
 import { Tabs, TabItem, Steps, Card, CardGrid } from '@astrojs/starlight/components';
 
-This guide will help you install and configure the Refaktor MCP Server for use with AI assistants.
+This guide will help you install and configure the Renamify MCP Server for use with AI assistants.
 
 ## Prerequisites
 
 Before installing the MCP Server, you need:
 
-#### Refaktor CLI
-The core Refaktor command-line tool must be installed and accessible
+#### Renamify CLI
+The core Renamify command-line tool must be installed and accessible
 
 #### Node.js 18+
 Required to run the MCP Server (check with `node --version`)
 
-## Step 1: Install Refaktor CLI
+## Step 1: Install Renamify CLI
 
 ### Quick Install (Recommended)
 
-The easiest way to install Refaktor:
+The easiest way to install Renamify:
 
 ```bash
-curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
+curl -fsSL https://docspring.github.io/renamify/install.sh | bash
 ```
 
 ### Manual Installation by Platform
@@ -33,36 +33,36 @@ curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
   <TabItem label="Linux">
     ### x86_64 / amd64
     ```bash
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-amd64.tar.gz | tar xz
-    sudo mv refaktor /usr/local/bin/refaktor
-    sudo chmod 755 /usr/local/bin/refaktor
-    refaktor --version
+    curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-linux-amd64.tar.gz | tar xz
+    sudo mv renamify /usr/local/bin/renamify
+    sudo chmod 755 /usr/local/bin/renamify
+    renamify --version
     ```
     
     ### arm64
     ```bash
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-arm64.tar.gz | tar xz
-    sudo mv refaktor /usr/local/bin/refaktor
-    sudo chmod 755 /usr/local/bin/refaktor
-    refaktor --version
+    curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-linux-arm64.tar.gz | tar xz
+    sudo mv renamify /usr/local/bin/renamify
+    sudo chmod 755 /usr/local/bin/renamify
+    renamify --version
     ```
   </TabItem>
   
   <TabItem label="macOS">
     ### Intel (x86_64)
     ```bash
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-amd64.tar.gz | tar xz
-    sudo mv refaktor /usr/local/bin/refaktor
-    sudo chmod 755 /usr/local/bin/refaktor
-    refaktor --version
+    curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-macos-amd64.tar.gz | tar xz
+    sudo mv renamify /usr/local/bin/renamify
+    sudo chmod 755 /usr/local/bin/renamify
+    renamify --version
     ```
     
     ### Apple Silicon (arm64)
     ```bash
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-arm64.tar.gz | tar xz
-    sudo mv refaktor /usr/local/bin/refaktor
-    sudo chmod 755 /usr/local/bin/refaktor
-    refaktor --version
+    curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-macos-arm64.tar.gz | tar xz
+    sudo mv renamify /usr/local/bin/renamify
+    sudo chmod 755 /usr/local/bin/renamify
+    renamify --version
     ```
   </TabItem>
   
@@ -73,10 +73,10 @@ curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
     ```powershell
     # Install Rust for Windows from https://win.rustup.rs/
     # Clone and build from source
-    git clone https://github.com/DocSpring/refaktor.git
-    cd refaktor
+    git clone https://github.com/DocSpring/renamify.git
+    cd renamify
     cargo build --release
-    # Copy target/release/refaktor.exe to your PATH
+    # Copy target/release/renamify.exe to your PATH
     ```
   </TabItem>
 </Tabs>
@@ -89,7 +89,7 @@ The simplest way to use the MCP Server is with npx, which requires no installati
 
 ```bash
 # This command will be used in your MCP configuration
-npx @refaktor/mcp-server
+npx @renamify/mcp-server
 ```
 
 This approach ensures you always use the latest version and avoids global package management issues.
@@ -100,7 +100,7 @@ If you prefer a global installation:
 
 ```bash
 # Install globally with npm
-npm install -g @refaktor/mcp-server
+npm install -g @renamify/mcp-server
 ```
 
 ## Step 3: Configure Your AI Assistant
@@ -116,9 +116,9 @@ npm install -g @refaktor/mcp-server
     ```json
     {
       "mcpServers": {
-        "refaktor": {
+        "renamify": {
           "command": "npx",
-          "args": ["-y", "@refaktor/mcp-server"]
+          "args": ["-y", "@renamify/mcp-server"]
         }
       }
     }
@@ -133,14 +133,14 @@ npm install -g @refaktor/mcp-server
     1. Open Cursor settings (Cmd/Ctrl + ,)
     2. Search for "MCP" in settings
     3. Edit the MCP configuration file
-    4. Add the Refaktor server:
+    4. Add the Renamify server:
     
     ```json
     {
       "mcpServers": {
-        "refaktor": {
+        "renamify": {
           "command": "npx",
-          "args": ["-y", "@refaktor/mcp-server"]
+          "args": ["-y", "@renamify/mcp-server"]
         }
       }
     }
@@ -159,9 +159,9 @@ npm install -g @refaktor/mcp-server
     {
       "mcpServers": [
         {
-          "name": "refaktor",
+          "name": "renamify",
           "command": "npx",
-          "args": ["-y", "@refaktor/mcp-server"]
+          "args": ["-y", "@renamify/mcp-server"]
         }
       ]
     }
@@ -176,11 +176,11 @@ npm install -g @refaktor/mcp-server
     For any MCP-compatible client, use these connection details:
     
     **Command:** `npx`  
-    **Arguments:** `["-y", "@refaktor/mcp-server"]`
+    **Arguments:** `["-y", "@renamify/mcp-server"]`
     
     Or if installed globally:
     
-    **Command:** `refaktor-mcp`  
+    **Command:** `renamify-mcp`  
     **Arguments:** `[]`
     
     The server communicates via standard input/output (stdio) following the MCP protocol.
@@ -190,10 +190,10 @@ npm install -g @refaktor/mcp-server
 ## Step 4: Verify Installation
 
 <Steps>
-1. **Check Refaktor CLI**
+1. **Check Renamify CLI**
    ```bash
-   refaktor --version
-   # Should output: refaktor x.y.z
+   renamify --version
+   # Should output: renamify x.y.z
    ```
 
 2. **Check Node.js version**
@@ -205,32 +205,32 @@ npm install -g @refaktor/mcp-server
 3. **Test MCP Server directly (optional)**
    ```bash
    # This should start the server (Ctrl+C to exit)
-   npx @refaktor/mcp-server
+   npx @renamify/mcp-server
    ```
 
 4. **Test in your AI assistant**
-   Ask your AI assistant: "Can you check if the Refaktor MCP tools are available?"
+   Ask your AI assistant: "Can you check if the Renamify MCP tools are available?"
    
-   The assistant should list the 7 available Refaktor tools:
-   - refaktor_plan
-   - refaktor_apply
-   - refaktor_undo
-   - refaktor_redo
-   - refaktor_history
-   - refaktor_status
-   - refaktor_preview
+   The assistant should list the 7 available Renamify tools:
+   - renamify_plan
+   - renamify_apply
+   - renamify_undo
+   - renamify_redo
+   - renamify_history
+   - renamify_status
+   - renamify_preview
 </Steps>
 
 ## Troubleshooting
 
-### "Refaktor CLI is not available"
+### "Renamify CLI is not available"
 
-This error means the MCP Server cannot find the `refaktor` binary:
+This error means the MCP Server cannot find the `renamify` binary:
 
 1. **Verify installation:**
    ```bash
-   which refaktor  # On macOS/Linux
-   where refaktor  # On Windows
+   which renamify  # On macOS/Linux
+   where renamify  # On Windows
    ```
 
 2. **Check PATH environment variable:**
@@ -239,9 +239,9 @@ This error means the MCP Server cannot find the `refaktor` binary:
    echo %PATH%  # On Windows
    ```
 
-3. **Ensure the refaktor binary is in a PATH directory**
+3. **Ensure the renamify binary is in a PATH directory**
 
-### "Command not found: refaktor-mcp"
+### "Command not found: renamify-mcp"
 
 If you see this error with global installation:
 
@@ -255,7 +255,7 @@ If you see this error with global installation:
    ```json
    {
      "command": "npx",
-     "args": ["-y", "@refaktor/mcp-server"]
+     "args": ["-y", "@renamify/mcp-server"]
    }
    ```
 
@@ -272,11 +272,11 @@ If you get permission errors when moving the binary:
 
 ```bash
 # Use sudo for system directories
-sudo mv refaktor /usr/local/bin/
+sudo mv renamify /usr/local/bin/
 
 # Or use a user directory instead
 mkdir -p ~/.local/bin
-mv refaktor ~/.local/bin/
+mv renamify ~/.local/bin/
 # Add ~/.local/bin to your PATH in ~/.bashrc or ~/.zshrc
 ```
 
@@ -304,6 +304,6 @@ mv refaktor ~/.local/bin/
 
 Now that you have the MCP Server configured:
 
-- [**Configuration**](/refaktor/mcp/configuration) - Customize the MCP Server settings
-- [**Tools Reference**](/refaktor/mcp/tools) - Learn about each available tool
-- [**Usage Examples**](/refaktor/mcp/examples) - See real-world refactoring examples
+- [**Configuration**](/renamify/mcp/configuration) - Customize the MCP Server settings
+- [**Tools Reference**](/renamify/mcp/tools) - Learn about each available tool
+- [**Usage Examples**](/renamify/mcp/examples) - See real-world refactoring examples

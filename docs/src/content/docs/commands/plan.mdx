@@ -1,14 +1,14 @@
 ---
-title: refaktor plan
+title: renamify plan
 description: Generate a detailed refactoring plan without modifying files
 ---
 
-The `plan` command generates a detailed plan of all changes that will be made without modifying any files. This is the first step in Refaktor's two-phase workflow.
+The `plan` command generates a detailed plan of all changes that will be made without modifying any files. This is the first step in Renamify's two-phase workflow.
 
 ## Usage
 
 ```bash
-refaktor plan <OLD> <NEW> [PATHS]... [OPTIONS]
+renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 ```
 
 ## Arguments
@@ -21,7 +21,7 @@ refaktor plan <OLD> <NEW> [PATHS]... [OPTIONS]
 
 ### Output Control
 - `--preview <FORMAT>` - Output format: table (default), diff, json
-- `--plan-out <PATH>` - Where to save the plan (default: .refaktor/plan.json)
+- `--plan-out <PATH>` - Where to save the plan (default: .renamify/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
 
 ### File Processing
@@ -47,7 +47,7 @@ refaktor plan <OLD> <NEW> [PATHS]... [OPTIONS]
 
 ### Table Format (Default)
 ```bash
-refaktor plan getUserName fetchUserProfile
+renamify plan getUserName fetchUserProfile
 ```
 
 Shows a clear table view of all changes:
@@ -73,7 +73,7 @@ Files to rename: 3
 
 ### Diff Format
 ```bash
-refaktor plan getUserName fetchUserProfile --preview diff
+renamify plan getUserName fetchUserProfile --preview diff
 ```
 
 Shows changes in diff format:
@@ -90,7 +90,7 @@ Shows changes in diff format:
 
 ### JSON Format
 ```bash
-refaktor plan getUserName fetchUserProfile --preview json
+renamify plan getUserName fetchUserProfile --preview json
 ```
 
 Outputs structured JSON for programmatic use:
@@ -122,37 +122,37 @@ Outputs structured JSON for programmatic use:
 ### Basic Planning
 ```bash
 # Create a plan with table preview (default)
-refaktor plan old_name new_name
+renamify plan old_name new_name
 
-# Plan is saved to .refaktor/plan.json
-cat .refaktor/plan.json
+# Plan is saved to .renamify/plan.json
+cat .renamify/plan.json
 
 # Or specify specific paths
-refaktor plan old_name new_name src/ tests/
+renamify plan old_name new_name src/ tests/
 ```
 
 ### Dry Run (No Plan File)
 ```bash
 # Just see what would change, don't create a plan file
-refaktor plan old_name new_name --dry-run
+renamify plan old_name new_name --dry-run
 ```
 
 ### Custom Plan Location
 ```bash
 # Save plan to a specific location
-refaktor plan old_name new_name --plan-out ./refactor-plan.json
+renamify plan old_name new_name --plan-out ./refactor-plan.json
 ```
 
 ### Specific File Types
 ```bash
 # Only plan changes for Rust files using paths
-refaktor plan old_name new_name src/ lib/
+renamify plan old_name new_name src/ lib/
 
 # Or use include patterns for more control
-refaktor plan old_name new_name --include "**/*.rs"
+renamify plan old_name new_name --include "**/*.rs"
 
 # Plan for source files, exclude tests
-refaktor plan old_name new_name \
+renamify plan old_name new_name \
   --include "src/**/*.{js,ts}" \
   --exclude "**/*test*"
 ```
@@ -160,24 +160,24 @@ refaktor plan old_name new_name \
 ### Case Style Control
 ```bash
 # Only plan camelCase and snake_case transformations
-refaktor plan oldName newName --only-styles camel,snake
+renamify plan oldName newName --only-styles camel,snake
 
 # Exclude SCREAMING_SNAKE_CASE from default styles
-refaktor plan oldName newName --exclude-styles screaming-snake
+renamify plan oldName newName --exclude-styles screaming-snake
 ```
 
 ### Large Codebase Planning
 ```bash
 # Include gitignored files (like vendor directories)
-refaktor plan old_name new_name -u
+renamify plan old_name new_name -u
 
 # Plan for everything (including hidden files)
-refaktor plan old_name new_name -uu
+renamify plan old_name new_name -uu
 ```
 
 ## Plan File Structure
 
-The generated plan file (`.refaktor/plan.json`) contains:
+The generated plan file (`.renamify/plan.json`) contains:
 
 ```json
 {
@@ -221,16 +221,16 @@ Once you have a plan, you can:
 
 ### Apply the Plan
 ```bash
-refaktor apply
+renamify apply
 ```
 
 ### Review Before Applying  
 ```bash
 # Look at the plan in detail
-cat .refaktor/plan.json | jq .
+cat .renamify/plan.json | jq .
 
 # Count total changes
-jq '.stats.total_matches' .refaktor/plan.json
+jq '.stats.total_matches' .renamify/plan.json
 ```
 
 ### Modify the Plan

@@ -1,5 +1,5 @@
 ---
-title: refaktor rename
+title: renamify rename
 description: Fast-path command that combines planning and applying with confirmation
 ---
 
@@ -8,7 +8,7 @@ The `rename` command is the fastest way to refactor your codebase. It combines p
 ## Usage
 
 ```bash
-refaktor rename <OLD> <NEW> [PATHS]... [OPTIONS]
+renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 ```
 
 ## Arguments
@@ -57,45 +57,45 @@ refaktor rename <OLD> <NEW> [PATHS]... [OPTIONS]
 ### Basic Rename
 ```bash
 # Rename with automatic preview and confirmation
-refaktor rename getUserName fetchUserProfile
+renamify rename getUserName fetchUserProfile
 
 # Or specify specific paths
-refaktor rename getUserName fetchUserProfile src/ tests/
+renamify rename getUserName fetchUserProfile src/ tests/
 ```
 
 ### Specific File Types
 ```bash
 # Only process TypeScript files using patterns
-refaktor rename oldName newName --include "**/*.{ts,tsx}"
+renamify rename oldName newName --include "**/*.{ts,tsx}"
 
 # Or use specific paths
-refaktor rename oldName newName src/components/ src/utils/
+renamify rename oldName newName src/components/ src/utils/
 ```
 
 ### Exclude Certain Areas
 ```bash
 # Skip test files and node_modules
-refaktor rename oldApi newApi \
+renamify rename oldApi newApi \
   --exclude "**/*test*,node_modules/**"
 ```
 
 ### Case Style Control
 ```bash
 # Only handle camelCase and PascalCase (common in React projects)
-refaktor rename oldComponent newComponent \
+renamify rename oldComponent newComponent \
   --only-styles camel,pascal
 ```
 
 ### With Git Commit
 ```bash
 # Automatically commit changes after applying
-refaktor rename old_function new_function --commit
+renamify rename old_function new_function --commit
 ```
 
 ### Project-Wide Rename
 ```bash  
 # Rename entire project including root directory
-refaktor rename myproject awesome_project \
+renamify rename myproject awesome_project \
   --rename-root \
   --commit
 ```
@@ -103,7 +103,7 @@ refaktor rename myproject awesome_project \
 ### Exclude Specific Matches
 ```bash
 # Skip compound words that contain your pattern
-refaktor rename config settings \
+renamify rename config settings \
   --exclude-match ConfigurationManager,ConfigService
 ```
 
@@ -111,7 +111,7 @@ refaktor rename config settings \
 
 When you run `rename`, this is what happens:
 
-1. **Scanning**: Refaktor scans your codebase for matches
+1. **Scanning**: Renamify scans your codebase for matches
 2. **Preview**: Shows a table/diff of all planned changes
 3. **Confirmation**: Prompts "Apply these changes? [y/N]:"
 4. **Apply**: If confirmed, applies changes atomically
@@ -119,7 +119,7 @@ When you run `rename`, this is what happens:
 
 ### Example Session
 ```bash
-$ refaktor rename getUserName fetchUserProfile
+$ renamify rename getUserName fetchUserProfile
 
 Files to modify: 12
 ┌─────────────────────────────────────┬──────────┬────────────────────┬─────────────────────┐
@@ -158,11 +158,11 @@ Apply these changes? [y/N]: y
 
 ## Safety Features
 
-The `rename` command includes all of Refaktor's safety features:
+The `rename` command includes all of Renamify's safety features:
 - **Atomic operations**: All changes succeed or none do
 - **Automatic backups**: Created before applying changes
 - **Conflict detection**: Warns about potential issues
-- **Undo support**: Use `refaktor undo <id>` to revert
+- **Undo support**: Use `renamify undo <id>` to revert
 
 ## Exit Codes
 

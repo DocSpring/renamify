@@ -1,5 +1,5 @@
 ---
-title: refaktor apply
+title: renamify apply
 description: Execute a previously generated refactoring plan
 ---
 
@@ -8,12 +8,12 @@ The `apply` command executes a previously generated plan, making all the planned
 ## Usage
 
 ```bash
-refaktor apply [ID] [OPTIONS]
+renamify apply [ID] [OPTIONS]
 ```
 
 ## Arguments
 
-- `[ID]` - Plan ID, file path, or "latest" (optional - defaults to .refaktor/plan.json)
+- `[ID]` - Plan ID, file path, or "latest" (optional - defaults to .renamify/plan.json)
 
 ## Options
 
@@ -23,7 +23,7 @@ refaktor apply [ID] [OPTIONS]
 
 ## How It Works
 
-When you run `apply`, Refaktor:
+When you run `apply`, Renamify:
 
 1. **Loads the plan** from the specified file
 2. **Validates the plan** and checks for conflicts
@@ -37,38 +37,38 @@ When you run `apply`, Refaktor:
 
 ### Basic Apply
 ```bash
-# Apply the default plan at .refaktor/plan.json
-refaktor apply
+# Apply the default plan at .renamify/plan.json
+renamify apply
 
 # Explicitly apply the latest/default plan
-refaktor apply latest
+renamify apply latest
 ```
 
 ### Apply by Plan ID
 ```bash
 # Apply a specific plan from history
-refaktor apply abc123def456
+renamify apply abc123def456
 
 # Apply from a file path
-refaktor apply ./my-refactor-plan.json
+renamify apply ./my-refactor-plan.json
 
 # Apply from a custom location
-refaktor apply ./backups/old-plan.json
+renamify apply ./backups/old-plan.json
 ```
 
 ### Apply with Git Commit
 ```bash
 # Apply changes and create a git commit
-refaktor apply --commit
+renamify apply --commit
 
 # Apply specific plan with commit
-refaktor apply abc123def456 --commit
+renamify apply abc123def456 --commit
 ```
 
 ### Force Apply (Dangerous)
 ```bash
 # Apply even if conflicts are detected
-refaktor apply --force-with-conflicts
+renamify apply --force-with-conflicts
 ```
 
 ## Atomic Operations
@@ -88,21 +88,21 @@ By default, `apply` uses atomic operations:
 
 ### Example Atomic Process
 ```bash
-$ refaktor apply
+$ renamify apply
 
-📋 Loading plan: .refaktor/plan.json
+📋 Loading plan: .renamify/plan.json
 🔍 Validating 23 file modifications, 5 renames...
 💾 Creating backups...
 ✏️  Applying content changes...
 📁 Renaming files and directories...
 ✅ Applied successfully! Operation ID: def456-20241201-150322
 
-Backups stored in: .refaktor/backups/def456-20241201-150322/
+Backups stored in: .renamify/backups/def456-20241201-150322/
 ```
 
 ## Conflict Detection
 
-Before applying, Refaktor checks for various conflicts:
+Before applying, Renamify checks for various conflicts:
 
 ### File Modification Conflicts
 ```
@@ -111,8 +111,8 @@ Before applying, Refaktor checks for various conflicts:
    Current checksum: def456...
 
 Resolve by:
-1. Recreating the plan: refaktor plan old new
-2. Or force apply: refaktor apply --force-with-conflicts
+1. Recreating the plan: renamify plan old new
+2. Or force apply: renamify apply --force-with-conflicts
 ```
 
 ### File Rename Conflicts
@@ -135,7 +135,7 @@ The plan may be outdated. Consider recreating it.
 
 ### Automatic Commits
 ```bash
-refaktor apply --commit
+renamify apply --commit
 ```
 
 Creates a commit message like:
@@ -147,7 +147,7 @@ Applied refactoring operation def456-20241201-150322:
 - Renamed 5 files  
 - Renamed 2 directories
 
-Operation can be undone with: refaktor undo def456-20241201-150322
+Operation can be undone with: renamify undo def456-20241201-150322
 ```
 
 ### Pre-commit Requirements
@@ -161,7 +161,7 @@ Every apply operation creates comprehensive backups:
 
 ### Backup Structure
 ```
-.refaktor/backups/def456-20241201-150322/
+.renamify/backups/def456-20241201-150322/
 ├── src/
 │   ├── auth.js                 # Original file content
 │   └── utils.js
@@ -191,7 +191,7 @@ Rolling back all changes...
 To fix:
 1. Check file permissions: ls -la src/readonly.js
 2. Make writable: chmod +w src/readonly.js  
-3. Retry: refaktor apply
+3. Retry: renamify apply
 ```
 
 ### Recovery Steps
@@ -205,7 +205,7 @@ Use `--force-with-conflicts` only when you understand the risks:
 
 ```bash
 # This bypasses safety checks - use carefully!
-refaktor apply --force-with-conflicts
+renamify apply --force-with-conflicts
 ```
 
 ## After Application
@@ -213,7 +213,7 @@ refaktor apply --force-with-conflicts
 ### Verify Changes
 ```bash
 # Check what was actually applied
-refaktor history --limit 1
+renamify history --limit 1
 
 # Test your code
 npm test  # or cargo test, etc.
@@ -222,11 +222,11 @@ npm test  # or cargo test, etc.
 ### Undo if Needed
 ```bash
 # Undo the last operation
-refaktor undo def456-20241201-150322
+renamify undo def456-20241201-150322
 
 # Or see all operations and pick one
-refaktor history
-refaktor undo <operation-id>
+renamify history
+renamify undo <operation-id>
 ```
 
 ### Clean Up
@@ -234,7 +234,7 @@ The plan file remains after application for reference:
 
 ```bash
 # Remove the plan file if done
-rm .refaktor/plan.json
+rm .renamify/plan.json
 
 # Or keep it for documentation
 ```
@@ -265,13 +265,13 @@ For very large refactoring operations:
 ### Typical Workflow
 ```bash
 # 1. Plan the changes
-refaktor plan old_name new_name --preview table
+renamify plan old_name new_name --preview table
 
 # 2. Review the plan
-cat .refaktor/plan.json | jq '.stats'
+cat .renamify/plan.json | jq '.stats'
 
 # 3. Apply the plan  
-refaktor apply --commit
+renamify apply --commit
 
 # 4. Verify and test
 git log --oneline -1
@@ -279,9 +279,9 @@ npm test
 ```
 
 ### Alternative: Use rename
-For simpler cases, consider using `refaktor rename` which combines planning and applying:
+For simpler cases, consider using `renamify rename` which combines planning and applying:
 
 ```bash
 # This does plan + apply in one step with confirmation
-refaktor rename old_name new_name --preview table --commit
+renamify rename old_name new_name --preview table --commit
 ```

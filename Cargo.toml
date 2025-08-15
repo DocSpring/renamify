@@ -1,14 +1,14 @@
 [workspace]
-members = ["refaktor-core", "refaktor-cli"]
+members = ["renamify-core", "renamify-cli"]
 resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["Refaktor Contributors"]
+authors = ["Renamify Contributors"]
 license = "MIT"
-repository = "https://github.com/ndbroadbent/refaktor"
-homepage = "https://github.com/ndbroadbent/refaktor"
+repository = "https://github.com/ndbroadbent/renamify"
+homepage = "https://github.com/ndbroadbent/renamify"
 
 [workspace.dependencies]
 # Core dependencies

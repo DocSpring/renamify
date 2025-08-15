@@ -1,11 +1,11 @@
 ---
 title: MCP Server Configuration
-description: Configure the Refaktor MCP Server for your environment
+description: Configure the Renamify MCP Server for your environment
 ---
 
 import { Code, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
 
-Learn how to configure the Refaktor MCP Server for different AI assistants and customize its behavior.
+Learn how to configure the Renamify MCP Server for different AI assistants and customize its behavior.
 
 ## Basic Configuration
 
@@ -14,9 +14,9 @@ The minimal configuration for any MCP client:
 ```json
 {
   "mcpServers": {
-    "refaktor": {
+    "renamify": {
       "command": "npx",
-      "args": ["-y", "@refaktor/mcp-server"]
+      "args": ["-y", "@renamify/mcp-server"]
     }
   }
 }
@@ -24,18 +24,18 @@ The minimal configuration for any MCP client:
 
 ## Advanced Configuration Options
 
-### Custom Refaktor Binary Path
+### Custom Renamify Binary Path
 
-If `refaktor` is not in your PATH, you can specify a custom location:
+If `renamify` is not in your PATH, you can specify a custom location:
 
 ```json
 {
   "mcpServers": {
-    "refaktor": {
+    "renamify": {
       "command": "npx",
-      "args": ["-y", "@refaktor/mcp-server"],
+      "args": ["-y", "@renamify/mcp-server"],
       "env": {
-        "REFAKTOR_PATH": "/custom/path/to/refaktor"
+        "RENAMIFY_PATH": "/custom/path/to/renamify"
       }
     }
   }
@@ -49,9 +49,9 @@ Specify a default working directory for refactoring operations:
 ```json
 {
   "mcpServers": {
-    "refaktor": {
+    "renamify": {
       "command": "npx",
-      "args": ["-y", "@refaktor/mcp-server"],
+      "args": ["-y", "@renamify/mcp-server"],
       "cwd": "/path/to/your/project"
     }
   }
@@ -65,11 +65,11 @@ Enable debug logging for troubleshooting:
 ```json
 {
   "mcpServers": {
-    "refaktor": {
+    "renamify": {
       "command": "npx",
-      "args": ["-y", "@refaktor/mcp-server"],
+      "args": ["-y", "@renamify/mcp-server"],
       "env": {
-        "DEBUG": "refaktor:*",
+        "DEBUG": "renamify:*",
         "LOG_LEVEL": "debug"
       }
     }
@@ -92,11 +92,11 @@ Enable debug logging for troubleshooting:
     ```json
     {
       "mcpServers": {
-        "refaktor": {
+        "renamify": {
           "command": "npx",
-          "args": ["-y", "@refaktor/mcp-server"],
+          "args": ["-y", "@renamify/mcp-server"],
           "env": {
-            "REFAKTOR_PATH": "/usr/local/bin/refaktor"
+            "RENAMIFY_PATH": "/usr/local/bin/renamify"
           }
         }
       }
@@ -114,9 +114,9 @@ Enable debug logging for troubleshooting:
     {
       "mcp": {
         "servers": {
-          "refaktor": {
+          "renamify": {
             "command": "npx",
-            "args": ["-y", "@refaktor/mcp-server"],
+            "args": ["-y", "@renamify/mcp-server"],
             "enabled": true
           }
         }
@@ -135,9 +135,9 @@ Enable debug logging for troubleshooting:
       "models": [...],
       "mcpServers": [
         {
-          "name": "refaktor",
+          "name": "renamify",
           "command": "npx",
-          "args": ["-y", "@refaktor/mcp-server"],
+          "args": ["-y", "@renamify/mcp-server"],
           "description": "Smart case-aware refactoring"
         }
       ]
@@ -158,9 +158,9 @@ Enable debug logging for troubleshooting:
     ```json
     {
       "mcp.servers": {
-        "refaktor": {
+        "renamify": {
           "command": "npx",
-          "args": ["-y", "@refaktor/mcp-server"]
+          "args": ["-y", "@renamify/mcp-server"]
         }
       }
     }
@@ -172,15 +172,15 @@ Enable debug logging for troubleshooting:
 
 The MCP Server respects these environment variables:
 
-### REFAKTOR_PATH
+### RENAMIFY_PATH
 - **Type:** String  
-- **Default:** `refaktor` (searches PATH)  
-- **Description:** Path to the refaktor binary
+- **Default:** `renamify` (searches PATH)  
+- **Description:** Path to the renamify binary
 
 ### DEBUG
 - **Type:** String  
 - **Default:** (none)  
-- **Description:** Enable debug output with `refaktor:*`
+- **Description:** Enable debug output with `renamify:*`
 
 ### LOG_LEVEL
 - **Type:** String  
@@ -203,7 +203,7 @@ The MCP Server defaults to `summary` format for AI agents. To change:
 ```json
 {
   "env": {
-    "REFAKTOR_DEFAULT_PREVIEW": "table"  // or "diff", "json"
+    "RENAMIFY_DEFAULT_PREVIEW": "table"  // or "diff", "json"
   }
 }
 ```
@@ -215,7 +215,7 @@ To always create git commits after applying changes:
 ```json
 {
   "env": {
-    "REFAKTOR_AUTO_COMMIT": "true"
+    "RENAMIFY_AUTO_COMMIT": "true"
   }
 }
 ```
@@ -227,14 +227,14 @@ For extra safety, make all operations dry-run by default:
 ```json
 {
   "env": {
-    "REFAKTOR_DEFAULT_DRY_RUN": "true"
+    "RENAMIFY_DEFAULT_DRY_RUN": "true"
   }
 }
 ```
 
 ## Project-Specific Configuration
 
-You can create a `.refaktor/config.json` file in your project root:
+You can create a `.renamify/config.json` file in your project root:
 
 ```json
 {
@@ -265,20 +265,20 @@ Configure different settings for different projects:
 ```json
 {
   "mcpServers": {
-    "refaktor-project1": {
+    "renamify-project1": {
       "command": "npx",
-      "args": ["-y", "@refaktor/mcp-server"],
+      "args": ["-y", "@renamify/mcp-server"],
       "cwd": "/path/to/project1",
       "env": {
-        "REFAKTOR_AUTO_COMMIT": "true"
+        "RENAMIFY_AUTO_COMMIT": "true"
       }
     },
-    "refaktor-project2": {
+    "renamify-project2": {
       "command": "npx",
-      "args": ["-y", "@refaktor/mcp-server"],
+      "args": ["-y", "@renamify/mcp-server"],
       "cwd": "/path/to/project2",
       "env": {
-        "REFAKTOR_DEFAULT_DRY_RUN": "true"
+        "RENAMIFY_DEFAULT_DRY_RUN": "true"
       }
     }
   }
@@ -306,8 +306,8 @@ Enable parallel file processing:
 ```json
 {
   "env": {
-    "REFAKTOR_PARALLEL": "true",
-    "REFAKTOR_WORKERS": "4"
+    "RENAMIFY_PARALLEL": "true",
+    "RENAMIFY_WORKERS": "4"
   }
 }
 ```
@@ -321,8 +321,8 @@ Limit refactoring to specific directories:
 ```json
 {
   "env": {
-    "REFAKTOR_ALLOWED_PATHS": "/home/user/projects,/home/user/work",
-    "REFAKTOR_RESTRICT_MODE": "true"
+    "RENAMIFY_ALLOWED_PATHS": "/home/user/projects,/home/user/work",
+    "RENAMIFY_RESTRICT_MODE": "true"
   }
 }
 ```
@@ -334,7 +334,7 @@ Enable read-only mode for planning without applying:
 ```json
 {
   "env": {
-    "REFAKTOR_READ_ONLY": "true"
+    "RENAMIFY_READ_ONLY": "true"
   }
 }
 ```
@@ -345,7 +345,7 @@ Enable read-only mode for planning without applying:
 
 Test your configuration with a simple request to your AI assistant:
 
-> "Can you list the available Refaktor tools?"
+> "Can you list the available Renamify tools?"
 
 The assistant should respond with the 7 available tools.
 
@@ -358,7 +358,7 @@ Enable comprehensive debugging:
   "env": {
     "DEBUG": "*",
     "LOG_LEVEL": "debug",
-    "REFAKTOR_VERBOSE": "true"
+    "RENAMIFY_VERBOSE": "true"
   }
 }
 ```
@@ -371,11 +371,11 @@ Enable comprehensive debugging:
 - Restart your AI assistant after changes
 
 **Permission errors:**
-- Ensure the refaktor binary is executable
+- Ensure the renamify binary is executable
 - Check file system permissions for your project
 
 **Binary not found:**
-- Use absolute paths in REFAKTOR_PATH
+- Use absolute paths in RENAMIFY_PATH
 - Verify the binary exists at the specified location
 
 ## Configuration Templates
@@ -385,13 +385,13 @@ Enable comprehensive debugging:
 ```json
 {
   "mcpServers": {
-    "refaktor-dev": {
+    "renamify-dev": {
       "command": "npx",
-      "args": ["-y", "@refaktor/mcp-server"],
+      "args": ["-y", "@renamify/mcp-server"],
       "env": {
         "LOG_LEVEL": "debug",
-        "REFAKTOR_DEFAULT_DRY_RUN": "true",
-        "REFAKTOR_AUTO_COMMIT": "false"
+        "RENAMIFY_DEFAULT_DRY_RUN": "true",
+        "RENAMIFY_AUTO_COMMIT": "false"
       }
     }
   }
@@ -403,13 +403,13 @@ Enable comprehensive debugging:
 ```json
 {
   "mcpServers": {
-    "refaktor-prod": {
-      "command": "refaktor-mcp",
+    "renamify-prod": {
+      "command": "renamify-mcp",
       "env": {
         "LOG_LEVEL": "error",
-        "REFAKTOR_AUTO_COMMIT": "true",
-        "REFAKTOR_RESTRICT_MODE": "true",
-        "REFAKTOR_ALLOWED_PATHS": "/var/www/app"
+        "RENAMIFY_AUTO_COMMIT": "true",
+        "RENAMIFY_RESTRICT_MODE": "true",
+        "RENAMIFY_ALLOWED_PATHS": "/var/www/app"
       }
     }
   }
@@ -421,12 +421,12 @@ Enable comprehensive debugging:
 ```json
 {
   "mcpServers": {
-    "refaktor-ci": {
+    "renamify-ci": {
       "command": "npx",
-      "args": ["-y", "@refaktor/mcp-server"],
+      "args": ["-y", "@renamify/mcp-server"],
       "env": {
-        "REFAKTOR_READ_ONLY": "true",
-        "REFAKTOR_DEFAULT_PREVIEW": "json",
+        "RENAMIFY_READ_ONLY": "true",
+        "RENAMIFY_DEFAULT_PREVIEW": "json",
         "CI": "true"
       }
     }
@@ -437,13 +437,13 @@ Enable comprehensive debugging:
 ## Next Steps
 
 <CardGrid>
-  <Card title="Tools Reference" icon="document" href="/refaktor/mcp/tools">
+  <Card title="Tools Reference" icon="document" href="/renamify/mcp/tools">
     Detailed documentation for each MCP tool
   </Card>
-  <Card title="Usage Examples" icon="rocket" href="/refaktor/mcp/examples">
+  <Card title="Usage Examples" icon="rocket" href="/renamify/mcp/examples">
     Real-world refactoring scenarios
   </Card>
-  <Card title="AI Agent Guide" icon="robot" href="/refaktor/mcp/ai-guide">
+  <Card title="AI Agent Guide" icon="robot" href="/renamify/mcp/ai-guide">
     Best practices for AI-assisted refactoring
   </Card>
 </CardGrid>

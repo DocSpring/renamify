@@ -1,13 +1,13 @@
 ---
 title: Filtering and Ignore Rules  
-description: Control which files Refaktor processes with includes, excludes, and ignore rules
+description: Control which files Renamify processes with includes, excludes, and ignore rules
 ---
 
-Refaktor provides powerful filtering options to control exactly which files get processed during refactoring operations.
+Renamify provides powerful filtering options to control exactly which files get processed during refactoring operations.
 
 ## Default Behavior (Respects .gitignore)
 
-By default, Refaktor respects standard ignore mechanisms:
+By default, Renamify respects standard ignore mechanisms:
 
 - **`.gitignore` files** at all levels
 - **`.git/info/exclude`** (repository-specific ignores)
@@ -15,7 +15,7 @@ By default, Refaktor respects standard ignore mechanisms:
 - **`.rgignore` files** (ripgrep-specific ignore files)
 - **Hidden files and directories** are skipped (starting with `.`)
 
-This means Refaktor won't process files in `node_modules/`, `target/`, `.git/`, etc. by default.
+This means Renamify won't process files in `node_modules/`, `target/`, `.git/`, etc. by default.
 
 ## Unrestricted Mode
 
@@ -25,7 +25,7 @@ Use ripgrep-style unrestricted flags to reduce filtering:
 Disables `.gitignore` files but respects other ignore mechanisms:
 
 ```bash
-refaktor plan old_name new_name -u
+renamify plan old_name new_name -u
 ```
 
 - ✅ Processes files ignored by `.gitignore`
@@ -37,7 +37,7 @@ refaktor plan old_name new_name -u
 Disables all ignore files and shows hidden files:
 
 ```bash
-refaktor plan old_name new_name -uu
+renamify plan old_name new_name -uu
 ```
 
 - ✅ Processes all ignore files
@@ -48,7 +48,7 @@ refaktor plan old_name new_name -uu
 Processes everything, including binary files:
 
 ```bash
-refaktor plan old_name new_name -uuu
+renamify plan old_name new_name -uuu
 ```
 
 - ✅ Processes all files
@@ -64,19 +64,19 @@ Use glob patterns to specify exactly which files to process:
 ### Single Pattern
 ```bash
 # Only process Rust source files
-refaktor plan old_name new_name --include "**/*.rs"
+renamify plan old_name new_name --include "**/*.rs"
 
 # Only process files in src/ directory
-refaktor plan old_name new_name --include "src/**"
+renamify plan old_name new_name --include "src/**"
 ```
 
 ### Multiple Patterns
 ```bash
 # Process Rust and TypeScript files
-refaktor plan old_name new_name --include "**/*.rs,**/*.ts,**/*.tsx"
+renamify plan old_name new_name --include "**/*.rs,**/*.ts,**/*.tsx"
 
 # Process specific directories
-refaktor plan old_name new_name --include "src/**,lib/**,tests/**"
+renamify plan old_name new_name --include "src/**,lib/**,tests/**"
 ```
 
 ## Exclude Patterns
@@ -86,19 +86,19 @@ Skip specific files or directories:
 ### Common Exclusions
 ```bash
 # Exclude test files
-refaktor plan old_name new_name --exclude "**/*test*"
+renamify plan old_name new_name --exclude "**/*test*"
 
 # Exclude build outputs and dependencies
-refaktor plan old_name new_name --exclude "target/**,node_modules/**,dist/**"
+renamify plan old_name new_name --exclude "target/**,node_modules/**,dist/**"
 
 # Exclude specific file types
-refaktor plan old_name new_name --exclude "**/*.min.js,**/*.bundle.js"
+renamify plan old_name new_name --exclude "**/*.min.js,**/*.bundle.js"
 ```
 
 ### Combining Include and Exclude
 ```bash
 # Process TypeScript files but skip tests and node_modules
-refaktor plan old_name new_name \
+renamify plan old_name new_name \
   --include "**/*.ts,**/*.tsx" \
   --exclude "**/*test*,node_modules/**"
 ```
@@ -109,10 +109,10 @@ Use `--exclude-match` to skip specific compound words or identifiers that match 
 
 ```bash
 # Skip specific compound words that contain your pattern
-refaktor plan foo bar --exclude-match bazFooQux,FooService
+renamify plan foo bar --exclude-match bazFooQux,FooService
 
 # Useful when a pattern accidentally matches unintended identifiers  
-refaktor rename config settings --exclude-match ConfigurationManager
+renamify rename config settings --exclude-match ConfigurationManager
 ```
 
 This is particularly useful when:
@@ -122,7 +122,7 @@ This is particularly useful when:
 
 ## Glob Pattern Syntax
 
-Refaktor uses standard glob patterns:
+Renamify uses standard glob patterns:
 
 | Pattern | Matches |
 |---------|---------|
@@ -150,7 +150,7 @@ Refaktor uses standard glob patterns:
 
 ## Binary File Handling
 
-Refaktor automatically detects and skips binary files by default:
+Renamify automatically detects and skips binary files by default:
 
 ### Detection Methods
 - **File extension**: `.jpg`, `.png`, `.exe`, etc.
@@ -160,19 +160,19 @@ Refaktor automatically detects and skips binary files by default:
 ### Override Binary Detection
 ```bash
 # Force processing of all files (dangerous!)
-refaktor plan old_name new_name -uuu
+renamify plan old_name new_name -uuu
 
 # Include specific binary extensions (not recommended)
-refaktor plan old_name new_name --include "**/*.{bin,dat}"
+renamify plan old_name new_name --include "**/*.{bin,dat}"
 ```
 
 ## Auto-Initialization
 
-Refaktor automatically prompts to ignore its workspace directory on first use:
+Renamify automatically prompts to ignore its workspace directory on first use:
 
 ### Interactive Prompt
 ```
-Refaktor uses .refaktor/ for plans, backups, and history.
+Renamify uses .renamify/ for plans, backups, and history.
 Ignore it now?
   [Y] Repo .gitignore   [l] Local .git/info/exclude   [g] Global excludesfile   [n] No
 Choice (Y/l/g/n): 
@@ -181,13 +181,13 @@ Choice (Y/l/g/n):
 ### Command-Line Control
 ```bash
 # Automatically add to .gitignore without prompting
-refaktor --auto-init=repo plan old new
+renamify --auto-init=repo plan old new
 
 # Prevent any auto-initialization
-refaktor --no-auto-init plan old new
+renamify --no-auto-init plan old new
 
 # Use -y for non-interactive environments (CI)
-refaktor -y plan old new
+renamify -y plan old new
 ```
 
 ## Performance Tips
@@ -195,21 +195,21 @@ refaktor -y plan old new
 ### Optimize Large Codebases
 ```bash
 # Be specific with includes to avoid scanning unnecessary files
-refaktor plan old new --include "src/**/*.{js,ts,tsx}"
+renamify plan old new --include "src/**/*.{js,ts,tsx}"
 
 # Exclude large directories early
-refaktor plan old new --exclude "node_modules/**,target/**,.git/**"
+renamify plan old new --exclude "node_modules/**,target/**,.git/**"
 ```
 
 ### Parallel Processing
-Refaktor automatically uses parallel directory traversal and file processing for optimal performance on large codebases.
+Renamify automatically uses parallel directory traversal and file processing for optimal performance on large codebases.
 
 ## Common Patterns
 
 ### Frontend Projects
 ```bash
 # React/TypeScript project
-refaktor rename oldName newName \
+renamify rename oldName newName \
   --include "src/**/*.{ts,tsx,js,jsx}" \
   --exclude "**/*.test.*,**/__tests__/**,node_modules/**"
 ```
@@ -217,7 +217,7 @@ refaktor rename oldName newName \
 ### Rust Projects  
 ```bash
 # Rust project with tests
-refaktor rename old_name new_name \
+renamify rename old_name new_name \
   --include "**/*.rs" \
   --exclude "target/**"
 ```
@@ -225,7 +225,7 @@ refaktor rename old_name new_name \
 ### Python Projects
 ```bash  
 # Python with tests in separate directory
-refaktor rename old_name new_name \
+renamify rename old_name new_name \
   --include "**/*.py" \
   --exclude "venv/**,__pycache__/**,*.pyc"
 ```
@@ -233,6 +233,6 @@ refaktor rename old_name new_name \
 ### Documentation Only
 ```bash
 # Only process markdown and text files
-refaktor rename old_name new_name \
+renamify rename old_name new_name \
   --include "**/*.{md,txt,rst}" 
 ```

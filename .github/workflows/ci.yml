@@ -69,13 +69,13 @@ jobs:
           cargo install cargo-llvm-cov --version 0.6.15
 
       - name: Generate code coverage
-        run: cargo llvm-cov --package refaktor-core --lcov --output-path lcov.info
+        run: cargo llvm-cov --package renamify-core --lcov --output-path lcov.info
 
       - name: Check coverage threshold
         run: |
           COVERAGE_THRESHOLD=85
           # Run coverage and capture output
-          COVERAGE_OUTPUT=$(cargo llvm-cov --package refaktor-core 2>&1)
+          COVERAGE_OUTPUT=$(cargo llvm-cov --package renamify-core 2>&1)
           echo "$COVERAGE_OUTPUT"
 
           # Extract coverage percentage from the TOTAL line
@@ -91,7 +91,7 @@ jobs:
           echo "Coverage meets ${COVERAGE_THRESHOLD}% threshold: ${COVERAGE}%"
 
       - name: Generate HTML report
-        run: cargo llvm-cov --package refaktor-core --html
+        run: cargo llvm-cov --package renamify-core --html
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

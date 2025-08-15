@@ -55,7 +55,7 @@ ci: lint-strict test-all doc
 clean:
     cargo clean
     rm -rf target/
-    rm -rf .refaktor/
+    rm -rf .renamify/
 
 # Install development tools
 install-tools:

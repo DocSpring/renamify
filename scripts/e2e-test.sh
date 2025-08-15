@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Faster: build debug for the loop, build release once at the end
-export CARGO_TARGET_DIR=/tmp/refaktor-e2e-target
-WORKDIR=./refaktor-e2e-test
+export CARGO_TARGET_DIR=/tmp/renamify-e2e-target
+WORKDIR=./renamify-e2e-test
 
 if [ -z "${CI:-}" ]; then
   RUSTC_WRAPPER="$(command -v sccache)"
@@ -32,7 +32,7 @@ function ensure_working_directory_is_clean() {
   fi
 }
 
-echo "Cloning refaktor to $WORKDIR"
+echo "Cloning renamify to $WORKDIR"
 git clone . "$WORKDIR"
 cd "$WORKDIR"
 
@@ -45,36 +45,36 @@ ensure_working_directory_is_clean "before test"
 
 echo "=== Initial debug build ==="
 cargo build
-DEBUG_REFAKTOR="$CARGO_TARGET_DIR/debug/refaktor"
-"$DEBUG_REFAKTOR" --version
+DEBUG_RENAMIFY="$CARGO_TARGET_DIR/debug/renamify"
+"$DEBUG_RENAMIFY" --version
 
 ensure_working_directory_is_clean "after initial build"
 
-echo "=== Testing refaktor rename to awesome_file_renaming_tool ==="
-# Use refaktor to rename itself using plan/apply
-"$DEBUG_REFAKTOR" plan refaktor awesome_file_renaming_tool --preview summary
-"$DEBUG_REFAKTOR" apply
+echo "=== Testing renamify rename to awesome_file_renaming_tool ==="
+# Use renamify to rename itself using plan/apply
+"$DEBUG_RENAMIFY" plan renamify awesome_file_renaming_tool --preview summary
+"$DEBUG_RENAMIFY" apply
 
-# Verify no instances of "refaktor" remain in the codebase (case-insensitive)
-echo "Checking for remaining instances of 'refaktor'..."
-if rg -i refaktor; then
-  echo "ERROR: Found remaining instances of 'refaktor' in the codebase!"
+# Verify no instances of "renamify" remain in the codebase (case-insensitive)
+echo "Checking for remaining instances of 'renamify'..."
+if rg -i renamify; then
+  echo "ERROR: Found remaining instances of 'renamify' in the codebase!"
   exit 1
 fi
 
 # Verify the rename worked by checking key dirs / files
-if [ -d "refaktor-core" ]; then
-  echo "ERROR: refaktor-core directory still exists!"
+if [ -d "renamify-core" ]; then
+  echo "ERROR: renamify-core directory still exists!"
   exit 1
 fi
 if [ ! -f "awesome-file-renaming-tool-core/Cargo.toml" ]; then
   echo "ERROR: awesome-file-renaming-tool-core/Cargo.toml not found!"
   exit 1
 fi
-echo "✓ No instances of 'refaktor' found"
+echo "✓ No instances of 'renamify' found"
 
 echo "=== Testing undo functionality ==="
-"$DEBUG_REFAKTOR" undo latest
+"$DEBUG_RENAMIFY" undo latest
 
 # Verify the undo worked
 if [ -f "awesome-file-renaming-tool-core/Cargo.toml" ]; then
@@ -85,15 +85,15 @@ ensure_working_directory_is_clean "after undo"
 echo "✓ Working directory is clean - undo successful!"
 
 echo "=== Testing redo functionality ==="
-"$DEBUG_REFAKTOR" redo latest
+"$DEBUG_RENAMIFY" redo latest
 
-# Verify no instances of "refaktor" remain in the codebase (case-insensitive)
-echo "Checking for remaining instances of 'refaktor'..."
-if rg -i "refaktor"; then
-  echo "ERROR: Found remaining instances of 'refaktor' in the codebase!"
+# Verify no instances of "renamify" remain in the codebase (case-insensitive)
+echo "Checking for remaining instances of 'renamify'..."
+if rg -i "renamify"; then
+  echo "ERROR: Found remaining instances of 'renamify' in the codebase!"
   exit 1
 fi
-echo "✓ No instances of 'refaktor' found"
+echo "✓ No instances of 'renamify' found"
 
 echo "=== Build debug for awesome_file_renaming_tool and check ==="
 cargo build
@@ -116,22 +116,22 @@ echo "✓ Found .awesome_file_renaming_tool/ in .gitignore"
 echo "=== Committing change to .gitignore"
 if [ -n "${CI:-}" ]; then
   git config --global user.email "e2e.test@example.com"
-  git config --global user.name "refaktor e2e test"
+  git config --global user.name "renamify e2e test"
 fi
 git add .gitignore
 git commit -m "Added .awesome_file_renaming_tool/ to .gitignore"
 
-echo "=== Testing awesome_file_renaming_tool rename back to refaktor ==="
+echo "=== Testing awesome_file_renaming_tool rename back to renamify ==="
 # Use awesome_file_renaming_tool to rename itself back
-"$DEBUG_AFRT" rename awesome_file_renaming_tool refaktor --preview summary --yes
+"$DEBUG_AFRT" rename awesome_file_renaming_tool renamify --preview summary --yes
 
 # Verify the rename worked
 if [ -f "awesome-file-renaming-tool-core/Cargo.toml" ]; then
   echo "ERROR: awesome-file-renaming-tool-core/Cargo.toml still exists!"
   exit 1
 fi
-if [ ! -f "refaktor-core/Cargo.toml" ]; then
-  echo "ERROR: refaktor-core/Cargo.toml not found!"
+if [ ! -f "renamify-core/Cargo.toml" ]; then
+  echo "ERROR: renamify-core/Cargo.toml not found!"
   exit 1
 fi
 
@@ -145,9 +145,9 @@ echo "✓ No instances of 'awesome_file_renaming_tool' found"
 
 echo "=== Final release build and verification ==="
 cargo build --release
-REL_REFAKTOR="$CARGO_TARGET_DIR/release/refaktor"
+REL_RENAMIFY="$CARGO_TARGET_DIR/release/renamify"
 
-"$REL_REFAKTOR" --version
+"$REL_RENAMIFY" --version
 
 ensure_working_directory_is_clean "after round-trip"
 echo "✓ Working directory is clean - round-trip successful!"

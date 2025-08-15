@@ -1,29 +1,29 @@
 ---
 title: Installation
-description: How to install Refaktor
+description: How to install Renamify
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## Quick Install
 
-Install Refaktor on Linux or macOS:
+Install Renamify on Linux or macOS:
 
 ```bash
-curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
+curl -fsSL https://docspring.github.io/renamify/install.sh | bash
 ```
 
 ### Alternative Install Options
 
 ```bash
 # System-wide install
-curl -fsSL https://docspring.github.io/refaktor/install.sh | bash -s -- --system
+curl -fsSL https://docspring.github.io/renamify/install.sh | bash -s -- --system
 
 # Custom directory
-curl -fsSL https://docspring.github.io/refaktor/install.sh | bash -s -- --prefix "$HOME/bin"
+curl -fsSL https://docspring.github.io/renamify/install.sh | bash -s -- --prefix "$HOME/bin"
 
 # Uninstall
-curl -fsSL https://docspring.github.io/refaktor/install.sh | bash -s -- --uninstall
+curl -fsSL https://docspring.github.io/renamify/install.sh | bash -s -- --uninstall
 ```
 
 The install script defaults to `~/.local/bin` (no sudo required) and detects your OS and architecture automatically.
@@ -34,36 +34,36 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
   <TabItem label="Linux">
     ### x86_64 / amd64
     ```bash
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-amd64.tar.gz | tar xz
-    sudo mv refaktor /usr/local/bin/refaktor
-    sudo chmod 755 /usr/local/bin/refaktor
-    refaktor --version
+    curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-linux-amd64.tar.gz | tar xz
+    sudo mv renamify /usr/local/bin/renamify
+    sudo chmod 755 /usr/local/bin/renamify
+    renamify --version
     ```
     
     ### arm64
     ```bash
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-linux-arm64.tar.gz | tar xz
-    sudo mv refaktor /usr/local/bin/refaktor
-    sudo chmod 755 /usr/local/bin/refaktor
-    refaktor --version
+    curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-linux-arm64.tar.gz | tar xz
+    sudo mv renamify /usr/local/bin/renamify
+    sudo chmod 755 /usr/local/bin/renamify
+    renamify --version
     ```
   </TabItem>
   
   <TabItem label="macOS">
     ### Intel (x86_64)
     ```bash
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-amd64.tar.gz | tar xz
-    sudo mv refaktor /usr/local/bin/refaktor
-    sudo chmod 755 /usr/local/bin/refaktor
-    refaktor --version
+    curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-macos-amd64.tar.gz | tar xz
+    sudo mv renamify /usr/local/bin/renamify
+    sudo chmod 755 /usr/local/bin/renamify
+    renamify --version
     ```
     
     ### Apple Silicon (arm64)
     ```bash
-    curl -L https://github.com/DocSpring/refaktor/releases/latest/download/refaktor-macos-arm64.tar.gz | tar xz
-    sudo mv refaktor /usr/local/bin/refaktor
-    sudo chmod 755 /usr/local/bin/refaktor
-    refaktor --version
+    curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-macos-arm64.tar.gz | tar xz
+    sudo mv renamify /usr/local/bin/renamify
+    sudo chmod 755 /usr/local/bin/renamify
+    renamify --version
     ```
   </TabItem>
   
@@ -74,10 +74,10 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
     ```powershell
     # Install Rust for Windows from https://win.rustup.rs/
     # Clone and build from source
-    git clone https://github.com/DocSpring/refaktor.git
-    cd refaktor
+    git clone https://github.com/DocSpring/renamify.git
+    cd renamify
     cargo build --release
-    # Copy target/release/refaktor.exe to your PATH
+    # Copy target/release/renamify.exe to your PATH
     ```
   </TabItem>
 </Tabs>
@@ -89,16 +89,16 @@ Coming soon: Install via Cargo, Homebrew, Chocolatey, or Linux package managers.
 {/* 
 ```bash
 # Cargo
-cargo install refaktor
+cargo install renamify
 
 # Homebrew (macOS)
-brew install refaktor
+brew install renamify
 
 # Chocolatey (Windows)
-choco install refaktor
+choco install renamify
 
 # Arch Linux
-yay -S refaktor
+yay -S renamify
 ``` */}
 
 ## Build from Source
@@ -108,8 +108,8 @@ For developers who want to build from source:
 **Prerequisites**: Rust 1.89.0 or later
 
 ```bash
-git clone https://github.com/DocSpring/refaktor
-cd refaktor
+git clone https://github.com/DocSpring/renamify
+cd renamify
 cargo build --release
-cp ./target/release/refaktor /usr/local/bin/
+cp ./target/release/renamify /usr/local/bin/
 ```

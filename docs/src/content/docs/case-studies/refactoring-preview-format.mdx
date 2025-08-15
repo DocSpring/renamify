@@ -3,12 +3,12 @@ title: Refactoring --preview
 description: A case study showing how to rename a command-line argument across a codebase
 ---
 
-This case study demonstrates using Refaktor to rename a command-line argument across an entire codebase, 
+This case study demonstrates using Renamify to rename a command-line argument across an entire codebase, 
 including documentation, tests, and code. 
 
 ## Background
 
-The initial code for the Refaktor CLI had an inconsistency in its argument naming:
+The initial code for the Renamify CLI had an inconsistency in its argument naming:
 
 - The `rename` command used `--preview` to choose the preview format
 - The `plan` command used `--preview-format` for the same purpose
@@ -39,8 +39,8 @@ I needed to change the test examples to use a different compound word that won't
 I decided to rename "preview_format" to "foo_bar" and "preview" to "foo".
 
 ```bash
-./target/release/refaktor rename preview_format foo_bar \
-    refaktor-core/tests/compound_position_test.rs
+./target/release/renamify rename preview_format foo_bar \
+    renamify-core/tests/compound_position_test.rs
 ```
 
 ![Preview of the refactoring changes](../../../assets/case-studies/preview-format-multi-replace-preview-format-foo-bar.png)
@@ -60,8 +60,8 @@ PreviewFormat, previewFormat
 Then a `preview` => `foo` rename to handle the remaining cases:
 
 ```bash
-./target/release/refaktor rename preview foo \
-    refaktor-core/tests/compound_position_test.rs
+./target/release/renamify rename preview foo \
+    renamify-core/tests/compound_position_test.rs
 ```
 
 ![Preview of the refactoring changes](../../../assets/case-studies/preview-format-multi-replace-preview-foo.png)
@@ -78,7 +78,7 @@ I ran the tests and they all passed.
 Now I was able to rename the CLI argument:
 
 ```bash
-./target/release/refaktor rename preview-format preview
+./target/release/renamify rename preview-format preview
 ```
 
 Some of the changes:

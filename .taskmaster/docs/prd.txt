@@ -1,10 +1,10 @@
-Refaktor v1.0.0 - Product Requirements Document (PRD)
+Renamify v1.0.0 - Product Requirements Document (PRD)
 Owner: Nathan Broadbent
 Date: 2025-08-11
 Repo files referenced: INITIAL_PLANNING.md, CLAUDE.md, .taskmaster/templates/example_prd.txt
 
 1) Summary
-- Refaktor is a cross-case-aware refactoring tool that performs content replacement and filesystem renames in one atomic operation with full undo and redo.
+- Renamify is a cross-case-aware refactoring tool that performs content replacement and filesystem renames in one atomic operation with full undo and redo.
 - It ships as three deliverables that share one core: a Rust core library and CLI, a VS Code extension, and an MCP server wrapper that talks to the CLI.
 - Core technologies: ripgrep crates for fast search, git for safety and rollback, JSON for change plans and history.
 - Project status: greenfield, unreleased. No backwards compatibility guarantees. Old code is deleted aggressively.
@@ -63,51 +63,51 @@ Non-goals for v1.0.0
   - Show counts by variant, by file, and grouped by content vs rename.
   - Provide unified diff output and a compact table view.
 - History
-  - history.json in .refaktor/ with plan metadata, affected files, and content hashes for verification.
+  - history.json in .renamify/ with plan metadata, affected files, and content hashes for verification.
 
 5.2 CLI requirements
-- Binary name: refaktor
+- Binary name: renamify
 - Commands:
-  - refaktor plan <old> <new> [options]
+  - renamify plan <old> <new> [options]
     - --include, --exclude, --respect-gitignore (default true)
     - --rename-files, --rename-dirs (both default true)
     - --styles=<comma list> to restrict styles
     - --preview table|diff|json (default table)
-    - --plan-out path (default .refaktor/plan.json)
-  - refaktor apply [--plan path or --id <history id>] [--atomic true] [--commit]
+    - --plan-out path (default .renamify/plan.json)
+  - renamify apply [--plan path or --id <history id>] [--atomic true] [--commit]
     - --commit optionally creates a git commit with a generated message
-  - refaktor undo <id>
-  - refaktor redo <id>
-  - refaktor status
-  - refaktor history [--limit N]
-  - refaktor dry-run alias for plan with preview only
+  - renamify undo <id>
+  - renamify redo <id>
+  - renamify status
+  - renamify history [--limit N]
+  - renamify dry-run alias for plan with preview only
 - Exit codes: 0 success, 1 conflicts, 2 invalid input, 3 internal error.
 - Performance target: scan 100k files and generate plan within seconds on an SSD-backed repo, comparable to ripgrep speed.
 
 5.3 VS Code extension requirements
 - Commands:
-  - Refaktor: Plan Rename
-  - Refaktor: Preview Plan
-  - Refaktor: Apply Plan
-  - Refaktor: Undo Last Refaktor
+  - Renamify: Plan Rename
+  - Renamify: Preview Plan
+  - Renamify: Apply Plan
+  - Renamify: Undo Last Renamify
 - UI:
   - QuickPick to select old and new names, style filters, include and exclude globs.
   - Diff-style preview webview with files, hunks, and rename badges.
   - Non-blocking progress with cancel that kills the CLI process.
 - Implementation:
-  - TypeScript extension that shells out to the refaktor CLI with a JSON protocol over stdio.
+  - TypeScript extension that shells out to the renamify CLI with a JSON protocol over stdio.
   - Bundled platform binaries or download-on-demand. Configurable path.
 
 5.4 MCP server requirements
 - Node TypeScript service that wraps the CLI and exposes tools:
   - plan, apply, undo, history, preview
-- Installed via npx and expects refaktor CLI to be installed on PATH.
+- Installed via npx and expects renamify CLI to be installed on PATH.
 - Returns structured JSON results for Cursor or other MCP clients.
 
 5.5 Data formats
-- .refaktor/plan.json
+- .renamify/plan.json
   - { id, created_at, old, new, styles[], includes[], excludes[], matches[], renames[], stats, version }
-- .refaktor/history.json
+- .renamify/history.json
   - Append-only list of applied plans with checksums and revert info.
 
 5.6 Quality and testing
@@ -130,13 +130,13 @@ Non-goals for v1.0.0
 6) UX flows
 
 Flow A - React component rename
-- User runs: refaktor plan UserCard AccountCard --include "src/**"
+- User runs: renamify plan UserCard AccountCard --include "src/**"
 - Preview shows content changes in .tsx and .css, plus file and directory renames.
-- User runs: refaktor apply --commit
+- User runs: renamify apply --commit
 - In VS Code, the extension shows a success toast and the git commit appears.
 
 Flow B - Ruby model rename
-- User runs: refaktor plan UserProfile CustomerAccount --include "app/**" --include "db/**"
+- User runs: renamify plan UserProfile CustomerAccount --include "app/**" --include "db/**"
 - The plan updates PascalCase classes, snake_case file paths, and related specs.
 
 7) Engineering notes
@@ -182,7 +182,7 @@ Flow B - Ruby model rename
 13) Task list for Task Master
 
 T-001 Bootstrap Rust workspace
-- Create refaktor-cli and refaktor-core crates.
+- Create renamify-cli and renamify-core crates.
 - Set up cargo workspace, linting, formatting, and baseline CI.
 
 Acceptance criteria:
@@ -256,7 +256,7 @@ T-011 Packaging
 - Homebrew formula and curl installer. Windows scoop where feasible.
 
 Acceptance criteria:
-- Fresh machine can install and run refaktor.
+- Fresh machine can install and run renamify.
 
 T-012 Docs
 - README, CONTRIBUTING, CHANGELOG, example scenarios, and the CLAUDE.md note.
@@ -267,16 +267,16 @@ Acceptance criteria:
 Appendix A - CLI examples
 
 1) Basic plan and apply
-refaktor plan UserCard AccountCard --include "src/**" --preview table
-refaktor apply --commit
+renamify plan UserCard AccountCard --include "src/**" --preview table
+renamify apply --commit
 
 2) Restrict styles and dry run
-refaktor plan UserProfile CustomerAccount --styles=camel,Pascal,snake --dry-run
+renamify plan UserProfile CustomerAccount --styles=camel,Pascal,snake --dry-run
 
 3) Rename files and dirs only
-refaktor plan User User --rename-files --rename-dirs --styles=snake,kebab --include "assets/**"
+renamify plan User User --rename-files --rename-dirs --styles=snake,kebab --include "assets/**"
 
 4) Undo
-refaktor undo <id>
+renamify undo <id>
 
 End of PRD

@@ -1,5 +1,5 @@
-# Refaktor Configuration File
-# Copy this file to .refaktor/config.toml to customize defaults
+# Renamify Configuration File
+# Copy this file to .renamify/config.toml to customize defaults
 
 [defaults]
 # Default preview format: "table", "diff", "json", or "summary"

@@ -1,6 +1,6 @@
 ---
 title: Self-Hosting Demo
-description: Watch Refaktor rename itself, run the test suite using the new name, then rename itself back
+description: Watch Renamify rename itself, run the test suite using the new name, then rename itself back
 ---
 
 import { LinkCard } from '@astrojs/starlight/components';
@@ -17,17 +17,17 @@ import Quote from '../../components/Quote.astro';
 </Quote>
 
 
-Watch Refaktor rename itself to `awesome_file_renaming_tool`, then use the new binary to rename itself back again.
+Watch Renamify rename itself to `awesome_file_renaming_tool`, then use the new binary to rename itself back again.
 
 
 ```bash
 # Clone and build
-git clone https://github.com/DocSpring/refaktor
-cd refaktor
+git clone https://github.com/DocSpring/renamify
+cd renamify
 cargo build
 
-# Use refaktor to rename itself to awesome_file_renaming_tool
-./target/debug/refaktor rename refaktor awesome_file_renaming_tool --preview table --yes
+# Use renamify to rename itself to awesome_file_renaming_tool
+./target/debug/renamify rename renamify awesome_file_renaming_tool --preview table --yes
 
 # Make sure the old compiled binary is gone
 rm -rf target
@@ -38,14 +38,14 @@ cargo test
 # Build the "awesome_file_renaming_tool" binary
 cargo build
 
-# Use the new binary to rename itself back to refaktor
-./target/debug/awesome_file_renaming_tool rename awesome_file_renaming_tool refaktor --preview table --yes
+# Use the new binary to rename itself back to renamify
+./target/debug/awesome_file_renaming_tool rename awesome_file_renaming_tool renamify --preview table --yes
 
 # Back to the original name
 rm -rf target
 cargo test
 cargo build
-./target/debug/refaktor --help
+./target/debug/renamify --help
 
 # Everything is completely restored. No changes to any files after the round-trip
 git status
@@ -63,6 +63,6 @@ P.S. We run all these steps on CI as an end-to-end integration test:
 
 <LinkCard
   title="scripts/e2e-test.sh"
-  href="https://github.com/DocSpring/refaktor/blob/main/scripts/e2e-test.sh"
+  href="https://github.com/DocSpring/renamify/blob/main/scripts/e2e-test.sh"
   description="View the script we use in our GitHub Actions workflow"
 />

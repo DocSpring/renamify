@@ -21,18 +21,18 @@ jobs:
           # macOS builds
           - os: macos-latest
             target: x86_64-apple-darwin
-            name: refaktor-macos-amd64
+            name: renamify-macos-amd64
           - os: macos-latest
             target: aarch64-apple-darwin
-            name: refaktor-macos-arm64
+            name: renamify-macos-arm64
 
           # Linux builds
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            name: refaktor-linux-amd64
+            name: renamify-linux-amd64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            name: refaktor-linux-arm64
+            name: renamify-linux-arm64
             use-cross: true
 
     steps:
@@ -67,15 +67,15 @@ jobs:
       - name: Build binary
         run: |
           if [ "${{ matrix.use-cross }}" = "true" ]; then
-            cross build --release --target ${{ matrix.target }} --bin refaktor
+            cross build --release --target ${{ matrix.target }} --bin renamify
           else
-            cargo build --release --target ${{ matrix.target }} --bin refaktor
+            cargo build --release --target ${{ matrix.target }} --bin renamify
           fi
 
       - name: Create archive
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../${{ matrix.name }}.tar.gz refaktor
+          tar czf ../../../${{ matrix.name }}.tar.gz renamify
           cd ../../../
           echo "ASSET_PATH=${{ matrix.name }}.tar.gz" >> $GITHUB_ENV
 
@@ -125,7 +125,7 @@ jobs:
             git log --pretty=format:"- %s (%h)" $PREV_TAG..$TAG >> changelog.md
           else
             echo "### Initial Release" >> changelog.md
-            echo "- First release of Refaktor" >> changelog.md
+            echo "- First release of Renamify" >> changelog.md
           fi
 
           echo "" >> changelog.md
@@ -133,33 +133,33 @@ jobs:
           echo "" >> changelog.md
           echo "### macOS (Intel)" >> changelog.md
           echo '```bash' >> changelog.md
-          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/refaktor-macos-amd64.tar.gz | tar xz" >> changelog.md
-          echo "sudo mv refaktor /usr/local/bin/" >> changelog.md
+          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-macos-amd64.tar.gz | tar xz" >> changelog.md
+          echo "sudo mv renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
           echo "" >> changelog.md
           echo "### macOS (Apple Silicon)" >> changelog.md
           echo '```bash' >> changelog.md
-          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/refaktor-macos-arm64.tar.gz | tar xz" >> changelog.md
-          echo "sudo mv refaktor /usr/local/bin/" >> changelog.md
+          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-macos-arm64.tar.gz | tar xz" >> changelog.md
+          echo "sudo mv renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
           echo "" >> changelog.md
           echo "### Linux (x86_64)" >> changelog.md
           echo '```bash' >> changelog.md
-          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/refaktor-linux-amd64.tar.gz | tar xz" >> changelog.md
-          echo "sudo mv refaktor /usr/local/bin/" >> changelog.md
+          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-linux-amd64.tar.gz | tar xz" >> changelog.md
+          echo "sudo mv renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
           echo "" >> changelog.md
           echo "### Linux (ARM64)" >> changelog.md
           echo '```bash' >> changelog.md
-          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/refaktor-linux-arm64.tar.gz | tar xz" >> changelog.md
-          echo "sudo mv refaktor /usr/local/bin/" >> changelog.md
+          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-linux-arm64.tar.gz | tar xz" >> changelog.md
+          echo "sudo mv renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
-          name: Refaktor ${{ steps.tag.outputs.tag }}
+          name: Renamify ${{ steps.tag.outputs.tag }}
           body_path: changelog.md
           draft: false
           prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
@@ -187,11 +187,11 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install dependencies
-        working-directory: refaktor-mcp
+        working-directory: renamify-mcp
         run: pnpm install
 
       - name: Build
-        working-directory: refaktor-mcp
+        working-directory: renamify-mcp
         run: pnpm build
 
       - name: Determine tag
@@ -204,14 +204,14 @@ jobs:
           fi
 
       - name: Update package version
-        working-directory: refaktor-mcp
+        working-directory: renamify-mcp
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
           VERSION="${TAG#v}"  # Remove 'v' prefix
           npm version $VERSION --no-git-tag-version
 
       - name: Publish to npm
-        working-directory: refaktor-mcp
+        working-directory: renamify-mcp
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

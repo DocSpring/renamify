@@ -69,7 +69,7 @@ description: Brief description for SEO and navigation
 
 ### Preview Formats
 
-When showing refaktor CLI output, use the appropriate format:
+When showing renamify CLI output, use the appropriate format:
 - `summary` - For AI agents (structured, minimal)
 - `table` - For human-readable overviews
 - `diff` - For detailed change previews
@@ -77,7 +77,7 @@ When showing refaktor CLI output, use the appropriate format:
 
 ### Testing Guidelines
 
-- Always use `--dry-run` flag when testing refaktor commands in docs
+- Always use `--dry-run` flag when testing renamify commands in docs
 - Use "renamed_refactoring_tool" as replacement target in examples (not the alternative protected string)
 - Test all links and ensure they work in the local dev server
 

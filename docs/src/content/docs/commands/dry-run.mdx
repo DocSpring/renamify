@@ -1,5 +1,5 @@
 ---
-title: refaktor dry-run
+title: renamify dry-run
 description: Preview changes without saving a plan file
 ---
 
@@ -8,12 +8,12 @@ The `dry-run` command is an alias for `plan --dry-run`. It shows what would be c
 ## Usage
 
 ```bash
-refaktor dry-run <OLD> <NEW> [OPTIONS]
+renamify dry-run <OLD> <NEW> [OPTIONS]
 ```
 
 This is equivalent to:
 ```bash
-refaktor plan <OLD> <NEW> --dry-run [OPTIONS]
+renamify plan <OLD> <NEW> --dry-run [OPTIONS]
 ```
 
 ## Use Cases
@@ -28,20 +28,20 @@ Perfect for:
 
 ```bash
 # Quick preview of what would change
-refaktor dry-run getUserName fetchUserProfile
+renamify dry-run getUserName fetchUserProfile
 
 # Test specific paths
-refaktor dry-run old_name new_name src/ tests/
+renamify dry-run old_name new_name src/ tests/
 
 # Test include patterns
-refaktor dry-run old_name new_name --include "src/**/*.{js,ts}"
+renamify dry-run old_name new_name --include "src/**/*.{js,ts}"
 
 # See changes in diff format
-refaktor dry-run old_name new_name --preview diff
+renamify dry-run old_name new_name --preview diff
 ```
 
 ## Benefits
 
-- **No files created** - Doesn't create `.refaktor/plan.json`
+- **No files created** - Doesn't create `.renamify/plan.json`
 - **Fast exploration** - Quick way to understand impact
 - **Safe testing** - No risk of accidentally applying changes

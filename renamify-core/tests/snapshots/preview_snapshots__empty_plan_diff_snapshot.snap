@@ -1,0 +1,6 @@
+---
+source: renamify-core/tests/preview_snapshots.rs
+assertion_line: 180
+expression: output
+---
+

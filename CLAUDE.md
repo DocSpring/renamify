@@ -4,7 +4,7 @@ The ONLY reason you should stop is if you have a blocking question for the user.
 
 ---
 
-# Refaktor - CLAUDE Agent Guide
+# Renamify - CLAUDE Agent Guide
 
 Smart case-aware search and replace across code and files with atomic apply and undo.
 
@@ -27,7 +27,7 @@ They should be mentioned in any package files, copyright notices, etc.
 
 ## Deliverables
 
-- Rust core library and CLI (`refaktor-core`, `refaktor-cli`)
+- Rust core library and CLI (`renamify-core`, `renamify-cli`)
 - VS Code extension (TypeScript) that shells out to the CLI
 - MCP server (TypeScript) that wraps the CLI and exposes tools for Cursor or other MCP clients
 
@@ -54,11 +54,11 @@ They should be mentioned in any package files, copyright notices, etc.
 ## Functional scope
 
 - Case styles: snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Title Case, Train-Case, dot.case
-- Plan: generate all old variants, map to new variants, create a single search program, scan once, write `.refaktor/plan.json`
+- Plan: generate all old variants, map to new variants, create a single search program, scan once, write `.renamify/plan.json`
 - Apply: update file contents, then rename files and directories, all atomically
-- Undo and redo: `.refaktor/history.json` with checksums
+- Undo and redo: `.renamify/history.json` with checksums
 - Conflicts: re-validate hunks, auto-resolve simple formatting shifts, stop on real conflicts unless forced
-- Respect ignore files by default (`.gitignore`, `.ignore`, `.rgignore`, `.rfignore`), allow include and exclude globs
+- Respect ignore files by default (`.gitignore`, `.ignore`, `.rgignore`, `.rnignore`), allow include and exclude globs
 - Exclude binary files by default
 
 ## Non-goals for v1
@@ -70,8 +70,8 @@ They should be mentioned in any package files, copyright notices, etc.
 
 ## Repo layout
 
-- `refaktor-core` - core logic
-- `refaktor-cli` - CLI frontend
+- `renamify-core` - core logic
+- `renamify-cli` - CLI frontend
 - `.claude/agents` - orchestrator, executor, checker role specs
 - `.taskmaster` - Task Master config, templates, and docs
 - `.taskmaster/docs/prd.txt` - PRD used by Task Master
@@ -102,22 +102,22 @@ They should be mentioned in any package files, copyright notices, etc.
 
 ## CLI contract
 
-Binary: `refaktor`
+Binary: `renamify`
 
 Commands:
 
-- `refaktor plan <old> <new> [opts]`
+- `renamify plan <old> <new> [opts]`
   - `--include` `--exclude` `--respect-gitignore` (default true, respects all ignore files)
   - `--rename-files` `--rename-dirs` (default true)
   - `--styles=<list>`
   - `--preview table|diff|json`
   - `--plan-out`
   - `-u/-uu/-uuu` (unrestricted levels to control ignore file handling)
-- `refaktor apply [--plan PATH | --id ID] [--atomic true] [--commit]`
-- `refaktor undo <id>`
-- `refaktor redo <id>`
-- `refaktor history [--limit N]`
-- `refaktor status`
+- `renamify apply [--plan PATH | --id ID] [--atomic true] [--commit]`
+- `renamify undo <id>`
+- `renamify redo <id>`
+- `renamify history [--limit N]`
+- `renamify status`
 
 Exit codes:
 
@@ -128,11 +128,11 @@ Exit codes:
 
 ## Data formats
 
-`.refaktor/plan.json`
+`.renamify/plan.json`
 
 - `{ id, created_at, old, new, styles[], includes[], excludes[], matches[], renames[], stats, version }`
 
-`.refaktor/history.json`
+`.renamify/history.json`
 
 - append only with checksums and revert info
 
@@ -141,7 +141,7 @@ Exit codes:
 1. Detect input case of `<old>` and `<new>`
 2. Generate all `old_variant -> new_variant` mappings
 3. Build a combined regex or Aho-Corasick automaton with boundary heuristics
-4. One walk of the repo using `ignore` with ignore files honored (`.gitignore`, `.ignore`, `.rgignore`, `.rfignore`)
+4. One walk of the repo using `ignore` with ignore files honored (`.gitignore`, `.ignore`, `.rgignore`, `.rnignore`)
 5. For each match, capture file, line, byte range, and preview text
 6. For file and directory names, detect and schedule renames with depth ordering
 7. Emit `plan.json` and fast summary stats
@@ -154,17 +154,17 @@ Boundary rules
 
 ## Ignore file handling
 
-Refaktor respects multiple ignore file formats:
+Renamify respects multiple ignore file formats:
 
 - `.gitignore` - Standard Git ignore patterns
 - `.ignore` - Generic ignore file (compatible with ripgrep)
 - `.rgignore` - Ripgrep-specific ignore patterns
-- `.rfignore` - Refaktor-specific ignore patterns (useful for excluding files from refactoring without affecting Git)
+- `.rnignore` - Renamify-specific ignore patterns (useful for excluding files from refactoring without affecting Git)
 
 The unrestricted levels (`-u` flag) control ignore behavior:
 
 - Level 0 (default): Respects all ignore files, skips hidden files
-- Level 1 (`-u`): Ignores `.gitignore` but respects `.ignore`, `.rgignore`, `.rfignore`
+- Level 1 (`-u`): Ignores `.gitignore` but respects `.ignore`, `.rgignore`, `.rnignore`
 - Level 2 (`-uu`): Ignores all ignore files, shows hidden files
 - Level 3 (`-uuu`): Same as level 2, plus treats binary files as text
 
@@ -186,7 +186,7 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 
 - Node TypeScript wrapper around the CLI
 - Tools: `plan`, `apply`, `undo`, `history`, `preview`
-- Installed via `npx`, expects `refaktor` on PATH
+- Installed via `npx`, expects `renamify` on PATH
 
 ## Coding standards
 
@@ -214,20 +214,20 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 
 ## Testing Guidelines
 
-- **ALWAYS use the --dry-run flag when testing the refaktor CLI** to avoid creating unwanted plan files and modifications
-- When running test commands with refaktor, use: `./target/debug/refaktor plan ... --dry-run`
-- This prevents the creation of `.refaktor/plan.json` files during testing
+- **ALWAYS use the --dry-run flag when testing the renamify CLI** to avoid creating unwanted plan files and modifications
+- When running test commands with renamify, use: `./target/debug/renamify plan ... --dry-run`
+- This prevents the creation of `.renamify/plan.json` files during testing
 
 ### CI Self-Hosting Testing
 
 - **Use "renamed_refactoring_tool" NOT the alternative protected string in tests**
-- The alternative protected string is only allowed in files matching `.rfignore` entries:
+- The alternative protected string is only allowed in files matching `.rnignore` entries:
   - `.github/workflows/`
   - `docs/src/content/docs/index.mdx`
   - `docs/src/assets/case-studies/`
   - `docs/src/content/docs/case-studies/`
 - All other test files should use "renamed_refactoring_tool" as the target replacement string
-- This prevents CI failures when refaktor tests itself and ensures clean self-hosting testing
+- This prevents CI failures when renamify tests itself and ensures clean self-hosting testing
 
 ## DO NOT REDIRECT STDERR
 

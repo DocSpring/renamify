@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-# Refaktor Installation Script
-# https://github.com/DocSpring/refaktor
+# Renamify Installation Script
+# https://github.com/DocSpring/renamify
 
-REPO="DocSpring/refaktor"
-BINARY_NAME="refaktor"
+REPO="DocSpring/renamify"
+BINARY_NAME="renamify"
 
 # Default to user-local installation
 DEFAULT_INSTALL_DIR="$HOME/.local/bin"
@@ -58,7 +58,7 @@ detect_platform() {
             ;;
         *)
             echo -e "${RED}Error: Unsupported operating system: $OS${NC}"
-            echo "Refaktor currently supports Linux and macOS."
+            echo "Renamify currently supports Linux and macOS."
             exit 1
             ;;
     esac
@@ -72,25 +72,25 @@ detect_platform() {
             ;;
         *)
             echo -e "${RED}Error: Unsupported architecture: $ARCH${NC}"
-            echo "Refaktor currently supports x86_64/amd64 and aarch64/arm64."
+            echo "Renamify currently supports x86_64/amd64 and aarch64/arm64."
             exit 1
             ;;
     esac
     
-    ASSET_NAME="refaktor-${PLATFORM}-${ARCH}.tar.gz"
+    ASSET_NAME="renamify-${PLATFORM}-${ARCH}.tar.gz"
 }
 
 # Uninstall function
-uninstall_refaktor() {
-    echo "🗑️  Uninstalling Refaktor..."
+uninstall_renamify() {
+    echo "🗑️  Uninstalling Renamify..."
     
     # Check common locations
-    LOCATIONS=("$HOME/.local/bin/refaktor" "/usr/local/bin/refaktor" "$HOME/bin/refaktor")
+    LOCATIONS=("$HOME/.local/bin/renamify" "/usr/local/bin/renamify" "$HOME/bin/renamify")
     FOUND=false
     
     for loc in "${LOCATIONS[@]}"; do
         if [ -f "$loc" ]; then
-            echo "Found refaktor at: $loc"
+            echo "Found renamify at: $loc"
             if [ -w "$loc" ]; then
                 rm "$loc"
             else
@@ -102,7 +102,7 @@ uninstall_refaktor() {
     done
     
     if [ "$FOUND" = false ]; then
-        echo "Refaktor not found in standard locations."
+        echo "Renamify not found in standard locations."
         echo "If installed elsewhere, please remove manually."
     fi
     
@@ -115,7 +115,7 @@ check_homebrew() {
         echo -e "${BLUE}ℹ️  Homebrew detected${NC}"
         echo ""
         echo "For macOS, we recommend installing via Homebrew (when available):"
-        echo -e "  ${GREEN}brew install refaktor${NC}  # Coming soon"
+        echo -e "  ${GREEN}brew install renamify${NC}  # Coming soon"
         echo ""
         echo "Continuing with manual installation to $INSTALL_DIR..."
         echo ""
@@ -165,8 +165,8 @@ check_path() {
 }
 
 # Download and install
-install_refaktor() {
-    echo "📦 Installing Refaktor..."
+install_renamify() {
+    echo "📦 Installing Renamify..."
     echo "  Platform: $PLATFORM"
     echo "  Architecture: $ARCH"
     echo "  Destination: $INSTALL_DIR"
@@ -212,35 +212,35 @@ install_refaktor() {
     
     # Move binary to install directory
     if [ "$NEED_SUDO" = true ]; then
-        sudo mv "$TEMP_DIR/refaktor" "$INSTALL_DIR/"
-        sudo chmod 755 "$INSTALL_DIR/refaktor"
+        sudo mv "$TEMP_DIR/renamify" "$INSTALL_DIR/"
+        sudo chmod 755 "$INSTALL_DIR/renamify"
     else
-        mv "$TEMP_DIR/refaktor" "$INSTALL_DIR/"
-        chmod 755 "$INSTALL_DIR/refaktor"
+        mv "$TEMP_DIR/renamify" "$INSTALL_DIR/"
+        chmod 755 "$INSTALL_DIR/renamify"
     fi
     
-    echo -e "${GREEN}✓ Refaktor installed successfully!${NC}"
-    echo -e "  Installed to: ${BLUE}$INSTALL_DIR/refaktor${NC}"
+    echo -e "${GREEN}✓ Renamify installed successfully!${NC}"
+    echo -e "  Installed to: ${BLUE}$INSTALL_DIR/renamify${NC}"
     echo ""
 }
 
 # Check installation and PATH
 verify_installation() {
-    # Check if refaktor is accessible
-    if command -v refaktor &> /dev/null; then
-        VERSION=$(refaktor --version 2>&1 | head -n1)
+    # Check if renamify is accessible
+    if command -v renamify &> /dev/null; then
+        VERSION=$(renamify --version 2>&1 | head -n1)
         echo -e "${GREEN}✓ Installation verified${NC}"
         echo "  Version: $VERSION"
         echo ""
         echo "Get started with:"
-        echo "  refaktor --help"
+        echo "  renamify --help"
         echo ""
         echo "Quick example:"
-        echo "  refaktor rename old_name new_name"
+        echo "  renamify rename old_name new_name"
     else
         # Check if the binary exists but PATH needs updating
-        if [ -f "$INSTALL_DIR/refaktor" ]; then
-            echo -e "${YELLOW}⚠️  Refaktor installed but not in PATH${NC}"
+        if [ -f "$INSTALL_DIR/renamify" ]; then
+            echo -e "${YELLOW}⚠️  Renamify installed but not in PATH${NC}"
             echo ""
             
             if ! check_path "$INSTALL_DIR"; then
@@ -278,7 +278,7 @@ verify_installation() {
             fi
         else
             echo -e "${RED}Error: Installation may have failed${NC}"
-            echo "Binary not found at: $INSTALL_DIR/refaktor"
+            echo "Binary not found at: $INSTALL_DIR/renamify"
             exit 1
         fi
     fi
@@ -286,13 +286,13 @@ verify_installation() {
 
 # Main installation flow
 main() {
-    echo "🔧 Refaktor Installer"
+    echo "🔧 Renamify Installer"
     echo "===================="
     echo ""
     
     # Handle uninstall
     if [ "$UNINSTALL" = true ]; then
-        uninstall_refaktor
+        uninstall_renamify
     fi
     
     detect_platform
@@ -302,7 +302,7 @@ main() {
         check_homebrew
     fi
     
-    install_refaktor
+    install_renamify
     verify_installation
 }
 

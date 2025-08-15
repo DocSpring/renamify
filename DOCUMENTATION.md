@@ -1,14 +1,14 @@
-# Refaktor Documentation
+# Renamify Documentation
 
 ## Overview
 
-Refaktor is a smart search & replace tool for code and files with case-aware transformations. It understands different naming conventions and can rename both file contents and the files themselves in a single operation.
+Renamify is a smart search & replace tool for code and files with case-aware transformations. It understands different naming conventions and can rename both file contents and the files themselves in a single operation.
 
 ## Core Features
 
 ### Case-Aware Transformations
 
-Refaktor automatically detects and converts between different naming conventions:
+Renamify automatically detects and converts between different naming conventions:
 
 - **snake_case** → `old_name` → `new_name`
 - **kebab-case** → `old-name` → `new-name`
@@ -19,22 +19,22 @@ Refaktor automatically detects and converts between different naming conventions
 - **Train-Case** → `Old-Name` → `New-Name`
 - **dot.case** → `old.name` → `new.name`
 
-When you provide a search and replace pattern, Refaktor will automatically apply the transformation to all detected case variants.
+When you provide a search and replace pattern, Renamify will automatically apply the transformation to all detected case variants.
 
 ### Contextual Separator Coercion
 
-Refaktor includes intelligent contextual separator coercion that adapts the replacement style based on the surrounding code context:
+Renamify includes intelligent contextual separator coercion that adapts the replacement style based on the surrounding code context:
 
-- **Context-aware replacement**: `refaktor_core::Engine` becomes `renamed_refactoring_tool_core::Engine` (snake_case context)
-- **Path-aware**: `src/refaktor/main.rs` becomes `src/renamed-refactoring-tool/main.rs` (kebab-case for paths)
-- **URL-aware**: `https://github.com/user/refaktor` becomes `https://github.com/user/renamed-refactoring-tool`
-- **Module-aware**: `refaktor::core::apply()` becomes `renamed_refactoring_tool::core::apply()`
+- **Context-aware replacement**: `renamify_core::Engine` becomes `renamed_refactoring_tool_core::Engine` (snake_case context)
+- **Path-aware**: `src/renamify/main.rs` becomes `src/renamed-refactoring-tool/main.rs` (kebab-case for paths)
+- **URL-aware**: `https://github.com/user/renamify` becomes `https://github.com/user/renamed-refactoring-tool`
+- **Module-aware**: `renamify::core::apply()` becomes `renamed_refactoring_tool::core::apply()`
 
 The coercion analyzes the immediate context around each match to determine the most appropriate separator style, making refactoring feel more natural and reducing manual corrections.
 
 ### File and Directory Renaming
 
-In addition to replacing text within files, Refaktor can rename:
+In addition to replacing text within files, Renamify can rename:
 
 - Files that match the pattern
 - Directories that match the pattern
@@ -42,7 +42,7 @@ In addition to replacing text within files, Refaktor can rename:
 
 ### Root Directory Renaming
 
-**NEW**: Refaktor can now rename the project root directory itself when the directory name matches your pattern:
+**NEW**: Renamify can now rename the project root directory itself when the directory name matches your pattern:
 
 - **Default behavior**: Root directory renaming is disabled for safety
 - **Enable with `--rename-root`**: Explicitly allow root directory renaming
@@ -53,10 +53,10 @@ In addition to replacing text within files, Refaktor can rename:
 
 ```bash
 # This will offer to rename the project directory itself
-cd /path/to/refaktor-project
-refaktor rename refaktor renamed_refactoring_tool --rename-root
+cd /path/to/renamify-project
+renamify rename renamify renamed_refactoring_tool --rename-root
 
-# Refaktor will show a "Next Steps" snippet like:
+# Renamify will show a "Next Steps" snippet like:
 # Next Steps:
 # 1. cd ../renamed-refactoring-tool-project
 # 2. cargo build --release  # if Rust project
@@ -76,7 +76,7 @@ refaktor rename refaktor renamed_refactoring_tool --rename-root
 Creates a plan of all changes that will be made without modifying any files.
 
 ```bash
-refaktor plan <OLD> <NEW> [OPTIONS]
+renamify plan <OLD> <NEW> [OPTIONS]
 ```
 
 **Options:**
@@ -90,7 +90,7 @@ refaktor plan <OLD> <NEW> [OPTIONS]
 - `--only-styles <STYLES>` - Use only these case styles, ignoring defaults (comma-separated: any combination)
 - `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
 - `--preview <FORMAT>` - Output format: table (default), diff, json
-- `--plan-out <PATH>` - Where to save the plan (default: .refaktor/plan.json)
+- `--plan-out <PATH>` - Where to save the plan (default: .renamify/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
 
 ### `apply` - Apply a Refactoring Plan
@@ -98,12 +98,12 @@ refaktor plan <OLD> <NEW> [OPTIONS]
 Executes a previously generated plan.
 
 ```bash
-refaktor apply [OPTIONS]
+renamify apply [OPTIONS]
 ```
 
 **Options:**
 
-- `--plan <PATH>` - Path to plan file (default: .refaktor/plan.json)
+- `--plan <PATH>` - Path to plan file (default: .renamify/plan.json)
 - `--atomic` - Apply changes atomically (default: true)
 - `--commit` - Create a git commit after applying
 - `--force-with-conflicts` - Apply even if conflicts are detected
@@ -113,7 +113,7 @@ refaktor apply [OPTIONS]
 Reverts a previously applied refactoring using backups.
 
 ```bash
-refaktor undo <ID>
+renamify undo <ID>
 ```
 
 ### `redo` - Redo a Previously Undone Refactoring
@@ -121,7 +121,7 @@ refaktor undo <ID>
 Re-applies a refactoring that was previously undone.
 
 ```bash
-refaktor redo <ID>
+renamify redo <ID>
 ```
 
 ### `status` - Show Current Status
@@ -129,7 +129,7 @@ refaktor redo <ID>
 Displays information about the current state of refactoring operations.
 
 ```bash
-refaktor status
+renamify status
 ```
 
 ### `history` - Show Refactoring History
@@ -137,7 +137,7 @@ refaktor status
 Lists all previous refactoring operations.
 
 ```bash
-refaktor history [OPTIONS]
+renamify history [OPTIONS]
 ```
 
 **Options:**
@@ -149,7 +149,7 @@ refaktor history [OPTIONS]
 **NEW**: Combines planning and applying in a single command with confirmation prompts. Perfect for quick, interactive refactoring.
 
 ```bash
-refaktor rename <OLD> <NEW> [OPTIONS]
+renamify rename <OLD> <NEW> [OPTIONS]
 ```
 
 **Options:**
@@ -174,10 +174,10 @@ refaktor rename <OLD> <NEW> [OPTIONS]
 
 ```bash
 # Quick rename with table preview
-refaktor rename old_name new_name --preview table
+renamify rename old_name new_name --preview table
 
 # Commit changes automatically
-refaktor rename getUserName fetchUserProfile --commit
+renamify rename getUserName fetchUserProfile --commit
 ```
 
 ### `dry-run` - Preview Changes Without Saving
@@ -185,29 +185,29 @@ refaktor rename getUserName fetchUserProfile --commit
 Alias for `plan --dry-run`. Shows what would be changed without creating a plan file.
 
 ```bash
-refaktor dry-run <OLD> <NEW> [OPTIONS]
+renamify dry-run <OLD> <NEW> [OPTIONS]
 ```
 
-### `init` - Initialize Refaktor Ignore Settings
+### `init` - Initialize Renamify Ignore Settings
 
-Adds `.refaktor/` to ignore files to prevent tracking of Refaktor's workspace.
+Adds `.renamify/` to ignore files to prevent tracking of Renamify's workspace.
 
 ```bash
-refaktor init [OPTIONS]
+renamify init [OPTIONS]
 ```
 
 **Options:**
 
 - `--local` - Add to `.git/info/exclude` instead of `.gitignore`
 - `--global` - Add to global git excludes file
-- `--check` - Check if `.refaktor` is ignored (exit 0 if yes, 1 if no)
+- `--check` - Check if `.renamify` is ignored (exit 0 if yes, 1 if no)
 - `--configure-global` - Configure global excludes file if it doesn't exist (requires `--global`)
 
 ## File Filtering and Ignore Rules
 
 ### Respecting .gitignore (Default Behavior)
 
-By default, Refaktor respects:
+By default, Renamify respects:
 
 - `.gitignore` files at all levels
 - `.git/info/exclude`
@@ -217,7 +217,7 @@ By default, Refaktor respects:
 
 ### Unrestricted Mode (-u/-uu/-uuu)
 
-Refaktor supports ripgrep-style unrestricted flags to reduce filtering:
+Renamify supports ripgrep-style unrestricted flags to reduce filtering:
 
 - `-u` (unrestricted level 1):
 
@@ -240,13 +240,13 @@ Refaktor supports ripgrep-style unrestricted flags to reduce filtering:
 
 ```bash
 # Search including files normally ignored by .gitignore
-refaktor plan old_name new_name -u
+renamify plan old_name new_name -u
 
 # Search including hidden files and all ignored files
-refaktor plan old_name new_name -uu
+renamify plan old_name new_name -uu
 
 # Search absolutely everything, including binary files
-refaktor plan old_name new_name -uuu
+renamify plan old_name new_name -uuu
 ```
 
 ### Include/Exclude Patterns
@@ -255,13 +255,13 @@ You can explicitly include or exclude files using glob patterns:
 
 ```bash
 # Only process Rust source files
-refaktor plan old_name new_name --include "**/*.rs"
+renamify plan old_name new_name --include "**/*.rs"
 
 # Exclude test files
-refaktor plan old_name new_name --exclude "**/*test*"
+renamify plan old_name new_name --exclude "**/*test*"
 
 # Multiple patterns (comma-separated)
-refaktor plan old_name new_name --include "src/**/*.rs,lib/**/*.rs" --exclude "target/**"
+renamify plan old_name new_name --include "src/**/*.rs,lib/**/*.rs" --exclude "target/**"
 ```
 
 ## Safety Features
@@ -277,14 +277,14 @@ By default, all file modifications are atomic:
 
 ### Backup and Restore
 
-- Before applying changes, Refaktor creates backups of all affected files
-- Backups are stored in `.refaktor/backups/<plan-id>/`
+- Before applying changes, Renamify creates backups of all affected files
+- Backups are stored in `.renamify/backups/<plan-id>/`
 - Each backup includes checksums for integrity verification
 - The `undo` command can restore from backups at any time
 
 ### Conflict Detection
 
-Refaktor detects several types of conflicts:
+Renamify detects several types of conflicts:
 
 1. **Multiple-to-One Conflicts**: When multiple files would be renamed to the same destination
 2. **Case-Insensitive Filesystem Conflicts**: When renaming would conflict on case-insensitive filesystems
@@ -292,7 +292,7 @@ Refaktor detects several types of conflicts:
 
 ### History Tracking
 
-- All operations are logged in `.refaktor/history.json`
+- All operations are logged in `.renamify/history.json`
 - Each entry includes:
   - Unique ID and timestamp
   - Original and new patterns
@@ -304,7 +304,7 @@ Refaktor detects several types of conflicts:
 
 ### Case-Insensitive Filesystems
 
-On macOS and Windows (typically case-insensitive), Refaktor:
+On macOS and Windows (typically case-insensitive), Renamify:
 
 - Detects the filesystem type automatically
 - Uses two-step renames for case-only changes (e.g., `oldName` → `temp` → `OldName`)
@@ -324,14 +324,14 @@ On macOS and Windows (typically case-insensitive), Refaktor:
 
 ## Auto-Initialization
 
-Refaktor automatically prompts to ignore the `.refaktor/` directory on first use. This ensures your workspace files aren't accidentally committed to version control.
+Renamify automatically prompts to ignore the `.renamify/` directory on first use. This ensures your workspace files aren't accidentally committed to version control.
 
 ### Interactive Prompt
 
-When running commands that create `.refaktor/` for the first time, you'll see:
+When running commands that create `.renamify/` for the first time, you'll see:
 
 ```
-Refaktor uses .refaktor/ for plans, backups, and history.
+Renamify uses .renamify/ for plans, backups, and history.
 Ignore it now?
   [Y] Repo .gitignore   [l] Local .git/info/exclude   [g] Global excludesfile   [n] No
 Choice (Y/l/g/n):
@@ -354,13 +354,13 @@ Control auto-initialization behavior with these flags:
 
 ```bash
 # Always add to .gitignore without prompting
-refaktor --auto-init=repo plan old new
+renamify --auto-init=repo plan old new
 
 # Prevent any auto-initialization
-refaktor --no-auto-init plan old new
+renamify --no-auto-init plan old new
 
 # Use -y for non-interactive environments
-refaktor -y plan old new
+renamify -y plan old new
 ```
 
 ### CI/CD Usage
@@ -368,11 +368,11 @@ refaktor -y plan old new
 For CI/CD pipelines:
 
 ```bash
-# Check if .refaktor is properly ignored
-refaktor init --check || exit 1
+# Check if .renamify is properly ignored
+renamify init --check || exit 1
 
 # Auto-initialize in CI without prompts
-refaktor --auto-init=repo plan old new
+renamify --auto-init=repo plan old new
 ```
 
 Non-TTY environments (like CI) will never show prompts unless `--auto-init` is explicitly set.
@@ -381,7 +381,7 @@ Non-TTY environments (like CI) will never show prompts unless `--auto-init` is e
 
 ### Project-Level Settings
 
-Refaktor looks for configuration in `.refaktor/config.toml`:
+Renamify looks for configuration in `.renamify/config.toml`:
 
 ```toml
 # Example configuration (not yet implemented)
@@ -398,7 +398,7 @@ ignore = ["vendor/**", "node_modules/**"]
 ### Environment Variables
 
 - `NO_COLOR` - Disable colored output (respects the NO_COLOR standard)
-- `REFAKTOR_YES` - Same as `-y` flag (assume yes for prompts)
+- `RENAMIFY_YES` - Same as `-y` flag (assume yes for prompts)
 
 ## Examples
 
@@ -408,13 +408,13 @@ Rename a function across your entire codebase:
 
 ```bash
 # Generate a plan
-refaktor plan getUserName fetchUserProfile
+renamify plan getUserName fetchUserProfile
 
 # Review the plan (shows table of changes)
-cat .refaktor/plan.json
+cat .renamify/plan.json
 
 # Apply the changes
-refaktor apply
+renamify apply
 ```
 
 ### Rename with Specific Styles
@@ -423,40 +423,40 @@ Only transform specific naming conventions:
 
 ```bash
 # Only handle snake_case and camelCase
-refaktor plan old_name new_name --styles snake,camel
+renamify plan old_name new_name --styles snake,camel
 
 # Include the new case styles
-refaktor plan old_name new_name --styles snake,kebab,title,train,dot
+renamify plan old_name new_name --styles snake,kebab,title,train,dot
 ```
 
 ### Rename in Specific Directories
 
 ```bash
 # Only rename in src/ directory
-refaktor plan old_name new_name --include "src/**"
+renamify plan old_name new_name --include "src/**"
 
 # Exclude tests
-refaktor plan old_name new_name --exclude "**/*test*,**/*spec*"
+renamify plan old_name new_name --exclude "**/*test*,**/*spec*"
 ```
 
 ### Preview Without Creating Plan
 
 ```bash
 # Just see what would change
-refaktor dry-run old_name new_name
+renamify dry-run old_name new_name
 
 # With diff output
-refaktor dry-run old_name new_name --preview diff
+renamify dry-run old_name new_name --preview diff
 ```
 
 ### Fast Interactive Renaming
 
 ```bash
 # Use the new rename command for quick interactive refactoring
-refaktor rename old_name new_name --preview table
+renamify rename old_name new_name --preview table
 
 # Rename with automatic git commit
-refaktor rename getUserName fetchUserProfile --commit --preview diff
+renamify rename getUserName fetchUserProfile --commit --preview diff
 ```
 
 ### Excluding Specific Matches
@@ -465,33 +465,33 @@ Use `--exclude-match` to skip specific compound words or identifiers:
 
 ```bash
 # Skip specific compound words that shouldn't be changed
-refaktor plan foo bar --exclude-match bazFooQux,FooService
+renamify plan foo bar --exclude-match bazFooQux,FooService
 
 # Useful when a pattern accidentally matches unintended identifiers
-refaktor rename config settings --exclude-match ConfigurationManager
+renamify rename config settings --exclude-match ConfigurationManager
 ```
 
 ### Root Directory Projects
 
 ```bash
 # Rename the entire project directory (requires confirmation)
-refaktor rename myproject awesome_project --rename-root --commit
+renamify rename myproject awesome_project --rename-root --commit
 
 # Or explicitly prevent root directory renaming
-refaktor rename myproject awesome_project --no-rename-root
+renamify rename myproject awesome_project --no-rename-root
 ```
 
 ### Undo/Redo Operations
 
 ```bash
 # See history
-refaktor history
+renamify history
 
 # Undo the last operation
-refaktor undo <id-from-history>
+renamify undo <id-from-history>
 
 # Redo if you change your mind
-refaktor redo <id-from-history>
+renamify redo <id-from-history>
 ```
 
 ## Best Practices
@@ -510,7 +510,7 @@ refaktor redo <id-from-history>
 ### Changes Not Being Found
 
 - Check if files are ignored: Run with `-u` flag to include gitignored files
-- Verify file encoding: Refaktor works with UTF-8 and ASCII files
+- Verify file encoding: Renamify works with UTF-8 and ASCII files
 - Check your include/exclude patterns
 
 ### Permission Errors
@@ -520,7 +520,7 @@ refaktor redo <id-from-history>
 
 ### Undo Fails
 
-- Check that backup files still exist in `.refaktor/backups/`
+- Check that backup files still exist in `.renamify/backups/`
 - Verify file permissions haven't changed
 - Ensure no manual changes were made after the refactoring
 
@@ -533,11 +533,11 @@ refaktor redo <id-from-history>
 git add -A && git commit -m "Before refactoring"
 
 # Perform refactoring with auto-commit
-refaktor plan old_name new_name
-refaktor apply --commit
+renamify plan old_name new_name
+renamify apply --commit
 
 # Or manually commit after
-refaktor apply
+renamify apply
 git add -A && git commit -m "Refactor: old_name -> new_name"
 ```
 
@@ -545,11 +545,11 @@ git add -A && git commit -m "Refactor: old_name -> new_name"
 
 ```bash
 # Validate no uncommitted refactoring plans
-test ! -f .refaktor/plan.json || exit 1
+test ! -f .renamify/plan.json || exit 1
 
 # Or apply pending refactorings automatically
-if [ -f .refaktor/plan.json ]; then
-  refaktor apply
+if [ -f .renamify/plan.json ]; then
+  renamify apply
 fi
 ```
 
@@ -557,7 +557,7 @@ fi
 
 ### Supported File Types
 
-Refaktor works with any text file. Binary files are automatically detected and skipped (unless using `-uuu`).
+Renamify works with any text file. Binary files are automatically detected and skipped (unless using `-uuu`).
 
 ### Performance Considerations
 
@@ -567,15 +567,15 @@ Refaktor works with any text file. Binary files are automatically detected and s
 
 ### Concurrent Process Protection
 
-Refaktor uses a lock file mechanism to prevent concurrent operations:
+Renamify uses a lock file mechanism to prevent concurrent operations:
 
-- Lock file is created in `.refaktor/refaktor.lock` during plan/apply/rename operations
+- Lock file is created in `.renamify/renamify.lock` during plan/apply/rename operations
 - Contains process ID and timestamp for tracking
 - Automatically cleaned up when operations complete
 - Stale locks (older than 5 minutes) are automatically removed
 - If a lock exists from a crashed process, it can be manually removed:
   ```bash
-  rm .refaktor/refaktor.lock
+  rm .renamify/renamify.lock
   ```
 
 ### Limitations
@@ -584,7 +584,7 @@ Refaktor uses a lock file mechanism to prevent concurrent operations:
 - Path length: OS-dependent (260 chars on Windows without long path support)
 - Number of files: No hard limit, but plans with >10,000 files may be slow
 
-### Why "Refaktor"?
+### Why "Renamify"?
 
 - Looks cool
 - Pronounced the same as "refactor"
@@ -594,5 +594,5 @@ Refaktor uses a lock file mechanism to prevent concurrent operations:
 
 For more information, see:
 
-- [GitHub Repository](https://github.com/DocSpring/refaktor)
-- [Issue Tracker](https://github.com/DocSpring/refaktor/issues)
+- [GitHub Repository](https://github.com/DocSpring/renamify)
+- [Issue Tracker](https://github.com/DocSpring/renamify/issues)

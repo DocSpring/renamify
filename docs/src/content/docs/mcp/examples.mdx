@@ -1,11 +1,11 @@
 ---
 title: MCP Usage Examples
-description: Real-world examples of using the Refaktor MCP Server
+description: Real-world examples of using the Renamify MCP Server
 ---
 
 import { Code, Steps, Card, CardGrid } from '@astrojs/starlight/components';
 
-Learn how to use the Refaktor MCP Server through practical, real-world scenarios.
+Learn how to use the Renamify MCP Server through practical, real-world scenarios.
 
 ## Basic Refactoring Examples
 
@@ -20,7 +20,7 @@ User: "Rename the UserProfile component to CustomerProfile throughout the codeba
 
 AI: I'll help you rename UserProfile to CustomerProfile. Let me create a refactoring plan:
 
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "UserProfile",
   "new": "CustomerProfile",
@@ -50,7 +50,7 @@ User: "Yes, apply the changes"
 
 AI: Applying the refactoring now:
 
-Tool: refaktor_apply
+Tool: renamify_apply
 Arguments: {
   "atomic": true
 }
@@ -69,7 +69,7 @@ User: "Change all references from user_accounts table to customer_accounts"
 
 AI: I'll help rename the database table references. Creating a plan:
 
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "user_accounts",
   "new": "customer_accounts",
@@ -108,7 +108,7 @@ User: "Replace all get-user API endpoints with fetch-customer"
 
 AI: I'll refactor the API endpoints from get-user to fetch-customer:
 
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "get-user",
   "new": "fetch-customer",
@@ -145,13 +145,13 @@ Summary:
 <Steps>
 1. **Check current status**
    ```
-   Tool: refaktor_status
+   Tool: renamify_status
    Arguments: {}
    ```
 
 2. **Create dry-run plan**
    ```
-   Tool: refaktor_plan
+   Tool: renamify_plan
    Arguments: {
      "old": "legacyFunction",
      "new": "modernFunction",
@@ -165,7 +165,7 @@ Summary:
 
 4. **Create actual plan if satisfied**
    ```
-   Tool: refaktor_plan
+   Tool: renamify_plan
    Arguments: {
      "old": "legacyFunction",
      "new": "modernFunction",
@@ -176,7 +176,7 @@ Summary:
 
 5. **Apply with git commit**
    ```
-   Tool: refaktor_apply
+   Tool: renamify_apply
    Arguments: {
      "atomic": true,
      "commit": true
@@ -185,7 +185,7 @@ Summary:
 
 6. **Verify the changes**
    ```
-   Tool: refaktor_history
+   Tool: renamify_history
    Arguments: {
      "limit": 1
    }
@@ -203,7 +203,7 @@ AI: I'll help you rename Product to Item in the backend only. Let's do this incr
 
 Step 1 - Backend models and database:
 
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "Product",
   "new": "Item",
@@ -218,7 +218,7 @@ Result: Created plan with 45 replacements in 8 files
 
 Step 2 - Backend API routes:
 
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "Product",
   "new": "Item",
@@ -243,7 +243,7 @@ User: "Rename calculatePrice to computeCost and make sure tests still pass"
 
 AI: I'll rename calculatePrice to computeCost and verify the tests. Here's my approach:
 
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "calculatePrice",
   "new": "computeCost",
@@ -258,7 +258,7 @@ Created plan: 5b2a7f9c1e4d8f3a
 
 Now applying the changes:
 
-Tool: refaktor_apply
+Tool: renamify_apply
 Arguments: {
   "atomic": true
 }
@@ -277,7 +277,7 @@ The refactoring is complete and all tests are passing!
 ### Python Class Migration
 
 ```
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "DataProcessor",
   "new": "DataTransformer",
@@ -291,7 +291,7 @@ Arguments: {
 ### Go Package Rename
 
 ```
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "userservice",
   "new": "customerservice",
@@ -304,7 +304,7 @@ Arguments: {
 ### TypeScript Interface Update
 
 ```
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "IUserData",
   "new": "ICustomerData",
@@ -318,7 +318,7 @@ Arguments: {
 ### Configuration File Updates
 
 ```
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "MAX_USERS",
   "new": "MAX_CUSTOMERS",
@@ -343,7 +343,7 @@ User: "Apply the refactoring plan"
 
 AI: Let me apply the refactoring:
 
-Tool: refaktor_apply
+Tool: renamify_apply
 Arguments: {}
 
 Result: Error: Conflicts detected in 2 files:
@@ -352,7 +352,7 @@ Result: Error: Conflicts detected in 2 files:
 
 The files have changed since the plan was created. Let me create a fresh plan:
 
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "User",
   "new": "Customer",
@@ -373,14 +373,14 @@ User: "The refactoring broke something, please undo it"
 
 AI: I'll immediately undo the last refactoring:
 
-Tool: refaktor_history
+Tool: renamify_history
 Arguments: {
   "limit": 1
 }
 
 Result: Last operation: 3a7c9d4e8f2b6a1d [APPLIED]
 
-Tool: refaktor_undo
+Tool: renamify_undo
 Arguments: {
   "id": "3a7c9d4e8f2b6a1d"
 }
@@ -400,7 +400,7 @@ Instead of refactoring everything at once, scope your changes:
 
 ```
 # Good: Specific scope
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "oldName",
   "new": "newName",
@@ -409,7 +409,7 @@ Arguments: {
 }
 
 # Risky: Too broad
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "data",
   "new": "information",
@@ -423,7 +423,7 @@ Always test on a subset first:
 
 ```
 # Step 1: Test on a small directory
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "Widget",
   "new": "Component",
@@ -432,7 +432,7 @@ Arguments: {
 }
 
 # Step 2: If good, expand to full directory
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "Widget",
   "new": "Component",
@@ -445,7 +445,7 @@ Arguments: {
 Exclude files that shouldn't change:
 
 ```
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "config",
   "new": "settings",
@@ -513,5 +513,5 @@ Arguments: {
 
 ## Next Steps
 
-- [**AI Agent Guide**](/refaktor/mcp/ai-guide) - Best practices for AI-assisted refactoring
-- [**Tools Reference**](/refaktor/mcp/tools) - Detailed documentation for each tool
+- [**AI Agent Guide**](/renamify/mcp/ai-guide) - Best practices for AI-assisted refactoring
+- [**Tools Reference**](/renamify/mcp/tools) - Detailed documentation for each tool

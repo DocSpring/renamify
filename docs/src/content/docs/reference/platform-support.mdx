@@ -3,7 +3,7 @@ title: Platform Support
 description: Cross-platform compatibility and platform-specific considerations
 ---
 
-Refaktor is designed to work consistently across Linux, macOS, and Windows in the near future.
+Renamify is designed to work consistently across Linux, macOS, and Windows in the near future.
 It handles platform-specific quirks intelligently.
 
 ## Supported Platforms
@@ -15,7 +15,7 @@ It handles platform-specific quirks intelligently.
 ## Case-Insensitive Filesystems
 
 ### macOS (APFS/HFS+)
-Most macOS systems use case-insensitive filesystems. Refaktor handles this by:
+Most macOS systems use case-insensitive filesystems. Renamify handles this by:
 
 - **Automatic detection** of filesystem case sensitivity
 - **Two-step renames** for case-only changes:
@@ -24,7 +24,7 @@ Most macOS systems use case-insensitive filesystems. Refaktor handles this by:
 - **Conflict warnings** when case changes might cause issues
 
 ### Windows (NTFS)
-Windows filesystems are typically case-insensitive. Refaktor will provide:
+Windows filesystems are typically case-insensitive. Renamify will provide:
 
 - **Smart rename handling** similar to macOS
 - **Reserved filename detection** (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
@@ -40,19 +40,19 @@ Most Linux filesystems are case-sensitive, allowing:
 ## Path Handling
 
 ### Path Separators
-Refaktor accepts both forward slashes and backslashes:
+Renamify accepts both forward slashes and backslashes:
 
 ```bash
 # These are equivalent on Windows
-refaktor plan old new --include "src/**/*.js"
-refaktor plan old new --include "src\\**\\*.js"
+renamify plan old new --include "src/**/*.js"
+renamify plan old new --include "src\\**\\*.js"
 ```
 
 ### Path Length Limits
 
 **Windows**: 260 characters by default
 ```bash
-# Refaktor detects and warns about long paths
+# Renamify detects and warns about long paths
 ❌ Error: Path too long for Windows: 
 "C:\very\long\path\that\exceeds\260\characters\..."
 
@@ -62,12 +62,12 @@ Enable long paths or use shorter directory names.
 **macOS/Linux**: Much higher limits (typically 4096+ characters)
 
 ### Unicode Support
-Refaktor fully supports Unicode filenames and content:
+Renamify fully supports Unicode filenames and content:
 
 ```bash
 # Works with international characters
-refaktor rename 用户 profile --preview table
-refaktor rename josé maria --preview table
+renamify rename 用户 profile --preview table
+renamify rename josé maria --preview table
 ```
 
 ## Symbolic Links
@@ -85,15 +85,15 @@ refaktor rename josé maria --preview table
 
 **Windows**:
 - Limited symlink support (requires admin privileges)
-- Refaktor handles gracefully without errors
+- Renamify handles gracefully without errors
 
 ## File Permissions
 
 ### Unix-like Systems (Linux/macOS)
 ```bash
-# Refaktor respects and preserves file permissions
+# Renamify respects and preserves file permissions
 ls -la before.js    # -rw-r--r--
-refaktor rename old new
+renamify rename old new
 ls -la after.js     # -rw-r--r-- (preserved)
 ```
 
@@ -137,19 +137,19 @@ ls -la after.js     # -rw-r--r-- (preserved)
 ## Environment Variables
 
 ### Platform Detection
-Refaktor automatically detects platform capabilities:
+Renamify automatically detects platform capabilities:
 
 ```bash
 # Force platform behavior (rarely needed)
-REFAKTOR_PLATFORM=linux refaktor plan old new    # Force Linux behavior
-REFAKTOR_PLATFORM=windows refaktor plan old new  # Force Windows behavior
+RENAMIFY_PLATFORM=linux renamify plan old new    # Force Linux behavior
+RENAMIFY_PLATFORM=windows renamify plan old new  # Force Windows behavior
 ```
 
 ### File System Override
 ```bash
 # Force case sensitivity detection (expert use only)
-REFAKTOR_CASE_SENSITIVE=true refaktor plan old new
-REFAKTOR_CASE_SENSITIVE=false refaktor plan old new
+RENAMIFY_CASE_SENSITIVE=true renamify plan old new
+RENAMIFY_CASE_SENSITIVE=false renamify plan old new
 ```
 
 ## Best Practices by Platform
@@ -157,28 +157,28 @@ REFAKTOR_CASE_SENSITIVE=false refaktor plan old new
 ### Linux
 ```bash
 # Take advantage of case sensitivity
-refaktor rename oldName OldName  # Works directly
+renamify rename oldName OldName  # Works directly
 
 # Use parallel processing for large projects
-refaktor plan old new --include "**/*.rs"  # Fast on Linux
+renamify plan old new --include "**/*.rs"  # Fast on Linux
 ```
 
 ### macOS
 ```bash
 # Be aware of case insensitivity
-refaktor rename oldName OldName --preview table  # Shows two-step rename
+renamify rename oldName OldName --preview table  # Shows two-step rename
 
 # Consider filesystem overhead for huge projects
-refaktor plan old new --include "src/**" --exclude "node_modules/**"
+renamify plan old new --include "src/**" --exclude "node_modules/**"
 ```
 
 ### Windows
 ```bash
 # Use forward slashes for consistency
-refaktor plan old new --include "src/**/*.js"
+renamify plan old new --include "src/**/*.js"
 
 # Be mindful of path lengths
-refaktor plan old new --exclude "**/very/deeply/nested/directories/**"
+renamify plan old new --exclude "**/very/deeply/nested/directories/**"
 ```
 
 ## Cross-Platform Testing
@@ -188,7 +188,7 @@ For teams working across platforms:
 ```bash
 # Test your refactoring on multiple platforms
 git branch test-refactor
-refaktor rename old new --preview table
+renamify rename old new --preview table
 git commit -m "Test refactor"
 
 # Have team members test on their platforms

@@ -1,14 +1,14 @@
 ---
 title: Configuration
-description: Refaktor configuration options and environment variables
+description: Renamify configuration options and environment variables
 ---
 
 ## Project-Level Settings
 
-Refaktor looks for configuration in `.refaktor/config.toml`:
+Renamify looks for configuration in `.renamify/config.toml`:
 
 ```toml
-# Refaktor Configuration File
+# Renamify Configuration File
 [defaults]
 # Default preview format: "table", "diff", or "json"
 preview = "diff"
@@ -31,7 +31,7 @@ unrestricted_level = 0
 # use_color = true
 ```
 
-See `.refaktor/config.toml.example` for a complete example configuration.
+See `.renamify/config.toml.example` for a complete example configuration.
 
 ## Environment Variables
 
@@ -39,15 +39,15 @@ See `.refaktor/config.toml.example` for a complete example configuration.
 Disable colored output (respects the [NO_COLOR standard](https://no-color.org/)):
 
 ```bash
-NO_COLOR=1 refaktor plan old new
+NO_COLOR=1 renamify plan old new
 ```
 
-### REFAKTOR_YES
+### RENAMIFY_YES
 Equivalent to the `-y` flag (assume yes for all prompts):
 
 ```bash
-REFAKTOR_YES=1 refaktor plan old new
-# Same as: refaktor -y plan old new
+RENAMIFY_YES=1 renamify plan old new
+# Same as: renamify -y plan old new
 ```
 
 Useful for:
@@ -57,40 +57,40 @@ Useful for:
 
 ## Auto-Initialization Settings
 
-Control how Refaktor initializes its workspace:
+Control how Renamify initializes its workspace:
 
 ### Command-Line Options
 ```bash
 # Automatically add to .gitignore without prompting
-refaktor --auto-init=repo plan old new
+renamify --auto-init=repo plan old new
 
 # Add to local git exclude instead
-refaktor --auto-init=local plan old new
+renamify --auto-init=local plan old new
 
 # Add to global git excludes
-refaktor --auto-init=global plan old new
+renamify --auto-init=global plan old new
 
 # Disable auto-initialization completely
-refaktor --no-auto-init plan old new
+renamify --no-auto-init plan old new
 ```
 
 ### Environment Integration
 ```bash
 # For CI/CD - assume yes and use repo initialization
-export REFAKTOR_YES=1
-refaktor --auto-init=repo plan old new
+export RENAMIFY_YES=1
+renamify --auto-init=repo plan old new
 ```
 
 ## Workspace Structure
 
-Refaktor creates and manages these directories and files:
+Renamify creates and manages these directories and files:
 
 ```
-.refaktor/
+.renamify/
 ├── config.toml          # Project configuration (optional)
 ├── plan.json           # Current active plan
 ├── history.json        # Operation history
-├── refaktor.lock       # Process lock file (temporary)
+├── renamify.lock       # Process lock file (temporary)
 └── backups/            # Backup directories
     ├── abc123-timestamp/
     │   ├── file1.js    # Original file contents
@@ -106,8 +106,8 @@ Refaktor creates and manages these directories and files:
 Most users should add to their repository's `.gitignore`:
 
 ```
-# Refaktor workspace
-.refaktor/
+# Renamify workspace
+.renamify/
 ```
 
 ### Local Level (.git/info/exclude)
@@ -115,7 +115,7 @@ For personal use without affecting the team:
 
 ```
 # Add to .git/info/exclude
-.refaktor/
+.renamify/
 ```
 
 ### Global Level
@@ -126,7 +126,7 @@ For all your projects:
 git config --global core.excludesfile ~/.gitignore_global
 
 # Add to ~/.gitignore_global
-echo '.refaktor/' >> ~/.gitignore_global
+echo '.renamify/' >> ~/.gitignore_global
 ```
 
 ## Performance Tuning
@@ -137,13 +137,13 @@ For projects with many files, consider these optimizations:
 
 ```bash
 # Use specific includes to limit scope
-refaktor plan old new --include "src/**/*.{js,ts}"
+renamify plan old new --include "src/**/*.{js,ts}"
 
 # Exclude large directories early
-refaktor plan old new --exclude "node_modules/**,target/**"
+renamify plan old new --exclude "node_modules/**,target/**"
 
 # Use unrestricted flags judiciously
-refaktor plan old new -u  # Only if you need gitignored files
+renamify plan old new -u  # Only if you need gitignored files
 ```
 
 ### Memory Considerations
@@ -152,13 +152,13 @@ Very large plans may require significant memory. Monitor usage with:
 
 ```bash
 # Check plan file size
-ls -lh .refaktor/plan.json
+ls -lh .renamify/plan.json
 
 # For huge plans, consider splitting the work:
-refaktor plan old new --include "src/module1/**"  # First part
-refaktor apply
-refaktor plan old new --include "src/module2/**"  # Second part  
-refaktor apply
+renamify plan old new --include "src/module1/**"  # First part
+renamify apply
+renamify plan old new --include "src/module2/**"  # Second part  
+renamify apply
 ```
 
 ## Platform-Specific Settings

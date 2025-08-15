@@ -1,4 +1,4 @@
-# Refaktor
+# Renamify
 
 Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
 
@@ -13,7 +13,7 @@ Smart search & replace for code and files with case-aware transformations and bu
   - If you're interested in helping us build these, please open an issue and let us know! (So we don't duplicate the effort.)
 - Contribute tests to help us get to >= 95% test coverage
 - Contribute fixes or improvements to the documentation. We got AI to write a lot of it and AI really likes making stuff up.
-- Please try out Refaktor and let us know if you have any feedback. Feel free to open issues:
+- Please try out Renamify and let us know if you have any feedback. Feel free to open issues:
   - Found a bug?
   - Not enough options?
   - Too many options?
@@ -26,45 +26,45 @@ Smart search & replace for code and files with case-aware transformations and bu
 - Plan / apply workflow for safety during large refactorings
 - Built-in undo/redo with history tracking (separate to git history)
   - Perform a large refactor safely without needing to commit anything first
-- Respects ignore files (`.gitignore`, `.ignore`, `.rgignore`, `.rfignore`)
+- Respects ignore files (`.gitignore`, `.ignore`, `.rgignore`, `.rnignore`)
 - Cross-platform support (Linux, macOS, Windows)
 
 ## Demo
 
-Watch Refaktor rename itself to `renamed_refactoring_tool`, then use the renamed binary to change it back:
+Watch Renamify rename itself to `renamed_refactoring_tool`, then use the renamed binary to change it back:
 
 ```bash
 # Clone and build
-git clone https://github.com/DocSpring/refaktor
-cd refaktor
+git clone https://github.com/DocSpring/renamify
+cd renamify
 cargo build --release
 
-# Use refaktor to rename itself to renamed_refactoring_tool
-./target/release/refaktor rename refaktor renamed_refactoring_tool --preview table
+# Use renamify to rename itself to renamed_refactoring_tool
+./target/release/renamify rename renamify renamed_refactoring_tool --preview table
 
 # Rebuild with the new name
 rm -rf target
 cargo build --release
 
-# Now use renamed_refactoring_tool to rename itself back to refaktor!
-./target/release/renamed_refactoring_tool rename renamed_refactoring_tool refaktor --preview table
+# Now use renamed_refactoring_tool to rename itself back to renamify!
+./target/release/renamed_refactoring_tool rename renamed_refactoring_tool renamify --preview table
 
 # Back to the original
 rm -rf target
 cargo build --release
-./target/release/refaktor --help
+./target/release/renamify --help
 ```
 
-This demonstrates Refaktor's power: it can rename entire projects including all code references, file names, and directory names - all while maintaining perfect consistency across different naming conventions.
+This demonstrates Renamify's power: it can rename entire projects including all code references, file names, and directory names - all while maintaining perfect consistency across different naming conventions.
 
 ## Ignore Files
 
-Refaktor respects various ignore files to skip files and directories during scanning:
+Renamify respects various ignore files to skip files and directories during scanning:
 
 - `.gitignore` - Standard Git ignore patterns
 - `.ignore` - Generic ignore file (like ripgrep)
 - `.rgignore` - Ripgrep-specific ignore patterns
-- `.rfignore` - Refaktor-specific ignore patterns
+- `.rnignore` - Renamify-specific ignore patterns
 
 You can control how ignore files are handled using the `-u` flag:
 
@@ -73,7 +73,7 @@ You can control how ignore files are handled using the `-u` flag:
 - `-uu`: Ignores all ignore files and shows hidden files
 - `-uuu`: Same as `-uu` plus treats binary files as text
 
-The `.rfignore` file is useful when you want to exclude files specifically from refaktor operations without affecting Git or other tools.
+The `.rnignore` file is useful when you want to exclude files specifically from renamify operations without affecting Git or other tools.
 
 ## Development
 
@@ -96,7 +96,7 @@ cargo test
 
 ### Debugging
 
-For debugging tokenization issues, you can set the `DEBUG_TOKENIZE` environment variable to see detailed output of how Refaktor parses identifiers into tokens:
+For debugging tokenization issues, you can set the `DEBUG_TOKENIZE` environment variable to see detailed output of how Renamify parses identifiers into tokens:
 
 ```bash
 DEBUG_TOKENIZE=1 cargo test test_name
@@ -106,11 +106,11 @@ This is particularly useful when troubleshooting issues with case conversions or
 
 ### Code Coverage
 
-The `refaktor-core` library maintains at least 85% code coverage:
+The `renamify-core` library maintains at least 85% code coverage:
 
 ```bash
 cargo install cargo-llvm-cov --version 0.6.15
-cargo llvm-cov --package refaktor-core
+cargo llvm-cov --package renamify-core
 ```
 
 ### Contributing
@@ -125,9 +125,9 @@ MIT License - Copyright (c) 2025 DocSpring
 
 ## Build Status
 
-[![CI](https://github.com/DocSpring/refaktor/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/refaktor/actions/workflows/ci.yml)
+[![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)
 
-[![E2E Tests](https://github.com/DocSpring/refaktor/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/refaktor/actions/workflows/e2e.yml)
+[![E2E Tests](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml)
 
 ---
 
@@ -137,6 +137,6 @@ MIT License - Copyright (c) 2025 DocSpring
   <img src="https://docspring.com/assets/logo-text-1e09b5522ee8602e08f1e3c4851e1657b14bd49e2e633618c344b4dc23fcbf79.svg" alt="DocSpring Logo" width="200">
 </a>
 
-Refaktor was created by [DocSpring](https://docspring.com)
+Renamify was created by [DocSpring](https://docspring.com)
 
 Fill, sign, and generate PDFs at scale

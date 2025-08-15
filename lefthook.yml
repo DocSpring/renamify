@@ -24,12 +24,12 @@ pre-commit:
       run: cargo test
 
     mcp-biome:
-      root: refaktor-mcp/
+      root: renamify-mcp/
       glob: "*.{ts,js,json}"
       run: pnpm run check
 
     mcp-test:
-      root: refaktor-mcp/
+      root: renamify-mcp/
       glob: "*.ts"
       run: pnpm run test
 

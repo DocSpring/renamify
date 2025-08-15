@@ -7,9 +7,9 @@ import { LinkCard } from '@astrojs/starlight/components';
 
 Refactoring a real codebase is more than find-and-replace. Case styles, separators, acronyms, 
 filenames, and imports all need to change in sync. This page shows concrete failure modes of 
-naive search or regex, and how Refaktor handles them safely.
+naive search or regex, and how Renamify handles them safely.
 
-> TLDR: Refaktor tokenizes identifiers, understands case styles and separators, knows common acronyms, respects boundaries, renames files and directories consistently, previews the plan, and applies changes atomically with undo.
+> TLDR: Renamify tokenizes identifiers, understands case styles and separators, knows common acronyms, respects boundaries, renames files and directories consistently, previews the plan, and applies changes atomically with undo.
 
 ## 1. Case style preservation across variants
 
@@ -41,7 +41,7 @@ Inflection_rule-Set          # broken Train
 excludeInflection_rules      # broken camel suffix
 ```
 
-Refaktor produces consistent, style-aware results:
+Renamify produces consistent, style-aware results:
 
 ```
 inflection_rule_set
@@ -76,7 +76,7 @@ Naive regex can overmatch:
 ProfileImage -> ProDocumentImage   # wrong
 ```
 
-Refaktor honors token boundaries:
+Renamify honors token boundaries:
 
 ```
 FileManager        -> DocumentManager
@@ -90,7 +90,7 @@ FileSystemWatcher  -> DocumentSystemWatcher
 
 Acronyms are common: `HTTPSConnection`, `XMLHttpRequest`, `parseURL`, `ID`, `URLParser`.
 
-Refaktor’s tokenizer understands acronym spans for matching:
+Renamify’s tokenizer understands acronym spans for matching:
 
 - `HTMLGenerator` is parsed as `HTML` + `Generator`, so searches for `html_generator` or `HTMLGenerator` both match correctly.
 - `URLParser` matches as `URL` + `Parser`, not `UR` + `LParser`.
@@ -107,25 +107,25 @@ Acronym matching is configurable:
 
 ## 4. File and directory renaming with consistency
 
-Refaktor updates file and directory names alongside contents, in the right order, and checks for collisions.
+Renamify updates file and directory names alongside contents, in the right order, and checks for collisions.
 
-Example: rename `smart_search_and_replace` to `refaktor`.
+Example: rename `smart_search_and_replace` to `renamify`.
 
 It handles:
 
 ```
-/smart_search_and_replace/                  -> /refaktor/
-/docs/smart-search-and-replace-guide.md     -> /docs/refaktor-guide.md
-smart_search_and_replace.exe                -> refaktor.exe
-SmartSearchAndReplace.java                  -> Refaktor.java
+/smart_search_and_replace/                  -> /renamify/
+/docs/smart-search-and-replace-guide.md     -> /docs/renamify-guide.md
+smart_search_and_replace.exe                -> renamify.exe
+SmartSearchAndReplace.java                  -> Renamify.java
 ```
 
 And updates common import patterns:
 
 ```
-import smart_search_and_replace.core    -> import refaktor.core
-require('smart-search-and-replace')     -> require('refaktor')
-use smart_search_and_replace::scanner;  -> use refaktor::scanner;
+import smart_search_and_replace.core    -> import renamify.core
+require('smart-search-and-replace')     -> require('renamify')
+use smart_search_and_replace::scanner;  -> use renamify::scanner;
 ```
 
 Root directory rename is suggested with a ready-to-paste snippet and opt-in flag to perform automatically.
@@ -140,7 +140,7 @@ smart-search-and-replace-Guide
 Run-SmartSearchAndReplace
 ```
 
-Refaktor treats the hyphen as a separator between differently styled segments, replaces only the matching subspan, and preserves each segment's style. For example:
+Renamify treats the hyphen as a separator between differently styled segments, replaces only the matching subspan, and preserves each segment's style. For example:
 
 ```
 Rename-Tool-CLI  -> Code-Transform-Engine-CLI
@@ -150,7 +150,7 @@ This works because the tokenizer classifies the segment as Train-Case with an ac
 
 ## 6. Special tokens that must be preserved
 
-Refaktor never splits these incorrectly:
+Renamify never splits these incorrectly:
 
 - `arm64`, `amd64`
 - `2FA`
@@ -169,13 +169,13 @@ b2b_sales -> b2c_sales -> b2b_sales
 ARM64_ARCH -> X86_ARCH -> ARM64_ARCH
 ```
 
-Refaktor tracks exact tokenization and case rules so round-trips restore the original.
+Renamify tracks exact tokenization and case rules so round-trips restore the original.
 We run end-to-end roundtrip tests on CI to ensure we catch any unhandled edgecases.
 
 ## 8. Safety and previews
 
 - Ignores binaries and build artifacts by default. (Same rules as ripgrep, same -u, -uu, -uuu flags.)
-- Honors `.gitignore`, `.ignore`, `.rgignore`, and `.rfignore`.
+- Honors `.gitignore`, `.ignore`, `.rgignore`, and `.rnignore`.
 - Plan and preview before apply.
 - Apply is atomic with rollback and undo history.
 
@@ -191,7 +191,7 @@ Challenges include:
 - Constants like `URL_PATTERN`
 - Filenames like `url_utils.js` that should become `web_address_utils.js`
 
-Refaktor handles matching and boundaries so you can review a single plan and apply confidently.
+Renamify handles matching and boundaries so you can review a single plan and apply confidently.
 
 ---
 
@@ -199,24 +199,24 @@ Refaktor handles matching and boundaries so you can review a single plan and app
 
 <LinkCard
   title="Case-Aware Transformations"
-  href="/refaktor/features/case-transformations"
-  description="Learn how Refaktor handles different naming conventions automatically"
+  href="/renamify/features/case-transformations"
+  description="Learn how Renamify handles different naming conventions automatically"
 />
 
 <LinkCard
   title="File and Directory Renaming"
-  href="/refaktor/features/file-renaming"
-  description="Rename files and folders safely with Refaktor"
+  href="/renamify/features/file-renaming"
+  description="Rename files and folders safely with Renamify"
 />
 
 <LinkCard
   title="Safety Features"
-  href="/refaktor/features/safety"
-  description="See how we protect your repo in Refaktor"
+  href="/renamify/features/safety"
+  description="See how we protect your repo in Renamify"
 />
 
 <LinkCard
   title="Filtering and Ignore Rules"
-  href="/refaktor/features/filtering"
-  description="Control scope with Refaktor"
+  href="/renamify/features/filtering"
+  description="Control scope with Renamify"
 />

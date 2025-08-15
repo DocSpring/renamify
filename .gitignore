@@ -16,7 +16,7 @@
 .DS_Store
 
 # Runtime directory (created at runtime, not tracked in VCS)
-.refaktor/
+.renamify/
 
 # Cloned source for reference
 ripgrep-source/

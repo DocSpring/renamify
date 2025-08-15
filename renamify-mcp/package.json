@@ -1,0 +1,73 @@
+{
+  "name": "@renamify/mcp-server",
+  "version": "0.1.1",
+  "description": "MCP (Model Context Protocol) server for Renamify - smart case-aware search and replace",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "renamify-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check --write",
+    "format": "biome format --write",
+    "check": "biome check",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "refactoring",
+    "refactor",
+    "rename",
+    "search-replace",
+    "code-transformation",
+    "ai-tools",
+    "claude",
+    "cursor",
+    "case-conversion",
+    "identifier-rename"
+  ],
+  "author": {
+    "name": "DocSpring",
+    "url": "https://docspring.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "execa": "^8.0.1",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.1.2",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "ultracite": "5.1.2",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DocSpring/renamify.git",
+    "directory": "renamify-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/DocSpring/renamify/issues"
+  },
+  "homepage": "https://docspring.github.io/renamify/",
+  "publishConfig": {
+    "access": "public"
+  }
+}

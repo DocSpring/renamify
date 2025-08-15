@@ -3,7 +3,7 @@ title: File and Directory Renaming
 description: Rename files and directories that match your patterns
 ---
 
-In addition to replacing text within files, Refaktor can rename files and directories that match your pattern.
+In addition to replacing text within files, Renamify can rename files and directories that match your pattern.
 
 ## What Gets Renamed
 
@@ -19,14 +19,14 @@ Directory names are also transformed:
 - `getUserName/` → `fetchUserProfile/`
 
 ### Rename Order
-Refaktor renames in dependency order:
+Renamify renames in dependency order:
 1. Files first
 2. Then directories, deepest first
 This prevents conflicts and ensures all operations succeed.
 
 ## Root Directory Renaming
 
-**NEW**: Refaktor can now rename the project root directory itself when the directory name matches your pattern.
+**NEW**: Renamify can now rename the project root directory itself when the directory name matches your pattern.
 
 ### Safety First
 - **Default behavior**: Root directory renaming is disabled for safety
@@ -38,11 +38,11 @@ This prevents conflicts and ensures all operations succeed.
 
 ```bash
 # This will offer to rename the project directory itself
-cd /path/to/refaktor-project
-refaktor rename refaktor renamed_refactoring_tool --rename-root
+cd /path/to/renamify-project
+renamify rename renamify renamed_refactoring_tool --rename-root
 ```
 
-Refaktor will show a "Next Steps" snippet like:
+Renamify will show a "Next Steps" snippet like:
 ```
 Next Steps:
 1. cd ../renamed-refactoring-tool-project
@@ -59,24 +59,24 @@ Next Steps:
 
 ### Disable File Renaming
 ```bash
-refaktor rename old_name new_name --no-rename-files
+renamify rename old_name new_name --no-rename-files
 ```
 
 ### Disable Directory Renaming
 ```bash
-refaktor rename old_name new_name --no-rename-dirs
+renamify rename old_name new_name --no-rename-dirs
 ```
 
 ### Prevent Root Directory Renaming
 ```bash
-refaktor rename old_name new_name --no-rename-root
+renamify rename old_name new_name --no-rename-root
 ```
 
 ## Examples
 
 ### Basic File Renaming
 ```bash
-refaktor rename getUserName fetchUserProfile
+renamify rename getUserName fetchUserProfile
 ```
 
 Might show:
@@ -93,7 +93,7 @@ Files to rename: 3
 
 ### Project-Wide Rename
 ```bash
-refaktor rename myproject awesome_project --rename-root
+renamify rename myproject awesome_project --rename-root
 ```
 
 This could rename:
@@ -104,7 +104,7 @@ This could rename:
 
 ## Conflict Detection
 
-Refaktor detects several types of renaming conflicts:
+Renamify detects several types of renaming conflicts:
 
 ### Multiple-to-One Conflicts
 When multiple files would be renamed to the same destination:
@@ -120,7 +120,7 @@ On macOS and Windows (case-insensitive filesystems):
 ⚠️  Warning: Renaming 'OldName.js' to 'oldName.js' requires special handling
 ```
 
-Refaktor uses two-step renames for case-only changes:
+Renamify uses two-step renames for case-only changes:
 1. `OldName.js` → `temp_12345.js`
 2. `temp_12345.js` → `oldName.js`
 

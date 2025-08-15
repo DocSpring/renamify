@@ -1,6 +1,6 @@
 # Release Guide
 
-This guide explains how to create a new release of Refaktor.
+This guide explains how to create a new release of Renamify.
 
 ## GitHub Releases Overview
 
@@ -30,9 +30,9 @@ GitHub releases work by:
 
 1. Update version numbers in:
 
-   - `refaktor-cli/Cargo.toml`
-   - `refaktor-core/Cargo.toml`
-   - `refaktor-mcp/package.json`
+   - `renamify-cli/Cargo.toml`
+   - `renamify-core/Cargo.toml`
+   - `renamify-mcp/package.json`
 
 2. Commit the version changes:
 
@@ -101,20 +101,20 @@ The release workflow builds for:
 
 Each release includes:
 
-- `refaktor-macos-amd64.tar.gz` - macOS Intel binary
-- `refaktor-macos-arm64.tar.gz` - macOS Apple Silicon binary
-- `refaktor-linux-amd64.tar.gz` - Linux x86_64 binary
-- `refaktor-linux-arm64.tar.gz` - Linux ARM64 binary
+- `renamify-macos-amd64.tar.gz` - macOS Intel binary
+- `renamify-macos-arm64.tar.gz` - macOS Apple Silicon binary
+- `renamify-linux-amd64.tar.gz` - Linux x86_64 binary
+- `renamify-linux-arm64.tar.gz` - Linux ARM64 binary
 - Source code (automatically included by GitHub)
 
 ## NPM Package
 
-The MCP server is published to npm as `@refaktor/mcp-server`.
+The MCP server is published to npm as `@renamify/mcp-server`.
 
 Users can install it with:
 
 ```bash
-npx @refaktor/mcp-server
+npx @renamify/mcp-server
 ```
 
 ## Troubleshooting

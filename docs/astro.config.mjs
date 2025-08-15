@@ -6,15 +6,15 @@ import starlightImageZoom from "starlight-image-zoom";
 // https://astro.build/config
 export default defineConfig({
   site: "https://docspring.github.io",
-  base: "/refaktor",
+  base: "/renamify",
 
   integrations: [
     starlight({
-      title: "Refaktor",
+      title: "Renamify",
       description:
         "Smart search & replace for code and files with case-aware transformations",
       editLink: {
-        baseUrl: "https://github.com/DocSpring/refaktor/edit/main/docs",
+        baseUrl: "https://github.com/DocSpring/renamify/edit/main/docs",
       },
       plugins: [starlightImageZoom()],
       components: {
@@ -24,7 +24,7 @@ export default defineConfig({
         {
           icon: "github",
           label: "GitHub",
-          href: "https://github.com/DocSpring/refaktor",
+          href: "https://github.com/DocSpring/renamify",
         },
       ],
       sidebar: [

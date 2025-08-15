@@ -1,5 +1,5 @@
 ---
-title: refaktor history
+title: renamify history
 description: View refactoring operation history
 ---
 
@@ -8,7 +8,7 @@ The `history` command shows all previous refactoring operations with their detai
 ## Usage
 
 ```bash
-refaktor history [OPTIONS]
+renamify history [OPTIONS]
 ```
 
 ## Options
@@ -19,10 +19,10 @@ refaktor history [OPTIONS]
 
 ```bash
 # Show all operations
-refaktor history
+renamify history
 
 # Show last 5 operations
-refaktor history --limit 5
+renamify history --limit 5
 ```
 
 ## Output Format
@@ -34,7 +34,7 @@ Pattern: getUserName → fetchUserProfile
 Status: Applied
 Files modified: 23
 Files renamed: 5
-Backup location: .refaktor/backups/a3b7c9d4e8f2a6b1/
+Backup location: .renamify/backups/a3b7c9d4e8f2a6b1/
 ```
 
 Use the Operation ID with `undo` or `redo` commands.

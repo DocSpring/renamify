@@ -8,7 +8,7 @@ description: Large-scale refactoring examples
 Rename an entire library or module throughout your project:
 
 ```bash
-refaktor rename mylib awesome_lib --commit
+renamify rename mylib awesome_lib --commit
 ```
 
 ### What This Changes
@@ -56,7 +56,7 @@ import AwesomeLibWidget from './components/AwesomeLibWidget';
 Rename API endpoints consistently:
 
 ```bash
-refaktor rename getUserData fetchUserProfile \
+renamify rename getUserData fetchUserProfile \
   --include "**/*.{js,ts,py,go}"
 ```
 
@@ -89,7 +89,7 @@ const fetchUserProfile = async (id) => { ... };
 Rename database-related code:
 
 ```bash
-refaktor rename user_profile account_profile \
+renamify rename user_profile account_profile \
   --include "**/*.{sql,js,py,rb}" \
   --exclude "migrations/**"
 ```
@@ -123,7 +123,7 @@ UPDATE account_profile SET name = ? WHERE id = ?;
 Update configuration keys across your application:
 
 ```bash
-refaktor rename redis_url cache_url \
+renamify rename redis_url cache_url \
   --include "**/*.{js,py,rb,yml,yaml,json,toml}"
 ```
 
@@ -156,7 +156,7 @@ database:
 Sometimes you need to be selective about what gets changed:
 
 ```bash
-refaktor rename config settings \
+renamify rename config settings \
   --exclude-match ConfigurationManager,ConfigService \
   --include "src/**" \
   --exclude "**/*test*"
@@ -174,7 +174,7 @@ This will:
 Rename the entire project directory:
 
 ```bash
-refaktor rename myproject awesome_project \
+renamify rename myproject awesome_project \
   --rename-root \
   --commit
 ```
@@ -201,31 +201,31 @@ Next Steps:
 ### Limit Scope
 ```bash
 # Only process source files, not dependencies
-refaktor rename old_name new_name \
+renamify rename old_name new_name \
   --include "src/**/*.{js,ts,tsx}" \
   --exclude "node_modules/**"
 
 # Or use specific paths
-refaktor rename old_name new_name src/ lib/
+renamify rename old_name new_name src/ lib/
 ```
 
 ### Use Dry Run First
 ```bash
 # Explore the scope before committing
-refaktor dry-run old_name new_name src/
+renamify dry-run old_name new_name src/
 
 # Or with patterns
-refaktor dry-run old_name new_name --include "src/**"
+renamify dry-run old_name new_name --include "src/**"
 
 # Count potential matches
-refaktor dry-run old_name new_name | grep -c "│"
+renamify dry-run old_name new_name | grep -c "│"
 ```
 
 ### Parallel Workflow
 ```bash
 # Create plan and review while system is idle
-refaktor plan large_change huge_change --preview json > plan.json
+renamify plan large_change huge_change --preview json > plan.json
 
 # Apply later when ready  
-refaktor apply --plan plan.json
+renamify apply --plan plan.json
 ```

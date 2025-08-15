@@ -1,13 +1,13 @@
 ---
 title: MCP Tools Reference
-description: Complete reference for all Refaktor MCP Server tools
+description: Complete reference for all Renamify MCP Server tools
 ---
 
 import { Card, CardGrid, Code } from '@astrojs/starlight/components';
 
-The Refaktor MCP Server provides 7 specialized tools for AI agents to perform intelligent refactoring operations.
+The Renamify MCP Server provides 7 specialized tools for AI agents to perform intelligent refactoring operations.
 
-## refaktor_plan
+## renamify_plan
 
 Creates a comprehensive refactoring plan that identifies all case variations of your identifiers.
 
@@ -47,7 +47,7 @@ Available case style options:
 ### Example Usage
 
 ```
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "UserAccount",
   "new": "CustomerAccount",
@@ -78,7 +78,7 @@ Summary:
     docs/user-account.md → docs/customer-account.md
 ```
 
-## refaktor_apply
+## renamify_apply
 
 Applies a refactoring plan to make the actual changes to your codebase.
 
@@ -94,7 +94,7 @@ Applies a refactoring plan to make the actual changes to your codebase.
 ### Example Usage
 
 ```
-Tool: refaktor_apply
+Tool: renamify_apply
 Arguments: {
   "atomic": true,
   "commit": true
@@ -121,10 +121,10 @@ Error: Conflicts detected in 2 files:
   - src/api/handlers.ts: Content changed since plan creation
   - lib/database.ts: File no longer exists
 
-Run 'refaktor_plan' again to create a fresh plan with current file state.
+Run 'renamify_plan' again to create a fresh plan with current file state.
 ```
 
-## refaktor_undo
+## renamify_undo
 
 Reverts a previously applied refactoring operation.
 
@@ -137,7 +137,7 @@ Reverts a previously applied refactoring operation.
 ### Example Usage
 
 ```
-Tool: refaktor_undo
+Tool: renamify_undo
 Arguments: {
   "id": "a3b7c9d4e8f2a6b1"
 }
@@ -153,7 +153,7 @@ Successfully undone refactoring a3b7c9d4e8f2a6b1
 All changes have been reverted.
 ```
 
-## refaktor_redo
+## renamify_redo
 
 Re-applies a previously undone refactoring.
 
@@ -166,7 +166,7 @@ Re-applies a previously undone refactoring.
 ### Example Usage
 
 ```
-Tool: refaktor_redo
+Tool: renamify_redo
 Arguments: {
   "id": "a3b7c9d4e8f2a6b1"
 }
@@ -182,7 +182,7 @@ Successfully redone refactoring a3b7c9d4e8f2a6b1
 All changes have been re-applied.
 ```
 
-## refaktor_history
+## renamify_history
 
 Shows the history of refactoring operations.
 
@@ -195,7 +195,7 @@ Shows the history of refactoring operations.
 ### Example Usage
 
 ```
-Tool: refaktor_history
+Tool: renamify_history
 Arguments: {
   "limit": 5
 }
@@ -223,9 +223,9 @@ Refactoring History (last 5 operations):
    Applied: 1734567600
 ```
 
-## refaktor_status
+## renamify_status
 
-Shows the current status of Refaktor, including pending plans and system state.
+Shows the current status of Renamify, including pending plans and system state.
 
 ### Parameters
 
@@ -234,14 +234,14 @@ This tool takes no parameters.
 ### Example Usage
 
 ```
-Tool: refaktor_status
+Tool: renamify_status
 Arguments: {}
 ```
 
 ### Response Example
 
 ```
-Refaktor Status:
+Renamify Status:
 
 Current Directory: /home/user/project
 Git Branch: feature/refactoring
@@ -259,12 +259,12 @@ Last Applied:
     Status: Success
 
 System:
-  Refaktor Version: 1.2.0
-  Config: .refaktor/config.json found
+  Renamify Version: 1.2.0
+  Config: .renamify/config.json found
   History Entries: 47
 ```
 
-## refaktor_preview
+## renamify_preview
 
 Preview a plan in different formats without applying changes.
 
@@ -286,7 +286,7 @@ Preview a plan in different formats without applying changes.
 ### Example Usage
 
 ```
-Tool: refaktor_preview
+Tool: renamify_preview
 Arguments: {
   "format": "diff"
 }
@@ -317,33 +317,33 @@ Arguments: {
 
 ```mermaid
 graph LR
-    A[refaktor_plan] --> B[refaktor_preview]
+    A[renamify_plan] --> B[renamify_preview]
     B --> C{Review OK?}
-    C -->|Yes| D[refaktor_apply]
+    C -->|Yes| D[renamify_apply]
     C -->|No| E[Adjust & re-plan]
     D --> F{Success?}
-    F -->|No| G[refaktor_undo]
+    F -->|No| G[renamify_undo]
     F -->|Yes| H[Complete]
 ```
 
 ### Best Practices for AI Agents
 
 1. **Always plan before applying**
-   - Use `refaktor_plan` first
-   - Review with `refaktor_preview` if needed
-   - Only then use `refaktor_apply`
+   - Use `renamify_plan` first
+   - Review with `renamify_preview` if needed
+   - Only then use `renamify_apply`
 
 2. **Use specific includes when possible**
    - Target specific directories: `["src/**/*.ts"]`
    - Exclude test files if not needed: `["!**/*.test.ts"]`
 
 3. **Check status before operations**
-   - Use `refaktor_status` to verify clean state
+   - Use `renamify_status` to verify clean state
    - Ensure no pending uncommitted changes
 
 4. **Handle errors gracefully**
    - Check for "conflicts detected" messages
-   - Use `refaktor_undo` if something goes wrong
+   - Use `renamify_undo` if something goes wrong
    - Re-plan if files have changed
 
 ## Error Messages and Recovery
@@ -352,18 +352,18 @@ graph LR
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "Refaktor CLI not available" | Binary not in PATH | Check installation |
+| "Renamify CLI not available" | Binary not in PATH | Check installation |
 | "No matches found" | Pattern too restrictive | Broaden search criteria |
 | "Conflicts detected" | Files changed since plan | Create new plan |
-| "Plan not found" | Invalid plan ID | Check with `refaktor_history` |
+| "Plan not found" | Invalid plan ID | Check with `renamify_history` |
 | "Permission denied" | File permissions | Check file ownership |
 
 ### Recovery Strategies
 
 **When apply fails:**
 1. Note the error message
-2. Use `refaktor_status` to check state
-3. If partially applied, use `refaktor_undo`
+2. Use `renamify_status` to check state
+3. If partially applied, use `renamify_undo`
 4. Fix the issue and create a new plan
 
 **When patterns don't match:**
@@ -391,10 +391,10 @@ The MCP Server loads plans into memory:
 ## Next Steps
 
 <CardGrid>
-  <Card title="Usage Examples" icon="rocket" href="/refaktor/mcp/examples">
+  <Card title="Usage Examples" icon="rocket" href="/renamify/mcp/examples">
     See real-world refactoring scenarios
   </Card>
-  <Card title="AI Agent Guide" icon="robot" href="/refaktor/mcp/ai-guide">
+  <Card title="AI Agent Guide" icon="robot" href="/renamify/mcp/ai-guide">
     Best practices for AI-assisted refactoring
   </Card>
 </CardGrid>

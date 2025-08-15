@@ -7,7 +7,7 @@ set -e
 VERSION=${1:-$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")}
 VERSION_NO_V=${VERSION#v}
 
-echo "Building Refaktor release $VERSION"
+echo "Building Renamify release $VERSION"
 
 # Create release directory
 RELEASE_DIR="release/$VERSION"
@@ -15,31 +15,31 @@ mkdir -p "$RELEASE_DIR"
 
 # Build for current platform (likely macOS)
 echo "Building for native platform..."
-cargo build --release --bin refaktor
+cargo build --release --bin renamify
 
 # Detect current platform
 if [[ "$OSTYPE" == "darwin"* ]]; then
     ARCH=$(uname -m)
     if [[ "$ARCH" == "x86_64" ]]; then
-        NATIVE_TARGET="refaktor-macos-amd64"
+        NATIVE_TARGET="renamify-macos-amd64"
     else
-        NATIVE_TARGET="refaktor-macos-arm64"
+        NATIVE_TARGET="renamify-macos-arm64"
     fi
 else
     ARCH=$(uname -m)
     if [[ "$ARCH" == "x86_64" ]]; then
-        NATIVE_TARGET="refaktor-linux-amd64"
+        NATIVE_TARGET="renamify-linux-amd64"
     else
-        NATIVE_TARGET="refaktor-linux-arm64"
+        NATIVE_TARGET="renamify-linux-arm64"
     fi
 fi
 
 # Package native build
 echo "Packaging $NATIVE_TARGET..."
-cp target/release/refaktor "$RELEASE_DIR/refaktor"
+cp target/release/renamify "$RELEASE_DIR/renamify"
 cd "$RELEASE_DIR"
-tar czf "$NATIVE_TARGET.tar.gz" refaktor
-rm refaktor
+tar czf "$NATIVE_TARGET.tar.gz" renamify
+rm renamify
 cd ../..
 
 # Cross-compile for other platforms (requires rustup targets)

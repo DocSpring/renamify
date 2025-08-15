@@ -1,11 +1,11 @@
 ---
 title: AI Agent Guide
-description: Best practices for AI assistants using the Refaktor MCP Server
+description: Best practices for AI assistants using the Renamify MCP Server
 ---
 
 import { Card, CardGrid, Steps, Aside } from '@astrojs/starlight/components';
 
-A comprehensive guide for AI assistants to effectively use the Refaktor MCP Server for intelligent, safe refactoring operations.
+A comprehensive guide for AI assistants to effectively use the Renamify MCP Server for intelligent, safe refactoring operations.
 
 ## Core Principles for AI Agents
 
@@ -31,7 +31,7 @@ When things go wrong, explain the issue and provide solutions.
 
 2. **Create a plan**
    ```
-   Tool: refaktor_plan
+   Tool: renamify_plan
    Arguments: {
      "old": "identifier",
      "new": "replacement",
@@ -51,7 +51,7 @@ When things go wrong, explain the issue and provide solutions.
 
 5. **Apply the changes**
    ```
-   Tool: refaktor_apply
+   Tool: renamify_apply
    Arguments: {
      "atomic": true
    }
@@ -225,7 +225,7 @@ For large changes, break them into stages:
 
 ```
 Stage 1: Core library files
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "OldSystem",
   "new": "NewSystem",
@@ -233,7 +233,7 @@ Arguments: {
 }
 
 Stage 2: API layer
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "OldSystem",
   "new": "NewSystem",
@@ -241,7 +241,7 @@ Arguments: {
 }
 
 Stage 3: Frontend
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "OldSystem",
   "new": "NewSystem",
@@ -254,7 +254,7 @@ Arguments: {
 Before applying changes in production:
 
 <Steps>
-1. Check git status with `refaktor_status`
+1. Check git status with `renamify_status`
 2. Create plan with `dryRun: true` first
 3. Review with `format: "diff"` if requested
 4. Apply with `atomic: true` always
@@ -408,7 +408,7 @@ When developing or testing AI agent integrations:
 
 ## Integration Checklist
 
-For AI developers integrating Refaktor MCP:
+For AI developers integrating Renamify MCP:
 
 <Steps>
 1. ✓ Install MCP Server and verify tools are available
@@ -427,13 +427,13 @@ For AI developers integrating Refaktor MCP:
 
 ### Tool Priority Order
 
-1. `refaktor_plan` - Always first
-2. `refaktor_preview` - Optional, for detailed review
-3. `refaktor_apply` - After user confirmation
-4. `refaktor_undo` - If something goes wrong
-5. `refaktor_history` - To check past operations
-6. `refaktor_status` - For system state checks
-7. `refaktor_redo` - To reapply undone changes
+1. `renamify_plan` - Always first
+2. `renamify_preview` - Optional, for detailed review
+3. `renamify_apply` - After user confirmation
+4. `renamify_undo` - If something goes wrong
+5. `renamify_history` - To check past operations
+6. `renamify_status` - For system state checks
+7. `renamify_redo` - To reapply undone changes
 
 ### Default Settings
 
@@ -450,9 +450,9 @@ For AI developers integrating Refaktor MCP:
 
 ## Support and Resources
 
-- [**Tools Reference**](/refaktor/mcp/tools) - Detailed documentation for each MCP tool
-- [**Usage Examples**](/refaktor/mcp/examples) - Real-world refactoring scenarios
-- [**Installation**](/refaktor/mcp/installation) - Setup guide for different platforms
+- [**Tools Reference**](/renamify/mcp/tools) - Detailed documentation for each MCP tool
+- [**Usage Examples**](/renamify/mcp/examples) - Real-world refactoring scenarios
+- [**Installation**](/renamify/mcp/installation) - Setup guide for different platforms
 
 ---
 

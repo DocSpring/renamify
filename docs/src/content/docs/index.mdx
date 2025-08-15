@@ -1,5 +1,5 @@
 ---
-title: Refaktor
+title: Renamify
 description: Smart search & replace for code and files with case-aware transformations
 ---
 
@@ -16,12 +16,12 @@ An **MCP Server**, **CLI tool**, and **VS Code / Cursor Extension** _(coming soo
 ## 🤖 MCP Server for AI Agents
 
 <LinkCard
-  title="Use Refaktor with AI Assistants"
-  href="/refaktor/mcp/overview"
-  description="Connect Refaktor to Claude, Cursor, and other AI tools via the Model Context Protocol (MCP) for intelligent, automated refactoring."
+  title="Use Renamify with AI Assistants"
+  href="/renamify/mcp/overview"
+  description="Connect Renamify to Claude, Cursor, and other AI tools via the Model Context Protocol (MCP) for intelligent, automated refactoring."
 />
 
-The Refaktor MCP Server enables AI agents to:
+The Renamify MCP Server enables AI agents to:
 - **Plan refactorings** with case-aware transformations
 - **Preview changes** in AI-friendly formats
 - **Apply changes atomically** with full undo/redo support
@@ -46,9 +46,9 @@ The Refaktor MCP Server enables AI agents to:
 
 ---
 
-## What is Refaktor?
+## What is Renamify?
 
-Refaktor is a command-line tool that understands different naming conventions and can rename both file contents and the files themselves in a single atomic operation. It's designed for developers who need to refactor codebases safely and efficiently.
+Renamify is a command-line tool that understands different naming conventions and can rename both file contents and the files themselves in a single atomic operation. It's designed for developers who need to refactor codebases safely and efficiently.
 
 Traditional find-and-replace tools work at the text level, but don't understand code conventions. If you want to rename `getUserName` to `fetchUserProfile`, you need to handle:
 
@@ -59,23 +59,23 @@ Traditional find-and-replace tools work at the text level, but don't understand 
 - Files like `get-user-name.js`
 - Directories like `user-name/`
 
-Refaktor handles all of these automatically in a single operation.
+Renamify handles all of these automatically in a single operation.
 
 ## Installation
 
 ```bash
 # Quick install to ~/.local/bin (no sudo)
-curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
+curl -fsSL https://docspring.github.io/renamify/install.sh | bash
 ```
 
-See the [installation guide](/refaktor/installation) for system-wide installation and more options.
+See the [installation guide](/renamify/installation) for system-wide installation and more options.
 
 ## Quick Example
 
 Rename `getUserName` to `fetchUserProfile` across your entire codebase:
 
 ```bash
-refaktor rename getUserName fetchUserProfile
+renamify rename getUserName fetchUserProfile
 ```
 
 This automatically handles:
@@ -87,7 +87,7 @@ This automatically handles:
 
 You can also specify specific paths:
 ```bash
-refaktor rename getUserName fetchUserProfile src/ tests/
+renamify rename getUserName fetchUserProfile src/ tests/
 ```
 
 ## Self-Hosting Demo
@@ -95,13 +95,13 @@ refaktor rename getUserName fetchUserProfile src/ tests/
 _(Not the "run it on your own server" kind of self-hosting.)_
 
 <LinkCard
-  title="See Refaktor in Action"
-  href="/refaktor/self-hosting-demo"
-  description="Watch Refaktor rename itself, then use the renamed binary to change itself back."
+  title="See Renamify in Action"
+  href="/renamify/self-hosting-demo"
+  description="Watch Renamify rename itself, then use the renamed binary to change itself back."
 />
 
 ## Build Status
 
-[![CI](https://github.com/DocSpring/refaktor/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/refaktor/actions/workflows/ci.yml)
+[![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)
 
-[![E2E Tests](https://github.com/DocSpring/refaktor/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/refaktor/actions/workflows/e2e.yml)
+[![E2E Tests](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml)

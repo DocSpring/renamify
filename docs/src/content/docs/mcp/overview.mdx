@@ -1,19 +1,19 @@
 ---
 title: MCP Server Overview
-description: Use Refaktor with AI assistants through the Model Context Protocol
+description: Use Renamify with AI assistants through the Model Context Protocol
 ---
 
 import { LinkCard, Steps, Aside } from '@astrojs/starlight/components';
 
-The Refaktor MCP Server enables AI assistants to perform intelligent, case-aware refactoring operations on your codebase.
+The Renamify MCP Server enables AI assistants to perform intelligent, case-aware refactoring operations on your codebase.
 
 ## Quick Start
 
 <Steps>
-1. **Install Refaktor CLI**
+1. **Install Renamify CLI**
 
    ```bash
-   curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
+   curl -fsSL https://docspring.github.io/renamify/install.sh | bash
    ```
 
 2. **Setup MCP Server**
@@ -22,9 +22,9 @@ The Refaktor MCP Server enables AI assistants to perform intelligent, case-aware
    ```json
    {
      "mcpServers": {
-       "refaktor": {
+       "renamify": {
          "command": "npx",
-         "args": ["-y", "@refaktor/mcp-server"]
+         "args": ["-y", "@renamify/mcp-server"]
        }
      }
    }
@@ -33,7 +33,7 @@ The Refaktor MCP Server enables AI assistants to perform intelligent, case-aware
 
 ## What is MCP?
 
-The **Model Context Protocol (MCP)** is an open standard that enables AI assistants to securely connect to external tools and data sources. The Refaktor MCP Server implements this protocol, allowing AI agents to:
+The **Model Context Protocol (MCP)** is an open standard that enables AI assistants to securely connect to external tools and data sources. The Renamify MCP Server implements this protocol, allowing AI agents to:
 
 - **Plan refactorings** with full case-awareness across your codebase
 - **Preview changes** in AI-friendly formats before applying
@@ -83,38 +83,38 @@ Every refactoring operation includes multiple safety layers:
 
 The MCP Server provides 7 specialized tools:
 
-- [**refaktor_plan**](/refaktor/mcp/tools#refaktor_plan) - Create a refactoring plan with case-aware transformations
-- [**refaktor_apply**](/refaktor/mcp/tools#refaktor_apply) - Execute a plan to make the actual changes
-- [**refaktor_undo**](/refaktor/mcp/tools#refaktor_undo) - Revert a previously applied refactoring
-- [**refaktor_redo**](/refaktor/mcp/tools#refaktor_redo) - Re-apply an undone refactoring
-- [**refaktor_history**](/refaktor/mcp/tools#refaktor_history) - View past refactoring operations
-- [**refaktor_status**](/refaktor/mcp/tools#refaktor_status) - Check current state and pending plans
-- [**refaktor_preview**](/refaktor/mcp/tools#refaktor_preview) - Review a plan in different formats
+- [**renamify_plan**](/renamify/mcp/tools#renamify_plan) - Create a refactoring plan with case-aware transformations
+- [**renamify_apply**](/renamify/mcp/tools#renamify_apply) - Execute a plan to make the actual changes
+- [**renamify_undo**](/renamify/mcp/tools#renamify_undo) - Revert a previously applied refactoring
+- [**renamify_redo**](/renamify/mcp/tools#renamify_redo) - Re-apply an undone refactoring
+- [**renamify_history**](/renamify/mcp/tools#renamify_history) - View past refactoring operations
+- [**renamify_status**](/renamify/mcp/tools#renamify_status) - Check current state and pending plans
+- [**renamify_preview**](/renamify/mcp/tools#renamify_preview) - Review a plan in different formats
 
 ## Installation Steps
 
 <Steps>
-1. **Install the Refaktor CLI**
+1. **Install the Renamify CLI**
    ```bash
-   curl -fsSL https://docspring.github.io/refaktor/install.sh | bash
+   curl -fsSL https://docspring.github.io/renamify/install.sh | bash
    # or download from GitHub releases
    ```
 
 2. **Configure your AI assistant**
-   Add the Refaktor MCP server using npx (no installation needed):
+   Add the Renamify MCP server using npx (no installation needed):
    ```json
    {
      "mcpServers": {
-       "refaktor": {
+       "renamify": {
          "command": "npx",
-         "args": ["-y", "@refaktor/mcp-server"]
+         "args": ["-y", "@renamify/mcp-server"]
        }
      }
    }
    ```
 
 3. **Start refactoring!**
-   Ask your AI assistant to use Refaktor for renaming operations
+   Ask your AI assistant to use Renamify for renaming operations
 </Steps>
 
 ## Example Workflow
@@ -126,7 +126,7 @@ User: "Rename all instances of UserAccount to CustomerAccount in the src folder"
 
 AI: I'll help you rename UserAccount to CustomerAccount. Let me start by creating a plan:
 
-Tool: refaktor_plan
+Tool: renamify_plan
 Arguments: {
   "old": "UserAccount",
   "new": "CustomerAccount",
@@ -148,7 +148,7 @@ User: "Yes, apply the changes"
 
 AI: I'll apply the refactoring plan now:
 
-Tool: refaktor_apply
+Tool: renamify_apply
 Arguments: {
   "atomic": true
 }
@@ -158,7 +158,7 @@ Result: Successfully applied 47 replacements across 12 files and renamed 3 files
 
 ## Integration Support
 
-The Refaktor MCP Server works with:
+The Renamify MCP Server works with:
 
 - **[Claude Desktop](https://claude.ai)** - Anthropic's AI assistant
 - **[Cursor](https://cursor.sh)** - AI-powered code editor
@@ -169,24 +169,24 @@ The Refaktor MCP Server works with:
 
 <LinkCard
   title="Installation Guide"
-  href="/refaktor/mcp/installation"
+  href="/renamify/mcp/installation"
   description="Step-by-step setup instructions for different platforms"
 />
 
 <LinkCard
   title="Configuration"
-  href="/refaktor/mcp/configuration"
+  href="/renamify/mcp/configuration"
   description="Configure the MCP Server for your environment"
 />
 
 <LinkCard
   title="Tools Reference"
-  href="/refaktor/mcp/tools"
+  href="/renamify/mcp/tools"
   description="Detailed documentation for each MCP tool"
 />
 
 <LinkCard
   title="Usage Examples"
-  href="/refaktor/mcp/examples"
+  href="/renamify/mcp/examples"
   description="Real-world refactoring scenarios and patterns"
 />
