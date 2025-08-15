@@ -132,7 +132,18 @@ pub fn find_compound_variants(
             if styles.contains(&style) {
                 // Convert the replacement tokens to the same style
                 let replacement_model = TokenModel::new(replacement_tokens.clone());
-                let replacement = to_style(&replacement_model, style);
+                let mut replacement = to_style(&replacement_model, style);
+
+                // Preserve trailing delimiters from the original identifier
+                // This handles cases like "oldtool_backup_" in format strings
+                if identifier.ends_with('_') && !replacement.ends_with('_') {
+                    replacement.push('_');
+                } else if identifier.ends_with('-') && !replacement.ends_with('-') {
+                    replacement.push('-');
+                } else if identifier.ends_with('.') && !replacement.ends_with('.') {
+                    replacement.push('.');
+                }
+
                 // Successfully created replacement in same style
 
                 matches.push(CompoundMatch {

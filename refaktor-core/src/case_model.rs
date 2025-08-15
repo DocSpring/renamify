@@ -181,14 +181,41 @@ pub fn parse_to_tokens_with_acronyms(
                 // Use trie to find longest matching acronym
                 // This handles both letter-starting acronyms (API, URL) and digit-starting ones (2FA, 3D)
                 if let Some(acronym) = acronym_set.find_longest_match(s, i) {
-                    // Check if the acronym is followed by a digit that should be part of the same token
-                    // For example, "ARM64" should be one token, not "ARM" and "64"
-                    // Also "Arm64" should be one token, not "Arm" and "64"
                     let next_pos = i + acronym.len();
-                    let should_skip_acronym = next_pos < bytes.len() &&
-                        bytes[next_pos].is_ascii_digit() &&
-                        // Only skip if the acronym doesn't already contain digits
-                        !acronym.bytes().any(|b| b.is_ascii_digit());
+                    let mut should_skip_acronym = false;
+
+                    // Check what comes after the potential acronym
+                    if next_pos < bytes.len() {
+                        let next_byte = bytes[next_pos];
+
+                        // Skip if followed by a digit (e.g., "ARM" in "ARM64")
+                        if next_byte.is_ascii_digit()
+                            && !acronym.bytes().any(|b| b.is_ascii_digit())
+                        {
+                            should_skip_acronym = true;
+                        }
+
+                        // Skip if the acronym match is part of a longer word
+                        // For example, "IDE" in "IDENTIFIERS" should not be matched
+                        // Check if we're in the same case style and continuing the word
+                        if bytes[i].is_ascii_uppercase() && next_byte.is_ascii_uppercase() {
+                            // Both uppercase - might be part of same word like "IDENTIFIERS"
+                            // Only accept the acronym if it's the complete uppercase sequence
+                            let mut j = next_pos;
+                            while j < bytes.len() && bytes[j].is_ascii_uppercase() {
+                                j += 1;
+                            }
+                            // If there are more uppercase letters, this might be a longer word
+                            // Only accept known acronyms if they're followed by a clear boundary
+                            if j > next_pos {
+                                // There are more uppercase letters - likely part of a longer word
+                                should_skip_acronym = true;
+                            }
+                        } else if bytes[i].is_ascii_lowercase() && next_byte.is_ascii_lowercase() {
+                            // Both lowercase - definitely part of same word
+                            should_skip_acronym = true;
+                        }
+                    }
 
                     if !should_skip_acronym {
                         tokens.push(Token::new(acronym));
