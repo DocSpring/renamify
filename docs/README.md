@@ -33,7 +33,7 @@ Documentation content is written in Markdown/MDX and located in `src/content/doc
 - Getting started guides
 - CLI command reference
 - Configuration examples
-- Live demo with self-referential testing
+- Live demo with self-hosting testing
 - Real-world case studies
 
 Visit the live documentation at https://docspring.github.io/refaktor/ to learn more about Refaktor.
