@@ -227,15 +227,15 @@ The Rename-Tool-Based-Solution is working.
         "rename_tool",
         "smart_search_and_replace",
         vec![], // paths (empty = current dir)
-        vec![], // include
-        vec![], // exclude
+        &[],    // include
+        &[],    // exclude
         0,      // unrestricted_level
         true,   // rename_files
         true,   // rename_dirs
-        vec![], // exclude_styles
-        vec![], // include_styles
-        vec![], // only_styles
-        vec![], // exclude_match
+        &[],    // exclude_styles
+        &[],    // include_styles
+        &[],    // only_styles
+        &[],    // exclude_match
         None,   // preview_format
         false,  // commit
         false,  // large
@@ -244,9 +244,9 @@ The Rename-Tool-Based-Solution is working.
         false,  // no_rename_root
         false,  // dry_run
         false,  // no_acronyms
-        vec![], // include_acronyms
-        vec![], // exclude_acronyms
-        vec![], // only_acronyms
+        &[],    // include_acronyms
+        &[],    // exclude_acronyms
+        &[],    // only_acronyms
         true,   // auto_approve
         true,   // use_color
     )

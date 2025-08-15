@@ -1,7 +1,8 @@
 use crate::{apply_plan, scan_repository_multi, ApplyOptions, LockFile, Plan, PlanOptions, Style};
 use anyhow::{anyhow, Context, Result};
+use std::fmt::Write;
 use std::fs;
-use std::io::{self, IsTerminal, Write};
+use std::io::{self, IsTerminal, Write as IoWrite};
 use std::path::PathBuf;
 
 #[allow(clippy::too_many_arguments)]
@@ -9,16 +10,16 @@ pub fn rename_operation(
     old: &str,
     new: &str,
     paths: Vec<PathBuf>,
-    include: Vec<String>,
-    exclude: Vec<String>,
+    include: &[String],
+    exclude: &[String],
     unrestricted_level: u8,
     rename_files: bool,
     rename_dirs: bool,
-    exclude_styles: Vec<Style>,
-    include_styles: Vec<Style>,
-    only_styles: Vec<Style>,
-    exclude_match: Vec<String>,
-    preview_format: Option<String>, // "table", "diff", "json", "none"
+    exclude_styles: &[Style],
+    include_styles: &[Style],
+    only_styles: &[Style],
+    exclude_match: &[String],
+    preview_format: Option<&String>, // "table", "diff", "json", "none"
     commit: bool,
     large: bool,
     force_with_conflicts: bool,
@@ -26,9 +27,9 @@ pub fn rename_operation(
     no_rename_root: bool,
     dry_run: bool,
     no_acronyms: bool,
-    include_acronyms: Vec<String>,
-    exclude_acronyms: Vec<String>,
-    only_acronyms: Vec<String>,
+    include_acronyms: &[String],
+    exclude_acronyms: &[String],
+    only_acronyms: &[String],
     auto_approve: bool,
     use_color: bool,
 ) -> Result<String> {
@@ -51,8 +52,8 @@ pub fn rename_operation(
 
     // Generate the plan
     let options = PlanOptions {
-        includes: include.clone(),
-        excludes: exclude.clone(),
+        includes: include.to_owned(),
+        excludes: exclude.to_owned(),
         respect_gitignore: true, // ignored, we use unrestricted instead
         unrestricted_level,
         styles,
@@ -61,11 +62,11 @@ pub fn rename_operation(
         rename_root: false, // Default: do not allow root directory renames
         plan_out: PathBuf::from(".renamify/temp_plan.json"), // temporary, will be stored in history
         coerce_separators: crate::scanner::CoercionMode::Auto,
-        exclude_match,
+        exclude_match: exclude_match.to_owned(),
         no_acronyms,
-        include_acronyms,
-        exclude_acronyms,
-        only_acronyms,
+        include_acronyms: include_acronyms.to_owned(),
+        exclude_acronyms: exclude_acronyms.to_owned(),
+        only_acronyms: only_acronyms.to_owned(),
     };
 
     // Resolve all search paths to absolute paths and canonicalize them
@@ -99,7 +100,7 @@ pub fn rename_operation(
     // Check if there's anything to do after filtering
     if plan.stats.total_matches == 0 && plan.renames.is_empty() {
         if !root_renames.is_empty() && !no_rename_root {
-            let snippet = generate_root_rename_snippet(&root_renames)?;
+            let snippet = generate_root_rename_snippet(&root_renames);
             return Ok(format!("Only root directory rename detected. Use --rename-root to perform it or see suggested snippet:\n{}", snippet));
         }
         return Ok("Nothing to do.".to_string());
@@ -110,7 +111,7 @@ pub fn rename_operation(
 
     // Show preview if requested
     if let Some(format) = preview_format.as_ref() {
-        if format != "none" {
+        if *format != "none" {
             let preview_output = generate_preview_output(&plan, format, use_color)?;
             println!("{preview_output}");
             println!(); // Add spacing before summary
@@ -118,7 +119,7 @@ pub fn rename_operation(
     }
 
     // Show summary
-    show_rename_summary(&plan, &include, &exclude)?;
+    show_rename_summary(&plan, include, exclude);
 
     // If dry-run, stop here
     if dry_run {
@@ -136,20 +137,22 @@ pub fn rename_operation(
     // Show completion message and handle root renames
     let mut output = result;
     if !root_renames.is_empty() && !rename_root && !no_rename_root {
-        let snippet = generate_root_rename_snippet(&root_renames)?;
-        output.push_str(&format!(
+        let snippet = generate_root_rename_snippet(&root_renames);
+        write!(
+            output,
             "\n\nNext step (root directory rename):\n{}",
             snippet
-        ));
+        )
+        .unwrap();
     }
 
     Ok(output)
 }
 
 fn build_styles_list(
-    exclude_styles: Vec<Style>,
-    include_styles: Vec<Style>,
-    only_styles: Vec<Style>,
+    exclude_styles: &[Style],
+    include_styles: &[Style],
+    only_styles: &[Style],
 ) -> Option<Vec<Style>> {
     if only_styles.is_empty() {
         // Start with the default styles
@@ -163,8 +166,8 @@ fn build_styles_list(
 
         // Add included styles
         for style in include_styles {
-            if !active_styles.contains(&style) {
-                active_styles.push(style);
+            if !active_styles.contains(style) {
+                active_styles.push(*style);
             }
         }
 
@@ -175,7 +178,7 @@ fn build_styles_list(
         }
     } else {
         // If --only-styles is specified, use only those styles
-        Some(only_styles)
+        Some(only_styles.to_vec())
     }
 }
 
@@ -186,8 +189,13 @@ fn separate_root_renames(
     renames.iter().cloned().partition(|rename| {
         resolved_paths.iter().any(|root_path| {
             rename.from.parent().is_none()
-                || rename.from.canonicalize().unwrap_or(rename.from.clone())
-                    == root_path.canonicalize().unwrap_or(root_path.clone())
+                || rename
+                    .from
+                    .canonicalize()
+                    .unwrap_or_else(|_| rename.from.clone())
+                    == root_path
+                        .canonicalize()
+                        .unwrap_or_else(|_| root_path.clone())
         })
     })
 }
@@ -261,7 +269,7 @@ fn generate_preview_output(plan: &Plan, format: &str, use_color: bool) -> Result
     ))
 }
 
-fn show_rename_summary(plan: &Plan, include: &[String], exclude: &[String]) -> Result<()> {
+fn show_rename_summary(plan: &Plan, include: &[String], exclude: &[String]) {
     println!("Renamify plan: {} -> {}", plan.old, plan.new);
     println!(
         "Edits: {} files, {} replacements",
@@ -279,13 +287,11 @@ fn show_rename_summary(plan: &Plan, include: &[String], exclude: &[String]) -> R
     if !exclude.is_empty() {
         println!("Exclude patterns: {}", exclude.join(", "));
     }
-
-    Ok(())
 }
 
 fn get_user_confirmation() -> Result<bool> {
     print!("Apply? [y/N]: ");
-    io::stdout().flush().context("Failed to flush stdout")?;
+    IoWrite::flush(&mut io::stdout()).context("Failed to flush stdout")?;
 
     let mut input = String::new();
     io::stdin()
@@ -331,28 +337,24 @@ fn apply_rename_changes(
     );
 
     if !plan.renames.is_empty() {
-        output.push_str(&format!("\n✓ Renamed {} items", plan.renames.len()));
+        write!(output, "\n✓ Renamed {} items", plan.renames.len()).unwrap();
     }
 
     if commit {
         output.push_str("\n✓ Changes committed to git");
     }
 
-    output.push_str(&format!("\nUndo with: renamify undo {history_id}"));
+    write!(output, "\nUndo with: renamify undo {history_id}").unwrap();
 
     Ok(output)
 }
 
-fn generate_root_rename_snippet(root_renames: &[crate::scanner::Rename]) -> Result<String> {
+fn generate_root_rename_snippet(root_renames: &[crate::scanner::Rename]) -> String {
     if root_renames.is_empty() {
-        return Ok(String::new());
+        return String::new();
     }
 
     // Generate a snippet for the root rename
     let rename = &root_renames[0];
-    Ok(format!(
-        "mv {} {}",
-        rename.from.display(),
-        rename.to.display()
-    ))
+    format!("mv {} {}", rename.from.display(), rename.to.display())
 }

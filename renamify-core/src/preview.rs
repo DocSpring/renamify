@@ -130,7 +130,9 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
     // Group matches by file
     let mut file_stats: HashMap<&Path, (usize, HashMap<String, usize>)> = HashMap::new();
     for hunk in &plan.matches {
-        let entry = file_stats.entry(&hunk.file).or_insert((0, HashMap::new()));
+        let entry = file_stats
+            .entry(&hunk.file)
+            .or_insert_with(|| (0, HashMap::new()));
         entry.0 += 1;
         *entry.1.entry(hunk.variant.clone()).or_insert(0) += 1;
     }

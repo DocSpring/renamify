@@ -184,8 +184,16 @@ pub fn plan_operation_with_dry_run(
     }
 
     // Return preview content for dry-run operations, summary for others
-    if dry_run && preview_content.is_some() {
-        Ok(preview_content.unwrap())
+    if dry_run {
+        if let Some(content) = preview_content {
+            Ok(content)
+        } else {
+            Ok(format!(
+                "Generated plan with {} matches and {} renames",
+                plan.stats.total_matches,
+                plan.renames.len()
+            ))
+        }
     } else {
         Ok(format!(
             "Generated plan with {} matches and {} renames{}",

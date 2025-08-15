@@ -1,5 +1,6 @@
 use crate::{apply_plan, scanner::Plan, ApplyOptions};
 use anyhow::{anyhow, Context, Result};
+use std::fmt::Write;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -51,14 +52,14 @@ pub fn apply_operation(
     );
 
     if !plan.renames.is_empty() {
-        result.push_str(&format!("\n✓ Renamed {} items", plan.renames.len()));
+        write!(result, "\n✓ Renamed {} items", plan.renames.len()).unwrap();
     }
 
     if commit {
         result.push_str("\n✓ Changes committed to git");
     }
 
-    result.push_str(&format!("\nUndo with: renamify undo {}", plan.id));
+    write!(result, "\nUndo with: renamify undo {}", plan.id).unwrap();
 
     Ok(result)
 }
@@ -79,7 +80,11 @@ fn load_plan_from_source_with_tracking(
         },
         (None, Some(id)) => {
             // Positional argument provided - determine what it is
-            if id.ends_with(".json") || Path::new(&id).exists() {
+            if std::path::Path::new(&id)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+                || Path::new(&id).exists()
+            {
                 // It's a file path
                 let path = PathBuf::from(id);
                 let plan_content = fs::read_to_string(&path)

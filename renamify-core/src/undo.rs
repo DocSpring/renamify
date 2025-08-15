@@ -123,7 +123,7 @@ pub fn undo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
                 }
                 if rename.from.starts_with(dir_from) {
                     // Keep the original "from" path as is
-                    adjusted_from = rename.from.clone();
+                    adjusted_from.clone_from(&rename.from);
                 }
             }
 
@@ -987,7 +987,7 @@ mod tests {
             affected_files,
             renames: vec![
                 (old_dir.clone(), new_dir.clone()),
-                (old_file.clone(), renamed_file.clone()),
+                (old_file.clone(), renamed_file),
             ],
             backups_path: backup_dir,
             revert_of: None,

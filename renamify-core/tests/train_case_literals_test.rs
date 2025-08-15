@@ -68,7 +68,7 @@ pub fn process() {
     // Debug: Print all matches
     println!("\n=== All Train-Case literal matches found ===");
     for m in &plan.matches {
-        if m.before.contains('-') && m.before.chars().next().map_or(false, |c| c.is_uppercase()) {
+        if m.before.contains('-') && m.before.chars().next().is_some_and(|c| c.is_uppercase()) {
             println!("'{}' -> '{}'", m.before, m.after);
         }
     }

@@ -272,17 +272,17 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
             // Replace "--- original" with actual from path (relative)
             // Check if the original line had a newline
             if line.ends_with('\n') {
-                result.push_str(&format!("--- {}\n", from_relative.display()));
+                writeln!(result, "--- {}", from_relative.display()).unwrap();
             } else {
-                result.push_str(&format!("--- {}", from_relative.display()));
+                write!(result, "--- {}", from_relative.display()).unwrap();
             }
         } else if line.starts_with("+++ ") {
             // Replace "+++ modified" with actual to path (relative)
             // Check if the original line had a newline
             if line.ends_with('\n') {
-                result.push_str(&format!("+++ {}\n", to_relative.display()));
+                writeln!(result, "+++ {}", to_relative.display()).unwrap();
             } else {
-                result.push_str(&format!("+++ {}", to_relative.display()));
+                write!(result, "+++ {}", to_relative.display()).unwrap();
             }
         } else {
             // Keep all other lines as-is (including their newlines)
