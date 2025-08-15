@@ -37,7 +37,7 @@ git clone . "$WORKDIR"
 cd "$WORKDIR"
 
 # Make ripgrep respect the same ignores as the tool
-cp .rfignore .rgignore
+cp .rnignore .rgignore
 echo .rgignore >> .git/info/exclude
 
 # Make sure working directory is clean before we start
