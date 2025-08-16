@@ -28,6 +28,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Preserve line endings to prevent Biome formatting issues on Windows
+          autocrlf: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
