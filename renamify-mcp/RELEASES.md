@@ -43,13 +43,13 @@ If you want to publish manually before setting up automation:
 cd renamify-mcp
 
 # Login to npm
-npm login
+pnpm login
 
 # Test the publish (dry run)
-npm publish --dry-run
+pnpm publish --dry-run
 
 # Actually publish
-npm publish
+pnpm publish
 ```
 
 ## Release Process
@@ -63,7 +63,7 @@ When you create a new tag and push it:
 ```bash
 # Update version in renamify-mcp/package.json
 cd renamify-mcp
-npm version 0.1.0 --no-git-tag-version
+pnpm version 0.1.0 --no-git-tag-version
 git add package.json
 git commit -m "Bump MCP server version to 0.1.0"
 
@@ -87,13 +87,13 @@ To publish just the MCP server without a full Renamify release:
 cd renamify-mcp
 
 # Update version
-npm version patch  # or minor, or major
+pnpm version patch  # or minor, or major
 
 # Build
 pnpm build
 
 # Publish
-npm publish --access public
+pnpm publish
 ```
 
 ## Package Information

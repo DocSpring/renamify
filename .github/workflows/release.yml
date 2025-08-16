@@ -208,10 +208,10 @@ jobs:
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
           VERSION="${TAG#v}"  # Remove 'v' prefix
-          npm version $VERSION --no-git-tag-version
+          pnpm version $VERSION --no-git-tag-version
 
-      - name: Publish to npm
+      - name: Publish to NPM
         working-directory: renamify-mcp
-        run: npm publish --access public
+        run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

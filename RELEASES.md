@@ -16,7 +16,7 @@ GitHub releases work by:
 1. Ensure you have an NPM account and are logged in:
 
    ```bash
-   npm login
+   pnpm login
    ```
 
 2. Add the NPM_TOKEN secret to your GitHub repository:
