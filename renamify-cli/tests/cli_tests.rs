@@ -4,6 +4,15 @@ use assert_fs::TempDir;
 use predicates::prelude::*;
 use renamify_core::{plan_operation_with_dry_run, Style};
 
+/// Helper function to create a cross-platform path string for testing
+fn path_str(components: &[&str]) -> String {
+    let mut path = std::path::PathBuf::new();
+    for component in components {
+        path.push(component);
+    }
+    path.to_str().unwrap().to_string()
+}
+
 #[test]
 fn test_help_command() {
     let mut cmd = Command::cargo_bin("renamify").unwrap();
@@ -166,8 +175,8 @@ fn test_plan_command_with_includes() {
         ])
         .assert()
         .success()
-        .stdout(predicate::str::contains("src/main.rs"))
-        .stdout(predicate::str::contains("tests/test.rs").not());
+        .stdout(predicate::str::contains(&path_str(&["src", "main.rs"])))
+        .stdout(predicate::str::contains(&path_str(&["tests", "test.rs"])).not());
 }
 
 #[test]
@@ -196,8 +205,8 @@ fn test_plan_command_with_excludes() {
         ])
         .assert()
         .success()
-        .stdout(predicate::str::contains("src/main.rs"))
-        .stdout(predicate::str::contains("tests/test.rs").not());
+        .stdout(predicate::str::contains(&path_str(&["src", "main.rs"])))
+        .stdout(predicate::str::contains(&path_str(&["tests", "test.rs"])).not());
 }
 
 #[test]
@@ -793,7 +802,9 @@ fn test_init_command_local_flag() {
         .args(["init", "--local"])
         .assert()
         .success()
-        .stderr(predicates::str::contains(".git/info/exclude"));
+        .stderr(predicates::str::contains(&path_str(&[
+            ".git", "info", "exclude",
+        ])));
 
     // Check .git/info/exclude was created with correct content
     let exclude_path = temp_dir.path().join(".git/info/exclude");
