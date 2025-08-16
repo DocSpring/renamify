@@ -1,4 +1,16 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.1.4/schema.json",
-  "extends": ["ultracite"]
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "extends": ["ultracite"],
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts", "**/*.spec.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noMagicNumbers": "off"
+          }
+        }
+      }
+    }
+  ]
 }

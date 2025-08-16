@@ -6,7 +6,7 @@ import type {
 } from './renamify-service.js';
 
 export class RenamifyTools {
-  private renamifyService: RenamifyService;
+  private readonly renamifyService: RenamifyService;
 
   constructor(renamifyService: RenamifyService) {
     this.renamifyService = renamifyService;
@@ -82,7 +82,7 @@ TROUBLESHOOTING:
   /**
    * Undo a renaming
    */
-  async undo(params: { id: string }): Promise<string> {
+  async undo(params: { id?: string }): Promise<string> {
     try {
       const result = await this.renamifyService.undo(params.id);
       return `${result}
@@ -96,7 +96,7 @@ Renaming has been undone successfully.`;
   /**
    * Redo a renaming
    */
-  async redo(params: { id: string }): Promise<string> {
+  async redo(params: { id?: string }): Promise<string> {
     try {
       const result = await this.renamifyService.redo(params.id);
       return `${result}

@@ -33,6 +33,11 @@ pre-commit:
       glob: "*.ts"
       run: pnpm run test
 
+    mcp-tsc:
+      root: renamify-mcp/
+      glob: "*.ts"
+      run: tsc --noEmit
+
 # pre-push:
 #   commands:
 #     test-all:

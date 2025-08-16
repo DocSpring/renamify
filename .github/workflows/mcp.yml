@@ -1,0 +1,86 @@
+name: MCP Server CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'renamify-mcp/**'
+      - '.github/workflows/mcp.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'renamify-mcp/**'
+      - '.github/workflows/mcp.yml'
+
+defaults:
+  run:
+    working-directory: renamify-mcp
+
+jobs:
+  test:
+    name: Test MCP Server
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+          cache-dependency-path: renamify-mcp/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeScript checks
+        run: pnpm exec tsc --noEmit
+
+      - name: Run Biome checks
+        run: pnpm run check
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm run build
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'pnpm'
+          cache-dependency-path: renamify-mcp/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with coverage
+        run: pnpm exec vitest run --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./renamify-mcp/coverage/coverage-final.json
+          flags: mcp
+          name: mcp-coverage

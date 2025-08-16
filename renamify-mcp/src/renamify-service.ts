@@ -2,7 +2,7 @@ import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { type ExecaError, execa } from 'execa';
 
-export interface PlanOptions {
+export type PlanOptions = {
   old: string;
   new: string;
   includes?: string[];
@@ -12,23 +12,23 @@ export interface PlanOptions {
   dryRun?: boolean;
   renameFiles?: boolean;
   renameDirs?: boolean;
-}
+};
 
-export interface ApplyOptions {
+export type ApplyOptions = {
   planId?: string;
   planPath?: string;
   atomic?: boolean;
   commit?: boolean;
-}
+};
 
-export interface PreviewOptions {
+export type PreviewOptions = {
   planId?: string;
   planPath?: string;
   format?: 'table' | 'diff' | 'json' | 'summary';
-}
+};
 
 export class RenamifyService {
-  private renamifyPath: string;
+  private readonly renamifyPath: string;
 
   constructor(renamifyPath?: string) {
     // Default to 'renamify' which should be in PATH
@@ -70,7 +70,7 @@ export class RenamifyService {
   }
 
   private addIncludeArgs(args: string[], includes?: string[]): void {
-    if (includes && includes.length > 0) {
+    if (includes?.length) {
       for (const pattern of includes) {
         args.push('--include', pattern);
       }
@@ -78,7 +78,7 @@ export class RenamifyService {
   }
 
   private addExcludeArgs(args: string[], excludes?: string[]): void {
-    if (excludes && excludes.length > 0) {
+    if (excludes?.length) {
       for (const pattern of excludes) {
         args.push('--exclude', pattern);
       }
@@ -86,7 +86,7 @@ export class RenamifyService {
   }
 
   private addStylesArg(args: string[], styles?: string[]): void {
-    if (styles && styles.length > 0) {
+    if (styles?.length) {
       args.push('--styles', styles.join(','));
     }
   }
@@ -165,15 +165,23 @@ export class RenamifyService {
   /**
    * Undo a renaming
    */
-  async undo(id: string): Promise<string> {
-    return await this.executeCommand(['undo', id], 'undo');
+  async undo(id?: string): Promise<string> {
+    const args = ['undo'];
+    if (id) {
+      args.push(id);
+    }
+    return await this.executeCommand(args, 'undo');
   }
 
   /**
    * Redo a renaming
    */
-  async redo(id: string): Promise<string> {
-    return await this.executeCommand(['redo', id], 'redo');
+  async redo(id?: string): Promise<string> {
+    const args = ['redo'];
+    if (id) {
+      args.push(id);
+    }
+    return await this.executeCommand(args, 'redo');
   }
 
   /**

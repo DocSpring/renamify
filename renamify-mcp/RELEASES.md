@@ -46,10 +46,10 @@ cd renamify-mcp
 npm login
 
 # Test the publish (dry run)
-npm publish --access public --dry-run
+npm publish --dry-run
 
 # Actually publish
-npm publish --access public
+npm publish
 ```
 
 ## Release Process
