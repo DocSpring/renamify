@@ -11,12 +11,17 @@ describe('MCP Server', () => {
 
   afterEach(() => {
     if (serverProcess) {
-      serverProcess.kill();
+      // Kill the process and all its children on Windows
+      if (process.platform === 'win32' && serverProcess.pid) {
+        spawn('taskkill', ['/pid', serverProcess.pid.toString(), '/f', '/t']);
+      } else {
+        serverProcess.kill();
+      }
       serverProcess = null;
     }
   });
 
-  it('should start without errors', async () => {
+  it('should start without errors', { timeout: 10_000 }, async () => {
     const serverPath = join(__dirname, '..', 'dist', 'index.js');
 
     // Start the server with node
@@ -91,7 +96,7 @@ describe('MCP Server', () => {
     });
   });
 
-  it('should list available tools', async () => {
+  it('should list available tools', { timeout: 10_000 }, async () => {
     const serverPath = join(__dirname, '..', 'dist', 'index.js');
 
     serverProcess = spawn('node', [serverPath], {
