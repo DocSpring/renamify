@@ -26,7 +26,7 @@ pre-commit:
     mcp-biome:
       root: renamify-mcp/
       glob: "*.{ts,js,json}"
-      run: pnpm run check
+      run: biome check --write
 
     mcp-test:
       root: renamify-mcp/
