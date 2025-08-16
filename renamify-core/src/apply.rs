@@ -206,6 +206,17 @@ fn generate_reverse_patches(
 /// Convert an absolute path to a relative path from the current working directory
 /// If the path is already relative, return it as-is
 fn make_path_relative(path: &Path) -> PathBuf {
+    // On Windows, strip the \\?\ prefix if present
+    #[cfg(windows)]
+    let path = {
+        let path_str = path.to_string_lossy();
+        if path_str.starts_with(r"\\?\") {
+            Path::new(&path_str[4..])
+        } else {
+            path
+        }
+    };
+
     if path.is_relative() {
         return path.to_path_buf();
     }
@@ -213,6 +224,17 @@ fn make_path_relative(path: &Path) -> PathBuf {
     // Try to get the current directory and make the path relative to it
     match std::env::current_dir() {
         Ok(current_dir) => {
+            // On Windows, also strip the \\?\ prefix from current_dir if present
+            #[cfg(windows)]
+            let current_dir = {
+                let dir_str = current_dir.to_string_lossy();
+                if dir_str.starts_with(r"\\?\") {
+                    PathBuf::from(&dir_str[4..])
+                } else {
+                    current_dir
+                }
+            };
+
             // Use pathdiff crate if available, or implement simple relative path logic
             match path.strip_prefix(&current_dir) {
                 Ok(relative) => relative.to_path_buf(),
@@ -1061,6 +1083,24 @@ mod tests {
 
         #[cfg(target_os = "linux")]
         assert!(!is_ci); // Linux is typically case-sensitive
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_make_path_relative_windows_long_path() {
+        // Test with Windows long path prefix
+        let long_path = Path::new(r"\\?\C:\Users\test\project\src\file.rs");
+        let relative = make_path_relative(long_path);
+
+        // Should strip the \\?\ prefix
+        assert!(!relative.to_string_lossy().starts_with(r"\\?\"));
+
+        // Test with regular Windows path
+        let normal_path = Path::new(r"C:\Users\test\project\src\file.rs");
+        let relative_normal = make_path_relative(normal_path);
+
+        // Should not have \\?\ prefix
+        assert!(!relative_normal.to_string_lossy().starts_with(r"\\?\"));
     }
 
     #[test]

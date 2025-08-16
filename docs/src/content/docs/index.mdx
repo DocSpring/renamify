@@ -100,6 +100,245 @@ _(The other kind of self-hosting.)_
   description="Watch Renamify rename itself, then use the renamed binary to change itself back."
 />
 
+## Frequently Asked Questions
+
+<details>
+<summary>Why do I need Renamify when IDEs already have rename/refactoring features?</summary>
+
+While IDEs have had context-aware search and replace capabilities for decades, the landscape has changed dramatically:
+
+1. **AI Development Era**: With AI assistants like Claude and Cursor, many developers now code outside traditional IDEs. These AI tools need programmatic access to refactoring capabilities.
+
+2. **Cross-Platform Consistency**: IDE refactoring features vary between editors and may not handle all case styles or file renames consistently.
+
+3. **Automation-Friendly**: Renamify can be used in scripts, CI/CD pipelines, and integrated with AI agents via MCP (Model Context Protocol).
+
+4. **Beyond IDE Boundaries**: Renamify works across your entire codebase including documentation, configuration files, and scripts that IDEs might not understand.
+
+5. **Undo/Redo History**: Unlike IDE operations, Renamify maintains a persistent history that survives editor restarts.
+
+In the new era of AI development, productivity has skyrocketed, but AI agents are still missing a lot of tooling to make them more effective. Renamify helps fill one of those gaps.
+
+</details>
+
+<details>
+<summary>How is this different from VS Code's case-preserving find and replace?</summary>
+
+VS Code introduced [case-preserving find and replace](https://devblogs.microsoft.com/visualstudio/keep-your-casing-with-case-preserving-find-and-replace/), which is great for simple cases. Renamify goes much further:
+
+- **More case styles**: Handles snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Title Case, Train-Case, and dot.case
+- **File and directory renaming**: Automatically renames matching files and folders, not just content
+- **Acronym intelligence**: Properly handles `HTTPSConnection`, `XMLParser`, `URLRouter` 
+- **Atomic operations**: All changes succeed or roll back together
+- **Cross-editor**: Works consistently regardless of your editor choice
+- **AI integration**: Can be controlled by AI agents through MCP
+
+</details>
+
+<details>
+<summary>Why use the MCP server instead of the CLI directly?</summary>
+
+The MCP (Model Context Protocol) server is optimized for AI agents:
+
+- **Structured outputs**: Returns data in formats that AI can easily parse and understand
+- **Stateful operations**: Maintains context between operations within a session
+- **Error handling**: Provides clear, actionable error messages for AI to interpret
+- **Integration**: Works seamlessly with Claude Desktop, Cursor, and other MCP-compatible tools
+
+However, if the MCP server doesn't work for your setup, you can always instruct your AI assistant to use the CLI directly by running shell commands. Both approaches give you the same powerful refactoring capabilities.
+
+</details>
+
+<details>
+<summary>What if the MCP server doesn't work with my AI tool?</summary>
+
+No problem! Renamify is primarily a command-line tool. If your AI assistant can run shell commands, it can use Renamify directly:
+
+```bash
+# AI agents can run these commands directly
+renamify rename oldName newName
+renamify plan oldName newName --preview table
+renamify apply
+renamify undo
+```
+
+The MCP server is just a convenience wrapper that makes it easier for AI tools to use Renamify, but it's not required.
+
+</details>
+
+<details>
+<summary>How does Renamify handle acronyms like HTTP, API, or URL?</summary>
+
+Renamify has built-in intelligence for common acronyms:
+
+- Recognizes acronym boundaries: `HTTPSConnection` → `HTTPS` + `Connection`
+- Preserves acronyms during transformation: `parseURL` → `parseWebAddress` (if renaming URL to WebAddress)
+- Maintains case appropriately: `XMLParser` in PascalCase becomes `xml_parser` in snake_case
+- Configurable with `--include-acronyms`, `--exclude-acronyms`, or `--no-acronyms` flags
+
+</details>
+
+<details>
+<summary>Is it safe to use on my production codebase?</summary>
+
+Yes! Renamify has multiple safety features:
+
+1. **Plan-first workflow**: Always preview changes before applying
+2. **Atomic operations**: All changes succeed or none are applied (no partial states)
+3. **Automatic backups**: Creates temporary backups during operations
+4. **Full undo/redo**: Every operation can be reversed
+5. **Git-aware**: Respects `.gitignore` and can create safety commits
+6. **Binary protection**: Ignores binary files by default
+7. **Conflict detection**: Identifies and reports merge conflicts
+
+We recommend creating a git commit before major refactoring operations for extra safety.
+
+</details>
+
+<details>
+<summary>What files does Renamify ignore by default?</summary>
+
+Renamify respects the same ignore rules as ripgrep:
+
+- `.gitignore` - Git's ignore patterns
+- `.ignore` - Generic ignore file
+- `.rgignore` - Ripgrep-specific patterns  
+- `.rnignore` - Renamify-specific patterns
+
+It also ignores:
+- Binary files (unless using `-uuu` flag)
+- Hidden files and directories (unless using `-u` flag)
+- Common build artifacts (`node_modules/`, `target/`, `dist/`, etc.)
+
+Use `-u`, `-uu`, or `-uuu` flags to override ignore rules progressively.
+
+</details>
+
+<details>
+<summary>Can I use Renamify in CI/CD pipelines?</summary>
+
+Absolutely! Renamify is designed for automation:
+
+```bash
+# Check for naming consistency
+renamify plan oldConvention newConvention --dry-run
+
+# Automated refactoring with safety
+renamify rename oldName newName --atomic --commit
+
+# Verify no uncommitted renames
+renamify status --check
+```
+
+Exit codes:
+- 0: Success
+- 1: Conflicts detected
+- 2: Invalid input
+- 3: Internal error
+
+</details>
+
+<details>
+<summary>Does Renamify work on Windows?</summary>
+
+Yes! Renamify is cross-platform and works on:
+- Linux (x86_64, arm64)
+- macOS (Intel, Apple Silicon)
+- Windows (native builds coming soon, build from source available now)
+
+All features work consistently across platforms, including proper handling of Windows path separators.
+
+</details>
+
+<details>
+<summary>How do I rename something back if I make a mistake?</summary>
+
+Renamify maintains a complete history:
+
+```bash
+# Undo the last operation
+renamify undo
+
+# Or undo a specific operation by ID
+renamify undo <id>
+
+# View history to find the right operation
+renamify history
+
+# Redo if you change your mind
+renamify redo
+```
+
+The history is persistent and survives terminal sessions.
+
+</details>
+
+<details>
+<summary>Can Renamify handle complex, multi-word identifiers?</summary>
+
+Yes! Renamify properly tokenizes and transforms complex identifiers:
+
+- `getUserAccountDetails` → `fetchCustomerAccountDetails` 
+- `get_user_account_details` → `fetch_customer_account_details`
+- `user-account-service.js` → `customer-account-service.js`
+- `UserAccountDTO` → `CustomerAccountDTO`
+
+It understands word boundaries, compound words, and mixed-case patterns.
+
+</details>
+
+<details>
+<summary>What's the advantage of atomic operations?</summary>
+
+Atomic operations ensure your codebase is never in a broken state:
+
+- All file content changes are applied first
+- Then all file/directory renames happen in dependency order
+- If anything fails, everything rolls back
+- No partially renamed code that won't compile
+- No broken imports from incomplete renames
+
+This is especially important when renaming across hundreds of files.
+
+</details>
+
+<details>
+<summary>How fast is Renamify on large codebases?</summary>
+
+Renamify is built on the ripgrep engine and is extremely fast:
+
+- Single-pass scanning with compiled regex/automaton
+- Parallel file processing
+- Efficient ignore file handling
+- Memory-mapped file I/O where appropriate
+
+It can handle codebases with thousands of files in seconds.
+
+</details>
+
+<details>
+<summary>Can I use Renamify for non-code files?</summary>
+
+Yes! Renamify works with any text files:
+
+- Markdown documentation
+- Configuration files (YAML, JSON, TOML)
+- Shell scripts
+- Docker files
+- CI/CD configurations
+- Even prose documents
+
+Use `--preview` to verify changes make sense for your file types.
+
+</details>
+
+<details>
+<summary>Who maintains Renamify?</summary>
+
+Renamify is developed and maintained by [DocSpring](https://docspring.com), a company that builds developer tools and PDF API services. It's open source under the MIT license.
+
+</details>
+
 ## Build Status
 
 [![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)

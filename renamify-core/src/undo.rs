@@ -17,8 +17,41 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     let original_metadata = fs::metadata(file_path)?;
     let original_permissions = original_metadata.permissions();
 
+    // On Windows, normalize the patch content to handle \\?\ prefixes
+    #[cfg(windows)]
+    let patch_content = {
+        // Remove \\?\ prefix from paths in the patch header
+        let mut normalized = String::new();
+        for line in patch_content.lines() {
+            if line.starts_with("--- ") || line.starts_with("+++ ") {
+                // Extract the path part after --- or +++
+                let prefix = &line[0..4];
+                let path_part = &line[4..];
+                // Remove \\?\ prefix if present
+                let cleaned = if path_part.starts_with(r"\\?\") {
+                    &path_part[4..]
+                } else {
+                    path_part
+                };
+                normalized.push_str(prefix);
+                normalized.push_str(cleaned);
+                normalized.push('\n');
+            } else {
+                normalized.push_str(line);
+                normalized.push('\n');
+            }
+        }
+        // Remove the trailing newline we added
+        if normalized.ends_with('\n') {
+            normalized.pop();
+        }
+        normalized
+    };
+    #[cfg(not(windows))]
+    let patch_content = patch_content;
+
     // Parse and apply the patch using diffy
-    let patch = diffy::Patch::from_str(patch_content)
+    let patch = diffy::Patch::from_str(&patch_content)
         .map_err(|e| anyhow!("Failed to parse patch: {}", e))?;
 
     let result = diffy::apply(&current_content, &patch)
@@ -667,6 +700,39 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("not been reverted"));
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_apply_single_patch_windows_long_path() {
+        // Test that patches with Windows long path prefixes are normalized correctly
+        let temp_dir = TempDir::new().unwrap();
+        let test_file = temp_dir.path().join("test.txt");
+
+        // Create a file with some content
+        fs::write(&test_file, "new content").unwrap();
+
+        // Create a patch with Windows long path prefix in headers
+        let patch_with_prefix = r"--- \\?\C:\temp\test.txt
++++ \\?\C:\temp\test.txt
+@@ -1 +1 @@
+-new content
+\ No newline at end of file
++old content
+\ No newline at end of file
+";
+
+        // This should work - the function should normalize the paths
+        let result = apply_single_patch(&test_file, patch_with_prefix);
+        assert!(
+            result.is_ok(),
+            "Should handle Windows long path prefix in patch: {:?}",
+            result.err()
+        );
+
+        // Verify content was changed
+        let content = fs::read(&test_file).unwrap();
+        assert_eq!(content, b"old content");
     }
 
     #[test]
