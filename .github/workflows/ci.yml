@@ -37,9 +37,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Check formatting
+        if: runner.os != 'Windows'
         run: cargo fmt --all -- --check
 
       - name: Run clippy
+        if: runner.os != 'Windows'
         run: cargo clippy --all-targets --all-features
 
       - name: Build
