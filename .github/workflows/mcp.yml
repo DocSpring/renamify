@@ -4,22 +4,22 @@ on:
   push:
     branches: [main]
     paths:
-      - 'renamify-mcp/**'
-      - '.github/workflows/mcp.yml'
+      - "renamify-mcp/**"
+      - ".github/workflows/mcp.yml"
   pull_request:
     branches: [main]
     paths:
-      - 'renamify-mcp/**'
-      - '.github/workflows/mcp.yml'
-
-defaults:
-  run:
-    working-directory: renamify-mcp
+      - "renamify-mcp/**"
+      - ".github/workflows/mcp.yml"
 
 jobs:
   test:
     name: Test MCP Server
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: renamify-mcp
+
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -61,52 +61,8 @@ jobs:
       - name: Run Biome checks
         run: pnpm run check
 
-      - name: Run tests
-        run: pnpm test
-
-      - name: Build
-        run: pnpm run build
-
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('renamify-mcp/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-workspace
-
       - name: Run tests with coverage
         run: pnpm exec vitest run --coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./renamify-mcp/coverage/coverage-final.json
-          flags: mcp
-          name: mcp-coverage
+      - name: Build
+        run: pnpm run build
