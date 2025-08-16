@@ -1,12 +1,12 @@
 [package]
-name = "renamify-cli"
+name = "renamify"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
-description = "CLI for Renamify - smart search & replace for code and files"
+description = "Smart search & replace for code and files"
 
 [[bin]]
 name = "renamify"
