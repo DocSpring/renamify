@@ -5,6 +5,7 @@ import { type ExecaError, execa } from 'execa';
 export type PlanOptions = {
   old: string;
   new: string;
+  paths?: string[];
   includes?: string[];
   excludes?: string[];
   styles?: string[];
@@ -58,6 +59,11 @@ export class RenamifyService {
 
   private buildPlanArgs(options: PlanOptions): string[] {
     const args = ['plan', options.old, options.new];
+
+    // Add paths after old and new
+    if (options.paths?.length) {
+      args.push(...options.paths);
+    }
 
     this.addIncludeArgs(args, options.includes);
     this.addExcludeArgs(args, options.excludes);
@@ -166,10 +172,7 @@ export class RenamifyService {
    * Undo a renaming
    */
   async undo(id?: string): Promise<string> {
-    const args = ['undo'];
-    if (id) {
-      args.push(id);
-    }
+    const args = ['undo', id || 'latest'];
     return await this.executeCommand(args, 'undo');
   }
 
@@ -177,10 +180,7 @@ export class RenamifyService {
    * Redo a renaming
    */
   async redo(id?: string): Promise<string> {
-    const args = ['redo'];
-    if (id) {
-      args.push(id);
-    }
+    const args = ['redo', id || 'latest'];
     return await this.executeCommand(args, 'redo');
   }
 

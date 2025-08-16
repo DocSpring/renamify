@@ -25,6 +25,12 @@ async function main() {
       inputSchema: {
         old: z.string().describe('The old name/identifier to replace'),
         new: z.string().describe('The new name/identifier to replace with'),
+        paths: z
+          .array(z.string())
+          .optional()
+          .describe(
+            'Paths to search (files or directories). Defaults to current directory'
+          ),
         includes: z
           .array(z.string())
           .optional()
@@ -36,7 +42,9 @@ async function main() {
         styles: z
           .array(z.string())
           .optional()
-          .describe('Case styles to detect and transform'),
+          .describe(
+            'Case styles to detect and transform (snake, kebab, camel, pascal, screaming-snake, title, train, dot)'
+          ),
         preview: z
           .enum(['table', 'diff', 'json', 'summary'])
           .optional()
@@ -103,7 +111,9 @@ async function main() {
         id: z
           .string()
           .optional()
-          .describe('History ID to undo (uses latest if not specified)'),
+          .describe(
+            'History ID to undo (use "latest" for most recent non-revert entry, defaults to "latest")'
+          ),
       },
     },
     async (params) => {
@@ -121,7 +131,9 @@ async function main() {
         id: z
           .string()
           .optional()
-          .describe('History ID to redo (uses latest if not specified)'),
+          .describe(
+            'History ID to redo (use "latest" for most recent reverted entry, defaults to "latest")'
+          ),
       },
     },
     async (params) => {

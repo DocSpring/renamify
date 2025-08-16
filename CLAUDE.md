@@ -233,6 +233,12 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 
 "2>&1" causes problems in Claude Code. DO NOT USE IT.
 
+### Bash Commands
+
+- **IMPORTANT**: The Bash tool maintains a persistent shell session. Directory changes (`cd`) persist between commands!
+- If you use `cd` in one command, subsequent commands will run from that directory
+- Always use absolute paths or reset to the project root when needed
+
 ## UPDATE THIS FILE!
 
 Remember to update your own CLAUDE.md file with corrections and improvements while you are working.
