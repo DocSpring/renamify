@@ -11,7 +11,7 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  test:
+  ci_test:
     name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -48,7 +48,7 @@ jobs:
       - name: Run tests
         run: cargo test --verbose
 
-  coverage:
+  ci_coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
     steps:
@@ -101,7 +101,7 @@ jobs:
           name: coverage-report
           path: target/llvm-cov/html/
 
-  check-msrv:
+  ci_msrv:
     name: Check MSRV
     runs-on: ubuntu-latest
     steps:

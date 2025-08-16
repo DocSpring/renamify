@@ -13,7 +13,7 @@ on:
       - ".github/workflows/mcp.yml"
 
 jobs:
-  test:
+  mcp_test:
     name: Test MCP Server
     runs-on: ${{ matrix.os }}
     defaults:

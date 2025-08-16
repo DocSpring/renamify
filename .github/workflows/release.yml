@@ -12,7 +12,7 @@ on:
         type: string
 
 jobs:
-  build:
+  release_build:
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -85,9 +85,9 @@ jobs:
           name: ${{ matrix.name }}
           path: ${{ env.ASSET_PATH }}
 
-  release:
+  release_create:
     name: Create Release
-    needs: build
+    needs: release_build
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -168,9 +168,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  publish-npm:
+  release_publish_mcp:
     name: Publish MCP Server to npm
-    needs: release
+    needs: release_create
     runs-on: ubuntu-latest
 
     steps:
