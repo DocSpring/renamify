@@ -100,7 +100,10 @@ async function main() {
       title: 'Undo Renaming',
       description: 'Undo a previously applied renaming',
       inputSchema: {
-        id: z.string().describe('History ID to undo'),
+        id: z
+          .string()
+          .optional()
+          .describe('History ID to undo (uses latest if not specified)'),
       },
     },
     async (params) => {
@@ -115,7 +118,10 @@ async function main() {
       title: 'Redo Renaming',
       description: 'Redo a previously undone renaming',
       inputSchema: {
-        id: z.string().describe('History ID to redo'),
+        id: z
+          .string()
+          .optional()
+          .describe('History ID to redo (uses latest if not specified)'),
       },
     },
     async (params) => {
