@@ -17,6 +17,7 @@ Creates a comprehensive renaming plan that identifies all case variations of you
 |-----------|------|----------|---------|-------------|
 | `old` | string | ✅ Yes | - | The identifier to replace |
 | `new` | string | ✅ Yes | - | The new identifier |
+| `paths` | string[] | No | Current dir | Paths to search (files or directories) |
 | `includes` | string[] | No | All files | Glob patterns to include |
 | `excludes` | string[] | No | None | Glob patterns to exclude |
 | `styles` | string[] | No | All styles | Case styles to detect |
@@ -32,7 +33,7 @@ Available case style options:
 - `camel` - camelCase
 - `pascal` - PascalCase
 - `kebab` - kebab-case
-- `screaming` - SCREAMING_SNAKE_CASE
+- `screaming-snake` - SCREAMING_SNAKE_CASE
 - `title` - Title Case
 - `train` - Train-Case
 - `dot` - dot.case
@@ -132,7 +133,7 @@ Reverts a previously applied renaming operation.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `id` | string | ✅ Yes | - | History ID to undo |
+| `id` | string | No | `latest` | History ID to undo (use "latest" for most recent non-revert entry) |
 
 ### Example Usage
 
@@ -161,7 +162,7 @@ Re-applies a previously undone renaming.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `id` | string | ✅ Yes | - | History ID to redo |
+| `id` | string | No | `latest` | History ID to redo (use "latest" for most recent reverted entry) |
 
 ### Example Usage
 

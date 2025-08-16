@@ -38,10 +38,19 @@ renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 ### Match Control
 - `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
 
+### Acronym Handling
+- `--no-acronyms` - Disable acronym detection and transformation
+- `--include-acronyms <ACRONYMS>` - Add custom acronyms to detect (e.g., "API,URL")
+- `--exclude-acronyms <ACRONYMS>` - Exclude specific acronyms from detection
+- `--only-acronyms <ACRONYMS>` - Only use these acronyms, ignore defaults
+
+### Display Options
+- `--fixed-table-width` - Use fixed column widths in table output for consistent formatting
+
 ### Unrestricted Mode
 - `-u` - Disable .gitignore files
-- `-uu` - Disable all ignore files, show hidden files  
-- `-uuu` - Disable all ignore files, show hidden files, process binary files
+- `-uu` - Disable all ignore files, include hidden files  
+- `-uuu` - Disable all ignore files, include hidden files, process binary files
 
 ## Output Formats
 

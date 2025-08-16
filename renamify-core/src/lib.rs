@@ -61,7 +61,7 @@ use std::path::{Path, PathBuf};
 /// This matches ripgrep's behavior:
 /// - Level 0 (default): Respect all ignore files, skip hidden files
 /// - Level 1 (-u): Don't respect .gitignore, but respect other ignore files, skip hidden  
-/// - Level 2 (-uu): Don't respect any ignore files, show hidden files
+/// - Level 2 (-uu): Don't respect any ignore files, include hidden files
 /// - Level 3 (-uuu): Same as level 2, plus treat binary files as text (handled by caller)
 pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> WalkBuilder {
     let mut builder = if roots.is_empty() {
@@ -117,7 +117,7 @@ pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> Wa
                 .git_exclude(false)
                 .ignore(false)
                 .parents(false)
-                .hidden(false); // false = show hidden files
+                .hidden(false); // false = include hidden files
         },
         _ => {
             // Treat any higher level as maximum unrestricted

@@ -24,9 +24,7 @@
             "id": 2,
             "title": "Configure Rust Toolchain and Add Dependencies",
             "description": "Specify the Rust toolchain version and add the required dependencies to the project.",
-            "dependencies": [
-              "1.1"
-            ],
+            "dependencies": ["1.1"],
             "details": "Create a 'rust-toolchain.toml' file in the workspace root to pin the Rust toolchain to stable version 1.80.x. In the Cargo.toml files of both crates, add the specified dependencies, allowing unused dependencies in the initial commit.",
             "status": "done",
             "testStrategy": "Run 'cargo check' to ensure that the project compiles without errors and that all dependencies are correctly recognized."
@@ -35,9 +33,7 @@
             "id": 3,
             "title": "Set Up Code Formatting and Linting",
             "description": "Configure rustfmt and clippy for code formatting and linting, respectively.",
-            "dependencies": [
-              "1.1"
-            ],
+            "dependencies": ["1.1"],
             "details": "Create a 'rustfmt.toml' file aligned with 2024+ style guidelines. Configure clippy to use pedantic and nursery lints where practical.",
             "status": "done",
             "testStrategy": "Run 'cargo fmt --check' and 'cargo clippy -- -D warnings' to ensure code adheres to formatting and linting standards."
@@ -46,11 +42,7 @@
             "id": 4,
             "title": "Implement GitHub Actions Continuous Integration (CI) Workflow",
             "description": "Set up a GitHub Actions workflow to automate building, testing, and linting across multiple operating systems.",
-            "dependencies": [
-              "1.1",
-              "1.2",
-              "1.3"
-            ],
+            "dependencies": ["1.1", "1.2", "1.3"],
             "details": "Create a '.github/workflows/ci.yml' file defining a matrix build for 'ubuntu-latest', 'macos-latest', and 'windows-latest' runners. Include steps for checking out the code, setting up the Rust toolchain, caching dependencies, running 'cargo fmt --check', 'cargo clippy -D warnings', and 'cargo test'.",
             "status": "done",
             "testStrategy": "Push a commit to trigger the workflow and verify that all steps complete successfully on all specified operating systems."
@@ -59,10 +51,7 @@
             "id": 5,
             "title": "Integrate Code Coverage Analysis with 100% Threshold for renamify-core",
             "description": "Set up code coverage analysis for the renamify-core library with a requirement of 100% coverage.",
-            "dependencies": [
-              "1.1",
-              "1.4"
-            ],
+            "dependencies": ["1.1", "1.4"],
             "details": "Add 'cargo-llvm-cov' as a development tool. Modify the GitHub Actions workflow to include steps for installing 'cargo-llvm-cov', running coverage analysis on renamify-core, and uploading the coverage report as an artifact. Configure the workflow to fail if coverage is below 100%.",
             "status": "done",
             "testStrategy": "Add a trivial unit test in renamify-core to exercise coverage. Push a commit to trigger the workflow and verify that it fails if coverage is below 100% and passes when coverage meets the threshold."
@@ -76,9 +65,7 @@
         "details": "Supported styles: snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Title Case, Train-Case, dot.case.\nAPI (renamify-core):\n- enum Style { Snake, Kebab, Camel, Pascal, ScreamingSnake, Title, Train, Dot }\n- struct Token { text: String }\n- struct TokenModel { tokens: Vec<Token> }\n- fn detect_style(s:&str)->Option<Style>\n- fn parse_to_tokens(s:&str)->TokenModel // Heuristics: split on [_\\-\\. ], camel boundaries (lower->Upper, digit transitions), keep acronyms as single token when followed by lowercase (\"XMLHttp\" -> [\"XML\", \"Http\"]).\n- fn to_style(model:&TokenModel, style:Style)->String\n- fn generate_variant_map(old:&str, new:&str, styles:Option<&[Style]>) -> BTreeMap<String,String>\nImplementation notes:\n- Use bstr for byte-wise ops; restrict to ASCII letters, digits, and allowed separators by default; Title/Train should space/hyphen separate words and capitalize first letters.\n- Preserve acronym casing heuristics: tokens that are all-caps remain all-caps in SCREAMING_SNAKE; in Camel/Pascal, keep all-caps for sequences length<=2 else transform to Pascal-ish (configurable later).\n- Provide deterministic ordering of variants to ensure stable regex alternation.\n- Expose serialize for debugging.\nPseudo-code (split camel):\nfn split_camel(s: &str) -> Vec<&str> {\n  let mut out = vec![]; let mut start=0; let bytes=s.as_bytes();\n  for i in 1..bytes.len() {\n    if is_lower(bytes[i-1]) && is_upper(bytes[i]) || is_alpha(bytes[i-1]) && is_digit(bytes[i]) || is_digit(bytes[i-1]) && is_alpha(bytes[i]) || (is_upper(bytes[i-1]) && is_upper(bytes[i]) && i+1<bytes.len() && is_lower(bytes[i+1])) { out.push(&s[start..i]); start=i; }\n  }\n  out.push(&s[start..]); out\n}\n",
         "testStrategy": "- Property tests with proptest: for random tokens and styles, to_style(parse_to_tokens(x), detect_style(x).unwrap_or(default)) should equal normalized x for already-in-style inputs.\n- Round-trip tests: for (old,new), generate_variant_map covers all listed styles with expected outputs on a golden set.\n- Edge cases: acronyms (HTTPServer->HttpServer/HTTP_SERVER), digits (User2FA), single-word tokens, non-ASCII rejection/handling.\n- 100% coverage for this module.",
         "priority": "medium",
-        "dependencies": [
-          1
-        ],
+        "dependencies": [1],
         "status": "done",
         "subtasks": [
           {
@@ -135,9 +122,7 @@
         "details": "API (renamify-core):\n- struct MatchPattern { regex: Regex, variants: Vec<String> }\n- fn build_pattern(variants:&[String]) -> MatchPattern\nBoundary strategy:\n- Avoid \\b which fails on kebab/dot; instead treat boundaries as transitions where the byte before/after is not [A-Za-z0-9] or is start/end of string; we post-filter matches.\n- Compile a single alternation: ^? not needed: use (?:v1|v2|v3) with (?u) for Unicode but we operate on bytes; keep ASCII classes for speed.\n- Use regex::bytes::Regex for byte-oriented search; capture which variant via capturing groups or map via regex.find and then slice compare using Aho-Corasick for identification.\nPerformance:\n- Prefer regex crate 1.11 (DFA/NFA hybrid) with no backtracking risk; build once per plan.\n- For very large variant sets, consider Aho-Corasick 1.1 with byte classes and manual boundary checking; start with regex to keep direct implementation.\nPseudo-code:\nfn build_pattern(vars:&[String])->Regex {\n  let escaped: Vec<String> = vars.iter().map(regex::escape).collect();\n  let body = escaped.join(\"|\");\n  let pat = format!(\"(?:{})\", body);\n  Regex::new(&pat).unwrap()\n}\nfn is_boundary(bytes:&[u8], start:usize, end:usize)->bool { let lb = start==0 || !is_alnum(bytes[start-1]); let rb = end==bytes.len() || !is_alnum(bytes[end]); lb && rb }\n",
         "testStrategy": "- Unit tests: boundary acceptance/rejection across styles embedded in longer tokens.\n- Fuzz with cargo-fuzz on random variant sets to ensure no panics and acceptable compile time and search time.\n- Snapshot tests: given variants, render pattern; invariant: all variants must match themselves and not match superstrings.\n- Performance microbenchmarks using criterion to ensure compile+scan is within acceptable bounds.",
         "priority": "medium",
-        "dependencies": [
-          2
-        ],
+        "dependencies": [2],
         "status": "done",
         "subtasks": [
           {
@@ -153,9 +138,7 @@
             "id": 2,
             "title": "Implement Boundary Detection Function",
             "description": "Create the `is_boundary` function to determine if a match is at a valid token boundary, avoiding the use of `\\b` due to its limitations with certain token styles.",
-            "dependencies": [
-              "3.1"
-            ],
+            "dependencies": ["3.1"],
             "details": "Develop a function that checks if the bytes before and after a match are non-alphanumeric or at the start/end of the string, ensuring accurate boundary detection.",
             "status": "done",
             "testStrategy": "Unit tests to confirm that the function correctly identifies valid and invalid boundaries across various token styles."
@@ -164,9 +147,7 @@
             "id": 3,
             "title": "Integrate Aho-Corasick for Variant Identification",
             "description": "Utilize the Aho-Corasick algorithm to efficiently identify which variant matched, complementing the regex search.",
-            "dependencies": [
-              "3.1"
-            ],
+            "dependencies": ["3.1"],
             "details": "After a regex match, use Aho-Corasick to map the match to the specific variant, enabling precise identification without relying on capturing groups.",
             "status": "done",
             "testStrategy": "Unit tests to ensure that the correct variant is identified for each match."
@@ -175,9 +156,7 @@
             "id": 4,
             "title": "Optimize Performance with Hybrid DFA/NFA Approach",
             "description": "Leverage the regex crate's hybrid DFA/NFA engine to minimize backtracking risks and enhance performance.",
-            "dependencies": [
-              "3.1"
-            ],
+            "dependencies": ["3.1"],
             "details": "Configure the regex engine to use a hybrid DFA/NFA approach, reducing the likelihood of catastrophic backtracking and improving search efficiency.",
             "status": "done",
             "testStrategy": "Benchmark tests to compare performance with and without the hybrid approach, ensuring no backtracking issues occur."
@@ -186,12 +165,7 @@
             "id": 5,
             "title": "Implement Fuzz Testing for Robustness",
             "description": "Set up fuzz testing to identify potential issues such as catastrophic backtracking and ensure the system handles various inputs gracefully.",
-            "dependencies": [
-              "3.1",
-              "3.2",
-              "3.3",
-              "3.4"
-            ],
+            "dependencies": ["3.1", "3.2", "3.3", "3.4"],
             "details": "Use tools like `cargo-fuzz` to generate random inputs and test the regex compilation and matching functions, aiming to uncover edge cases and vulnerabilities.",
             "status": "done",
             "testStrategy": "Continuous integration with fuzz tests running on a schedule, monitoring for crashes or performance degradation."
@@ -205,10 +179,7 @@
         "details": "APIs:\n- struct PlanOptions { includes: Vec<String>, excludes: Vec<String>, respect_gitignore: bool, styles: Option<Vec<Style>>, rename_files: bool, rename_dirs: bool, plan_out: PathBuf }\n- struct MatchHunk { file: PathBuf, line: u64, col: u32, before: String, after: String }\n- struct Plan { id: String, created_at: String, old: String, new: String, styles: Vec<Style>, includes: Vec<String>, excludes: Vec<String>, matches: Vec<MatchHunk>, renames: Vec<Rename>, stats: Stats, version: \"1.0.0\" }\nImplementation:\n- Use ignore::WalkBuilder with .gitignore honoring (respect_gitignore default true), add includes/excludes via globset.\n- Parallel scanning: WalkBuilder::build_parallel; for each file:\n  - Use content_inspector to skip binaries unless explicitly included.\n  - Read via memmap2 where possible; otherwise buffered read.\n  - Use pattern from Task 3 to find positions; compute before/after by applying mapping for that match only; produce hunks with minimal context.\n- Stream JSON: use serde_json::Serializer with pretty disabled; write header, then matches/renames arrays incrementally to avoid high memory; maintain stats counters per variant and per file.\n- Generate unique id via SHA256 of (old,new,options,timestamp) or ULID; store .renamify/plan.json default path.\n- Performance target: ~ripgrep speed on SSD; leverage rayon for file worker pool; keep allocations pooled (e.g., typed-arena or bumpalo optional later if needed).\n",
         "testStrategy": "- Integration tests on synthetic repo (50k+ small files) to validate performance within 1.5x of ripgrep (approximate): time the scan and assert upper bound.\n- Respect .gitignore: create ignored files and ensure no matches when respect_gitignore=true.\n- Includes/excludes correctness on glob edge cases (\"src/**\", \"**/*.tsx\").\n- Binary exclusion: place matches inside a binary file and ensure skipped by default; flag to include verifies inclusion.\n- Snapshot tests for generated plan.json structure and fields.",
         "priority": "medium",
-        "dependencies": [
-          3,
-          1
-        ],
+        "dependencies": [3, 1],
         "status": "done",
         "subtasks": [
           {
@@ -265,9 +236,7 @@
         "details": "APIs:\n- struct Rename { from: PathBuf, to: PathBuf, kind: \"file\"|\"dir\" }\n- fn plan_renames(root:&Path, mapping:&BTreeMap<String,String>, opts:&PlanOptions)->Vec<Rename>\nImplementation:\n- Walk the tree (ignore::Walk) collecting pathnames where filename contains any old_variant; replace occurrences with corresponding new_variant.\n- Sort: directories by depth descending, then files; stable order for determinism.\n- Collision detection:\n  - Build a HashMap<from->to>; if two different sources map to same \"to\" path, mark conflict entry in plan (renames not applied unless resolved).\n  - Detect case-only changes on case-insensitive FS via probe (create temp file \"A\" then stat \"a\"); set a flag in plan to use staged renames.\n- Windows reserved names (CON, NUL, etc.) guard; fail plan if produced.\nPseudo-code:\nfor each entry { let name = file_name(entry); for (old,new) in mapping { if name.contains(old) { to_name = name.replace(old, new); push Rename { from, to: parent.join(to_name) } } } }\n",
         "testStrategy": "- Unit tests: path depth sort correctness; mapping with multiple variants in same filename.\n- Collision tests: two files mapping to same target; assert plan marks conflict.\n- Case-insensitive test: simulate FS flag and ensure staged rename requirement is recorded.\n- Symlink presence: ensure symlink entries are skipped or noted according to safety policy.",
         "priority": "medium",
-        "dependencies": [
-          2
-        ],
+        "dependencies": [2],
         "status": "done",
         "subtasks": [
           {
@@ -283,9 +252,7 @@
             "id": 2,
             "title": "Generate Rename Mappings Based on Variant Mapping",
             "description": "For each collected pathname, identify occurrences of old variants in the filename and generate corresponding new variants based on the provided mapping.",
-            "dependencies": [
-              "5.1"
-            ],
+            "dependencies": ["5.1"],
             "details": "Parse each filename to detect and replace old variants with new variants as specified in the mapping, preparing a list of proposed renames.",
             "status": "done",
             "testStrategy": "Ensure that filenames are correctly transformed according to the mapping, including cases with multiple occurrences of old variants."
@@ -294,9 +261,7 @@
             "id": 3,
             "title": "Sort Renames by Depth and Type",
             "description": "Sort the list of proposed renames, ordering directories by descending depth followed by files, to ensure correct rename application order.",
-            "dependencies": [
-              "5.2"
-            ],
+            "dependencies": ["5.2"],
             "details": "Implement sorting logic that prioritizes deeper directories first, followed by files, maintaining a stable order for determinism.",
             "status": "done",
             "testStrategy": "Validate that the sorting order is correct, ensuring directories are processed before their contents and that the order is stable across runs."
@@ -305,9 +270,7 @@
             "id": 4,
             "title": "Detect and Handle Naming Collisions",
             "description": "Identify potential naming conflicts where multiple sources map to the same target path and mark these conflicts in the plan.",
-            "dependencies": [
-              "5.3"
-            ],
+            "dependencies": ["5.3"],
             "details": "Build a mapping of source to target paths and detect cases where different sources result in the same target, flagging these as conflicts.",
             "status": "done",
             "testStrategy": "Test scenarios where different files or directories map to the same target name, ensuring conflicts are correctly identified and reported."
@@ -316,9 +279,7 @@
             "id": 5,
             "title": "Implement Case-Insensitivity and Reserved Name Handling",
             "description": "Detect case-only changes on case-insensitive file systems and handle reserved names to prevent conflicts and errors during renaming.",
-            "dependencies": [
-              "5.4"
-            ],
+            "dependencies": ["5.4"],
             "details": "Probe the file system to determine case sensitivity and check for reserved names like 'CON' or 'NUL' on Windows, setting flags or failing the plan as appropriate.",
             "status": "done",
             "testStrategy": "Simulate case-insensitive file systems and reserved name scenarios to ensure the system correctly identifies and handles these cases."
@@ -332,10 +293,7 @@
         "details": "Implementation:\n- Table view using comfy-table with ANSI coloring via nu-ansi-term; columns: File, Kind(Content/Rename), Matches, Variants; footer totals.\n- Diff view using similar crate unified_diff for content changes: compute minimal hunks; add badges for renames (from->to) grouped separately.\n- JSON view simply emits plan.json path or streams JSON to stdout with --preview=json.\n- CLI integration point: renamify plan ... defaults to table; --preview diff|table|json.\n- Snapshot fixtures under tests/snapshots/ using insta for both table and diff outputs.\n",
         "testStrategy": "- Snapshot tests: given a small repo, compare the table and diff renderings to saved snapshots across platforms (normalize path separators).\n- Verify counts match stats in plan.json.\n- Golden tests for ANSI off mode (detect non-TTY) to avoid escape codes in CI.",
         "priority": "medium",
-        "dependencies": [
-          4,
-          5
-        ],
+        "dependencies": [4, 5],
         "status": "done",
         "subtasks": [
           {
@@ -378,10 +336,7 @@
             "id": 5,
             "title": "Set Up Snapshot Testing for Outputs",
             "description": "Establish snapshot fixtures under tests/snapshots/ using the insta crate for both table and diff outputs.",
-            "dependencies": [
-              "6.1",
-              "6.2"
-            ],
+            "dependencies": ["6.1", "6.2"],
             "details": "Create a directory structure under tests/snapshots/ to store snapshot files. Utilize the insta crate to capture and manage snapshots of the table and diff outputs for testing purposes.",
             "status": "done",
             "testStrategy": "Develop tests that generate the table and diff outputs and compare them against the stored snapshots. Ensure that any changes to the output are intentional and reviewed."
@@ -395,11 +350,7 @@
         "details": "Tech: clap 4.5 with derive; anyhow for errors; color choice via NO_COLOR.\nCommands and flags:\n- renamify plan <old> <new> [--include ...] [--exclude ...] [--respect-gitignore=true] [--rename-files] [--rename-dirs] [--styles=a,b,c] [--preview table|diff|json] [--plan-out path]\n- renamify apply [--plan path | --id <history id>] [--atomic true] [--commit] [--force-with-conflicts]\n- renamify undo <id>\n- renamify redo <id>\n- renamify status\n- renamify history [--limit N]\n- renamify dry-run (alias of plan with preview only)\nExit codes: 0 success, 1 conflicts, 2 invalid input, 3 internal error.\nImplementation:\n- Define ArgEnums for styles and preview formats; parse comma lists.\n- Use clap complete to generate shell completions later.\n- Graceful SIGINT handling: abort scan and remove partial plan file.\n- All heavy lifting calls into renamify-core modules from prior tasks.\n",
         "testStrategy": "- CLI integration tests with assert_cmd and assert_fs: validate flag parsing, exit codes, stdout content for each command.\n- Invalid input returns code 2; simulated internal error returns 3.\n- Dry-run does not write changes.\n- Golden tests ensure help text contains required options.",
         "priority": "medium",
-        "dependencies": [
-          4,
-          5,
-          6
-        ],
+        "dependencies": [4, 5, 6],
         "status": "done",
         "subtasks": [
           {
@@ -415,9 +366,7 @@
             "id": 2,
             "title": "Implement Argument Enums and Parsing",
             "description": "Create ArgEnums for styles and preview formats, and implement parsing for comma-separated lists.",
-            "dependencies": [
-              "7.1"
-            ],
+            "dependencies": ["7.1"],
             "details": "Define enumerations for styles and preview formats to facilitate argument parsing. Implement functionality to parse and validate comma-separated lists for these arguments.",
             "status": "done",
             "testStrategy": "Write tests to confirm that the enumerations are correctly defined and that the parsing logic accurately processes comma-separated lists into the appropriate enum variants."
@@ -426,9 +375,7 @@
             "id": 3,
             "title": "Integrate Error Handling with anyhow",
             "description": "Incorporate the anyhow crate to manage and propagate errors throughout the CLI application.",
-            "dependencies": [
-              "7.1"
-            ],
+            "dependencies": ["7.1"],
             "details": "Utilize anyhow to handle errors in a consistent and informative manner, ensuring that all potential error cases are addressed and reported appropriately.",
             "status": "done",
             "testStrategy": "Create scenarios that trigger various error conditions and verify that the application handles them gracefully, providing clear and actionable error messages."
@@ -437,9 +384,7 @@
             "id": 4,
             "title": "Implement Shell Completion Generation",
             "description": "Use clap's completion feature to generate shell completion scripts for various shells.",
-            "dependencies": [
-              "7.1"
-            ],
+            "dependencies": ["7.1"],
             "details": "Leverage clap's built-in functionality to generate shell completion scripts, enhancing the user experience by providing command and argument suggestions in supported shells.",
             "status": "done",
             "testStrategy": "Test the generated completion scripts in different shell environments to ensure they function correctly and provide accurate suggestions."
@@ -448,9 +393,7 @@
             "id": 5,
             "title": "Handle Graceful Termination Signals",
             "description": "Implement handling for SIGINT to allow the application to abort operations and clean up resources gracefully.",
-            "dependencies": [
-              "7.1"
-            ],
+            "dependencies": ["7.1"],
             "details": "Set up signal handlers to intercept SIGINT (Ctrl+C) and ensure that ongoing operations are safely aborted, and any temporary files or resources are cleaned up appropriately.",
             "status": "done",
             "testStrategy": "Simulate SIGINT during various stages of operation and verify that the application terminates processes safely and cleans up resources as expected."
@@ -464,10 +407,7 @@
         "details": "Algorithm:\n1) Create working set: list of files to edit and renames to perform from plan.\n2) Create backups in .renamify/backups/<id>/ for each file to be modified or renamed (copy bytes; preserve perms; use fs::hard_link where safe to save space).\n3) Apply content edits first: load file, re-validate matches context minimally (Task 9 will expand), write to temp file in same dir, fsync, rename over original (POSIX atomic; on Windows use replace_file equivalent with backup).\n4) Perform renames depth-first:\n   - Case-insensitive safe mode: if from.lowercase() == to.lowercase() and differs, perform two-step: from -> temp (unique suffix .renamify.tmp), then temp -> to.\n   - Detect cross-filesystem moves: fallback to copy + remove preserving metadata.\n5) On any error, rollback: restore all files from backups and revert renames.\n6) If --commit provided: run porcelain git commands: `git add -A` then `git commit -m \"renamify: rename <old> -> <new> (#<id>)\"` via std::process::Command; never touch .git internals.\nImplementation details:\n- Use fsync on file and parent directory (unix) for durability; on Windows, use File::flush and ensure rename semantics.\n- Respect symlinks: do not edit symlink targets; treat symlink path rename per policy (default: skip).\n- Log steps to .renamify/apply.log for debugging.\n",
         "testStrategy": "- End-to-end tests: induce failure mid-apply (e.g., read-only file, simulated error) and assert zero partial state after rollback.\n- Case-only rename on case-insensitive FS simulation: ensure two-step rename produces correct final state.\n- Cross-device move test using temp mount (if CI supports) or simulate via mocked fs trait.\n- Verify optional git commit is created only when requested.",
         "priority": "medium",
-        "dependencies": [
-          5,
-          7
-        ],
+        "dependencies": [5, 7],
         "status": "done",
         "subtasks": [
           {
@@ -483,9 +423,7 @@
             "id": 2,
             "title": "Implement Atomic Content Edits with Temporary Files",
             "description": "Ensure content edits are applied atomically by writing changes to temporary files before replacing the originals.",
-            "dependencies": [
-              "8.1"
-            ],
+            "dependencies": ["8.1"],
             "details": "For each file requiring content edits, load the file, minimally re-validate its context, write the changes to a temporary file in the same directory, perform an fsync operation, and then rename the temporary file over the original to achieve atomicity.",
             "status": "done",
             "testStrategy": "Simulate interruptions during the editing process to confirm that partial edits do not affect the original files. Validate that the final content matches expectations after successful edits."
@@ -494,9 +432,7 @@
             "id": 3,
             "title": "Design and Execute Depth-First File and Directory Renaming",
             "description": "Develop a strategy to perform renames in a depth-first manner, handling case-insensitive scenarios and cross-filesystem moves.",
-            "dependencies": [
-              "8.2"
-            ],
+            "dependencies": ["8.2"],
             "details": "Implement a renaming process that traverses directories depth-first. For case-insensitive filesystems, handle case-only renames by performing a two-step process: rename the original file to a temporary name, then rename it to the target name. Detect cross-filesystem moves and fallback to copy-and-delete operations while preserving metadata.",
             "status": "done",
             "testStrategy": "Test renaming operations on case-insensitive filesystems to ensure correct handling of case-only changes. Validate that cross-filesystem moves preserve file metadata and content integrity."
@@ -505,11 +441,7 @@
             "id": 4,
             "title": "Establish Rollback Mechanism for Error Handling",
             "description": "Create a rollback system to restore original files and revert renames in case of errors during the apply process.",
-            "dependencies": [
-              "8.1",
-              "8.2",
-              "8.3"
-            ],
+            "dependencies": ["8.1", "8.2", "8.3"],
             "details": "On encountering any error during the apply process, restore all files from their backups and revert any renames performed, ensuring the system returns to its original state.",
             "status": "done",
             "testStrategy": "Induce errors at various stages of the apply process and verify that the rollback mechanism correctly restores all files and directories to their initial states."
@@ -518,9 +450,7 @@
             "id": 5,
             "title": "Integrate Optional Git Commit Functionality",
             "description": "Add functionality to commit changes to a Git repository if the '--commit' flag is provided.",
-            "dependencies": [
-              "8.4"
-            ],
+            "dependencies": ["8.4"],
             "details": "If the '--commit' option is specified, execute Git commands to add all changes and commit them with a message indicating the rename operation and associated ID. Ensure that the implementation uses standard Git commands and does not interact directly with Git internals.",
             "status": "done",
             "testStrategy": "Test the commit functionality by applying changes with the '--commit' flag and verifying that the Git repository reflects the changes with the correct commit message. Ensure that the process does not interfere with Git internals."
@@ -534,10 +464,7 @@
         "details": "Conflict rules per PRD:\n- If surrounding context has changed or count of occurrences differs, mark conflict.\n- Auto-resolve if the replacement still exists in-line post-formatting change (e.g., whitespace only moved).\nImplementation approach:\n- For each planned hunk, recompute matches in the current file slice; compare expected count and positions +/- small tolerance for whitespace; if mismatch, flag.\n- Use a lightweight 3-way-like check: check if old_variant is still present at/near span; if replaced content already matches new_variant, mark as resolved and skip.\n- Collate conflicts into a report; if any conflicts and --force-with-conflicts not set, abort apply with exit code 1; write conflict details to .renamify/conflicts/<id>.json.\nPseudo:\nfor hunk in plan.matches { let window = expand_context(file, hunk.line); if !still_applicable(window, hunk) { if already_applied(window, hunk) { continue } else { conflicts.push(hunk) } } else { apply(hunk) } }\n",
         "testStrategy": "- Modify files between plan and apply to create: (a) whitespace-only edits; (b) inserted text shifting columns; (c) semantic change removing the token. Ensure (a) auto-resolves, (b) may still apply within tolerance, (c) flags conflict and exits 1.\n- Snapshot conflict JSON.\n- CLI returns correct exit codes with and without --force-with-conflicts.",
         "priority": "medium",
-        "dependencies": [
-          8,
-          4
-        ],
+        "dependencies": [8, 4],
         "status": "pending",
         "subtasks": [
           {
@@ -553,9 +480,7 @@
             "id": 2,
             "title": "Implement Lightweight 3-Way-Like Check",
             "description": "Develop a mechanism to check if the old_variant is still present at or near the span and if the replaced content already matches the new_variant.",
-            "dependencies": [
-              "9.1"
-            ],
+            "dependencies": ["9.1"],
             "details": "This check helps in determining whether the changes have already been applied or if the old content still exists, facilitating auto-resolution of format-only changes where the replacement still exists in-line.",
             "status": "pending",
             "testStrategy": "Create test cases where the old_variant is present near the span and where the replaced content matches the new_variant. Verify that such cases are auto-resolved correctly."
@@ -564,9 +489,7 @@
             "id": 3,
             "title": "Auto-Resolve Format-Only Changes",
             "description": "Automatically resolve changes that are purely formatting (e.g., whitespace adjustments) where the replacement still exists in-line.",
-            "dependencies": [
-              "9.2"
-            ],
+            "dependencies": ["9.2"],
             "details": "Utilize the lightweight 3-way-like check to identify and auto-resolve format-only changes, ensuring that such changes do not interrupt the apply process.",
             "status": "pending",
             "testStrategy": "Introduce whitespace-only edits between plan and apply stages. Confirm that these edits are auto-resolved without manual intervention."
@@ -575,10 +498,7 @@
             "id": 4,
             "title": "Collate and Report Conflicts",
             "description": "Gather all identified conflicts into a comprehensive report and handle them according to the specified rules.",
-            "dependencies": [
-              "9.1",
-              "9.2"
-            ],
+            "dependencies": ["9.1", "9.2"],
             "details": "If any conflicts are detected and the --force-with-conflicts flag is not set, abort the apply process with exit code 1. Write detailed conflict information to .renamify/conflicts/<id>.json for further analysis.",
             "status": "pending",
             "testStrategy": "Simulate scenarios with various types of conflicts, including semantic changes removing tokens. Ensure that conflicts are reported accurately and the apply process behaves as expected."
@@ -587,9 +507,7 @@
             "id": 5,
             "title": "Implement Conflict Handling Logic",
             "description": "Develop the logic to handle conflicts based on the specified rules and user inputs.",
-            "dependencies": [
-              "9.4"
-            ],
+            "dependencies": ["9.4"],
             "details": "This includes implementing the behavior to stop the apply process when conflicts are detected, unless the --force-with-conflicts flag is set, in which case the process continues despite conflicts.",
             "status": "pending",
             "testStrategy": "Test the apply process with and without the --force-with-conflicts flag in the presence of conflicts. Verify that the process stops or continues as per the flag's setting."
@@ -603,10 +521,7 @@
         "details": "Data model:\n- .renamify/history.json: append-only list [{ id, created_at, old, new, styles, includes, excludes, affected_files, renames, checksums, backups_path, revert_of?:id }]\n- Checksums via sha2 (SHA-256) per file content after apply for verification.\nImplementation:\n- After successful apply, write entry with all metadata, list of files touched, and backup dir.\n- Undo <id>: read entry, restore all files from backups_path, reverse renames (to->from) with same staged logic; append a new history entry with revert_of=id.\n- Redo <id>: re-apply using stored plan and backups as needed; append entry linking to original.\n- status: show last plan id, pending conflicts, and whether working tree is clean per our records (no git interaction unless --commit was used earlier).\n- history --limit N: pretty-print table or JSON.\n",
         "testStrategy": "- Unit tests for serialization/deserialization of history entries.\n- Integration: apply then undo and verify exact byte-for-byte restoration and filenames.\n- Redo after undo returns repo to post-apply state.\n- Corruption test: tamper with history.json; CLI should detect and refuse to operate with clear error.",
         "priority": "medium",
-        "dependencies": [
-          8,
-          7
-        ],
+        "dependencies": [8, 7],
         "status": "done",
         "subtasks": [
           {
@@ -622,9 +537,7 @@
             "id": 2,
             "title": "Implement Undo Command Functionality",
             "description": "Create the 'undo <id>' command to revert changes associated with a specific plan ID by restoring files from backups and reversing renames.",
-            "dependencies": [
-              "10.1"
-            ],
+            "dependencies": ["10.1"],
             "details": "Develop functionality to read the specified history entry, restore all affected files from the backups_path, and reverse any renames using the same staged logic. Append a new history entry indicating the revert operation with a link to the original plan ID.",
             "status": "done",
             "testStrategy": "Conduct integration tests that apply a plan and then perform an undo operation, verifying that the repository is restored to its exact previous state, including file contents and names."
@@ -633,10 +546,7 @@
             "id": 3,
             "title": "Implement Redo Command Functionality",
             "description": "Develop the 'redo <id>' command to reapply changes associated with a specific plan ID using stored plans and backups as needed.",
-            "dependencies": [
-              "10.1",
-              "10.2"
-            ],
+            "dependencies": ["10.1", "10.2"],
             "details": "Create functionality to reapply the changes from a specified history entry, utilizing the stored plan and backups. Append a new history entry linking to the original plan ID to indicate the redo operation.",
             "status": "done",
             "testStrategy": "Perform integration tests that apply a plan, undo it, and then redo it, ensuring the repository returns to the post-apply state accurately."
@@ -645,9 +555,7 @@
             "id": 4,
             "title": "Implement Status Command Functionality",
             "description": "Create the 'status' command to display the last plan ID, pending conflicts, and the cleanliness of the working tree according to recorded history.",
-            "dependencies": [
-              "10.1"
-            ],
+            "dependencies": ["10.1"],
             "details": "Develop functionality to assess the current state of the repository by comparing it against the recorded history. Display the last applied plan ID, any pending conflicts, and indicate whether the working tree is clean. Avoid direct interaction with Git unless the --commit flag was used previously.",
             "status": "done",
             "testStrategy": "Develop unit tests to verify the accuracy of the status output under various scenarios, including clean states, pending conflicts, and after applying, undoing, and redoing plans."
@@ -656,9 +564,7 @@
             "id": 5,
             "title": "Implement History Listing Command",
             "description": "Develop the 'history --limit N' command to display a list of past plans in a user-friendly format.",
-            "dependencies": [
-              "10.1"
-            ],
+            "dependencies": ["10.1"],
             "details": "Create functionality to read the history.json file and present the list of past plans up to a specified limit. Implement options to display the history in a table or JSON format for user convenience.",
             "status": "done",
             "testStrategy": "Conduct unit tests to ensure the history listing accurately reflects the contents of history.json and respects the specified limit and format options."
@@ -672,10 +578,7 @@
         "details": "Implementation:\n- Detect case sensitivity at startup by probe file test in temp dir; cache result.\n- Windows long paths: opt-in by normalizing to \\?\\-prefixed paths for long operations where needed; avoid exceeding MAX_PATH by using canonicalization.\n- Symlinks: by default, do not traverse symlinked directories outside repo root; skip editing symlink targets; allow renaming the symlink itself if its name matches; ensure no path traversal beyond repo root using same-file and canonicalization checks.\n- Permissions and locks: implement retry with exponential backoff on Windows sharing violations; surface clear error messages.\n- Reserved names filter for Windows and invalid characters; plan step should preemptively catch and flag.\n",
         "testStrategy": "- Platform-specific tests via conditional compilation: simulate case-insensitive behavior; symlink tests ensure no traversal outside root.\n- Windows CI: create locked file (open handle) and ensure retry logic behaves; verify helpful error.\n- Path length stress test.",
         "priority": "medium",
-        "dependencies": [
-          5,
-          8
-        ],
+        "dependencies": [5, 8],
         "status": "pending",
         "subtasks": [
           {
@@ -732,10 +635,7 @@
         "details": "Performance:\n- Ensure WalkBuilder parallelism tuned (threads = num_cpus).\n- Stream plan.json arrays to keep memory bounded; document max buffer sizes.\n- Use memmap2 for large files; fallback to buffered IO where mmap unavailable.\n- Benchmark with criterion against synthetic repos.\nTesting:\n- Property tests for tokenization/regex boundaries (proptest).\n- Fuzz tests: regex generation and boundary checker with cargo-fuzz harness; run in CI nightly schedule to save time.\n- Large-repo integration perf test gated behind env var PERF=1.\n",
         "testStrategy": "- Criterion benchmarks checked into benches/ and run locally; ensure <1.5x ripgrep on test corpus.\n- Run cargo-fuzz locally; CI scheduled workflow runs for limited time (e.g., 10 minutes) and reports crashes.\n- Property tests must pass and contribute to 100% coverage.",
         "priority": "medium",
-        "dependencies": [
-          4,
-          3
-        ],
+        "dependencies": [4, 3],
         "status": "pending",
         "subtasks": [
           {
@@ -792,9 +692,7 @@
         "details": "Tech choices:\n- Node 20 LTS, TypeScript 5.5, VS Code engine ^1.92.0, esbuild 0.23 or tsup 8 for bundling; ESLint 9, Prettier 3.\nImplementation:\n- Commands: \"Renamify: Plan Rename\", \"Renamify: Preview Plan\", \"Renamify: Apply Plan\", \"Renamify: Undo Last Renamify\".\n- QuickPick/InputBox UX to capture old/new names, styles, include/exclude; persist last values per-workspace.\n- Spawn CLI via child_process.spawn; capture JSON/stdout; support cancel via AbortController and proc.kill(); display progress via window.withProgress.\n- Preview webview: render file list with badges for content/rename; show unified diffs (use a client-side diff renderer like diff2html 3.x) with lazy expand; allow checkbox to filter styles.\n- Binary management: configurable path to CLI; if not found, prompt to download platform-specific binary from GitHub Releases or use cargo install; cache under extension storage path.\n- Error surfaces: show conflicts/non-zero exit codes with actionable messages.\nPackaging:\n- package.json contributes commands, configuration (renamify.cliPath), and activation events.\n",
         "testStrategy": "- Use @vscode/test-electron to run integration tests on macOS/Windows sample repo.\n- Mock child process to simulate CLI outputs for deterministic tests.\n- Manual QA checklist: cancel long-running plan; preview updates; apply success; undo success.\n- VSIX build verification and smoke tests.",
         "priority": "medium",
-        "dependencies": [
-          7
-        ],
+        "dependencies": [7],
         "status": "pending",
         "subtasks": [
           {
@@ -810,9 +708,7 @@
             "id": 2,
             "title": "Implement Renamify Commands and User Input Handling",
             "description": "Develop the core commands for the extension and implement user interfaces for capturing necessary inputs.",
-            "dependencies": [
-              "13.1"
-            ],
+            "dependencies": ["13.1"],
             "details": "Create the commands 'Renamify: Plan Rename', 'Renamify: Preview Plan', 'Renamify: Apply Plan', and 'Renamify: Undo Last Renamify'. Implement QuickPick and InputBox interfaces to capture old/new names, styles, and include/exclude options. Ensure that the last values are persisted per workspace.",
             "status": "pending",
             "testStrategy": "Write unit tests to validate command registration and user input handling. Perform manual testing to ensure commands execute as expected and inputs are correctly captured and persisted."
@@ -821,10 +717,7 @@
             "id": 3,
             "title": "Integrate with Renamify CLI and Manage Processes",
             "description": "Set up communication between the extension and the Renamify CLI, handling process management and progress reporting.",
-            "dependencies": [
-              "13.1",
-              "13.2"
-            ],
+            "dependencies": ["13.1", "13.2"],
             "details": "Use 'child_process.spawn' to invoke the Renamify CLI, capturing JSON and stdout outputs. Implement support for cancellation using 'AbortController' and 'proc.kill()'. Display progress to the user via 'window.withProgress'.",
             "status": "pending",
             "testStrategy": "Mock the child process to simulate CLI outputs for deterministic tests. Conduct integration tests to ensure correct process management and progress reporting."
@@ -833,11 +726,7 @@
             "id": 4,
             "title": "Develop Diff-Style Preview Webview",
             "description": "Create a webview to display a diff-style preview of planned changes.",
-            "dependencies": [
-              "13.1",
-              "13.2",
-              "13.3"
-            ],
+            "dependencies": ["13.1", "13.2", "13.3"],
             "details": "Implement a webview that renders a file list with badges indicating content or rename changes. Use a client-side diff renderer like 'diff2html' 3.x to show unified diffs with lazy expand functionality. Include a checkbox to filter styles.",
             "status": "pending",
             "testStrategy": "Write unit tests for the webview's rendering logic. Perform manual testing to ensure the webview displays diffs correctly and responds to user interactions as expected."
@@ -846,12 +735,7 @@
             "id": 5,
             "title": "Implement Binary Management and Error Handling",
             "description": "Manage the Renamify CLI binary and handle errors gracefully within the extension.",
-            "dependencies": [
-              "13.1",
-              "13.2",
-              "13.3",
-              "13.4"
-            ],
+            "dependencies": ["13.1", "13.2", "13.3", "13.4"],
             "details": "Provide a configurable path to the Renamify CLI. If the binary is not found, prompt the user to download the platform-specific binary from GitHub Releases or use 'cargo install'. Cache the binary under the extension's storage path. Display actionable messages for conflicts and non-zero exit codes.",
             "status": "pending",
             "testStrategy": "Write unit tests to verify binary management logic and error handling. Conduct manual testing to ensure the extension prompts for binary installation when necessary and handles errors appropriately."
@@ -865,9 +749,7 @@
         "details": "Tech: Node 20 LTS, TypeScript 5.5, zod 3.23 for schemas, execa 8 for process management, tsup 8 bundling.\nImplementation:\n- Define zod schemas mirroring .renamify/plan.json and history entries.\n- Tools: plan(old,new,options), apply(planPath?|id, atomic?, commit?), undo(id), history(limit?), preview(planPath?).\n- Spawn CLI with proper args; parse stdout/stderr; map exit codes to structured error objects; return JSON suitable for Cursor or other MCP clients.\n- Cancellation: support AbortSignal to kill child process.\n- Distribution: package.json { \"name\": \"@renamify/mcp\", \"bin\": { \"renamify-mcp\": \"dist/index.js\" } }; publish to npm; npx-compatible.\n",
         "testStrategy": "- Unit tests: schema validation, argument mapping, error mapping from exit codes.\n- Integration tests: use a temporary git repo and invoke plan/apply via the server; verify outputs.\n- E2E smoke with Cursor (if available in CI) or mock client that exercises each tool.",
         "priority": "medium",
-        "dependencies": [
-          7
-        ],
+        "dependencies": [7],
         "status": "pending",
         "subtasks": [
           {
@@ -883,9 +765,7 @@
             "id": 2,
             "title": "Implement MCP Tools Wrapping CLI Commands",
             "description": "Develop MCP tools (plan, apply, undo, history, preview) that wrap corresponding CLI commands, handling input/output and error mapping.",
-            "dependencies": [
-              "14.1"
-            ],
+            "dependencies": ["14.1"],
             "details": "Create MCP tools that invoke the CLI with appropriate arguments, parse stdout/stderr, map exit codes to structured error objects, and return JSON responses suitable for MCP clients.",
             "status": "pending",
             "testStrategy": "Conduct unit tests for each tool to verify correct argument mapping, output parsing, and error handling. Perform integration tests by invoking the tools and validating the responses."
@@ -894,9 +774,7 @@
             "id": 3,
             "title": "Implement Process Management with Execa",
             "description": "Utilize Execa 8 to manage child processes for CLI command execution, ensuring proper argument passing, output handling, and error management.",
-            "dependencies": [
-              "14.2"
-            ],
+            "dependencies": ["14.2"],
             "details": "Use Execa 8 to spawn CLI processes with the correct arguments, capture stdout/stderr, and handle process termination and errors effectively.",
             "status": "pending",
             "testStrategy": "Write unit tests to verify that processes are spawned with the correct arguments and that outputs and errors are handled as expected. Include tests for process termination scenarios."
@@ -905,9 +783,7 @@
             "id": 4,
             "title": "Implement Cancellation Support with AbortSignal",
             "description": "Integrate AbortSignal to allow for the cancellation of ongoing CLI processes, ensuring that child processes are terminated gracefully when needed.",
-            "dependencies": [
-              "14.3"
-            ],
+            "dependencies": ["14.3"],
             "details": "Incorporate AbortSignal into the process management logic to enable the cancellation of child processes, ensuring that resources are released appropriately.",
             "status": "pending",
             "testStrategy": "Develop tests to verify that processes can be cancelled mid-execution and that they terminate gracefully without leaving orphaned processes."
@@ -916,9 +792,7 @@
             "id": 5,
             "title": "Prepare for Distribution and Publish to npm",
             "description": "Configure the project for distribution by setting up package.json with the appropriate metadata and publishing the package to npm.",
-            "dependencies": [
-              "14.4"
-            ],
+            "dependencies": ["14.4"],
             "details": "Update package.json with the name '@renamify/mcp', define the bin entry for 'renamify-mcp' pointing to 'dist/index.js', and ensure the package is npx-compatible. Publish the package to npm.",
             "status": "pending",
             "testStrategy": "Verify that the package installs correctly via npm and that the 'renamify-mcp' command is executable. Ensure that all dependencies are correctly bundled and that the package functions as expected in a clean environment."
@@ -932,13 +806,7 @@
         "details": "Packaging:\n- GitHub Actions release workflow building for macOS (x64, arm64), Linux (x64, arm64, MUSL x64), Windows (x64). Use actions-rs/cargo and zig toolchain or cross only if needed; produce archives and checksums.\n- Homebrew: create a tap formula that downloads GitHub release tarballs; update on release.\n- curl | sh installer: script that resolves OS/arch, downloads binary to ~/.local/bin or /usr/local/bin.\n- Windows: Scoop bucket manifest; optionally winget later.\n- cargo install: publish renamify-cli crate; document feature flags and minimal deps.\nDocs:\n- README: quickstart commands, examples mirroring PRD Appendix A, performance notes, safety model.\n- CONTRIBUTING: dev setup, CI, coverage requirements, coding standards.\n- CHANGELOG using Keep a Changelog.\n- CLAUDE.md: state unreleased, no backwards compatibility, delete old code promptly, prioritize DX.\n- Examples/ folder: React component rename, Ruby model rename including expected outputs.\n- Minimum git version documented (recommend >=2.35 for robust rename/case handling on Windows).\n",
         "testStrategy": "- Fresh machine tests in CI using containers/VMs: run installer scripts and verify `renamify --help` works.\n- Validate Homebrew/Scoop manifests via their linters, and tap install succeeds.\n- Docs link checks; copy-paste commands from README in CI to ensure they run.\n- Release dry-run workflow that builds artifacts without publishing.",
         "priority": "medium",
-        "dependencies": [
-          7,
-          8,
-          10,
-          13,
-          14
-        ],
+        "dependencies": [7, 8, 10, 13, 14],
         "status": "pending",
         "subtasks": [
           {
@@ -954,9 +822,7 @@
             "id": 2,
             "title": "Create and Maintain Homebrew Tap Formula",
             "description": "Develop a Homebrew tap formula that downloads the GitHub release tarballs and updates on each release.",
-            "dependencies": [
-              "15.1"
-            ],
+            "dependencies": ["15.1"],
             "details": "Establish a Homebrew tap repository following the naming convention 'homebrew-<repository>' for easy access. Create a formula that fetches the latest release tarballs from GitHub and installs the binaries. Implement automation to update the formula with each new release.",
             "status": "pending",
             "testStrategy": "Test the Homebrew formula by installing it on a clean macOS environment. Ensure that the installation process completes without errors and that the installed binaries function as expected. Validate the update mechanism by simulating new releases and confirming that the formula updates correctly."
@@ -965,9 +831,7 @@
             "id": 3,
             "title": "Develop Cross-Platform Installer Scripts",
             "description": "Create installer scripts for various platforms: a curl | sh installer for Unix-like systems, a Scoop bucket manifest for Windows, and consider a winget manifest for future Windows support.",
-            "dependencies": [
-              "15.1"
-            ],
+            "dependencies": ["15.1"],
             "details": "For Unix-like systems, develop a shell script that detects the operating system and architecture, downloads the appropriate binary, and installs it to ~/.local/bin or /usr/local/bin. For Windows, create a Scoop bucket manifest that points to the latest release binaries. Optionally, prepare a winget manifest for future integration.",
             "status": "pending",
             "testStrategy": "Test the installer scripts on fresh installations of each target platform. Verify that the scripts correctly identify the system architecture, download the appropriate binaries, and place them in the correct directories. Ensure that the installed binaries are executable and function as intended."
@@ -976,9 +840,7 @@
             "id": 4,
             "title": "Publish renamify-cli Crate to crates.io",
             "description": "Prepare and publish the renamify-cli crate to crates.io, documenting feature flags and minimal dependencies.",
-            "dependencies": [
-              "15.1"
-            ],
+            "dependencies": ["15.1"],
             "details": "Ensure that the renamify-cli crate is ready for publication by verifying that all dependencies are correctly specified and that the code adheres to Rust's packaging guidelines. Document available feature flags and any minimal dependencies required for users. Publish the crate to crates.io and monitor for any issues.",
             "status": "pending",
             "testStrategy": "Before publishing, run cargo package to ensure that the crate packages correctly. After publishing, install the crate from crates.io on a clean environment to verify that it installs and runs without issues. Check that all documented feature flags function as described."
@@ -999,11 +861,9 @@
         "title": "Fix gitignore handling for rename operations",
         "description": "Rename operations must match ripgrep's unrestricted behavior using ignore::WalkBuilder wiring. We already use the correct primitives; the task is to configure them properly across scanner and rename so that -u/-uu/-uuu behave exactly like ripgrep: default respects all ignore files and skips hidden; -u disables .gitignore only; -uu disables all ignore files and shows hidden; -uuu also treats binary as text.",
         "status": "done",
-        "dependencies": [
-          7
-        ],
+        "dependencies": [7],
         "priority": "high",
-        "details": "Background: Both scanner and rename modules already use ignore::WalkBuilder, but their configuration isn't wired to match ripgrep's unrestricted levels. We need a single source of truth for how PlanOptions affects WalkBuilder and, for -uuu, how binary detection is handled in the scanner.\nRequired behavior (mirror ripgrep):\n- Default (level 0): respect all ignore files (.gitignore, .ignore, .rgignore, git excludes) and skip hidden files.\n- -u (level 1): disable .gitignore only; still respect other ignore files (.ignore, .rgignore, global excludes) and skip hidden files.\n- -uu (level 2): disable all ignore files; show hidden files.\n- -uuu (level 3): same as -uu and additionally treat binary files as text in scanning.\nImplementation plan:\n1) PlanOptions: add unrestricted level 0-3 (or equivalent enum) with Default = 0. Derive a binary_as_text flag from level == 3 for scanner use. Maintain backward compatibility with any existing flags (e.g., --respect-gitignore) by mapping them to the new level as appropriate.\n2) Centralize WalkBuilder configuration: create a helper (e.g., configure_walkbuilder(root, opts)) used by both scanner and rename modules. Map levels to ignore::WalkBuilder as follows:\n   - Level 0: git_ignore(true), ignore(true), parents(true), hidden(true)\n   - Level 1: git_ignore(false), ignore(true), parents(true), hidden(true)\n   - Level 2: git_ignore(false), ignore(false), parents(false), hidden(false)\n   - Level 3: same as Level 2; scanner additionally sets binary_as_text = true to avoid binary short-circuiting\n   Notes:\n   - parents(true) ensures parent .gitignore files are respected when enabled.\n   - \"hidden(true)\" means skip hidden files; \"hidden(false)\" shows them.\n3) Apply the same configuration in rename planning and scanning so the set of candidate files/dirs is identical across modules.\n4) CLI: support ripgrep-style -u flag that can be repeated up to three times (-u/-uu/-uuu) to set the unrestricted level. Keep existing options working; precedence: explicit -u level overrides legacy flags. Update help text accordingly.\n5) Documentation: DOCUMENTATION.md has been created and must describe unrestricted levels and examples. Ensure code comments reference it and keep it in sync with the implemented behavior.\n6) Tests: add comprehensive tests covering default, -u, -uu, -uuu for both scanner and rename. Include cases for .gitignore vs .ignore/.rgignore, hidden files, and binary content handling in scanner at -uuu.\nNotes:\n- Rename operations are path-based; binary_as_text only affects scanner/content reading. The traversal set must still match between modules at each level.\n- Do not change dependencies; build atop CLI from Task 7 by adding the -u flag mapping.",
+        "details": "Background: Both scanner and rename modules already use ignore::WalkBuilder, but their configuration isn't wired to match ripgrep's unrestricted levels. We need a single source of truth for how PlanOptions affects WalkBuilder and, for -uuu, how binary detection is handled in the scanner.\nRequired behavior (mirror ripgrep):\n- Default (level 0): respect all ignore files (.gitignore, .ignore, .rgignore, git excludes) and skip hidden files.\n- -u (level 1): disable .gitignore only; still respect other ignore files (.ignore, .rgignore, global excludes) and skip hidden files.\n- -uu (level 2): disable all ignore files; include hidden files.\n- -uuu (level 3): same as -uu and additionally treat binary files as text in scanning.\nImplementation plan:\n1) PlanOptions: add unrestricted level 0-3 (or equivalent enum) with Default = 0. Derive a binary_as_text flag from level == 3 for scanner use. Maintain backward compatibility with any existing flags (e.g., --respect-gitignore) by mapping them to the new level as appropriate.\n2) Centralize WalkBuilder configuration: create a helper (e.g., configure_walkbuilder(root, opts)) used by both scanner and rename modules. Map levels to ignore::WalkBuilder as follows:\n   - Level 0: git_ignore(true), ignore(true), parents(true), hidden(true)\n   - Level 1: git_ignore(false), ignore(true), parents(true), hidden(true)\n   - Level 2: git_ignore(false), ignore(false), parents(false), hidden(false)\n   - Level 3: same as Level 2; scanner additionally sets binary_as_text = true to avoid binary short-circuiting\n   Notes:\n   - parents(true) ensures parent .gitignore files are respected when enabled.\n   - \"hidden(true)\" means skip hidden files; \"hidden(false)\" shows them.\n3) Apply the same configuration in rename planning and scanning so the set of candidate files/dirs is identical across modules.\n4) CLI: support ripgrep-style -u flag that can be repeated up to three times (-u/-uu/-uuu) to set the unrestricted level. Keep existing options working; precedence: explicit -u level overrides legacy flags. Update help text accordingly.\n5) Documentation: DOCUMENTATION.md has been created and must describe unrestricted levels and examples. Ensure code comments reference it and keep it in sync with the implemented behavior.\n6) Tests: add comprehensive tests covering default, -u, -uu, -uuu for both scanner and rename. Include cases for .gitignore vs .ignore/.rgignore, hidden files, and binary content handling in scanner at -uuu.\nNotes:\n- Rename operations are path-based; binary_as_text only affects scanner/content reading. The traversal set must still match between modules at each level.\n- Do not change dependencies; build atop CLI from Task 7 by adding the -u flag mapping.",
         "testStrategy": "- Unit tests for WalkBuilder wiring using a fixture tree:\n  - Create temp repos with: .gitignore ignoring a subdir; .ignore ignoring a file; .rgignore ignoring a pattern; hidden files/dirs; a binary file. For each level (0..3), list collected paths from configure_walkbuilder and assert:\n    - Level 0: .gitignore/.ignore/.rgignore respected; hidden skipped.\n    - Level 1: .gitignore NOT respected; .ignore/.rgignore respected; hidden skipped.\n    - Level 2: all ignore files disabled; hidden shown.\n    - Level 3: same paths as Level 2.\n- Scanner binary behavior tests:\n  - With a binary file containing the search bytes, assert:\n    - Level 0/1/2: scanner treats it as binary (no content match if we short-circuit on binary).\n    - Level 3: scanner treats binary as text; match is found.\n- Rename planning integration tests:\n  - For each level, generate a plan and assert included/excluded paths match expectations from the unit tests above.\n  - Ensure consistency: for each level, the set of paths considered by scanner equals the set considered by rename planner.\n- CLI integration tests (assert_cmd/assert_fs):\n  - renamify plan with -u/-uu/-uuu produces the expected plan paths; default behaves as level 0.\n  - Help text documents -u flag (repeatable up to three times) without regressing existing flags.\n- Documentation tests:\n  - Validate that DOCUMENTATION.md examples are in sync: run a doc example (if applicable) or snapshot test key snippets describing levels.",
         "subtasks": [
           {
@@ -1069,9 +929,7 @@
         "details": "Create a comprehensive documentation website that:\n- Uses Astro Starlight for a modern, searchable docs experience\n- Includes proper navigation structure\n- Has sections for: Getting Started, Commands Reference, Configuration, Examples, Integration Guides, API Reference (for library usage)\n- Supports dark/light mode\n- Has good SEO and social sharing metadata\n- Can be deployed to GitHub Pages or Vercel\n- Includes search functionality\n- Has proper syntax highlighting for code examples",
         "testStrategy": "- Verify all links work (no 404s)\n- Check that search indexes all content\n- Validate that examples in docs match actual CLI behavior\n- Test responsive design on mobile/tablet/desktop\n- Ensure dark/light mode works properly\n- Validate SEO metadata and OpenGraph tags",
         "status": "pending",
-        "dependencies": [
-          15
-        ],
+        "dependencies": [15],
         "priority": "low",
         "subtasks": []
       },
@@ -1082,10 +940,7 @@
         "details": "Scope and behavior:\n- Introduce a new repeatable CLI option --exclude-match <TEXT> on renamify plan that allows users to specify exact match texts to be skipped from the generated plan. Matching is exact, byte-for-byte, case-sensitive, and literal (no regex/glob semantics). Multiple values are supported either by repeating the flag or via comma-separated values in a single flag instance.\n- Apply this filter to both content matches (MatchHunk.before) and rename candidates (file/dir rename source names) so excluded texts are not included in plan.json.\n- Persist the user-supplied exclude list in the plan metadata for auditability.\n\nCLI (clap 4.5) changes:\n- In the plan subcommand args (main.rs), add a Vec<String> field for exclude-match. Best practice in clap 4 is to use a Vec type to accept multiple occurrences and value_delimiter to support comma-separated lists.\n  Example (Rust):\n  #[derive(clap::Parser)]\n  struct PlanArgs {\n      // ...existing args...\n      #[arg(\n          long = \"exclude-match\",\n          value_name = \"TEXT\",\n          num_args = 1..,\n          value_delimiter = ','.into(),\n          help = \"Skip matches whose exact text equals any provided value; repeatable or comma-separated\"\n      )]\n      exclude_match: Vec<String>,\n  }\n- Thread this vector into PlanOptions (see below) when invoking the scanning/planning API.\n\nCore API changes (scanner/plan generator):\n- Extend PlanOptions to carry the new setting:\n  pub struct PlanOptions {\n      // existing fields...\n      pub exclude_matches: Vec<String>,\n  }\n- Optionally, record the list in Plan for traceability (add a new optional field):\n  pub struct Plan { /* existing fields... */ pub excluded_matches: Option<Vec<String>>, }\n  This is a backward-compatible additive field. If you prefer not to touch Plan, you may omit storing it, but including it improves debuggability.\n\nFiltering logic (fast path and minimal allocations):\n- At the start of the scan, construct a HashSet<String> (or FxHashSet if crate is in use) from options.exclude_matches, after trimming surrounding whitespace and deduplicating. Reject empty strings.\n- Content matches: Prior to pushing a MatchHunk into plan.matches, compare the candidate hunk.before against the set; if present, skip emitting the hunk.\n- Rename candidates: When computing renames for files/dirs, derive the source name string used for the style-based transformation (typically the basename for files and the directory name for dirs). If that source equals any excluded string, skip emitting that Rename entry. Do not attempt partial/path-segment matching beyond the style source name; keep semantics predictable and literal.\n- Performance: The check is O(1) with a HashSet; place it on the hot path right before pushing results. Avoid cloning strings unnecessarily; compare &str against the set by interning the set as String and comparing via &str.\n\nEdge cases and considerations:\n- Exact, literal semantics only. No wildcard/regex. Document this clearly in the help text.\n- Case sensitivity: matches must equal exactly; do not normalize case or Unicode. Document this.\n- Interaction with includes/excludes and ignore levels: apply include/exclude globs and ignore handling first, then apply exclude-match filtering to the resulting candidate matches.\n- Styles interaction: The excluded text is compared against the hunk.before, which is the text as found. If the user wants to exclude multiple style variants, they must pass each explicitly.\n- Plan versioning: Adding an optional field to Plan is backward-compatible; keep version as-is if consumers tolerate additive fields. If consumers are strict, gate the field behind a feature flag or skip storing it in Plan.\n- Help and UX: Update --help for plan to describe the new option with examples, including repetition and comma-separated usage.\n\nExample usage:\n- renamify plan foo bar --exclude-match bazFooQux\n- renamify plan foo bar --exclude-match bazFooQux --exclude-match quux\n- renamify plan foo bar --exclude-match bazFooQux,quux\n",
         "testStrategy": "Unit tests (Rust):\n- Parser tests (clap): Use clap::Command::debug_assert to ensure arg shape; confirm that repeated flags and comma-separated values parse into Vec<String> correctly and reject empty strings.\n- Options propagation: A unit test that constructs PlanArgs with multiple exclude-match values and verifies PlanOptions.exclude_matches receives them intact.\n\nScanner/Planner tests:\n- Content match filtering: In a temp repo, create files containing: \"foo\", \"bazFooQux\", \"Foo\", \"bazfooqux\". Run plan for old=foo new=bar with styles that would match the variants you support. Assert that without exclude-match, a hunk exists for \"bazFooQux\"; with --exclude-match bazFooQux, that hunk is absent while other foo-derived matches remain.\n- Rename filtering: Create files or dirs named bazFooQux that would be scheduled for rename under the same plan. Assert the rename is suppressed when excluded.\n- Mixed values: Provide multiple exclude values via repeated flags and via comma-separated in a single flag; ensure both are honored and duplicates do not cause issues.\n- Non-match stability: Provide an exclude value that does not occur; ensure plan output is unchanged relative to baseline.\n- Performance sanity: On a generated directory with many matches, ensure enabling exclude-match with a small set does not meaningfully regress scan time (>5% tolerance) compared to baseline (coarse-grained assertion).\n\nCLI integration tests (assert_cmd + assert_fs):\n- Help text includes the new option and documents the semantics and examples.\n- End-to-end: Run renamify plan ... --exclude-match bazFooQux and verify plan.json contains no matches whose before equals \"bazFooQux\" and, if rename flags are on, no rename entries for that source name.\n- Apply pass-through: Execute renamify apply on the produced plan and confirm that files previously containing bazFooQux remain unchanged while other matches are applied.\n\nRegression tests:\n- Ensure behavior is unaffected when the flag is omitted.\n- Verify interaction with existing include/exclude globs and ignore levels remains correct (e.g., using the fixtures from ignore handling tests; the exclude-match filtering should not re-include ignored paths).",
         "status": "in-progress",
-        "dependencies": [
-          7,
-          4
-        ],
+        "dependencies": [7, 4],
         "priority": "medium",
         "subtasks": [
           {
@@ -1101,9 +956,7 @@
             "id": 2,
             "title": "Extend PlanOptions to include exclude_matches",
             "description": "Modify the PlanOptions struct to carry the new exclude_matches setting, enabling the core API to recognize and utilize the exclusion list.",
-            "dependencies": [
-              "18.1"
-            ],
+            "dependencies": ["18.1"],
             "details": "Add a Vec<String> field named exclude_matches to the PlanOptions struct. Ensure that this field is properly initialized and accessible throughout the planning process.",
             "status": "pending",
             "testStrategy": "Develop unit tests to confirm that the exclude_matches field is correctly populated and accessible within the PlanOptions struct."
@@ -1112,9 +965,7 @@
             "id": 3,
             "title": "Implement filtering logic for content matches and rename candidates",
             "description": "Develop the logic to filter out matches and rename candidates based on the exclude_matches list, ensuring that excluded texts are not included in plan.json.",
-            "dependencies": [
-              "18.2"
-            ],
+            "dependencies": ["18.2"],
             "details": "Construct a HashSet<String> from the exclude_matches list, trimming surrounding whitespace and deduplicating entries. For content matches, compare each MatchHunk.before against the set and skip emitting the hunk if a match is found. For rename candidates, compare the source name string used for the style-based transformation against the set and skip emitting the Rename entry if a match is found.",
             "status": "pending",
             "testStrategy": "Create unit tests to verify that matches and rename candidates containing excluded texts are correctly filtered out and not included in the generated plan.json."
@@ -1123,9 +974,7 @@
             "id": 4,
             "title": "Persist exclude_matches list in plan metadata",
             "description": "Record the user-supplied exclude_matches list in the plan metadata for auditability and traceability.",
-            "dependencies": [
-              "18.2"
-            ],
+            "dependencies": ["18.2"],
             "details": "Add an optional field named excluded_matches to the Plan struct to store the exclude_matches list. Ensure that this field is populated when the exclude_matches option is used and remains backward-compatible.",
             "status": "pending",
             "testStrategy": "Write unit tests to confirm that the excluded_matches field is correctly populated in the Plan struct and that the plan remains backward-compatible when the field is absent."
@@ -1134,9 +983,7 @@
             "id": 5,
             "title": "Update documentation and help text",
             "description": "Revise the CLI help text and documentation to include information about the new --exclude-match option, its usage, and examples.",
-            "dependencies": [
-              "18.1"
-            ],
+            "dependencies": ["18.1"],
             "details": "Update the --help output for the renamify plan command to describe the new --exclude-match option, including its exact, case-sensitive, and literal matching semantics. Provide examples demonstrating the use of repeated flags and comma-separated values.",
             "status": "pending",
             "testStrategy": "Conduct manual testing to ensure that the updated help text and documentation accurately describe the --exclude-match option and provide clear usage examples."

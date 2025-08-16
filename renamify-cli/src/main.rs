@@ -28,7 +28,7 @@ struct Cli {
 
     /// Reduce the level of "smart" filtering. Can be repeated up to 3 times.
     /// -u: Don't respect .gitignore files
-    /// -uu: Don't respect any ignore files (.gitignore, .ignore, .rgignore, .rnignore), show hidden files
+    /// -uu: Don't respect any ignore files (.gitignore, .ignore, .rgignore, .rnignore), include hidden files
     /// -uuu: Same as -uu, plus treat binary files as text
     #[arg(short = 'u', long = "unrestricted", global = true, action = clap::ArgAction::Count, verbatim_doc_comment)]
     unrestricted: u8,
