@@ -38,6 +38,7 @@ export default defineConfig({
               label: "Why Not Search and Replace?",
               slug: "why-not-search-and-replace",
             },
+            { label: "FAQ", link: "/#frequently-asked-questions" },
           ],
         },
         {

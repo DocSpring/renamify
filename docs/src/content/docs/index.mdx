@@ -117,7 +117,7 @@ While IDEs have had context-aware search and replace capabilities for decades, t
 
 5. **Undo/Redo History**: Unlike IDE operations, Renamify maintains a persistent history that survives editor restarts.
 
-In the new era of AI development, productivity has skyrocketed, but AI agents are still missing a lot of tooling to make them more effective. Renamify helps fill one of those gaps.
+Productivity has skyrocketed in the new era of AI development, but AI agents are still missing a lot of tooling to make them more effective. Renamify helps fill one of these gaps.
 
 </details>
 
@@ -211,30 +211,6 @@ It also ignores:
 - Common build artifacts (`node_modules/`, `target/`, `dist/`, etc.)
 
 Use `-u`, `-uu`, or `-uuu` flags to override ignore rules progressively.
-
-</details>
-
-<details>
-<summary>Can I use Renamify in CI/CD pipelines?</summary>
-
-Absolutely! Renamify is designed for automation:
-
-```bash
-# Check for naming consistency
-renamify plan oldConvention newConvention --dry-run
-
-# Automated refactoring with safety
-renamify rename oldName newName --atomic --commit
-
-# Verify no uncommitted renames
-renamify status --check
-```
-
-Exit codes:
-- 0: Success
-- 1: Conflicts detected
-- 2: Invalid input
-- 3: Internal error
 
 </details>
 
