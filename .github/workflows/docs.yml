@@ -22,7 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Wait for Tests
+      - name: Wait for CI
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.sha }}
@@ -35,6 +35,14 @@ jobs:
         with:
           ref: ${{ github.sha }}
           check-name: "Self-Hosting Demo (ubuntu-latest)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+      - name: Wait for MCP
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: "MCP Server (ubuntu-latest)"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
