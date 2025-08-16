@@ -16,7 +16,7 @@ fn test_hyphenated_capitalized_replacement() {
         &test_file,
         r#"# Documentation
 
-- `.rnignore` - Tool-specific ignore patterns (useful for excluding files from refactoring without affecting Git)
+- `.rnignore` - Tool-specific ignore patterns (useful for excluding files from renaming without affecting Git)
 - Use Tool-compatible tools for better integration
 - The Tool-engine processes files efficiently
 - Try tool-specific settings (lowercase should remain kebab)

@@ -7,7 +7,7 @@ import { Code, Steps, Card, CardGrid } from '@astrojs/starlight/components';
 
 Learn how to use the Renamify MCP Server through practical, real-world scenarios.
 
-## Basic Refactoring Examples
+## Basic Renaming Examples
 
 ### Example 1: Rename a React Component
 
@@ -18,7 +18,7 @@ Learn how to use the Renamify MCP Server through practical, real-world scenarios
 ```
 User: "Rename the UserProfile component to CustomerProfile throughout the codebase"
 
-AI: I'll help you rename UserProfile to CustomerProfile. Let me create a refactoring plan:
+AI: I'll help you rename UserProfile to CustomerProfile. Let me create a renaming plan:
 
 Tool: renamify_plan
 Arguments: {
@@ -43,12 +43,12 @@ Summary:
     src/components/UserProfile.tsx → src/components/CustomerProfile.tsx
     src/components/UserProfile.test.tsx → src/components/CustomerProfile.test.tsx
 
-The refactoring will update 8 files with 23 replacements and rename 2 files. 
+The renaming will update 8 files with 23 replacements and rename 2 files. 
 Shall I apply these changes?
 
 User: "Yes, apply the changes"
 
-AI: Applying the refactoring now:
+AI: Applying the renaming now:
 
 Tool: renamify_apply
 Arguments: {
@@ -99,7 +99,7 @@ Note: File renaming is disabled to preserve migration file names.
 Would you like me to apply these database schema changes?
 ```
 
-### Example 3: API Endpoint Refactoring
+### Example 3: API Endpoint Renaming
 
 **Scenario:** Update API endpoints from `/api/get-user` pattern to `/api/fetch-customer`.
 
@@ -138,7 +138,7 @@ Summary:
 
 ## Advanced Workflows
 
-### Workflow 1: Safe Production Refactoring
+### Workflow 1: Safe Production Renaming
 
 **Scenario:** Refactor production code with maximum safety.
 
@@ -234,9 +234,9 @@ Result: Created plan with 67 replacements in 12 files
 Would you like me to apply the backend model changes first?
 ```
 
-### Workflow 3: Test-Driven Refactoring
+### Workflow 3: Test-Driven Renaming
 
-**Scenario:** Ensure tests pass after refactoring.
+**Scenario:** Ensure tests pass after renaming.
 
 ```
 User: "Rename calculatePrice to computeCost and make sure tests still pass"
@@ -269,7 +269,7 @@ Let me run the tests to verify everything works:
 
 [AI would then run: npm test]
 
-The refactoring is complete and all tests are passing!
+The renaming is complete and all tests are passing!
 ```
 
 ## Pattern-Specific Examples
@@ -339,9 +339,9 @@ Arguments: {
 ### Handling Conflicts
 
 ```
-User: "Apply the refactoring plan"
+User: "Apply the renaming plan"
 
-AI: Let me apply the refactoring:
+AI: Let me apply the renaming:
 
 Tool: renamify_apply
 Arguments: {}
@@ -369,9 +369,9 @@ Shall I apply the updated plan?
 ### Rolling Back Changes
 
 ```
-User: "The refactoring broke something, please undo it"
+User: "The renaming broke something, please undo it"
 
-AI: I'll immediately undo the last refactoring:
+AI: I'll immediately undo the last renaming:
 
 Tool: renamify_history
 Arguments: {
@@ -385,18 +385,18 @@ Arguments: {
   "id": "3a7c9d4e8f2b6a1d"
 }
 
-Result: Successfully undone refactoring 3a7c9d4e8f2b6a1d
+Result: Successfully undone renaming 3a7c9d4e8f2b6a1d
   ✓ Reverted 85 replacements in 20 files
   ✓ Restored 3 renamed files
 
-The refactoring has been completely rolled back. Your code is now in its previous state.
+The renaming has been completely rolled back. Your code is now in its previous state.
 ```
 
 ## Best Practices Examples
 
-### 1. Scoped Refactoring
+### 1. Scoped Renaming
 
-Instead of refactoring everything at once, scope your changes:
+Instead of renaming everything at once, scope your changes:
 
 ```
 # Good: Specific scope
@@ -513,5 +513,5 @@ Arguments: {
 
 ## Next Steps
 
-- [**AI Agent Guide**](/renamify/mcp/ai-guide) - Best practices for AI-assisted refactoring
+- [**AI Agent Guide**](/renamify/mcp/ai-guide) - Best practices for AI-assisted renaming
 - [**Tools Reference**](/renamify/mcp/tools) - Detailed documentation for each tool

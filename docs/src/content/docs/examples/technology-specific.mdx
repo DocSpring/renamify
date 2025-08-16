@@ -1,11 +1,11 @@
 ---
 title: Technology-Specific Examples
-description: Refactoring examples for specific programming languages and frameworks
+description: Renaming examples for specific programming languages and frameworks
 ---
 
 ## React/TypeScript Projects
 
-### Component Refactoring
+### Component Renaming
 ```bash
 # Rename a React component across the entire project
 renamify rename UserCard ProfileCard \
@@ -23,7 +23,7 @@ renamify rename UserCard ProfileCard src/components/ src/pages/
 - JSX usage: `<UserCard />` → `<ProfileCard />`
 - Type definitions: `UserCardProps` → `ProfileCardProps`
 
-### Hook Refactoring
+### Hook Renaming
 ```bash
 # Rename a custom React hook
 renamify rename useUserData useProfileData \
@@ -46,7 +46,7 @@ const { data, loading } = useProfileData(userId);
 
 ## Python Projects
 
-### Django Model Refactoring
+### Django Model Renaming
 ```bash
 # Rename Django models and related code
 renamify rename UserProfile AccountProfile \
@@ -76,7 +76,7 @@ def account_profile_view(request): ...
 profile = AccountProfile.objects.get(id=1)
 ```
 
-### Flask API Refactoring
+### Flask API Renaming
 ```bash
 # Rename Flask route handlers
 renamify rename getUserData fetchUserProfile \
@@ -89,7 +89,7 @@ renamify rename getUserData fetchUserProfile app/ routes/
 
 ## Rust Projects
 
-### Module Refactoring
+### Module Renaming
 ```bash
 # Rename Rust modules and functions
 renamify rename user_manager profile_manager \
@@ -124,7 +124,7 @@ renamify rename my_crate awesome_crate \
 
 ## Go Projects
 
-### Package Refactoring
+### Package Renaming
 ```bash
 # Rename Go packages
 renamify rename userservice profileservice \
@@ -150,7 +150,7 @@ func GetProfileService() *ProfileService { ... }
 
 ## Node.js/JavaScript Projects
 
-### NPM Package Refactoring
+### NPM Package Renaming
 ```bash
 # Rename throughout a Node.js project
 renamify rename mypackage awesome_package \
@@ -180,7 +180,7 @@ renamify rename userRoutes profileRoutes routes/ controllers/
 
 ## Database Projects
 
-### SQL Schema Refactoring
+### SQL Schema Renaming
 ```bash
 # Rename database tables and columns (be careful!)
 renamify rename user_data profile_data \
@@ -267,7 +267,7 @@ renamify rename UserWidget ProfileWidget src/components/ src/views/
 
 ### Laravel Projects
 ```bash
-# PHP Laravel project refactoring
+# PHP Laravel project renaming
 renamify rename UserController ProfileController \
   --include "**/*.php" \
   --exclude "vendor/**"

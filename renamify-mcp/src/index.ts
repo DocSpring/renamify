@@ -112,7 +112,7 @@ async function main() {
       {
         name: 'renamify_plan',
         description:
-          'Create a refactoring plan to replace identifiers across a codebase with case-awareness',
+          'Create a renaming plan to replace identifiers across a codebase with case-awareness',
         inputSchema: {
           type: 'object',
           properties: {
@@ -167,7 +167,7 @@ async function main() {
       },
       {
         name: 'renamify_apply',
-        description: 'Apply a refactoring plan to make the actual changes',
+        description: 'Apply a renaming plan to make the actual changes',
         inputSchema: {
           type: 'object',
           properties: {
@@ -191,7 +191,7 @@ async function main() {
       },
       {
         name: 'renamify_undo',
-        description: 'Undo a previously applied refactoring',
+        description: 'Undo a previously applied renaming',
         inputSchema: {
           type: 'object',
           properties: {
@@ -202,7 +202,7 @@ async function main() {
       },
       {
         name: 'renamify_redo',
-        description: 'Redo a previously undone refactoring',
+        description: 'Redo a previously undone renaming',
         inputSchema: {
           type: 'object',
           properties: {
@@ -213,7 +213,7 @@ async function main() {
       },
       {
         name: 'renamify_history',
-        description: 'Show refactoring history',
+        description: 'Show renaming history',
         inputSchema: {
           type: 'object',
           properties: {

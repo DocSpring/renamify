@@ -20,9 +20,9 @@ fn test_train_case_patterns_are_replaced_in_apply() {
 - The Renamify-Based-Solution works well
 
 ## Comments
-    // - "Renamify-Specific-Settings" -> "Renamed-Refactoring-Tool-Specific-Settings"
-    // - "Renamify-Core-Engine" -> "Renamed-Refactoring-Tool-Core-Engine"
-    // - "Renamify-Based-Solution" -> "Renamed-Refactoring-Tool-Based-Solution"
+    // - "Renamify-Specific-Settings" -> "Renamed-Renaming-Tool-Specific-Settings"
+    // - "Renamify-Core-Engine" -> "Renamed-Renaming-Tool-Core-Engine"
+    // - "Renamify-Based-Solution" -> "Renamed-Renaming-Tool-Based-Solution"
 "#;
 
     std::fs::write(&test_file, original_content).unwrap();
@@ -46,8 +46,7 @@ fn test_train_case_patterns_are_replaced_in_apply() {
     };
 
     // Create the plan
-    let mut plan =
-        scan_repository(&root, "renamify", "renamed_refactoring_tool", &options).unwrap();
+    let mut plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
 
     // Debug: Print matches found
     println!("\n=== Matches found in plan ===");
@@ -85,8 +84,8 @@ fn test_train_case_patterns_are_replaced_in_apply() {
     );
 
     assert!(
-        modified_content.contains("Renamed-Refactoring-Tool-Core-Engine"),
-        "File should contain 'Renamed-Refactoring-Tool-Core-Engine' after replacement"
+        modified_content.contains("Renamed-Renaming-Tool-Core-Engine"),
+        "File should contain 'Renamed-Renaming-Tool-Core-Engine' after replacement"
     );
 
     assert!(
@@ -95,8 +94,8 @@ fn test_train_case_patterns_are_replaced_in_apply() {
     );
 
     assert!(
-        modified_content.contains("Renamed-Refactoring-Tool-Specific-Settings"),
-        "File should contain 'Renamed-Refactoring-Tool-Specific-Settings' after replacement"
+        modified_content.contains("Renamed-Renaming-Tool-Specific-Settings"),
+        "File should contain 'Renamed-Renaming-Tool-Specific-Settings' after replacement"
     );
 
     assert!(
@@ -105,7 +104,7 @@ fn test_train_case_patterns_are_replaced_in_apply() {
     );
 
     assert!(
-        modified_content.contains("Renamed-Refactoring-Tool-Based-Solution"),
-        "File should contain 'Renamed-Refactoring-Tool-Based-Solution' after replacement"
+        modified_content.contains("Renamed-Renaming-Tool-Based-Solution"),
+        "File should contain 'Renamed-Renaming-Tool-Based-Solution' after replacement"
     );
 }

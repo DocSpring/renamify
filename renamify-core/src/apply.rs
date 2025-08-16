@@ -9,7 +9,7 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-/// Options for applying a refactoring plan
+/// Options for applying a renaming plan
 #[derive(Debug, Clone)]
 pub struct ApplyOptions {
     /// Create backups before applying changes
@@ -502,7 +502,7 @@ fn rollback(state: &mut ApplyState) -> Result<()> {
     Ok(())
 }
 
-/// Apply a refactoring plan
+/// Apply a renaming plan
 #[allow(clippy::too_many_lines)]
 pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
     let mut state = ApplyState::new(plan.id.clone(), options.log_file.clone())?;

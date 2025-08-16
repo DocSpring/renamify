@@ -476,7 +476,7 @@ mod tests {
                 is_acronym: false,
             },
             Token {
-                word: "refactoring".to_string(),
+                word: "renaming".to_string(),
                 is_acronym: false,
             },
             Token {
@@ -487,28 +487,19 @@ mod tests {
 
         assert_eq!(
             render_tokens(&tokens, Style::Snake),
-            "renamed_refactoring_tool"
+            "renamed_renaming_tool"
         );
         assert_eq!(
             render_tokens(&tokens, Style::Kebab),
-            "renamed-refactoring-tool"
+            "renamed-renaming-tool"
         );
-        assert_eq!(
-            render_tokens(&tokens, Style::Camel),
-            "renamedRefactoringTool"
-        );
-        assert_eq!(
-            render_tokens(&tokens, Style::Pascal),
-            "RenamedRefactoringTool"
-        );
+        assert_eq!(render_tokens(&tokens, Style::Camel), "renamedRenamingTool");
+        assert_eq!(render_tokens(&tokens, Style::Pascal), "RenamedRenamingTool");
         assert_eq!(
             render_tokens(&tokens, Style::ScreamingSnake),
-            "RENAMED_REFACTORING_TOOL"
+            "RENAMED_RENAMING_TOOL"
         );
-        assert_eq!(
-            render_tokens(&tokens, Style::Dot),
-            "renamed.refactoring.tool"
-        );
+        assert_eq!(render_tokens(&tokens, Style::Dot), "renamed.renaming.tool");
     }
 
     #[test]

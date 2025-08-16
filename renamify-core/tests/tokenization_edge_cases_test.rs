@@ -13,10 +13,10 @@ fn test_mixed_case_repository_names() {
     std::fs::write(
         &test_file,
         r#"#!/bin/bash
-REPO="DocSpring/renamed_refactoring_tool"
-REPO='DocSpring/renamed_refactoring_tool'
-repo="docspring/renamed_refactoring_tool"
-URL="https://github.com/DocSpring/renamed_refactoring_tool"
+REPO="DocSpring/renamed_renaming_tool"
+REPO='DocSpring/renamed_renaming_tool'
+repo="docspring/renamed_renaming_tool"
+URL="https://github.com/DocSpring/renamed_renaming_tool"
 "#,
     )
     .unwrap();
@@ -38,7 +38,7 @@ URL="https://github.com/DocSpring/renamed_refactoring_tool"
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
-    let plan = scan_repository(&root, "renamed_refactoring_tool", "mytool", &options).unwrap();
+    let plan = scan_repository(&root, "renamed_renaming_tool", "mytool", &options).unwrap();
 
     // Debug output
     println!("Found {} matches:", plan.matches.len());
@@ -50,11 +50,11 @@ URL="https://github.com/DocSpring/renamed_refactoring_tool"
     assert!(
         plan.matches
             .iter()
-            .any(|m| m.before == "renamed_refactoring_tool" && m.after == "mytool"),
-        "Should find lowercase 'renamed_refactoring_tool'"
+            .any(|m| m.before == "renamed_renaming_tool" && m.after == "mytool"),
+        "Should find lowercase 'renamed_renaming_tool'"
     );
 
-    // The string "DocSpring/renamed_refactoring_tool" should become "DocSpring/mytool"
+    // The string "DocSpring/renamed_renaming_tool" should become "DocSpring/mytool"
     // NOT "DocSpring/Mytool" (wrong case change)
     // This verifies that case is preserved in path contexts
 
@@ -66,7 +66,7 @@ URL="https://github.com/DocSpring/renamed_refactoring_tool"
     std::fs::write(&test_file, content).unwrap();
 
     // Now test round-trip to ensure it's reversible
-    let plan2 = scan_repository(&root, "mytool", "renamed_refactoring_tool", &options).unwrap();
+    let plan2 = scan_repository(&root, "mytool", "renamed_renaming_tool", &options).unwrap();
 
     // Debug output for round-trip
     println!("Round-trip found {} matches:", plan2.matches.len());
@@ -79,7 +79,7 @@ URL="https://github.com/DocSpring/renamed_refactoring_tool"
         plan2
             .matches
             .iter()
-            .any(|m| m.before == "mytool" && m.after == "renamed_refactoring_tool"),
+            .any(|m| m.before == "mytool" && m.after == "renamed_renaming_tool"),
         "Round-trip should find 'mytool' and replace it back"
     );
 }

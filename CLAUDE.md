@@ -63,7 +63,7 @@ They should be mentioned in any package files, copyright notices, etc.
 
 ## Non-goals for v1
 
-- No AST or language-semantic refactors
+- No AST or language-semantic renaming
 - Only VS Code IDE integration
 - Local execution only
 - No telemetry by default
@@ -159,7 +159,7 @@ Renamify respects multiple ignore file formats:
 - `.gitignore` - Standard Git ignore patterns
 - `.ignore` - Generic ignore file (compatible with ripgrep)
 - `.rgignore` - Ripgrep-specific ignore patterns
-- `.rnignore` - Renamify-specific ignore patterns (useful for excluding files from refactoring without affecting Git)
+- `.rnignore` - Renamify-specific ignore patterns (useful for excluding files from renaming without affecting Git)
 
 The unrestricted levels (`-u` flag) control ignore behavior:
 
@@ -220,13 +220,13 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 
 ### CI Self-Hosting Testing
 
-- **Use "renamed_refactoring_tool" NOT the alternative protected string in tests**
+- **Use "renamed_renaming_tool" NOT the alternative protected string in tests**
 - The alternative protected string is only allowed in files matching `.rnignore` entries:
   - `.github/workflows/`
   - `docs/src/content/docs/index.mdx`
   - `docs/src/assets/case-studies/`
   - `docs/src/content/docs/case-studies/`
-- All other test files should use "renamed_refactoring_tool" as the target replacement string
+- All other test files should use "renamed_renaming_tool" as the target replacement string
 - This prevents CI failures when renamify tests itself and ensures clean self-hosting testing
 
 ## DO NOT REDIRECT STDERR

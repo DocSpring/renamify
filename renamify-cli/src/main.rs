@@ -52,7 +52,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Generate a refactoring plan
+    /// Generate a renaming plan
     Plan {
         /// Old identifier to replace
         old: String,
@@ -143,7 +143,7 @@ enum Commands {
         only_acronyms: Vec<String>,
     },
 
-    /// Apply a refactoring plan
+    /// Apply a renaming plan
     Apply {
         /// Plan ID or path to apply (optional - defaults to .renamify/plan.json)
         id: Option<String>,
@@ -161,22 +161,22 @@ enum Commands {
         force_with_conflicts: bool,
     },
 
-    /// Undo a previous refactoring
+    /// Undo a previous renaming
     Undo {
         /// History ID to undo (use 'latest' for the most recent non-revert entry)
         id: String,
     },
 
-    /// Redo a previously undone refactoring
+    /// Redo a previously undone renaming
     Redo {
         /// History ID to redo (use 'latest' for the most recent reverted entry)
         id: String,
     },
 
-    /// Show refactoring status
+    /// Show renaming status
     Status,
 
-    /// Show refactoring history
+    /// Show renaming history
     History {
         /// Limit number of entries
         #[arg(long)]
@@ -285,7 +285,7 @@ enum Commands {
         configure_global: bool,
     },
 
-    /// Plan and apply a refactoring in one step (with confirmation)
+    /// Plan and apply a renaming in one step (with confirmation)
     Rename {
         /// Old identifier to replace
         old: String,

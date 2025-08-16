@@ -5,7 +5,7 @@ description: Best practices for AI assistants using the Renamify MCP Server
 
 import { Card, CardGrid, Steps, Aside } from '@astrojs/starlight/components';
 
-A comprehensive guide for AI assistants to effectively use the Renamify MCP Server for intelligent, safe refactoring operations.
+A comprehensive guide for AI assistants to effectively use the Renamify MCP Server for intelligent, safe renaming operations.
 
 ## Core Principles for AI Agents
 
@@ -65,7 +65,7 @@ When things go wrong, explain the issue and provide solutions.
 
 ## Understanding User Intent
 
-### Interpreting Refactoring Requests
+### Interpreting Renaming Requests
 
 | User Says | You Should |
 |-----------|------------|
@@ -179,7 +179,7 @@ Based on the identifier pattern, intelligently select case styles:
 
 ```
 I'll help you rename [old] to [new] across your codebase. Let me create a 
-refactoring plan that will handle all case variations automatically.
+renaming plan that will handle all case variations automatically.
 
 [Creating plan...]
 ```
@@ -187,7 +187,7 @@ refactoring plan that will handle all case variations automatically.
 ### Presenting Results
 
 ```
-I've created a refactoring plan (ID: a3b7c9d4e8f2a6b1) with the following changes:
+I've created a renaming plan (ID: a3b7c9d4e8f2a6b1) with the following changes:
 
 📊 Summary:
 • Files to modify: 12
@@ -204,7 +204,7 @@ Would you like me to apply these changes?
 ### Error Handling
 
 ```
-I encountered an issue while applying the refactoring:
+I encountered an issue while applying the renaming:
 
 ❌ Error: Conflicts detected in 2 files
 The files have been modified since the plan was created.
@@ -219,7 +219,7 @@ Which option would you prefer?
 
 ## Advanced Techniques
 
-### 1. Progressive Refactoring
+### 1. Progressive Renaming
 
 For large changes, break them into stages:
 
@@ -263,7 +263,7 @@ Before applying changes in production:
 
 ### 3. Intelligent Fallbacks
 
-When a refactoring fails:
+When a renaming fails:
 
 ```javascript
 // First attempt: Specific includes
@@ -311,7 +311,7 @@ Found 23 occurrences across 8 files. This includes getUserData,
 get_user_data, and related variations. Shall I apply these changes?
 ```
 
-### For Complex Refactoring
+### For Complex Renaming
 
 ```
 User: "Refactor our authentication system from Auth to Security"
@@ -329,7 +329,7 @@ I found Auth used in 45 files with 234 total occurrences including:
 - auth, authState, isAuthenticated (variables)
 - Files: auth.js, auth-utils.js, AuthContext.tsx
 
-This is a large refactoring. Would you like me to:
+This is a large renaming. Would you like me to:
 1. Apply all changes at once
 2. Start with core files first
 3. See a detailed preview before proceeding
@@ -451,11 +451,11 @@ For AI developers integrating Renamify MCP:
 ## Support and Resources
 
 - [**Tools Reference**](/renamify/mcp/tools) - Detailed documentation for each MCP tool
-- [**Usage Examples**](/renamify/mcp/examples) - Real-world refactoring scenarios
+- [**Usage Examples**](/renamify/mcp/examples) - Real-world renaming scenarios
 - [**Installation**](/renamify/mcp/installation) - Setup guide for different platforms
 
 ---
 
 <Aside type="tip">
-**Remember:** The goal is to make refactoring safe, predictable, and efficient. Always prioritize clarity and safety over speed.
+**Remember:** The goal is to make renaming safe, predictable, and efficient. Always prioritize clarity and safety over speed.
 </Aside>

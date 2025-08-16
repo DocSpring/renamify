@@ -23,15 +23,15 @@ Smart search & replace for code and files with case-aware transformations and bu
 
 - Case-aware transformations (snake_case, kebab-case, camelCase, PascalCase, UPPER_SNAKE_CASE)
 - File and directory renaming
-- Plan / apply workflow for safety during large refactorings
+- Plan / apply workflow for safety during large renamings
 - Built-in undo/redo with history tracking (separate to git history)
-  - Perform a large refactor safely without needing to commit anything first
+  - Perform a large rename safely without needing to commit anything first
 - Respects ignore files (`.gitignore`, `.ignore`, `.rgignore`, `.rnignore`)
 - Cross-platform support (Linux, macOS, Windows)
 
 ## Demo
 
-Watch Renamify rename itself to `renamed_refactoring_tool`, then use the renamed binary to change it back:
+Watch Renamify rename itself to `renamed_renaming_tool`, then use the renamed binary to change it back:
 
 ```bash
 # Clone and build
@@ -39,15 +39,15 @@ git clone https://github.com/DocSpring/renamify
 cd renamify
 cargo build --release
 
-# Use renamify to rename itself to renamed_refactoring_tool
-./target/release/renamify rename renamify renamed_refactoring_tool --preview table
+# Use renamify to rename itself to renamed_renaming_tool
+./target/release/renamify rename renamify renamed_renaming_tool --preview table
 
 # Rebuild with the new name
 rm -rf target
 cargo build --release
 
-# Now use renamed_refactoring_tool to rename itself back to renamify!
-./target/release/renamed_refactoring_tool rename renamed_refactoring_tool renamify --preview table
+# Now use renamed_renaming_tool to rename itself back to renamify!
+./target/release/renamed_renaming_tool rename renamed_renaming_tool renamify --preview table
 
 # Back to the original
 rm -rf target

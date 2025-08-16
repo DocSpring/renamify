@@ -49,7 +49,7 @@ export class RenamifyService {
   }
 
   /**
-   * Create a refactoring plan
+   * Create a renaming plan
    */
   async plan(options: PlanOptions): Promise<string> {
     const args = this.buildPlanArgs(options);
@@ -135,7 +135,7 @@ export class RenamifyService {
   }
 
   /**
-   * Apply a refactoring plan
+   * Apply a renaming plan
    */
   async apply(options: ApplyOptions): Promise<string> {
     const args = this.buildApplyArgs(options);
@@ -163,21 +163,21 @@ export class RenamifyService {
   }
 
   /**
-   * Undo a refactoring
+   * Undo a renaming
    */
   async undo(id: string): Promise<string> {
     return await this.executeCommand(['undo', id], 'undo');
   }
 
   /**
-   * Redo a refactoring
+   * Redo a renaming
    */
   async redo(id: string): Promise<string> {
     return await this.executeCommand(['redo', id], 'redo');
   }
 
   /**
-   * Get refactoring history
+   * Get renaming history
    */
   async history(limit?: number): Promise<string> {
     const args = ['history'];

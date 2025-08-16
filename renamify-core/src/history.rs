@@ -5,7 +5,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
-/// Represents a single entry in the refactoring history
+/// Represents a single entry in the renaming history
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HistoryEntry {
     /// Unique identifier for this plan/operation
@@ -34,7 +34,7 @@ pub struct HistoryEntry {
     pub redo_of: Option<String>,
 }
 
-/// Manages the refactoring history
+/// Manages the renaming history
 pub struct History {
     path: PathBuf,
     entries: Vec<HistoryEntry>,

@@ -5,7 +5,7 @@ description: Use Renamify with AI assistants through the Model Context Protocol
 
 import { LinkCard, Steps, Aside } from '@astrojs/starlight/components';
 
-The Renamify MCP Server enables AI assistants to perform intelligent, case-aware refactoring operations on your codebase.
+The Renamify MCP Server enables AI assistants to perform intelligent, case-aware renaming operations on your codebase.
 
 ## Quick Start
 
@@ -71,7 +71,7 @@ When you rename `getUserName` to `fetchUserProfile`, the MCP Server automaticall
 
 ### 🛡️ Safety Features
 
-Every refactoring operation includes multiple safety layers:
+Every renaming operation includes multiple safety layers:
 
 1. **Preview before apply** - See exactly what will change
 2. **Atomic operations** - All changes succeed or none are applied
@@ -83,11 +83,11 @@ Every refactoring operation includes multiple safety layers:
 
 The MCP Server provides 7 specialized tools:
 
-- [**renamify_plan**](/renamify/mcp/tools#renamify_plan) - Create a refactoring plan with case-aware transformations
+- [**renamify_plan**](/renamify/mcp/tools#renamify_plan) - Create a renaming plan with case-aware transformations
 - [**renamify_apply**](/renamify/mcp/tools#renamify_apply) - Execute a plan to make the actual changes
-- [**renamify_undo**](/renamify/mcp/tools#renamify_undo) - Revert a previously applied refactoring
-- [**renamify_redo**](/renamify/mcp/tools#renamify_redo) - Re-apply an undone refactoring
-- [**renamify_history**](/renamify/mcp/tools#renamify_history) - View past refactoring operations
+- [**renamify_undo**](/renamify/mcp/tools#renamify_undo) - Revert a previously applied renaming
+- [**renamify_redo**](/renamify/mcp/tools#renamify_redo) - Re-apply an undone renaming
+- [**renamify_history**](/renamify/mcp/tools#renamify_history) - View past renaming operations
 - [**renamify_status**](/renamify/mcp/tools#renamify_status) - Check current state and pending plans
 - [**renamify_preview**](/renamify/mcp/tools#renamify_preview) - Review a plan in different formats
 
@@ -113,7 +113,7 @@ The MCP Server provides 7 specialized tools:
    }
    ```
 
-3. **Start refactoring!**
+3. **Start renaming!**
    Ask your AI assistant to use Renamify for renaming operations
 </Steps>
 
@@ -146,7 +146,7 @@ The plan shows 47 replacements across 12 files. Would you like me to apply these
 
 User: "Yes, apply the changes"
 
-AI: I'll apply the refactoring plan now:
+AI: I'll apply the renaming plan now:
 
 Tool: renamify_apply
 Arguments: {
@@ -188,5 +188,5 @@ The Renamify MCP Server works with:
 <LinkCard
   title="Usage Examples"
   href="/renamify/mcp/examples"
-  description="Real-world refactoring scenarios and patterns"
+  description="Real-world renaming scenarios and patterns"
 />

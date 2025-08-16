@@ -5,11 +5,11 @@ description: Complete reference for all Renamify MCP Server tools
 
 import { Card, CardGrid, Code } from '@astrojs/starlight/components';
 
-The Renamify MCP Server provides 7 specialized tools for AI agents to perform intelligent refactoring operations.
+The Renamify MCP Server provides 7 specialized tools for AI agents to perform intelligent renaming operations.
 
 ## renamify_plan
 
-Creates a comprehensive refactoring plan that identifies all case variations of your identifiers.
+Creates a comprehensive renaming plan that identifies all case variations of your identifiers.
 
 ### Parameters
 
@@ -80,7 +80,7 @@ Summary:
 
 ## renamify_apply
 
-Applies a refactoring plan to make the actual changes to your codebase.
+Applies a renaming plan to make the actual changes to your codebase.
 
 ### Parameters
 
@@ -126,7 +126,7 @@ Run 'renamify_plan' again to create a fresh plan with current file state.
 
 ## renamify_undo
 
-Reverts a previously applied refactoring operation.
+Reverts a previously applied renaming operation.
 
 ### Parameters
 
@@ -146,7 +146,7 @@ Arguments: {
 ### Response Example
 
 ```
-Successfully undone refactoring a3b7c9d4e8f2a6b1
+Successfully undone renaming a3b7c9d4e8f2a6b1
   ✓ Reverted 47 replacements in 12 files
   ✓ Restored 3 renamed files
   
@@ -155,7 +155,7 @@ All changes have been reverted.
 
 ## renamify_redo
 
-Re-applies a previously undone refactoring.
+Re-applies a previously undone renaming.
 
 ### Parameters
 
@@ -175,7 +175,7 @@ Arguments: {
 ### Response Example
 
 ```
-Successfully redone refactoring a3b7c9d4e8f2a6b1
+Successfully redone renaming a3b7c9d4e8f2a6b1
   ✓ Re-applied 47 replacements in 12 files
   ✓ Re-renamed 3 files
   
@@ -184,7 +184,7 @@ All changes have been re-applied.
 
 ## renamify_history
 
-Shows the history of refactoring operations.
+Shows the history of renaming operations.
 
 ### Parameters
 
@@ -204,7 +204,7 @@ Arguments: {
 ### Response Example
 
 ```
-Refactoring History (last 5 operations):
+Renaming History (last 5 operations):
 
 1. 4e8f2a6b1d3c7a9b [APPLIED]
    getUserData → fetchUserData
@@ -244,7 +244,7 @@ Arguments: {}
 Renamify Status:
 
 Current Directory: /home/user/project
-Git Branch: feature/refactoring
+Git Branch: feature/renaming
 Git Status: Clean (no uncommitted changes)
 
 Pending Plans:
@@ -313,7 +313,7 @@ Arguments: {
 
 ## Tool Interaction Patterns
 
-### Safe Refactoring Workflow
+### Safe Renaming Workflow
 
 ```mermaid
 graph LR
@@ -392,9 +392,9 @@ The MCP Server loads plans into memory:
 
 <CardGrid>
   <Card title="Usage Examples" icon="rocket" href="/renamify/mcp/examples">
-    See real-world refactoring scenarios
+    See real-world renaming scenarios
   </Card>
   <Card title="AI Agent Guide" icon="robot" href="/renamify/mcp/ai-guide">
-    Best practices for AI-assisted refactoring
+    Best practices for AI-assisted renaming
   </Card>
 </CardGrid>

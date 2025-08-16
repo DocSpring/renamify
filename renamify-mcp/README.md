@@ -1,6 +1,6 @@
 # Renamify MCP Server
 
-MCP (Model Context Protocol) server for Renamify - enabling AI agents to perform intelligent, case-aware refactoring operations across codebases.
+MCP (Model Context Protocol) server for Renamify - enabling AI agents to perform intelligent, case-aware renaming operations across codebases.
 
 [![npm version](https://badge.fury.io/js/@renamify%2Fmcp-server.svg)](https://www.npmjs.com/package/@renamify/mcp-server)
 
@@ -61,7 +61,7 @@ Add to your MCP client configuration (e.g., for Claude Desktop or Cursor):
 ## Available Tools
 
 ### `renamify_plan`
-Create a refactoring plan to replace identifiers across a codebase with case-awareness.
+Create a renaming plan to replace identifiers across a codebase with case-awareness.
 
 **Parameters:**
 - `old` (required): The old name/identifier to replace
@@ -88,7 +88,7 @@ Arguments: {
 ```
 
 ### `renamify_apply`
-Apply a refactoring plan to make the actual changes.
+Apply a renaming plan to make the actual changes.
 
 **Parameters:**
 - `planId`: Plan ID to apply (uses latest if not specified)
@@ -106,7 +106,7 @@ Arguments: {
 ```
 
 ### `renamify_undo`
-Undo a previously applied refactoring.
+Undo a previously applied renaming.
 
 **Parameters:**
 - `id` (required): History ID to undo
@@ -120,13 +120,13 @@ Arguments: {
 ```
 
 ### `renamify_redo`
-Redo a previously undone refactoring.
+Redo a previously undone renaming.
 
 **Parameters:**
 - `id` (required): History ID to redo
 
 ### `renamify_history`
-Show refactoring history.
+Show renaming history.
 
 **Parameters:**
 - `limit`: Number of history entries to show (default: 10)
@@ -150,7 +150,7 @@ For comprehensive documentation, visit: https://docspring.github.io/renamify/mcp
 
 **Note:** The examples below show how AI agents call MCP tools through the MCP protocol. These are not JavaScript function calls - they represent the tool name and arguments that the AI agent sends to the MCP server.
 
-### Safe Refactoring Workflow
+### Safe Renaming Workflow
 
 1. **Plan First, Apply Later**
    ```

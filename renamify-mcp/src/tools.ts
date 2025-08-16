@@ -13,7 +13,7 @@ export class RenamifyTools {
   }
 
   /**
-   * Create a refactoring plan
+   * Create a renaming plan
    */
   async plan(params: PlanOptions): Promise<string> {
     // Check if renamify is available
@@ -54,7 +54,7 @@ SAFETY NOTES:
   }
 
   /**
-   * Apply a refactoring plan
+   * Apply a renaming plan
    */
   async apply(params: ApplyOptions): Promise<string> {
     try {
@@ -80,42 +80,42 @@ TROUBLESHOOTING:
   }
 
   /**
-   * Undo a refactoring
+   * Undo a renaming
    */
   async undo(params: { id: string }): Promise<string> {
     try {
       const result = await this.renamifyService.undo(params.id);
       return `${result}
 
-Refactoring has been undone successfully.`;
+Renaming has been undone successfully.`;
     } catch (error) {
-      return `Error undoing refactoring: ${error instanceof Error ? error.message : String(error)}`;
+      return `Error undoing renaming: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
 
   /**
-   * Redo a refactoring
+   * Redo a renaming
    */
   async redo(params: { id: string }): Promise<string> {
     try {
       const result = await this.renamifyService.redo(params.id);
       return `${result}
 
-Refactoring has been redone successfully.`;
+Renaming has been redone successfully.`;
     } catch (error) {
-      return `Error redoing refactoring: ${error instanceof Error ? error.message : String(error)}`;
+      return `Error redoing renaming: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
 
   /**
-   * Show refactoring history
+   * Show renaming history
    */
   async history(params: { limit?: number }): Promise<string> {
     try {
       const result = await this.renamifyService.history(params.limit);
 
       if (!result || result.trim() === '') {
-        return 'No refactoring history found.';
+        return 'No renaming history found.';
       }
 
       return `${result}

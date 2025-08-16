@@ -1,9 +1,9 @@
 ---
 title: Safety Features
-description: Renamify's comprehensive safety mechanisms for worry-free refactoring
+description: Renamify's comprehensive safety mechanisms for worry-free renaming
 ---
 
-Renamify is built with safety as a core principle. Multiple layers of protection ensure your code remains intact during refactoring operations.
+Renamify is built with safety as a core principle. Multiple layers of protection ensure your code remains intact during renaming operations.
 
 ## Plan/Apply Workflow
 
@@ -142,7 +142,7 @@ renamify apply --commit
 ### Best Practices
 - **Commit before large refactors**: Makes git-based rollback possible
 - **Clean working directory**: Start with committed changes when possible
-- **Branch for experiments**: Use git branches for exploratory refactoring
+- **Branch for experiments**: Use git branches for exploratory renaming
 
 ## Dry Run Mode
 
@@ -178,7 +178,7 @@ When operations fail, Renamify provides:
 Suggestions:
 1. Check file permissions: ls -la src/readonly.js
 2. Make writable: chmod +w src/readonly.js
-3. Or exclude from refactoring: --exclude "src/readonly.js"
+3. Or exclude from renaming: --exclude "src/readonly.js"
 ```
 
 ## Force Options (Use with Caution)

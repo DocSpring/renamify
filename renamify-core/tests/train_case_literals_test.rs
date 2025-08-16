@@ -22,9 +22,9 @@ fn test_train_case_patterns_in_literals() {
 
 fn main() {
     // Comments inside code
-    // - "Renamify-Specific-Settings" -> "Renamed-Refactoring-Tool-Specific-Settings"
-    // - "Renamify-Core-Engine" -> "Renamed-Refactoring-Tool-Core-Engine"
-    // - "Renamify-Based-Solution" -> "Renamed-Refactoring-Tool-Based-Solution"
+    // - "Renamify-Specific-Settings" -> "Renamed-Renaming-Tool-Specific-Settings"
+    // - "Renamify-Core-Engine" -> "Renamed-Renaming-Tool-Core-Engine"
+    // - "Renamify-Based-Solution" -> "Renamed-Renaming-Tool-Based-Solution"
     
     let config = "Renamify-Specific-Settings";
     let engine = "Use Renamify-Core-Engine";
@@ -63,7 +63,7 @@ pub fn process() {
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "renamify", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== All Train-Case literal matches found ===");
@@ -98,28 +98,27 @@ pub fn process() {
     // Check that specific patterns are replaced correctly
     let has_specific_settings = plan.matches.iter().any(|m| {
         m.before == "Renamify-Specific-Settings"
-            && m.after == "Renamed-Refactoring-Tool-Specific-Settings"
+            && m.after == "Renamed-Renaming-Tool-Specific-Settings"
     });
     assert!(
         has_specific_settings,
-        "Should replace 'Renamify-Specific-Settings' with 'Renamed-Refactoring-Tool-Specific-Settings'"
+        "Should replace 'Renamify-Specific-Settings' with 'Renamed-Renaming-Tool-Specific-Settings'"
     );
 
     let has_core_engine = plan.matches.iter().any(|m| {
-        m.before == "Renamify-Core-Engine" && m.after == "Renamed-Refactoring-Tool-Core-Engine"
+        m.before == "Renamify-Core-Engine" && m.after == "Renamed-Renaming-Tool-Core-Engine"
     });
     assert!(
         has_core_engine,
-        "Should replace 'Renamify-Core-Engine' with 'Renamed-Refactoring-Tool-Core-Engine'"
+        "Should replace 'Renamify-Core-Engine' with 'Renamed-Renaming-Tool-Core-Engine'"
     );
 
     let has_based_solution = plan.matches.iter().any(|m| {
-        m.before == "Renamify-Based-Solution"
-            && m.after == "Renamed-Refactoring-Tool-Based-Solution"
+        m.before == "Renamify-Based-Solution" && m.after == "Renamed-Renaming-Tool-Based-Solution"
     });
     assert!(
         has_based_solution,
-        "Should replace 'Renamify-Based-Solution' with 'Renamed-Refactoring-Tool-Based-Solution'"
+        "Should replace 'Renamify-Based-Solution' with 'Renamed-Renaming-Tool-Based-Solution'"
     );
 
     // This one might not work because "The" is not our pattern
@@ -146,15 +145,15 @@ fn test_train_case_exact_patterns() {
         r#"- Renamify-Specific-Settings for configuration
 - Use Renamify-Core-Engine for processing
 - The Renamify-Based-Solution works well
-    // - "Renamify-Specific-Settings" -> "Renamed-Refactoring-Tool-Specific-Settings"
-    // - "Renamify-Core-Engine" -> "Renamed-Refactoring-Tool-Core-Engine"
-    // - "Renamify-Based-Solution" -> "Renamed-Refactoring-Tool-Based-Solution"
+    // - "Renamify-Specific-Settings" -> "Renamed-Renaming-Tool-Specific-Settings"
+    // - "Renamify-Core-Engine" -> "Renamed-Renaming-Tool-Core-Engine"
+    // - "Renamify-Based-Solution" -> "Renamed-Renaming-Tool-Based-Solution"
         m.before == "Renamify-Specific-Settings"
-        "Should replace 'Renamify-Specific-Settings' with 'Renamed-Refactoring-Tool-Specific-Settings'"
-        m.before == "Renamify-Core-Engine" && m.after == "Renamed-Refactoring-Tool-Core-Engine"
-        "Should replace 'Renamify-Core-Engine' with 'Renamed-Refactoring-Tool-Core-Engine'"
+        "Should replace 'Renamify-Specific-Settings' with 'Renamed-Renaming-Tool-Specific-Settings'"
+        m.before == "Renamify-Core-Engine" && m.after == "Renamed-Renaming-Tool-Core-Engine"
+        "Should replace 'Renamify-Core-Engine' with 'Renamed-Renaming-Tool-Core-Engine'"
         m.before == "Renamify-Based-Solution"
-        "Should replace 'Renamify-Based-Solution' with 'Renamed-Refactoring-Tool-Based-Solution'"
+        "Should replace 'Renamify-Based-Solution' with 'Renamed-Renaming-Tool-Based-Solution'"
 - The-Renamify-Tool (Train-Case context)
         Style::Train, // Include Train-Case for patterns like Renamify-Core-Engine
 "#,
@@ -179,7 +178,7 @@ fn test_train_case_exact_patterns() {
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "renamify", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
 
     // Count how many times each Train-Case pattern appears
     let specific_settings_count = plan

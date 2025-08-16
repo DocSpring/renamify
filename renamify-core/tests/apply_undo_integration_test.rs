@@ -1,5 +1,5 @@
 use renamify_core::{
-    apply_plan, undo_refactoring, ApplyOptions, MatchHunk, Plan, Rename, RenameKind, Stats,
+    apply_plan, undo_renaming, ApplyOptions, MatchHunk, Plan, Rename, RenameKind, Stats,
 };
 use std::collections::HashMap;
 use std::fs;
@@ -88,7 +88,7 @@ fn test_apply_undo_content_changes_only() {
 
     // Undo the changes
     let renamify_dir = temp_dir.path().join(".renamify");
-    undo_refactoring(&plan.id, &renamify_dir).unwrap();
+    undo_renaming(&plan.id, &renamify_dir).unwrap();
 
     // Verify undo worked
     let undone_content = fs::read_to_string(&test_file).unwrap();
@@ -130,7 +130,7 @@ fn test_apply_undo_file_rename_only() {
 
     // Undo the rename
     let renamify_dir = temp_dir.path().join(".renamify");
-    undo_refactoring(&plan.id, &renamify_dir).unwrap();
+    undo_renaming(&plan.id, &renamify_dir).unwrap();
 
     // Verify undo worked
     assert!(old_file.exists());
@@ -179,7 +179,7 @@ fn test_apply_undo_dir_rename_only() {
 
     // Undo the rename
     let renamify_dir = temp_dir.path().join(".renamify");
-    undo_refactoring(&plan.id, &renamify_dir).unwrap();
+    undo_renaming(&plan.id, &renamify_dir).unwrap();
 
     // Verify undo worked
     assert!(old_dir.exists());
@@ -261,7 +261,7 @@ fn test_apply_undo_content_and_file_rename() {
 
     // Undo the changes
     let renamify_dir = temp_dir.path().join(".renamify");
-    undo_refactoring(&plan.id, &renamify_dir).unwrap();
+    undo_renaming(&plan.id, &renamify_dir).unwrap();
 
     // Verify undo worked
     assert!(old_file.exists());
@@ -346,7 +346,7 @@ fn test_apply_undo_content_and_dir_rename() {
 
     // Undo the changes
     let renamify_dir = temp_dir.path().join(".renamify");
-    undo_refactoring(&plan.id, &renamify_dir).unwrap();
+    undo_renaming(&plan.id, &renamify_dir).unwrap();
 
     // Verify undo worked
     assert!(old_dir.exists());
@@ -404,7 +404,7 @@ fn test_apply_undo_file_and_dir_rename() {
 
     // Undo the changes
     let renamify_dir = temp_dir.path().join(".renamify");
-    undo_refactoring(&plan.id, &renamify_dir).unwrap();
+    undo_renaming(&plan.id, &renamify_dir).unwrap();
 
     // Verify undo worked
     assert!(old_dir.exists());
@@ -541,7 +541,7 @@ fn test_apply_undo_all_changes() {
 
     // Undo ALL the changes
     let renamify_dir = temp_dir.path().join(".renamify");
-    undo_refactoring(&plan.id, &renamify_dir).unwrap();
+    undo_renaming(&plan.id, &renamify_dir).unwrap();
 
     // Verify complete undo
     assert!(old_dir.exists());
@@ -633,7 +633,7 @@ fn test_apply_undo_multiple_files_in_renamed_dir() {
 
     // Undo
     let renamify_dir = temp_dir.path().join(".renamify");
-    undo_refactoring(&plan.id, &renamify_dir).unwrap();
+    undo_renaming(&plan.id, &renamify_dir).unwrap();
 
     // Verify complete restoration
     assert!(old_dir.exists());

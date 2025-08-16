@@ -25,12 +25,12 @@ When you provide a search and replace pattern, Renamify will automatically apply
 
 Renamify includes intelligent contextual separator coercion that adapts the replacement style based on the surrounding code context:
 
-- **Context-aware replacement**: `renamify_core::Engine` becomes `renamed_refactoring_tool_core::Engine` (snake_case context)
-- **Path-aware**: `src/renamify/main.rs` becomes `src/renamed-refactoring-tool/main.rs` (kebab-case for paths)
-- **URL-aware**: `https://github.com/user/renamify` becomes `https://github.com/user/renamed-refactoring-tool`
-- **Module-aware**: `renamify::core::apply()` becomes `renamed_refactoring_tool::core::apply()`
+- **Context-aware replacement**: `renamify_core::Engine` becomes `renamed_renaming_tool_core::Engine` (snake_case context)
+- **Path-aware**: `src/renamify/main.rs` becomes `src/renamed-renaming-tool/main.rs` (kebab-case for paths)
+- **URL-aware**: `https://github.com/user/renamify` becomes `https://github.com/user/renamed-renaming-tool`
+- **Module-aware**: `renamify::core::apply()` becomes `renamed_renaming_tool::core::apply()`
 
-The coercion analyzes the immediate context around each match to determine the most appropriate separator style, making refactoring feel more natural and reducing manual corrections.
+The coercion analyzes the immediate context around each match to determine the most appropriate separator style, making renaming feel more natural and reducing manual corrections.
 
 ### File and Directory Renaming
 
@@ -54,11 +54,11 @@ In addition to replacing text within files, Renamify can rename:
 ```bash
 # This will offer to rename the project directory itself
 cd /path/to/renamify-project
-renamify rename renamify renamed_refactoring_tool --rename-root
+renamify rename renamify renamed_renaming_tool --rename-root
 
 # Renamify will show a "Next Steps" snippet like:
 # Next Steps:
-# 1. cd ../renamed-refactoring-tool-project
+# 1. cd ../renamed-renaming-tool-project
 # 2. cargo build --release  # if Rust project
 # 3. Update any IDE project settings
 ```
@@ -71,7 +71,7 @@ renamify rename renamify renamed_refactoring_tool --rename-root
 
 ## Commands
 
-### `plan` - Generate a Refactoring Plan
+### `plan` - Generate a Renaming Plan
 
 Creates a plan of all changes that will be made without modifying any files.
 
@@ -93,7 +93,7 @@ renamify plan <OLD> <NEW> [OPTIONS]
 - `--plan-out <PATH>` - Where to save the plan (default: .renamify/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
 
-### `apply` - Apply a Refactoring Plan
+### `apply` - Apply a Renaming Plan
 
 Executes a previously generated plan.
 
@@ -108,17 +108,17 @@ renamify apply [OPTIONS]
 - `--commit` - Create a git commit after applying
 - `--force-with-conflicts` - Apply even if conflicts are detected
 
-### `undo` - Undo a Previous Refactoring
+### `undo` - Undo a Previous Renaming
 
-Reverts a previously applied refactoring using backups.
+Reverts a previously applied renaming using backups.
 
 ```bash
 renamify undo <ID>
 ```
 
-### `redo` - Redo a Previously Undone Refactoring
+### `redo` - Redo a Previously Undone Renaming
 
-Re-applies a refactoring that was previously undone.
+Re-applies a renaming that was previously undone.
 
 ```bash
 renamify redo <ID>
@@ -126,15 +126,15 @@ renamify redo <ID>
 
 ### `status` - Show Current Status
 
-Displays information about the current state of refactoring operations.
+Displays information about the current state of renaming operations.
 
 ```bash
 renamify status
 ```
 
-### `history` - Show Refactoring History
+### `history` - Show Renaming History
 
-Lists all previous refactoring operations.
+Lists all previous renaming operations.
 
 ```bash
 renamify history [OPTIONS]
@@ -146,7 +146,7 @@ renamify history [OPTIONS]
 
 ### `rename` - Fast Path Plan and Apply
 
-**NEW**: Combines planning and applying in a single command with confirmation prompts. Perfect for quick, interactive refactoring.
+**NEW**: Combines planning and applying in a single command with confirmation prompts. Perfect for quick, interactive renaming.
 
 ```bash
 renamify rename <OLD> <NEW> [OPTIONS]
@@ -452,7 +452,7 @@ renamify dry-run old_name new_name --preview diff
 ### Fast Interactive Renaming
 
 ```bash
-# Use the new rename command for quick interactive refactoring
+# Use the new rename command for quick interactive renaming
 renamify rename old_name new_name --preview table
 
 # Rename with automatic git commit
@@ -496,7 +496,7 @@ renamify redo <id-from-history>
 
 ## Best Practices
 
-1. **Use `rename` for quick refactoring** - The new fast-path command with preview and confirmation
+1. **Use `rename` for quick renaming** - The new fast-path command with preview and confirmation
 2. **Always run `plan` first for large changes** - Review changes before applying them
 3. **Use `--dry-run` for exploration** - See what would change without commitment
 4. **Commit before large refactors** - Makes it easy to revert if needed
@@ -522,17 +522,17 @@ renamify redo <id-from-history>
 
 - Check that backup files still exist in `.renamify/backups/`
 - Verify file permissions haven't changed
-- Ensure no manual changes were made after the refactoring
+- Ensure no manual changes were made after the renaming
 
 ## Integration
 
 ### Git Workflows
 
 ```bash
-# Commit before refactoring
-git add -A && git commit -m "Before refactoring"
+# Commit before renaming
+git add -A && git commit -m "Before renaming"
 
-# Perform refactoring with auto-commit
+# Perform renaming with auto-commit
 renamify plan old_name new_name
 renamify apply --commit
 
@@ -544,7 +544,7 @@ git add -A && git commit -m "Refactor: old_name -> new_name"
 ### CI/CD Pipelines
 
 ```bash
-# Validate no uncommitted refactoring plans
+# Validate no uncommitted renaming plans
 test ! -f .renamify/plan.json || exit 1
 
 # Or apply pending refactorings automatically

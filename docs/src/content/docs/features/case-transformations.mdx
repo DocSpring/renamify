@@ -27,12 +27,12 @@ When you provide a search and replace pattern, Renamify automatically applies th
 
 Renamify includes intelligent contextual separator coercion that adapts the replacement style based on the surrounding code context:
 
-- **Context-aware replacement**: `renamify_core::Engine` becomes `renamed_refactoring_tool_core::Engine` (snake_case context)
-- **Path-aware**: `src/renamify/main.rs` becomes `src/renamed-refactoring-tool/main.rs` (kebab-case for paths)
-- **URL-aware**: `https://github.com/user/renamify` becomes `https://github.com/user/renamed-refactoring-tool`
-- **Module-aware**: `renamify::core::apply()` becomes `renamed_refactoring_tool::core::apply()`
+- **Context-aware replacement**: `renamify_core::Engine` becomes `renamed_renaming_tool_core::Engine` (snake_case context)
+- **Path-aware**: `src/renamify/main.rs` becomes `src/renamed-renaming-tool/main.rs` (kebab-case for paths)
+- **URL-aware**: `https://github.com/user/renamify` becomes `https://github.com/user/renamed-renaming-tool`
+- **Module-aware**: `renamify::core::apply()` becomes `renamed_renaming_tool::core::apply()`
 
-The coercion analyzes the immediate context around each match to determine the most appropriate separator style, making refactoring feel more natural and reducing manual corrections.
+The coercion analyzes the immediate context around each match to determine the most appropriate separator style, making renaming feel more natural and reducing manual corrections.
 
 ## Controlling Case Styles
 

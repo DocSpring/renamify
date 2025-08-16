@@ -10,7 +10,9 @@ fn test_help_command() {
     cmd.arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("CLI for Renamify"));
+        .stdout(predicate::str::contains(
+            "Smart search & replace for code and files",
+        ));
 }
 
 #[test]

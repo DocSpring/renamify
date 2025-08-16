@@ -29,7 +29,7 @@ fn resolve_latest_id(operation: OperationType, renamify_dir: &Path) -> Result<St
     let entries = history.list_entries(None);
 
     if entries.is_empty() {
-        return Err(anyhow!("No refactoring history found"));
+        return Err(anyhow!("No renaming history found"));
     }
 
     match operation {
@@ -40,7 +40,7 @@ fn resolve_latest_id(operation: OperationType, renamify_dir: &Path) -> Result<St
                 .iter()
                 .find(|entry| entry.revert_of.is_none())
                 .map(|entry| entry.id.clone())
-                .ok_or_else(|| anyhow!("No refactoring entries found that can be undone"))
+                .ok_or_else(|| anyhow!("No renaming entries found that can be undone"))
         },
         OperationType::Redo => {
             // Find the most recent revert entry
@@ -52,7 +52,7 @@ fn resolve_latest_id(operation: OperationType, renamify_dir: &Path) -> Result<St
                     // Return the ID of the original operation that was undone
                     entry.revert_of.as_ref().unwrap().clone()
                 })
-                .ok_or_else(|| anyhow!("No undone refactoring entries found that can be redone"))
+                .ok_or_else(|| anyhow!("No undone renaming entries found that can be redone"))
         },
     }
 }
@@ -171,7 +171,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("No refactoring entries found that can be undone"));
+            .contains("No renaming entries found that can be undone"));
     }
 
     #[test]
@@ -188,7 +188,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("No undone refactoring entries found"));
+            .contains("No undone renaming entries found"));
     }
 
     #[test]
@@ -202,7 +202,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("No refactoring history found"));
+            .contains("No renaming history found"));
 
         // Empty history for redo
         let result = resolve_id("latest", OperationType::Redo, &renamify_dir);
@@ -210,7 +210,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("No refactoring history found"));
+            .contains("No renaming history found"));
     }
 
     #[test]

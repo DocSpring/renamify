@@ -1,5 +1,5 @@
 use crate::id_resolver::{resolve_id, OperationType};
-use crate::{redo_refactoring, undo_refactoring};
+use crate::{redo_renaming, undo_renaming};
 use anyhow::Result;
 use std::path::Path;
 
@@ -11,9 +11,9 @@ pub fn undo_operation(id: &str, working_dir: Option<&Path>) -> Result<String> {
     // Resolve the ID (handles "latest" and validates the ID exists)
     let actual_id = resolve_id(id, OperationType::Undo, &renamify_dir)?;
 
-    undo_refactoring(&actual_id, &renamify_dir)?;
+    undo_renaming(&actual_id, &renamify_dir)?;
 
-    Ok(format!("Successfully undid refactoring '{}'", actual_id))
+    Ok(format!("Successfully undid renaming '{}'", actual_id))
 }
 
 /// High-level redo operation - equivalent to `renamify redo` command
@@ -24,7 +24,7 @@ pub fn redo_operation(id: &str, working_dir: Option<&Path>) -> Result<String> {
     // Resolve the ID (handles "latest" and validates the ID exists)
     let actual_id = resolve_id(id, OperationType::Redo, &renamify_dir)?;
 
-    redo_refactoring(&actual_id, &renamify_dir)?;
+    redo_renaming(&actual_id, &renamify_dir)?;
 
-    Ok(format!("Successfully redid refactoring '{}'", actual_id))
+    Ok(format!("Successfully redid renaming '{}'", actual_id))
 }

@@ -78,7 +78,7 @@ When showing renamify CLI output, use the appropriate format:
 ### Testing Guidelines
 
 - Always use `--dry-run` flag when testing renamify commands in docs
-- Use "renamed_refactoring_tool" as replacement target in examples (not the alternative protected string)
+- Use "renamed_renaming_tool" as replacement target in examples (not the alternative protected string)
 - Test all links and ensure they work in the local dev server
 
 ### Sidebar Configuration

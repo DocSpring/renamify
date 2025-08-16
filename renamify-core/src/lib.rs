@@ -51,7 +51,7 @@ pub use scanner::{
     scan_repository, scan_repository_multi, write_plan, MatchHunk, Plan, PlanOptions, Rename,
     RenameKind, Stats,
 };
-pub use undo::{redo_refactoring, undo_refactoring};
+pub use undo::{redo_renaming, undo_renaming};
 
 use ignore::WalkBuilder;
 use std::path::{Path, PathBuf};

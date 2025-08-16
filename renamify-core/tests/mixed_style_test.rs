@@ -41,7 +41,7 @@ let simple = renamify;
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "renamify", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
 
     // Debug: Print all matches
     println!("\n=== All matches found ===");
@@ -67,7 +67,7 @@ let simple = renamify;
     assert_eq!(line2_matches[0].before, "renamify_someCAMEL-case");
     assert_eq!(
         line2_matches[0].after,
-        "renamed_refactoring_tool_someCAMEL-case"
+        "renamed_renaming_tool_someCAMEL-case"
     );
 
     // Line 3: Should have compound match for renamify_someCAMEL-case
@@ -75,7 +75,7 @@ let simple = renamify;
     assert_eq!(line3_matches[0].before, "renamify_someCAMEL-case");
     assert_eq!(
         line3_matches[0].after,
-        "renamed_refactoring_tool_someCAMEL-case"
+        "renamed_renaming_tool_someCAMEL-case"
     );
 
     // Line 4: Should have match for "renamify-with_MIXED" (after splitting on dot)
@@ -90,19 +90,19 @@ let simple = renamify;
     );
     assert_eq!(
         compound_match.unwrap().after,
-        "renamed_refactoring_tool-with_MIXED"
+        "renamed_renaming_tool-with_MIXED"
     );
 
     // Line 5: Should have exact match for renamify
     assert_eq!(line5_matches.len(), 1);
     assert_eq!(line5_matches[0].before, "renamify");
-    assert_eq!(line5_matches[0].after, "renamed_refactoring_tool");
+    assert_eq!(line5_matches[0].after, "renamed_renaming_tool");
 }
 
 #[test]
 fn test_format_string_placeholders_are_replaced() {
     // This test verifies that format string placeholders like "renamify_{}.tmp"
-    // are correctly replaced to "renamed_refactoring_tool_{}.tmp"
+    // are correctly replaced to "renamed_renaming_tool_{}.tmp"
 
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
@@ -138,7 +138,7 @@ fn test_format_string_placeholders_are_replaced() {
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "renamify", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
 
     // Should find matches for format string placeholders
     // Note: These are exact pattern matches, not compound matches like "renamify_{}"
@@ -196,7 +196,7 @@ In format string: renamify_{}.tmp
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "renamify", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
 
     // Should find occurrences of "renamify"
     // Note: renamify_{}.tmp is not matched because {} is not a valid identifier character

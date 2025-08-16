@@ -12,8 +12,8 @@ fn test_dot_renamify_directory_replacement() {
     std::fs::write(
         &test_file,
         r#"let renamify_dir = PathBuf::from(".renamify");
-undo_refactoring(&id, &renamify_dir)
-    .context("Failed to undo refactoring")?;
+undo_renaming(&id, &renamify_dir)
+    .context("Failed to undo renaming")?;
 // Check if .renamify is already ignored
 if is_renamify_ignored()? {
     return Ok(());
@@ -41,7 +41,7 @@ temp_dir.child(".renamify").create_dir_all().unwrap();
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "renamify", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
 
     // Should find all occurrences including .renamify
 
@@ -76,8 +76,8 @@ temp_dir.child(".renamify").create_dir_all().unwrap();
         assert!(
             hunk.line_after
                 .as_ref()
-                .is_some_and(|l| l.contains(".renamed_refactoring_tool")),
-            "Should replace .renamify with .renamed_refactoring_tool"
+                .is_some_and(|l| l.contains(".renamed_renaming_tool")),
+            "Should replace .renamify with .renamed_renaming_tool"
         );
     }
 }
@@ -92,7 +92,7 @@ fn test_import_statement_replacement() {
     std::fs::write(&test_file,
         r"use renamify_core::{
     apply_plan, ApplyOptions, Plan, PlanOptions, scan_repository, write_plan, 
-    write_preview, Style, History, format_history, get_status, undo_refactoring, redo_refactoring,
+    write_preview, Style, History, format_history, get_status, undo_renaming, redo_renaming,
 };
 let preview_output = renamify_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;
 coerce_separators: renamify_core::scanner::CoercionMode::Auto,
@@ -120,7 +120,7 @@ coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     let plan = scan_repository(
         &root,
         "renamify_core",
-        "renamed_refactoring_tool_core",
+        "renamed_renaming_tool_core",
         &options,
     )
     .unwrap();
@@ -142,7 +142,7 @@ coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     // Verify each is properly replaced
     for hunk in &plan.matches {
         assert_eq!(hunk.before, "renamify_core");
-        assert_eq!(hunk.after, "renamed_refactoring_tool_core");
+        assert_eq!(hunk.after, "renamed_renaming_tool_core");
     }
 }
 
@@ -189,7 +189,7 @@ Commands:
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "renamify", "renamed_refactoring_tool", &options).unwrap();
+    let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
 
     println!("Total matches: {}", plan.stats.total_matches);
     for hunk in &plan.matches {

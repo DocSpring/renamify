@@ -329,7 +329,7 @@ fn apply_rename_changes(
         log_file: Some(renamify_dir.join("logs").join(format!("{history_id}.log"))),
     };
 
-    apply_plan(plan, &apply_options).context("Failed to apply refactoring plan")?;
+    apply_plan(plan, &apply_options).context("Failed to apply renaming plan")?;
 
     // Build completion message
     let mut output = format!(

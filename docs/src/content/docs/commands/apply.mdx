@@ -1,6 +1,6 @@
 ---
 title: renamify apply
-description: Execute a previously generated refactoring plan
+description: Execute a previously generated renaming plan
 ---
 
 The `apply` command executes a previously generated plan, making all the planned changes to your codebase atomically.
@@ -142,7 +142,7 @@ Creates a commit message like:
 ```
 Refactor: getUserName → fetchUserProfile
 
-Applied refactoring operation def456-20241201-150322:
+Applied renaming operation def456-20241201-150322:
 - Modified 23 files
 - Renamed 5 files  
 - Renamed 2 directories
@@ -242,7 +242,7 @@ rm .renamify/plan.json
 ## Performance Considerations
 
 ### Large Applications
-For very large refactoring operations:
+For very large renaming operations:
 
 - **Disk space**: Ensure you have space for backups (roughly 2x the size of modified files)
 - **Memory usage**: Large plans may require significant RAM

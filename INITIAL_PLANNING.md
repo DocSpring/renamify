@@ -50,7 +50,7 @@ Yes – it sounds both **useful**and **marketable**.
 
 **Positioning opportunity**
 
-- Brand it clearly around “safe refactoring” or “smart rename” rather than just “search/replace.”
+- Brand it clearly around “safe renaming” or “smart rename” rather than just “search/replace.”
 - Highlight speed (ripgrep), case-intelligence, and filesystem awareness in one package.
 - If you own both the **developer experience**and **awareness campaign**, you can displace incumbents.
 

@@ -143,7 +143,7 @@ describe('RenamifyService', () => {
   });
 
   describe('undo', () => {
-    it('should undo a refactoring', async () => {
+    it('should undo a renaming', async () => {
       const mockOutput = 'Undone successfully';
       mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as never);
 
@@ -168,7 +168,7 @@ describe('RenamifyService', () => {
   });
 
   describe('redo', () => {
-    it('should redo a refactoring', async () => {
+    it('should redo a renaming', async () => {
       const mockOutput = 'Redone successfully';
       mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as never);
 

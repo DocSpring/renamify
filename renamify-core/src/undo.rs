@@ -35,8 +35,8 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     Ok(())
 }
 
-/// Undo a previously applied refactoring
-pub fn undo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
+/// Undo a previously applied renaming
+pub fn undo_renaming(id: &str, renamify_dir: &Path) -> Result<()> {
     let mut history = History::load(renamify_dir)?;
 
     // Find the entry to undo
@@ -238,7 +238,7 @@ pub fn undo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
 
     // Process all original affected files to calculate new checksums
     for path in entry.affected_files.keys() {
-        // The file should now be at its original location (before the refactoring)
+        // The file should now be at its original location (before the renaming)
         // Check if it was renamed and is now back at original location
         let original_path = entry
             .renames
@@ -278,8 +278,8 @@ pub fn undo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Redo a previously undone refactoring
-pub fn redo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
+/// Redo a previously undone renaming
+pub fn redo_renaming(id: &str, renamify_dir: &Path) -> Result<()> {
     let history = History::load(renamify_dir)?;
 
     // Find the original entry
@@ -297,12 +297,12 @@ pub fn redo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
         return Err(anyhow!("Entry '{}' has not been reverted", id));
     }
 
-    eprintln!("Redoing refactoring '{}'...", id);
+    eprintln!("Redoing renaming '{}'...", id);
 
     // Load the original plan from disk
     let plan_path = renamify_dir.join("plans").join(format!("{}.json", id));
     if !plan_path.exists() {
-        return Err(anyhow!("Plan file not found for entry '{}'. This may be an old refactoring before plans were stored.", id));
+        return Err(anyhow!("Plan file not found for entry '{}'. This may be an old renaming before plans were stored.", id));
     }
 
     let plan_json = fs::read_to_string(&plan_path)?;
@@ -321,7 +321,7 @@ pub fn redo_refactoring(id: &str, renamify_dir: &Path) -> Result<()> {
 
     apply_plan(&mut plan, &options)?;
 
-    eprintln!("Successfully redid refactoring '{}'", id);
+    eprintln!("Successfully redid renaming '{}'", id);
     Ok(())
 }
 
@@ -412,7 +412,7 @@ mod tests {
         let plan_path = plans_dir.join("test_apply_123.json");
         fs::write(&plan_path, serde_json::to_string(&plan).unwrap()).unwrap();
 
-        // Create history entry representing the applied refactoring
+        // Create history entry representing the applied renaming
         let mut affected_files = HashMap::new();
         affected_files.insert(new_file.clone(), "checksum123".to_string());
 
@@ -439,7 +439,7 @@ mod tests {
         history.save().unwrap();
 
         // Perform undo
-        undo_refactoring("test_apply_123", &renamify_dir).unwrap();
+        undo_renaming("test_apply_123", &renamify_dir).unwrap();
 
         // Verify file was renamed back
         assert!(!new_file.exists(), "Renamed file should not exist");
@@ -508,7 +508,7 @@ mod tests {
         history.save().unwrap();
 
         // Try to undo again - should fail
-        let result = undo_refactoring("original", &renamify_dir);
+        let result = undo_renaming("original", &renamify_dir);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -545,7 +545,7 @@ mod tests {
         history.save().unwrap();
 
         // Try to undo a revert entry - should fail
-        let result = undo_refactoring("revert-123", &renamify_dir);
+        let result = undo_renaming("revert-123", &renamify_dir);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -566,7 +566,7 @@ mod tests {
         history.save().unwrap();
 
         // Try to undo nonexistent entry
-        let result = undo_refactoring("nonexistent", &renamify_dir);
+        let result = undo_renaming("nonexistent", &renamify_dir);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("not found"));
     }
@@ -621,7 +621,7 @@ mod tests {
 
         // Redo should succeed (though apply might fail without proper setup)
         // We're mainly testing the redo logic, not the full apply
-        let result = redo_refactoring("test123", &renamify_dir);
+        let result = redo_renaming("test123", &renamify_dir);
         // The redo might fail due to missing files, but it should at least find the entry
         if let Err(err) = result {
             let err_msg = err.to_string();
@@ -661,7 +661,7 @@ mod tests {
         history.save().unwrap();
 
         // Try to redo - should fail
-        let result = redo_refactoring("test456", &renamify_dir);
+        let result = redo_renaming("test456", &renamify_dir);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -812,7 +812,7 @@ mod tests {
         history.save().unwrap();
 
         // Perform undo
-        undo_refactoring("test_perms", &renamify_dir).unwrap();
+        undo_renaming("test_perms", &renamify_dir).unwrap();
 
         // Verify content was restored
         let content = fs::read_to_string(&test_file).unwrap();
@@ -998,7 +998,7 @@ mod tests {
         history.save().unwrap();
 
         // Perform undo
-        undo_refactoring("test_complex", &renamify_dir).unwrap();
+        undo_renaming("test_complex", &renamify_dir).unwrap();
 
         // Verify renames were undone
         assert!(!new_dir.exists(), "New directory should not exist");
@@ -1114,7 +1114,7 @@ mod tests {
         history.save().unwrap();
 
         // Perform undo
-        let result = undo_refactoring("test_case", &renamify_dir);
+        let result = undo_renaming("test_case", &renamify_dir);
 
         // On case-insensitive filesystems, this should handle the temp rename
         // On case-sensitive filesystems, it should just rename directly

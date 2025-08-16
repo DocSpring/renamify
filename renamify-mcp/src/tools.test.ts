@@ -91,7 +91,7 @@ describe('RenamifyTools', () => {
       const result = await tools.undo({ id: 'history123' });
 
       expect(result).toContain('Undone 5 changes');
-      expect(result).toContain('Refactoring has been undone successfully');
+      expect(result).toContain('Renaming has been undone successfully');
     });
 
     it('should handle undo errors', async () => {
@@ -99,7 +99,7 @@ describe('RenamifyTools', () => {
 
       const result = await tools.undo({ id: 'invalid' });
 
-      expect(result).toContain('Error undoing refactoring: History not found');
+      expect(result).toContain('Error undoing renaming: History not found');
     });
   });
 
@@ -110,7 +110,7 @@ describe('RenamifyTools', () => {
       const result = await tools.redo({ id: 'history123' });
 
       expect(result).toContain('Redone 5 changes');
-      expect(result).toContain('Refactoring has been redone successfully');
+      expect(result).toContain('Renaming has been redone successfully');
     });
   });
 
@@ -131,7 +131,7 @@ describe('RenamifyTools', () => {
 
       const result = await tools.history({});
 
-      expect(result).toBe('No refactoring history found.');
+      expect(result).toBe('No renaming history found.');
     });
 
     it('should handle history errors', async () => {
