@@ -6,14 +6,17 @@ import { z } from 'zod';
 import { RenamifyService } from './renamify-service.js';
 import { RenamifyTools } from './tools.js';
 
-async function main() {
+export function createServer(
+  renamifyService?: RenamifyService,
+  tools?: RenamifyTools
+) {
   const server = new McpServer({
     name: 'renamify-mcp',
     version: '0.1.0',
   });
 
-  const renamifyService = new RenamifyService();
-  const tools = new RenamifyTools(renamifyService);
+  const service = renamifyService || new RenamifyService();
+  const toolsInstance = tools || new RenamifyTools(service);
 
   // Register tools using the new API - inputSchema needs Zod schema properties, not the full schema
   server.registerTool(
@@ -68,7 +71,7 @@ async function main() {
       },
     },
     async (params) => {
-      const result = await tools.plan(params);
+      const result = await toolsInstance.plan(params);
       return { content: [{ type: 'text', text: result }] };
     }
   );
@@ -97,7 +100,7 @@ async function main() {
       },
     },
     async (params) => {
-      const result = await tools.apply(params);
+      const result = await toolsInstance.apply(params);
       return { content: [{ type: 'text', text: result }] };
     }
   );
@@ -117,7 +120,7 @@ async function main() {
       },
     },
     async (params) => {
-      const result = await tools.undo(params);
+      const result = await toolsInstance.undo(params);
       return { content: [{ type: 'text', text: result }] };
     }
   );
@@ -137,7 +140,7 @@ async function main() {
       },
     },
     async (params) => {
-      const result = await tools.redo(params);
+      const result = await toolsInstance.redo(params);
       return { content: [{ type: 'text', text: result }] };
     }
   );
@@ -156,7 +159,7 @@ async function main() {
       },
     },
     async (params) => {
-      const result = await tools.history(params);
+      const result = await toolsInstance.history(params);
       return { content: [{ type: 'text', text: result }] };
     }
   );
@@ -169,7 +172,7 @@ async function main() {
       inputSchema: {},
     },
     async (params) => {
-      const result = await tools.status(params);
+      const result = await toolsInstance.status(params);
       return { content: [{ type: 'text', text: result }] };
     }
   );
@@ -193,18 +196,26 @@ async function main() {
       },
     },
     async (params) => {
-      const result = await tools.preview(params);
+      const result = await toolsInstance.preview(params);
       return { content: [{ type: 'text', text: result }] };
     }
   );
 
+  return server;
+}
+
+export async function main() {
+  const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // Server started successfully - MCP servers communicate via stdio
 }
 
-main().catch((error) => {
-  // Fatal errors need to be reported before exit
-  process.stderr.write(`Fatal error: ${error}\n`);
-  process.exit(1);
-});
+// Only run main if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    // Fatal errors need to be reported before exit
+    process.stderr.write(`Fatal error: ${error}\n`);
+    process.exit(1);
+  });
+}
