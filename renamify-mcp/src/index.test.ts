@@ -17,10 +17,10 @@ describe('MCP Server', () => {
   });
 
   it('should start without errors', async () => {
-    const serverPath = join(__dirname, 'index.ts');
+    const serverPath = join(__dirname, '..', 'dist', 'index.js');
 
-    // Start the server with bun
-    serverProcess = spawn('bun', ['run', serverPath], {
+    // Start the server with node
+    serverProcess = spawn('node', [serverPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
@@ -92,9 +92,9 @@ describe('MCP Server', () => {
   });
 
   it('should list available tools', async () => {
-    const serverPath = join(__dirname, 'index.ts');
+    const serverPath = join(__dirname, '..', 'dist', 'index.js');
 
-    serverProcess = spawn('bun', ['run', serverPath], {
+    serverProcess = spawn('node', [serverPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
