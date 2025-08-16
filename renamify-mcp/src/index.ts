@@ -212,7 +212,8 @@ export async function main() {
 }
 
 // Only run main if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+import { pathToFileURL } from 'node:url';
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
     // Fatal errors need to be reported before exit
     process.stderr.write(`Fatal error: ${error}\n`);
