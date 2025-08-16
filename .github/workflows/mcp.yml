@@ -16,9 +16,6 @@ jobs:
   mcp_test:
     name: Test MCP Server
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: renamify-mcp
 
     strategy:
       matrix:
@@ -53,16 +50,16 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-workspace
+        run: cd renamify-mcp && pnpm install
 
       - name: Run TypeScript checks
-        run: pnpm exec tsc --noEmit
+        run: cd renamify-mcp && pnpm exec tsc --noEmit
 
       - name: Run Biome checks
-        run: pnpm run check
+        run: cd renamify-mcp && pnpm run check
 
       - name: Run tests with coverage
-        run: pnpm exec vitest run --coverage
+        run: cd renamify-mcp && pnpm exec vitest run --coverage
 
       - name: Build
-        run: pnpm run build
+        run: cd renamify-mcp && pnpm run build
