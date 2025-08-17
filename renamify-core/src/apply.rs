@@ -212,7 +212,7 @@ fn make_path_relative(path: &Path) -> PathBuf {
     #[cfg(windows)]
     let path = {
         let path_str = path.to_string_lossy();
-        if path_str.starts_with(r"\\?\") {
+        if path_str.starts_with("\\\\?\\") {
             path_buf = PathBuf::from(&path_str[4..]);
             &path_buf
         } else {
@@ -233,7 +233,7 @@ fn make_path_relative(path: &Path) -> PathBuf {
             #[cfg(windows)]
             let current_dir = {
                 let dir_str = current_dir.to_string_lossy();
-                if dir_str.starts_with(r"\\?\") {
+                if dir_str.starts_with("\\\\?\\") {
                     current_dir_buf = PathBuf::from(&dir_str[4..]);
                     &current_dir_buf
                 } else {
@@ -302,7 +302,7 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
     #[cfg(windows)]
     let from_str = {
         let s = from_relative.to_string_lossy();
-        if s.starts_with(r"\\?\") {
+        if s.starts_with("\\\\?\\") {
             s[4..].to_string()
         } else {
             s.to_string()
@@ -314,7 +314,7 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
     #[cfg(windows)]
     let to_str = {
         let s = to_relative.to_string_lossy();
-        if s.starts_with(r"\\?\") {
+        if s.starts_with("\\\\?\\") {
             s[4..].to_string()
         } else {
             s.to_string()
@@ -1127,14 +1127,14 @@ mod tests {
         let relative = make_path_relative(long_path);
 
         // Should strip the \\?\ prefix
-        assert!(!relative.to_string_lossy().starts_with(r"\\?\"));
+        assert!(!relative.to_string_lossy().starts_with("\\\\?\\"));
 
         // Test with regular Windows path
         let normal_path = Path::new(r"C:\Users\test\project\src\file.rs");
         let relative_normal = make_path_relative(normal_path);
 
         // Should not have \\?\ prefix
-        assert!(!relative_normal.to_string_lossy().starts_with(r"\\?\"));
+        assert!(!relative_normal.to_string_lossy().starts_with("\\\\?\\"));
     }
 
     #[test]

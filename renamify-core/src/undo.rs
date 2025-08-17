@@ -28,7 +28,7 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
                 let prefix = &line[0..4];
                 let path_part = &line[4..];
                 // Remove \\?\ prefix if present
-                let cleaned = if path_part.starts_with(r"\\?\") {
+                let cleaned = if path_part.starts_with("\\\\?\\") {
                     &path_part[4..]
                 } else {
                     path_part
