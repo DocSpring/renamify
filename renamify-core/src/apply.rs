@@ -208,10 +208,13 @@ fn generate_reverse_patches(
 fn make_path_relative(path: &Path) -> PathBuf {
     // On Windows, strip the \\?\ prefix if present
     #[cfg(windows)]
+    let path_buf: PathBuf;
+    #[cfg(windows)]
     let path = {
         let path_str = path.to_string_lossy();
         if path_str.starts_with(r"\\?\") {
-            Path::new(&path_str[4..])
+            path_buf = PathBuf::from(&path_str[4..]);
+            &path_buf
         } else {
             path
         }
@@ -226,17 +229,22 @@ fn make_path_relative(path: &Path) -> PathBuf {
         Ok(current_dir) => {
             // On Windows, also strip the \\?\ prefix from current_dir if present
             #[cfg(windows)]
+            let current_dir_buf: PathBuf;
+            #[cfg(windows)]
             let current_dir = {
                 let dir_str = current_dir.to_string_lossy();
                 if dir_str.starts_with(r"\\?\") {
-                    PathBuf::from(&dir_str[4..])
+                    current_dir_buf = PathBuf::from(&dir_str[4..]);
+                    &current_dir_buf
                 } else {
-                    current_dir
+                    &current_dir
                 }
             };
+            #[cfg(not(windows))]
+            let current_dir = &current_dir;
 
             // Use pathdiff crate if available, or implement simple relative path logic
-            match path.strip_prefix(&current_dir) {
+            match path.strip_prefix(current_dir) {
                 Ok(relative) => relative.to_path_buf(),
                 Err(_) => {
                     // If the path is not under the current directory, return the original path
