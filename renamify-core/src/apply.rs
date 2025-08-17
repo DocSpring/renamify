@@ -247,14 +247,15 @@ fn make_path_relative(path: &Path) -> PathBuf {
             match path.strip_prefix(current_dir) {
                 Ok(relative) => relative.to_path_buf(),
                 Err(_) => {
-                    // If the path is not under the current directory, return the original path
-                    // This maintains compatibility but isn't ideal
+                    // If the path is not under the current directory, return the path without \\?\ prefix
+                    // On Windows, we've already stripped the prefix above
                     path.to_path_buf()
                 },
             }
         },
         Err(_) => {
-            // If we can't get the current directory, return the original path
+            // If we can't get the current directory, return the path without \\?\ prefix
+            // On Windows, we've already stripped the prefix above
             path.to_path_buf()
         },
     }
@@ -297,22 +298,47 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
     let from_relative = make_path_relative(from_path);
     let to_relative = make_path_relative(to_path);
 
+    // On Windows, ensure we never have \\?\ in the path string
+    #[cfg(windows)]
+    let from_str = {
+        let s = from_relative.to_string_lossy();
+        if s.starts_with(r"\\?\") {
+            s[4..].to_string()
+        } else {
+            s.to_string()
+        }
+    };
+    #[cfg(not(windows))]
+    let from_str = from_relative.to_string_lossy().to_string();
+
+    #[cfg(windows)]
+    let to_str = {
+        let s = to_relative.to_string_lossy();
+        if s.starts_with(r"\\?\") {
+            s[4..].to_string()
+        } else {
+            s.to_string()
+        }
+    };
+    #[cfg(not(windows))]
+    let to_str = to_relative.to_string_lossy().to_string();
+
     for line in lines {
         if line.starts_with("--- ") {
             // Replace "--- original" with actual from path (relative)
             // Check if the original line had a newline
             if line.ends_with('\n') {
-                writeln!(result, "--- {}", from_relative.display()).unwrap();
+                writeln!(result, "--- {}", from_str).unwrap();
             } else {
-                write!(result, "--- {}", from_relative.display()).unwrap();
+                write!(result, "--- {}", from_str).unwrap();
             }
         } else if line.starts_with("+++ ") {
             // Replace "+++ modified" with actual to path (relative)
             // Check if the original line had a newline
             if line.ends_with('\n') {
-                writeln!(result, "+++ {}", to_relative.display()).unwrap();
+                writeln!(result, "+++ {}", to_str).unwrap();
             } else {
-                write!(result, "+++ {}", to_relative.display()).unwrap();
+                write!(result, "+++ {}", to_str).unwrap();
             }
         } else {
             // Keep all other lines as-is (including their newlines)

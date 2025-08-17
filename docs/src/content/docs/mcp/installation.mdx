@@ -67,7 +67,35 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
   </TabItem>
   
   <TabItem label="Windows">
-    *Coming soon - Windows builds will be available in a future release*
+    ### x86_64 / amd64
+    ```powershell
+    # Download the latest release
+    Invoke-WebRequest -Uri "https://github.com/DocSpring/renamify/releases/latest/download/renamify-windows-amd64.zip" -OutFile "renamify.zip"
+    
+    # Extract to Program Files
+    Expand-Archive -Path "renamify.zip" -DestinationPath "$env:ProgramFiles\renamify"
+    
+    # Add to PATH (requires admin privileges)
+    [Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:ProgramFiles\renamify", [EnvironmentVariableTarget]::Machine)
+    
+    # Verify installation (open new terminal)
+    renamify --version
+    ```
+    
+    ### arm64
+    ```powershell
+    # Download the latest release
+    Invoke-WebRequest -Uri "https://github.com/DocSpring/renamify/releases/latest/download/renamify-windows-arm64.zip" -OutFile "renamify.zip"
+    
+    # Extract to Program Files
+    Expand-Archive -Path "renamify.zip" -DestinationPath "$env:ProgramFiles\renamify"
+    
+    # Add to PATH (requires admin privileges)
+    [Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:ProgramFiles\renamify", [EnvironmentVariableTarget]::Machine)
+    
+    # Verify installation (open new terminal)
+    renamify --version
+    ```
     
     ### Build from Source (Alternative)
     ```powershell

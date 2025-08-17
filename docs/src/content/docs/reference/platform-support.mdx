@@ -3,14 +3,14 @@ title: Platform Support
 description: Cross-platform compatibility and platform-specific considerations
 ---
 
-Renamify is designed to work consistently across Linux, macOS, and Windows in the near future.
+Renamify is designed to work consistently across Linux, macOS, and Windows.
 It handles platform-specific quirks intelligently.
 
 ## Supported Platforms
 
-✅ **Linux** (x86_64)
+✅ **Linux** (x86_64, arm64)
 ✅ **macOS** (Intel and Apple Silicon)  
-❌ **Windows** (x86_64) (coming soon)
+✅ **Windows** (x86_64, arm64)
 
 ## Case-Insensitive Filesystems
 
@@ -24,7 +24,7 @@ Most macOS systems use case-insensitive filesystems. Renamify handles this by:
 - **Conflict warnings** when case changes might cause issues
 
 ### Windows (NTFS)
-Windows filesystems are typically case-insensitive. Renamify will provide:
+Windows filesystems are typically case-insensitive. Renamify provides:
 
 - **Smart rename handling** similar to macOS
 - **Reserved filename detection** (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
@@ -114,8 +114,9 @@ ls -la after.js     # -rw-r--r-- (preserved)
 - **Slightly slower renames** due to case-insensitivity handling
 
 ### Windows
-- **Adequate performance** with some Windows-specific overhead
-- **NTFS optimizations** where possible
+- **Good performance** with Windows-specific optimizations
+- **NTFS optimizations** for efficient file operations
+- **Long path support** (handles paths with \\?\ prefix)
 - **Antivirus interaction** may slow operations
 
 ## Known Platform Issues
@@ -128,7 +129,7 @@ ls -la after.js     # -rw-r--r-- (preserved)
 ### Windows
 - **Antivirus scanning**: Real-time scanners may slow file operations
 - **File locking**: Some editors/IDEs lock files more aggressively
-- **Long path support**: Must be enabled in Windows 10+ for very long paths
+- **Long path support**: Automatically handled with \\?\ prefix when needed
 
 ### Linux
 - **Case sensitivity**: Be careful when moving code between case-sensitive and case-insensitive systems
@@ -199,6 +200,5 @@ git push origin test-refactor
 
 ### Planned Improvements
 - **macOS**: Better APFS optimization
-- **Windows**: Long path support detection and enablement
 - **Linux**: io_uring support for faster file operations
 - **All**: Platform-specific ignore patterns

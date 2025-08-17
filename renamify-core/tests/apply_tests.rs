@@ -281,36 +281,35 @@ fn test_atomic_operations() {
 }
 
 #[test]
+#[cfg(unix)]
 fn test_skip_symlinks() {
+    use std::os::unix::fs::symlink;
+
     let temp_dir = TempDir::new().unwrap();
     let target_file = temp_dir.path().join("target.txt");
     let symlink_path = temp_dir.path().join("link.txt");
 
     fs::write(&target_file, "target content").unwrap();
 
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::symlink;
-        symlink(&target_file, &symlink_path).unwrap();
+    symlink(&target_file, &symlink_path).unwrap();
 
-        // Create plan trying to rename symlink
-        let mut plan = create_test_plan("test_symlink", "link", "new_link");
-        plan.renames.push(Rename {
-            from: symlink_path,
-            to: temp_dir.path().join("new_link.txt"),
-            kind: RenameKind::File,
-            coercion_applied: None,
-        });
+    // Create plan trying to rename symlink
+    let mut plan = create_test_plan("test_symlink", "link", "new_link");
+    plan.renames.push(Rename {
+        from: symlink_path,
+        to: temp_dir.path().join("new_link.txt"),
+        kind: RenameKind::File,
+        coercion_applied: None,
+    });
 
-        let options = ApplyOptions {
-            backup_dir: temp_dir.path().join(".backups"),
-            skip_symlinks: true,
-            ..Default::default()
-        };
+    let options = ApplyOptions {
+        backup_dir: temp_dir.path().join(".backups"),
+        skip_symlinks: true,
+        ..Default::default()
+    };
 
-        // Applying should handle symlinks based on policy
-        let _ = apply_plan(&mut plan, &options);
-    }
+    // Applying should handle symlinks based on policy
+    let _ = apply_plan(&mut plan, &options);
 }
 
 #[test]
