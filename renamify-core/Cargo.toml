@@ -46,3 +46,6 @@ proptest = { workspace = true }
 insta = { workspace = true }
 criterion = { workspace = true }
 serial_test = "3.0"
+walkdir = { workspace = true }
+tempfile = { workspace = true }
+serde_json = { workspace = true }

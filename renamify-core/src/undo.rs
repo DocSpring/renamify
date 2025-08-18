@@ -13,6 +13,15 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     let current_content = fs::read_to_string(file_path)
         .with_context(|| format!("Failed to read file: {}", file_path.display()))?;
 
+    // On Windows, normalize line endings to match what's in the patch
+    // The patches have CRLF in content lines
+    #[cfg(windows)]
+    let current_content = if !current_content.contains("\r\n") {
+        current_content.replace("\n", "\r\n")
+    } else {
+        current_content
+    };
+
     // Get original file permissions before modifying
     let original_metadata = fs::metadata(file_path)?;
     let original_permissions = original_metadata.permissions();
@@ -43,9 +52,9 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
             } else {
                 normalized.push_str(line);
             }
-            // Add newline unless it's the last line and the original didn't end with newline
+            // Add Windows line ending unless it's the last line and the original didn't end with newline
             if i < lines.len() - 1 || patch_content.ends_with('\n') {
-                normalized.push('\n');
+                normalized.push_str("\r\n");
             }
         }
         normalized
