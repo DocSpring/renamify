@@ -261,19 +261,25 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
     // Generate diffs for each file
     for file in sorted_files {
         let hunks = &file_hunks[&file];
+
+        // Use forward slashes for consistent cross-platform output
+        let file_str = if cfg!(windows) {
+            file.to_string_lossy().replace('\\', "/")
+        } else {
+            file.to_string_lossy().to_string()
+        };
+
         if use_color {
             write!(
                 output,
                 "{}",
-                AnsiColor::Cyan.bold().paint(format!(
-                    "--- {}\n+++ {}\n",
-                    file.display(),
-                    file.display()
-                ))
+                AnsiColor::Cyan
+                    .bold()
+                    .paint(format!("--- {}\n+++ {}\n", file_str, file_str))
             )
             .unwrap();
         } else {
-            write!(output, "--- {}\n+++ {}\n", file.display(), file.display()).unwrap();
+            write!(output, "--- {}\n+++ {}\n", file_str, file_str).unwrap();
         }
 
         // Group hunks by line number to merge multiple changes on the same line

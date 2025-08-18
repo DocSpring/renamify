@@ -22,7 +22,8 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     let patch_content = {
         // Remove \\?\ prefix from paths in the patch header
         let mut normalized = String::new();
-        for line in patch_content.lines() {
+        let lines: Vec<&str> = patch_content.lines().collect();
+        for (i, line) in lines.iter().enumerate() {
             if line.starts_with("--- ") || line.starts_with("+++ ") {
                 // Extract the path part after --- or +++
                 let prefix = &line[0..4];
@@ -35,15 +36,13 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
                 };
                 normalized.push_str(prefix);
                 normalized.push_str(cleaned);
-                normalized.push('\n');
             } else {
                 normalized.push_str(line);
+            }
+            // Add newline unless it's the last line and the original didn't end with newline
+            if i < lines.len() - 1 || patch_content.ends_with('\n') {
                 normalized.push('\n');
             }
-        }
-        // Remove the trailing newline we added
-        if normalized.ends_with('\n') {
-            normalized.pop();
         }
         normalized
     };
