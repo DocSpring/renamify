@@ -143,10 +143,23 @@ fn generate_reverse_patches(
         // Generate REVERSE diff (new -> old) for undo using diffy
         let reverse_patch =
             diffy::create_patch(current_content.as_str(), original_content.as_str());
-        let reverse_diff_str = reverse_patch.to_string();
+        let mut reverse_diff_str = reverse_patch.to_string();
+
+        // On Windows, normalize the entire patch to use CRLF consistently
+        // diffy generates patches with LF line endings, but Windows needs CRLF
+        #[cfg(windows)]
+        if !reverse_diff_str.contains("\r\n") {
+            // Only convert if the patch doesn't already have CRLF
+            // This replaces all LF with CRLF
+            reverse_diff_str = reverse_diff_str.replace("\n", "\r\n");
+        }
 
         // If there are actual differences, save the reverse patch
-        if !reverse_diff_str.is_empty() && reverse_diff_str != "--- original\n+++ modified\n" {
+        if !reverse_diff_str.is_empty()
+            && reverse_diff_str != "--- original\n+++ modified\n"
+            && !reverse_diff_str.is_empty()
+            && reverse_diff_str != "--- original\r\n+++ modified\r\n"
+        {
             // Replace diffy's generic headers with actual file paths
             // For reverse patch: current_path -> original_path
             let patch_with_paths =
@@ -344,9 +357,9 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
     for line in lines {
         if line.starts_with("--- ") {
             // Replace "--- original" with actual from path (relative)
-            // Preserve the original line ending style (could be \n or \r\n)
+            // Preserve the original line ending
             write!(result, "--- {}", from_str).unwrap();
-            // Add back the original line ending(s)
+            // Add back the line ending from the original line
             if line.ends_with("\r\n") {
                 result.push_str("\r\n");
             } else if line.ends_with('\n') {
@@ -354,9 +367,9 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
             }
         } else if line.starts_with("+++ ") {
             // Replace "+++ modified" with actual to path (relative)
-            // Preserve the original line ending style (could be \n or \r\n)
+            // Preserve the original line ending
             write!(result, "+++ {}", to_str).unwrap();
-            // Add back the original line ending(s)
+            // Add back the line ending from the original line
             if line.ends_with("\r\n") {
                 result.push_str("\r\n");
             } else if line.ends_with('\n') {

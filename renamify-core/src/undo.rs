@@ -13,15 +13,6 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     let current_content = fs::read_to_string(file_path)
         .with_context(|| format!("Failed to read file: {}", file_path.display()))?;
 
-    // On Windows, normalize line endings to match what's in the patch
-    // The patches have CRLF in content lines
-    #[cfg(windows)]
-    let current_content = if !current_content.contains("\r\n") {
-        current_content.replace("\n", "\r\n")
-    } else {
-        current_content
-    };
-
     // Get original file permissions before modifying
     let original_metadata = fs::metadata(file_path)?;
     let original_permissions = original_metadata.permissions();
@@ -29,35 +20,58 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     // On Windows, normalize the patch content to handle \\?\ prefixes
     #[cfg(windows)]
     let patch_content = {
-        // Remove \\?\ prefix from paths in the patch header
-        let mut normalized = String::new();
-        let lines: Vec<&str> = patch_content.lines().collect();
-        for (i, line) in lines.iter().enumerate() {
-            if line.starts_with("--- ") || line.starts_with("+++ ") {
-                // Extract the path part after --- or +++
-                let prefix = &line[0..4];
-                let path_part = &line[4..];
+        // We need to handle \\?\ prefix in paths, but preserve line endings
+        // Split preserving line endings
+        let mut result = String::new();
+        let mut remaining = patch_content;
+
+        while !remaining.is_empty() {
+            // Find the next line ending
+            let line_end = remaining.find('\n').unwrap_or(remaining.len());
+            let (line_with_ending, rest) = remaining.split_at(line_end);
+
+            // Check if this line has a CRLF or just LF
+            let (line_content, line_ending) = if line_with_ending.ends_with('\r') {
+                (&line_with_ending[..line_with_ending.len() - 1], "\r\n")
+            } else {
+                (
+                    line_with_ending,
+                    if rest.starts_with('\n') { "\n" } else { "" },
+                )
+            };
+
+            // Process the line content
+            if line_content.starts_with("--- ") || line_content.starts_with("+++ ") {
+                let prefix = &line_content[0..4];
+                let path_part = &line_content[4..];
                 // Remove \\?\ prefix if present
-                // The prefix can appear as either \\?\ (in actual patch files) or \?\ (in test strings)
                 let cleaned = if path_part.starts_with("\\\\?\\") {
                     &path_part[4..]
                 } else if path_part.starts_with("\\?\\") {
-                    // Handle the case where the prefix is not double-escaped
                     &path_part[3..]
                 } else {
                     path_part
                 };
-                normalized.push_str(prefix);
-                normalized.push_str(cleaned);
+                result.push_str(prefix);
+                result.push_str(cleaned);
             } else {
-                normalized.push_str(line);
+                result.push_str(line_content);
             }
-            // Add Windows line ending unless it's the last line and the original didn't end with newline
-            if i < lines.len() - 1 || patch_content.ends_with('\n') {
-                normalized.push_str("\r\n");
+
+            // Add the original line ending
+            if !line_ending.is_empty() {
+                result.push_str(line_ending);
             }
+
+            // Move past the line ending in the remaining string
+            remaining = if rest.starts_with('\n') {
+                &rest[1..]
+            } else {
+                rest
+            };
         }
-        normalized
+
+        result
     };
     #[cfg(not(windows))]
     let patch_content = patch_content;
