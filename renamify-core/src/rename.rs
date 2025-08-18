@@ -515,11 +515,18 @@ mod tests {
             .renames
             .iter()
             .map(|r| {
-                r.from
+                let path_str = r
+                    .from
                     .strip_prefix(temp_dir.path())
                     .unwrap()
                     .to_string_lossy()
-                    .to_string()
+                    .to_string();
+                // Normalize to forward slashes for consistent comparison
+                if cfg!(windows) {
+                    path_str.replace('\\', "/")
+                } else {
+                    path_str
+                }
             })
             .collect();
 
@@ -559,11 +566,18 @@ mod tests {
             .renames
             .iter()
             .map(|r| {
-                r.from
+                let path_str = r
+                    .from
                     .strip_prefix(temp_dir.path())
                     .unwrap()
                     .to_string_lossy()
-                    .to_string()
+                    .to_string();
+                // Normalize to forward slashes for consistent comparison
+                if cfg!(windows) {
+                    path_str.replace('\\', "/")
+                } else {
+                    path_str
+                }
             })
             .collect();
 

@@ -29,8 +29,12 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
                 let prefix = &line[0..4];
                 let path_part = &line[4..];
                 // Remove \\?\ prefix if present
+                // The prefix can appear as either \\?\ (in actual patch files) or \?\ (in test strings)
                 let cleaned = if path_part.starts_with("\\\\?\\") {
                     &path_part[4..]
+                } else if path_part.starts_with("\\?\\") {
+                    // Handle the case where the prefix is not double-escaped
+                    &path_part[3..]
                 } else {
                     path_part
                 };
