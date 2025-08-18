@@ -55,7 +55,15 @@ fn test_rnignore_with_patterns() {
     let file_paths: Vec<String> = plan
         .matches
         .iter()
-        .map(|m| m.file.to_str().unwrap().to_string())
+        .map(|m| {
+            let path = m.file.to_str().unwrap().to_string();
+            // Normalize to forward slashes for consistent comparison
+            if cfg!(windows) {
+                path.replace('\\', "/")
+            } else {
+                path
+            }
+        })
         .collect();
 
     assert!(file_paths.iter().any(|p| p.contains("src/main.rs")));
@@ -133,7 +141,15 @@ fn test_rnignore_in_subdirectory() {
     let file_paths: Vec<String> = plan
         .matches
         .iter()
-        .map(|m| m.file.to_str().unwrap().to_string())
+        .map(|m| {
+            let path = m.file.to_str().unwrap().to_string();
+            // Normalize to forward slashes for consistent comparison
+            if cfg!(windows) {
+                path.replace('\\', "/")
+            } else {
+                path
+            }
+        })
         .collect();
 
     assert!(file_paths.iter().any(|p| p.contains("root.txt")));
