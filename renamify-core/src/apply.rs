@@ -324,11 +324,13 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
 
     // On Windows, ensure we never have \\?\ in the path string
     // Check both escaped and unescaped versions to be safe
+    // Convert paths to forward slashes for patch compatibility
+    // The diffy library cannot parse patches with backslashes in filenames
     let from_str = {
         let s = from_relative.to_string_lossy();
         #[cfg(windows)]
         {
-            if s.starts_with("\\\\?\\") || s.starts_with(r"\\?\") {
+            let mut path_str = if s.starts_with("\\\\?\\") || s.starts_with(r"\\?\") {
                 eprintln!(
                     "DEBUG replace_patch_headers: Stripping prefix from from_str: {}",
                     s
@@ -336,7 +338,10 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
                 s[4..].to_string()
             } else {
                 s.to_string()
-            }
+            };
+            // Replace backslashes with forward slashes for patch compatibility
+            path_str = path_str.replace('\\', "/");
+            path_str
         }
         #[cfg(not(windows))]
         {
@@ -348,7 +353,7 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
         let s = to_relative.to_string_lossy();
         #[cfg(windows)]
         {
-            if s.starts_with("\\\\?\\") || s.starts_with(r"\\?\") {
+            let mut path_str = if s.starts_with("\\\\?\\") || s.starts_with(r"\\?\") {
                 eprintln!(
                     "DEBUG replace_patch_headers: Stripping prefix from to_str: {}",
                     s
@@ -356,7 +361,10 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
                 s[4..].to_string()
             } else {
                 s.to_string()
-            }
+            };
+            // Replace backslashes with forward slashes for patch compatibility
+            path_str = path_str.replace('\\', "/");
+            path_str
         }
         #[cfg(not(windows))]
         {
