@@ -432,7 +432,7 @@ fn generate_hunks(
         }
 
         // For diff mode, we need the full line context
-        let line_before = line_string.trim_end().to_string();
+        let line_before = line_string.clone();
 
         // Create the after line by replacing the variant in the original line
         // Use the column position from the match to ensure we replace the right occurrence
@@ -443,7 +443,7 @@ fn generate_hunks(
                 after_line.push_str(&line_string[..match_col]);
                 after_line.push_str(&after);
                 after_line.push_str(&line_string[match_col + before.len()..]);
-                after_line.trim_end().to_string()
+                after_line
             } else {
                 // Fallback: try to find the match in the line
                 if let Some(match_pos) = line_string.find(&before) {
@@ -451,7 +451,7 @@ fn generate_hunks(
                     after_line.push_str(&line_string[..match_pos]);
                     after_line.push_str(&after);
                     after_line.push_str(&line_string[match_pos + before.len()..]);
-                    after_line.trim_end().to_string()
+                    after_line
                 } else {
                     // Could not find the match in the line - this shouldn't happen
                     line_before.clone()
@@ -937,8 +937,8 @@ mod tests {
         assert_eq!(hunks[0].line, 1);
         assert_eq!(hunks[0].before, "old_name");
         assert_eq!(hunks[0].after, "new_name");
-        assert_eq!(hunks[0].line_before.as_ref().unwrap(), "fn old_name() {");
-        assert_eq!(hunks[0].line_after.as_ref().unwrap(), "fn new_name() {");
+        assert_eq!(hunks[0].line_before.as_ref().unwrap(), "fn old_name() {\n");
+        assert_eq!(hunks[0].line_after.as_ref().unwrap(), "fn new_name() {\n");
 
         // Second line replacement
         assert_eq!(hunks[1].variant, "oldName");
@@ -947,11 +947,11 @@ mod tests {
         assert_eq!(hunks[1].after, "newName");
         assert_eq!(
             hunks[1].line_before.as_ref().unwrap(),
-            "    println!(\"oldName\");"
+            "    println!(\"oldName\");\n"
         );
         assert_eq!(
             hunks[1].line_after.as_ref().unwrap(),
-            "    println!(\"newName\");"
+            "    println!(\"newName\");\n"
         );
 
         // Third line replacement
@@ -959,8 +959,8 @@ mod tests {
         assert_eq!(hunks[2].line, 3);
         assert_eq!(hunks[2].before, "old_name");
         assert_eq!(hunks[2].after, "new_name");
-        assert_eq!(hunks[2].line_before.as_ref().unwrap(), "    old_name();");
-        assert_eq!(hunks[2].line_after.as_ref().unwrap(), "    new_name();");
+        assert_eq!(hunks[2].line_before.as_ref().unwrap(), "    old_name();\n");
+        assert_eq!(hunks[2].line_after.as_ref().unwrap(), "    new_name();\n");
     }
 
     #[test]
