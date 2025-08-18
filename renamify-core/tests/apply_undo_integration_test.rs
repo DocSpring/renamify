@@ -92,7 +92,12 @@ fn test_apply_undo_content_changes_only() {
 
     // Verify undo worked
     let undone_content = fs::read_to_string(&test_file).unwrap();
-    assert_eq!(undone_content, initial_content);
+    // On Windows, line endings will be CRLF after write
+    #[cfg(windows)]
+    let expected_content = initial_content.replace("\n", "\r\n");
+    #[cfg(not(windows))]
+    let expected_content = initial_content.to_string();
+    assert_eq!(undone_content, expected_content);
 }
 
 #[test]
@@ -267,7 +272,12 @@ fn test_apply_undo_content_and_file_rename() {
     assert!(old_file.exists());
     assert!(!new_file.exists());
     let undone_content = fs::read_to_string(&old_file).unwrap();
-    assert_eq!(undone_content, initial_content);
+    // On Windows, line endings will be CRLF after write
+    #[cfg(windows)]
+    let expected_content = initial_content.replace("\n", "\r\n");
+    #[cfg(not(windows))]
+    let expected_content = initial_content.to_string();
+    assert_eq!(undone_content, expected_content);
 }
 
 #[test]
@@ -353,7 +363,12 @@ fn test_apply_undo_content_and_dir_rename() {
     assert!(!new_dir.exists());
     assert!(test_file.exists());
     let undone_content = fs::read_to_string(&test_file).unwrap();
-    assert_eq!(undone_content, initial_content);
+    // On Windows, line endings will be CRLF after write
+    #[cfg(windows)]
+    let expected_content = initial_content.replace("\n", "\r\n");
+    #[cfg(not(windows))]
+    let expected_content = initial_content.to_string();
+    assert_eq!(undone_content, expected_content);
 }
 
 #[test]
@@ -549,10 +564,20 @@ fn test_apply_undo_all_changes() {
     assert!(old_file.exists());
 
     let undone_content = fs::read_to_string(&old_file).unwrap();
-    assert_eq!(undone_content, initial_content);
+    // On Windows, line endings will be CRLF after write
+    #[cfg(windows)]
+    let expected_content = initial_content.replace("\n", "\r\n");
+    #[cfg(not(windows))]
+    let expected_content = initial_content.to_string();
+    assert_eq!(undone_content, expected_content);
 
     let undone_stable = fs::read_to_string(&stable_file).unwrap();
-    assert_eq!(undone_stable, stable_initial);
+    // On Windows, line endings will be CRLF after write
+    #[cfg(windows)]
+    let expected_stable = stable_initial.replace("\n", "\r\n");
+    #[cfg(not(windows))]
+    let expected_stable = stable_initial.to_string();
+    assert_eq!(undone_stable, expected_stable);
 }
 
 #[test]
