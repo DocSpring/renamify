@@ -12,8 +12,10 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     // Debug: print first 200 chars of patch to see what we're dealing with
     #[cfg(windows)]
     {
+        let first_200 = patch_content.chars().take(200).collect::<String>();
         eprintln!("DEBUG: Patch content (first 200 chars):");
-        eprintln!("{:?}", &patch_content.chars().take(200).collect::<String>());
+        eprintln!("{}", first_200);
+        eprintln!("DEBUG HEX: {:?}", first_200.as_bytes());
     }
 
     // Read the current file content
