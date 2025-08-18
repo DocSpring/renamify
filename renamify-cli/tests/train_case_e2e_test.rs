@@ -266,8 +266,15 @@ The Rename-Tool-Based-Solution is working.
 
     // Verify content is back to original
     let restored_content = std::fs::read_to_string(temp_dir.path().join("doc.md")).unwrap();
+
+    // On Windows, line endings will be CRLF after write_str
+    #[cfg(windows)]
+    let expected_content = original_content.replace("\n", "\r\n");
+    #[cfg(not(windows))]
+    let expected_content = original_content.to_string();
+
     assert_eq!(
-        restored_content, original_content,
+        restored_content, expected_content,
         "Content should be restored to original after undo"
     );
     assert!(restored_content.contains("Rename-Tool-Core-Engine"));

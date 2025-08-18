@@ -526,8 +526,12 @@ mod tests {
 
         // Verify content was restored
         let content = fs::read_to_string(&old_file).unwrap();
+        #[cfg(windows)]
+        let expected_content = "original content\r\n";
+        #[cfg(not(windows))]
+        let expected_content = "original content\n";
         assert_eq!(
-            content, "original content\n",
+            content, expected_content,
             "Content should be restored from modified"
         );
 
