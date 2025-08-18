@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if ! command -v rg &> /dev/null; then
+  echo "ripgrep not found. Please install it."
+  exit 1
+fi
+
 echo "=== Renamify E2E Test ==="
 
 # Faster: build debug for the loop, build release once at the end
