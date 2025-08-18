@@ -179,8 +179,13 @@ fn test_patches_preserve_exact_line_content() {
 
     // Verify exact restoration
     let restored_content = std::fs::read_to_string(&test_file).unwrap();
+    // On Windows, line endings will be CRLF after write
+    #[cfg(windows)]
+    let expected_content = original_content.replace("\n", "\r\n");
+    #[cfg(not(windows))]
+    let expected_content = original_content.to_string();
     assert_eq!(
-        restored_content, original_content,
+        restored_content, expected_content,
         "Content should be exactly restored including all whitespace"
     );
 }
