@@ -9,6 +9,13 @@ use std::path::{Path, PathBuf};
 
 /// Apply a single patch to a file
 fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
+    // Debug: print first 200 chars of patch to see what we're dealing with
+    #[cfg(windows)]
+    {
+        eprintln!("DEBUG: Patch content (first 200 chars):");
+        eprintln!("{:?}", &patch_content.chars().take(200).collect::<String>());
+    }
+
     // Read the current file content
     let current_content = fs::read_to_string(file_path)
         .with_context(|| format!("Failed to read file: {}", file_path.display()))?;
