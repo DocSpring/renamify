@@ -175,8 +175,8 @@ fn test_plan_command_with_includes() {
         ])
         .assert()
         .success()
-        .stdout(predicate::str::contains(&path_str(&["src", "main.rs"])))
-        .stdout(predicate::str::contains(&path_str(&["tests", "test.rs"])).not());
+        .stdout(predicate::str::contains("src/main.rs"))
+        .stdout(predicate::str::contains("tests/test.rs").not());
 }
 
 #[test]
@@ -205,8 +205,8 @@ fn test_plan_command_with_excludes() {
         ])
         .assert()
         .success()
-        .stdout(predicate::str::contains(&path_str(&["src", "main.rs"])))
-        .stdout(predicate::str::contains(&path_str(&["tests", "test.rs"])).not());
+        .stdout(predicate::str::contains("src/main.rs"))
+        .stdout(predicate::str::contains("tests/test.rs").not());
 }
 
 #[test]
