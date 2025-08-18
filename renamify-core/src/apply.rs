@@ -212,7 +212,7 @@ fn make_path_relative(path: &Path) -> PathBuf {
     #[cfg(windows)]
     let path = {
         let path_str = path.to_string_lossy();
-        if path_str.starts_with("\\\\?\\") {
+        if path_str.starts_with("\\\\?\\") || path_str.starts_with(r"\\?\") {
             path_buf = PathBuf::from(&path_str[4..]);
             &path_buf
         } else {
@@ -233,7 +233,7 @@ fn make_path_relative(path: &Path) -> PathBuf {
             #[cfg(windows)]
             let current_dir = {
                 let dir_str = current_dir.to_string_lossy();
-                if dir_str.starts_with("\\\\?\\") {
+                if dir_str.starts_with("\\\\?\\") || dir_str.starts_with(r"\\?\") {
                     current_dir_buf = PathBuf::from(&dir_str[4..]);
                     &current_dir_buf
                 } else {
@@ -299,29 +299,38 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
     let to_relative = make_path_relative(to_path);
 
     // On Windows, ensure we never have \\?\ in the path string
-    #[cfg(windows)]
+    // Check both escaped and unescaped versions to be safe
     let from_str = {
         let s = from_relative.to_string_lossy();
-        if s.starts_with("\\\\?\\") {
-            s[4..].to_string()
-        } else {
+        #[cfg(windows)]
+        {
+            if s.starts_with("\\\\?\\") || s.starts_with(r"\\?\") {
+                s[4..].to_string()
+            } else {
+                s.to_string()
+            }
+        }
+        #[cfg(not(windows))]
+        {
             s.to_string()
         }
     };
-    #[cfg(not(windows))]
-    let from_str = from_relative.to_string_lossy().to_string();
 
-    #[cfg(windows)]
     let to_str = {
         let s = to_relative.to_string_lossy();
-        if s.starts_with("\\\\?\\") {
-            s[4..].to_string()
-        } else {
+        #[cfg(windows)]
+        {
+            if s.starts_with("\\\\?\\") || s.starts_with(r"\\?\") {
+                s[4..].to_string()
+            } else {
+                s.to_string()
+            }
+        }
+        #[cfg(not(windows))]
+        {
             s.to_string()
         }
     };
-    #[cfg(not(windows))]
-    let to_str = to_relative.to_string_lossy().to_string();
 
     for line in lines {
         if line.starts_with("--- ") {
