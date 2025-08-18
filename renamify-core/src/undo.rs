@@ -9,15 +9,6 @@ use std::path::{Path, PathBuf};
 
 /// Apply a single patch to a file
 fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
-    // Debug: print first 200 chars of patch to see what we're dealing with
-    #[cfg(windows)]
-    {
-        let first_200 = patch_content.chars().take(200).collect::<String>();
-        eprintln!("DEBUG: Patch content (first 200 chars):");
-        eprintln!("{}", first_200);
-        eprintln!("DEBUG HEX: {:?}", first_200.as_bytes());
-    }
-
     // Read the current file content
     let current_content = fs::read_to_string(file_path)
         .with_context(|| format!("Failed to read file: {}", file_path.display()))?;
@@ -85,8 +76,14 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     #[cfg(not(windows))]
     let patch_content = patch_content;
 
+    // Normalize patch to LF for diffy parsing (diffy expects LF line endings)
+    #[cfg(windows)]
+    let patch_content_for_diffy = patch_content.replace("\r\n", "\n");
+    #[cfg(not(windows))]
+    let patch_content_for_diffy = patch_content;
+
     // Parse and apply the patch using diffy
-    let patch = diffy::Patch::from_str(&patch_content)
+    let patch = diffy::Patch::from_str(&patch_content_for_diffy)
         .map_err(|e| anyhow!("Failed to parse patch: {}", e))?;
 
     let result = diffy::apply(&current_content, &patch)
