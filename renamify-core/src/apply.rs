@@ -147,10 +147,29 @@ fn generate_reverse_patches(
 
         // If there are actual differences, save the reverse patch
         if !reverse_diff_str.is_empty() && reverse_diff_str != "--- original\n+++ modified\n" {
+            // Debug output on Windows
+            #[cfg(windows)]
+            {
+                eprintln!(
+                    "DEBUG generate_reverse_patches: current_path = {}",
+                    current_path.display()
+                );
+                eprintln!(
+                    "DEBUG generate_reverse_patches: original_path = {}",
+                    original_path.display()
+                );
+            }
             // Replace diffy's generic headers with actual file paths
             // For reverse patch: current_path -> original_path
             let patch_with_paths =
                 replace_patch_headers(&reverse_diff_str, &current_path, original_path);
+
+            // Debug: Show first few lines of patch
+            #[cfg(windows)]
+            {
+                let patch_lines: Vec<&str> = patch_with_paths.lines().take(3).collect();
+                eprintln!("DEBUG patch headers: {:?}", patch_lines);
+            }
 
             // Generate hash for this file's patch
             let relative_path = make_path_relative(original_path);
@@ -212,7 +231,12 @@ fn make_path_relative(path: &Path) -> PathBuf {
     #[cfg(windows)]
     let path = {
         let path_str = path.to_string_lossy();
-        if path_str.starts_with("\\\\?\\") || path_str.starts_with(r"\\?\") {
+        // The actual string contains literal backslashes "\\?\", not the raw string r"\\?\"
+        if path_str.starts_with("\\\\?\\") {
+            eprintln!(
+                "DEBUG: Stripping Windows long path prefix from: {}",
+                path_str
+            );
             path_buf = PathBuf::from(&path_str[4..]);
             &path_buf
         } else {
@@ -305,6 +329,10 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
         #[cfg(windows)]
         {
             if s.starts_with("\\\\?\\") || s.starts_with(r"\\?\") {
+                eprintln!(
+                    "DEBUG replace_patch_headers: Stripping prefix from from_str: {}",
+                    s
+                );
                 s[4..].to_string()
             } else {
                 s.to_string()
@@ -321,6 +349,10 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
         #[cfg(windows)]
         {
             if s.starts_with("\\\\?\\") || s.starts_with(r"\\?\") {
+                eprintln!(
+                    "DEBUG replace_patch_headers: Stripping prefix from to_str: {}",
+                    s
+                );
                 s[4..].to_string()
             } else {
                 s.to_string()
