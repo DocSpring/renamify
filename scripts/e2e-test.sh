@@ -8,7 +8,7 @@ export CARGO_TARGET_DIR=/tmp/renamify-e2e-target
 WORKDIR=./renamify-e2e-test
 
 if [ -z "${CI:-}" ]; then
-  RUSTC_WRAPPER="$(command -v sccache)"
+  RUSTC_WRAPPER="$(command -v sccache || true)"
   if [ -n "$RUSTC_WRAPPER" ]; then
     SCCACHE_DIR="${SCCACHE_DIR:-$HOME/.cache/sccache}"
     export RUSTC_WRAPPER SCCACHE_DIR
