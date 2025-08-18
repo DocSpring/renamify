@@ -716,8 +716,9 @@ mod tests {
         fs::write(&test_file, "new content").unwrap();
 
         // Create a patch with Windows long path prefix in headers
-        let patch_with_prefix = r"--- \\?\C:\temp\test.txt
-+++ \\?\C:\temp\test.txt
+        // Use a path that doesn't contain escape sequences like \t
+        let patch_with_prefix = r"--- \?\C:\Users\test.txt
++++ \?\C:\Users\test.txt
 @@ -1 +1 @@
 -new content
 \ No newline at end of file
