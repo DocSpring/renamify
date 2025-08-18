@@ -262,11 +262,20 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
     for file in sorted_files {
         let hunks = &file_hunks[&file];
 
+        // Make path relative to current directory for cleaner display
+        let relative_path = match std::env::current_dir()
+            .ok()
+            .and_then(|cwd| file.strip_prefix(cwd).ok())
+        {
+            Some(rel) => rel,
+            None => file,
+        };
+
         // Use forward slashes for consistent cross-platform output
         let file_str = if cfg!(windows) {
-            file.to_string_lossy().replace('\\', "/")
+            relative_path.to_string_lossy().replace('\\', "/")
         } else {
-            file.to_string_lossy().to_string()
+            relative_path.to_string_lossy().to_string()
         };
 
         if use_color {
