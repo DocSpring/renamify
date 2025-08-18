@@ -6,7 +6,24 @@ use anyhow::Result;
 use bstr::ByteSlice;
 use regex::bytes::Regex;
 use std::collections::{BTreeMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+/// Normalize a path by removing Windows long path prefix if present
+fn normalize_path(path: &Path) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let path_str = path.to_string_lossy();
+        if path_str.starts_with("\\\\?\\") {
+            PathBuf::from(&path_str[4..])
+        } else {
+            path.to_path_buf()
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        path.to_path_buf()
+    }
+}
 
 /// Check if a string has any recognizable case style
 fn has_recognizable_case_style(s: &str) -> bool {
@@ -373,7 +390,7 @@ pub fn enhanced_matches_to_hunks(
         };
 
         hunks.push(MatchHunk {
-            file: path.to_path_buf(),
+            file: normalize_path(path),
             line: m.line as u64,
             col: u32::try_from(m.column).unwrap_or(u32::MAX),
             variant: before.clone(),

@@ -16,6 +16,23 @@ use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+/// Normalize a path by removing Windows long path prefix if present
+fn normalize_path(path: &Path) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let path_str = path.to_string_lossy();
+        if path_str.starts_with("\\\\?\\") {
+            PathBuf::from(&path_str[4..])
+        } else {
+            path.to_path_buf()
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        path.to_path_buf()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlanOptions {
     pub includes: Vec<String>,
@@ -442,7 +459,7 @@ fn generate_hunks(
             };
 
         hunks.push(MatchHunk {
-            file: path.to_path_buf(),
+            file: normalize_path(path),
             line: m.line as u64,
             col: u32::try_from(m.column).unwrap_or(u32::MAX),
             variant: m.variant.clone(),

@@ -7,6 +7,23 @@ use tempfile::TempDir;
 
 use crate::scanner::{PlanOptions, Rename, RenameKind};
 
+/// Normalize a path by removing Windows long path prefix if present
+fn normalize_path(path: &Path) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let path_str = path.to_string_lossy();
+        if path_str.starts_with("\\\\?\\") {
+            PathBuf::from(&path_str[4..])
+        } else {
+            path.to_path_buf()
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        path.to_path_buf()
+    }
+}
+
 /// Windows reserved filenames that cannot be used
 const WINDOWS_RESERVED: &[&str] = &[
     "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
@@ -155,8 +172,8 @@ pub fn plan_renames_with_conflicts(
                     };
 
                     collected_renames.push(Rename {
-                        from: path.to_path_buf(),
-                        to: new_path,
+                        from: normalize_path(path),
+                        to: normalize_path(&new_path),
                         kind,
                         coercion_applied,
                     });
