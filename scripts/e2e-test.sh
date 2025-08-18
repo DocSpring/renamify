@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "=== Renamify E2E Test ==="
+
 # Faster: build debug for the loop, build release once at the end
 export CARGO_TARGET_DIR=/tmp/renamify-e2e-target
 WORKDIR=./renamify-e2e-test
 
 if [ -z "${CI:-}" ]; then
   RUSTC_WRAPPER="$(command -v sccache)"
-  if [ -z "$RUSTC_WRAPPER" ]; then
-    echo "sscache not found. Please install it."
+  if [ -n "$RUSTC_WRAPPER" ]; then
+    SCCACHE_DIR="${SCCACHE_DIR:-$HOME/.cache/sccache}"
+    export RUSTC_WRAPPER SCCACHE_DIR
   fi
-  SCCACHE_DIR="${SCCACHE_DIR:-$HOME/.cache/sccache}"
-  export RUSTC_WRAPPER SCCACHE_DIR
 fi
 
 if [ -d "$WORKDIR" ]; then
