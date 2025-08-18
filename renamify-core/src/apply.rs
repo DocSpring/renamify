@@ -148,10 +148,11 @@ fn generate_reverse_patches(
         // On Windows, normalize the entire patch to use CRLF consistently
         // diffy generates patches with LF line endings, but Windows needs CRLF
         #[cfg(windows)]
-        if !reverse_diff_str.contains("\r\n") {
-            // Only convert if the patch doesn't already have CRLF
-            // This replaces all LF with CRLF
-            reverse_diff_str = reverse_diff_str.replace("\n", "\r\n");
+        {
+            // Always convert LF to CRLF on Windows
+            // This replaces all standalone LF with CRLF
+            reverse_diff_str = reverse_diff_str.replace("\r\n", "\n"); // First normalize any existing CRLF to LF
+            reverse_diff_str = reverse_diff_str.replace("\n", "\r\n"); // Then convert all LF to CRLF
         }
 
         // If there are actual differences, save the reverse patch
