@@ -96,8 +96,14 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     let result = diffy::apply(&current_content_for_diffy, &patch)
         .map_err(|e| anyhow!("Failed to apply patch: {}", e))?;
 
+    // On Windows, convert back to CRLF before writing
+    #[cfg(windows)]
+    let result_to_write = result.replace("\n", "\r\n");
+    #[cfg(not(windows))]
+    let result_to_write = result;
+
     // Write the result back to the file
-    fs::write(file_path, &result)
+    fs::write(file_path, &result_to_write)
         .with_context(|| format!("Failed to write file: {}", file_path.display()))?;
 
     // Restore original permissions
