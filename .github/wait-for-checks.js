@@ -1,9 +1,14 @@
 /**
  * Wait for GitHub Actions checks to complete
- * Used by the docs workflow to wait for CI/E2E/MCP checks that are actually running
+ * 
+ * @param {Object} params
+ * @param {Object} params.github - GitHub API object
+ * @param {Object} params.context - GitHub context
+ * @param {Object} params.core - GitHub Actions core
+ * @param {Array<string>} params.checks - Optional array of check name prefixes to wait for
  */
 
-const REQUIRED_PREFIXES = [
+const DEFAULT_REQUIRED_PREFIXES = [
   "Test on", // from ci.yml - matrix job (ubuntu, macos, windows)
   "Code Coverage", // from ci.yml - coverage job
   "Check MSRV", // from ci.yml - minimum supported rust version
@@ -17,7 +22,15 @@ const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes overall timeout
 const WARMUP_MS = 5 * 60 * 1000; // 5 minutes for checks to appear
 const POLL_INTERVAL_MS = 10 * 1000; // 10 seconds between polls
 
-module.exports = async ({ github, context, core }) => {
+module.exports = async ({ github, context, core, checks }) => {
+  // Use provided checks or default to all checks
+  const REQUIRED_PREFIXES = checks || DEFAULT_REQUIRED_PREFIXES;
+  
+  if (checks) {
+    core.info(`Waiting for specific checks: ${checks.join(", ")}`);
+  } else {
+    core.info("Waiting for all default required checks");
+  }
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }

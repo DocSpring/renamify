@@ -50,6 +50,30 @@ jobs:
       - name: Run tests
         run: cargo test --verbose
 
+      - name: Build release binary
+        run: cargo build --release --verbose
+
+      - name: Upload release binary (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: renamify-linux-x64
+          path: target/release/renamify
+
+      - name: Upload release binary (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: renamify-macos-x64
+          path: target/release/renamify
+
+      - name: Upload release binary (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: renamify-windows-x64
+          path: target/release/renamify.exe
+
   ci_coverage:
     name: Code Coverage
     runs-on: ubuntu-latest

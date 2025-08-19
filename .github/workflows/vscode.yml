@@ -35,6 +35,54 @@ jobs:
           # Preserve line endings to prevent Biome formatting issues on Windows
           autocrlf: false
 
+      - name: Wait for CI workflow to complete
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('./.github/wait-for-checks.js');
+            await script({ github, context, core, checks: ["Test on", "Code Coverage", "Check MSRV"] });
+
+      - name: Download renamify binary (Linux)
+        if: runner.os == 'Linux'
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ci.yml
+          workflow_conclusion: success
+          name: renamify-linux-x64
+          path: ./renamify-bin
+
+      - name: Download renamify binary (macOS)
+        if: runner.os == 'macOS'
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ci.yml
+          workflow_conclusion: success
+          name: renamify-macos-x64
+          path: ./renamify-bin
+
+      - name: Download renamify binary (Windows)
+        if: runner.os == 'Windows'
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ci.yml
+          workflow_conclusion: success
+          name: renamify-windows-x64
+          path: ./renamify-bin
+
+      - name: Make binary executable and add to PATH
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            chmod +x ./renamify-bin/renamify.exe
+            echo "$PWD/renamify-bin" >> $GITHUB_PATH
+          else
+            chmod +x ./renamify-bin/renamify
+            echo "$PWD/renamify-bin" >> $GITHUB_PATH
+          fi
+
+      - name: Verify renamify is available
+        run: renamify --version
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
