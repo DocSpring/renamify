@@ -53,7 +53,7 @@ See [MCP Server documentation](https://docspring.github.io/renamify/mcp/overview
 
 ## Features
 
-- **Case-aware transformations**: Automatically handles snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Train-Case, and more
+- **Case-aware transformations**: Automatically handles snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Title Case, Train-Case, dot.case
 - **Safe by default**: Plan → Review → Apply workflow prevents accidents
 - **Built-in undo/redo**: Full history tracking, separate from git
 - **File and directory renaming**: Rename everything in one atomic operation
