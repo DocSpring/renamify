@@ -49,7 +49,7 @@ jobs:
           workflow: ci.yml
           workflow_conclusion: success
           name: renamify-linux-x64
-          path: ../renamify-bin
+          path: ${{ github.workspace }}/renamify-bin
 
       - name: Download renamify binary (macOS)
         if: runner.os == 'macOS'
@@ -58,7 +58,7 @@ jobs:
           workflow: ci.yml
           workflow_conclusion: success
           name: renamify-macos-x64
-          path: ../renamify-bin
+          path: ${{ github.workspace }}/renamify-bin
 
       - name: Download renamify binary (Windows)
         if: runner.os == 'Windows'
@@ -67,18 +67,22 @@ jobs:
           workflow: ci.yml
           workflow_conclusion: success
           name: renamify-windows-x64
-          path: ../renamify-bin
+          path: ${{ github.workspace }}/renamify-bin
 
       - name: Make binary executable and add to PATH
         shell: bash
         run: |
-          ls -la ../renamify-bin/
+          # Debug: show where we are and what's available
+          echo "Current directory: $(pwd)"
+          echo "Workspace: ${{ github.workspace }}"
+          ls -la ${{ github.workspace }}/renamify-bin/
+
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            chmod +x ../renamify-bin/renamify.exe
-            echo "$(cd .. && pwd)/renamify-bin" >> $GITHUB_PATH
+            chmod +x ${{ github.workspace }}/renamify-bin/renamify.exe
+            echo "${{ github.workspace }}/renamify-bin" >> $GITHUB_PATH
           else
-            chmod +x ../renamify-bin/renamify
-            echo "$(cd .. && pwd)/renamify-bin" >> $GITHUB_PATH
+            chmod +x ${{ github.workspace }}/renamify-bin/renamify
+            echo "${{ github.workspace }}/renamify-bin" >> $GITHUB_PATH
           fi
 
       - name: Verify renamify is available
