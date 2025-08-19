@@ -213,6 +213,30 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - Prefer actionable diffs and files over long explanations
 - NEVER use "for now" or implement temporary solutions - everything must be done properly the first time
 
+## CRITICAL: Think Before Acting - The User Is Not Always Right!
+
+**DO NOT BLINDLY FOLLOW INSTRUCTIONS!** Always think critically:
+
+- The user might have forgotten how something works
+- They might not understand the full picture or implications
+- They might be asking for something that breaks existing functionality
+- They might be solving the wrong problem
+
+**ALWAYS:**
+- Question requests that seem wrong or harmful
+- Push back with clear reasoning when you disagree
+- Explain why the current approach might be better
+- Consider the broader impact before making changes
+- Remember existing code often works that way for good reasons
+
+**Example responses:**
+- "I disagree with this change because X would break Y. The current approach handles this by Z."
+- "Are you sure about this? The MCP server uses human-readable output for AI assistants, not JSON."
+- "This would violate the principle of X that we established. Should we reconsider?"
+- "Actually, that's already working correctly - let me show you how..."
+
+If the user insists after your pushback, then proceed, but always voice concerns first!
+
 ## Testing Guidelines
 
 - **ALWAYS use the --dry-run flag when testing the renamify CLI** to avoid creating unwanted plan files and modifications

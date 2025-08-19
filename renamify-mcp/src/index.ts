@@ -49,7 +49,7 @@ export function createServer(
             'Case styles to detect and transform (snake, kebab, camel, pascal, screaming-snake, title, train, dot)'
           ),
         preview: z
-          .enum(['table', 'diff', 'json', 'summary'])
+          .enum(['table', 'diff', 'summary'])
           .optional()
           .default('summary')
           .describe('Output format for the plan'),
@@ -105,7 +105,7 @@ export function createServer(
             'Case styles to detect and transform (snake, kebab, camel, pascal, screaming-snake, title, train, dot)'
           ),
         preview: z
-          .enum(['table', 'matches', 'json', 'summary'])
+          .enum(['table', 'matches', 'summary'])
           .optional()
           .default('summary')
           .describe('Output format for the search results'),
@@ -245,7 +245,7 @@ export function createServer(
           .optional()
           .describe('Path to plan file to preview'),
         format: z
-          .enum(['table', 'diff', 'json', 'summary'])
+          .enum(['table', 'diff', 'summary'])
           .optional()
           .default('summary')
           .describe('Preview format'),

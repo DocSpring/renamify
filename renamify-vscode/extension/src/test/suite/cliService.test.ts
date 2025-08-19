@@ -88,11 +88,9 @@ suite('CLI Service Test Suite', () => {
 
     assert.ok(mockSpawn.calledOnce);
     const args = mockSpawn.firstCall.args[1];
-    assert.ok(args.includes('plan'));
+    assert.ok(args.includes('search'));
     assert.ok(args.includes('oldName'));
-    assert.ok(args.includes('newName'));
-    assert.ok(args.includes('--dry-run'));
-    assert.ok(args.includes('--preview'));
+    assert.ok(args.includes('--output'));
     assert.ok(args.includes('json'));
     assert.ok(args.includes('--include'));
     assert.ok(args.includes('**/*.ts'));

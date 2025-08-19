@@ -8,7 +8,7 @@ export type SearchOptions = {
   includes?: string[];
   excludes?: string[];
   styles?: string[];
-  preview?: 'table' | 'matches' | 'json' | 'summary';
+  preview?: 'table' | 'matches' | 'summary';
   dryRun?: boolean;
   renameFiles?: boolean;
   renameDirs?: boolean;
@@ -21,7 +21,7 @@ export type PlanOptions = {
   includes?: string[];
   excludes?: string[];
   styles?: string[];
-  preview?: 'table' | 'diff' | 'json' | 'summary';
+  preview?: 'table' | 'diff' | 'summary';
   dryRun?: boolean;
   renameFiles?: boolean;
   renameDirs?: boolean;
@@ -37,7 +37,7 @@ export type ApplyOptions = {
 export type PreviewOptions = {
   planId?: string;
   planPath?: string;
-  format?: 'table' | 'diff' | 'json' | 'summary';
+  format?: 'table' | 'diff' | 'summary';
 };
 
 export class RenamifyService {
