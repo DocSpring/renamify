@@ -39,7 +39,7 @@ renamify rename useUserData useProfileData src/hooks/ src/components/
 function useUserData(id: string) { ... }
 const { data, loading } = useUserData(userId);
 
-// After  
+// After
 function useProfileData(id: string) { ... }
 const { data, loading } = useProfileData(userId);
 ```
@@ -199,7 +199,7 @@ CREATE TABLE user_data (
 
 -- After
 CREATE TABLE profile_data (
-    id SERIAL PRIMARY KEY, 
+    id SERIAL PRIMARY KEY,
     profile_data_json JSONB
 );
 ```
@@ -215,7 +215,7 @@ renamify rename DATABASE_HOST DB_HOST \
 
 ### Docker and K8s
 ```bash
-# Rename service references in Docker/K8s files  
+# Rename service references in Docker/K8s files
 renamify rename userservice profileservice \
   --include "**/*.{yml,yaml,dockerfile}"
 ```
@@ -235,7 +235,7 @@ renamify rename userservice profileservice services/ api/ config/
 
 This handles:
 - Service names in configuration files
-- API endpoint references  
+- API endpoint references
 - Docker service names
 - Inter-service communication code
 - Documentation updates
@@ -254,7 +254,7 @@ renamify rename oldPage newPage \
 renamify rename oldPage newPage pages/ app/ components/
 ```
 
-### Vue.js Projects  
+### Vue.js Projects
 ```bash
 # Include Vue single file components
 renamify rename UserWidget ProfileWidget \

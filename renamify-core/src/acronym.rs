@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
-/// Default acronyms commonly used in development  
+/// Default acronyms commonly used in development
 pub const DEFAULT_ACRONYMS: &[&str] = &[
     "2FA", "AMD", "AMD64", "API", "ARM", "ARM64", "CLI", "CORS", "CPU", "CSP", "CSV", "CSS", "DB",
     "DNS", "EC2", "FTP", "GIF", "GPU", "GUI", "HTML", "HTTP", "HTTPS", "ID", "IDE", "IP", "JSON",

@@ -34,7 +34,7 @@ All file modifications are atomic by default:
 ### How It Works
 1. **Temporary files**: Changes are written to temporary files first
 2. **Atomic rename**: Files are atomically renamed into place
-3. **Directory sync**: Parent directories are synced (on Unix systems) 
+3. **Directory sync**: Parent directories are synced (on Unix systems)
 4. **Rollback on failure**: If any operation fails, all changes are rolled back
 
 ### Benefits
@@ -71,7 +71,7 @@ renamify history
 # Undo any operation by ID
 renamify undo abc123
 
-# Redo if you change your mind  
+# Redo if you change your mind
 renamify redo abc123
 ```
 

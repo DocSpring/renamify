@@ -38,7 +38,7 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
     sudo chmod 755 /usr/local/bin/renamify
     renamify --version
     ```
-    
+
     ### arm64
     ```bash
     curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-linux-arm64.tar.gz | tar xz
@@ -47,7 +47,7 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
     renamify --version
     ```
   </TabItem>
-  
+
   <TabItem label="macOS">
     ### Intel (x86_64)
     ```bash
@@ -56,7 +56,7 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
     sudo chmod 755 /usr/local/bin/renamify
     renamify --version
     ```
-    
+
     ### Apple Silicon (arm64)
     ```bash
     curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-macos-arm64.tar.gz | tar xz
@@ -65,38 +65,38 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
     renamify --version
     ```
   </TabItem>
-  
+
   <TabItem label="Windows">
     ### x86_64 / amd64
     ```powershell
     # Download the latest release
     Invoke-WebRequest -Uri "https://github.com/DocSpring/renamify/releases/latest/download/renamify-windows-amd64.zip" -OutFile "renamify.zip"
-    
+
     # Extract to Program Files
     Expand-Archive -Path "renamify.zip" -DestinationPath "$env:ProgramFiles\renamify"
-    
+
     # Add to PATH (requires admin privileges)
     [Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:ProgramFiles\renamify", [EnvironmentVariableTarget]::Machine)
-    
+
     # Verify installation (open new terminal)
     renamify --version
     ```
-    
+
     ### arm64
     ```powershell
     # Download the latest release
     Invoke-WebRequest -Uri "https://github.com/DocSpring/renamify/releases/latest/download/renamify-windows-arm64.zip" -OutFile "renamify.zip"
-    
+
     # Extract to Program Files
     Expand-Archive -Path "renamify.zip" -DestinationPath "$env:ProgramFiles\renamify"
-    
+
     # Add to PATH (requires admin privileges)
     [Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:ProgramFiles\renamify", [EnvironmentVariableTarget]::Machine)
-    
+
     # Verify installation (open new terminal)
     renamify --version
     ```
-    
+
     ### Build from Source (Alternative)
     ```powershell
     # Install Rust for Windows from https://win.rustup.rs/
@@ -136,11 +136,11 @@ npm install -g @renamify/mcp-server
 <Tabs>
   <TabItem label="Claude Desktop">
     ### Claude Desktop Configuration
-    
+
     1. Open Claude Desktop settings
     2. Navigate to the Developer section
     3. Add the following to your MCP servers configuration:
-    
+
     ```json
     {
       "mcpServers": {
@@ -151,18 +151,18 @@ npm install -g @renamify/mcp-server
       }
     }
     ```
-    
+
     4. Restart Claude Desktop for the changes to take effect
   </TabItem>
-  
+
   <TabItem label="Cursor">
     ### Cursor Configuration
-    
+
     1. Open Cursor settings (Cmd/Ctrl + ,)
     2. Search for "MCP" in settings
     3. Edit the MCP configuration file
     4. Add the Renamify server:
-    
+
     ```json
     {
       "mcpServers": {
@@ -173,16 +173,16 @@ npm install -g @renamify/mcp-server
       }
     }
     ```
-    
+
     5. Reload Cursor window (Cmd/Ctrl + R)
   </TabItem>
-  
+
   <TabItem label="Continue">
     ### Continue Configuration
-    
+
     1. Open your Continue configuration file (`~/.continue/config.json`)
     2. Add the MCP server to the `mcpServers` section:
-    
+
     ```json
     {
       "mcpServers": [
@@ -194,23 +194,23 @@ npm install -g @renamify/mcp-server
       ]
     }
     ```
-    
+
     3. Restart Continue or reload the configuration
   </TabItem>
-  
+
   <TabItem label="Other MCP Clients">
     ### Generic MCP Client Configuration
-    
+
     For any MCP-compatible client, use these connection details:
-    
-    **Command:** `npx`  
+
+    **Command:** `npx`
     **Arguments:** `["-y", "@renamify/mcp-server"]`
-    
+
     Or if installed globally:
-    
-    **Command:** `renamify-mcp`  
+
+    **Command:** `renamify-mcp`
     **Arguments:** `[]`
-    
+
     The server communicates via standard input/output (stdio) following the MCP protocol.
   </TabItem>
 </Tabs>
@@ -238,7 +238,7 @@ npm install -g @renamify/mcp-server
 
 4. **Test in your AI assistant**
    Ask your AI assistant: "Can you check if the Renamify MCP tools are available?"
-   
+
    The assistant should list the 7 available Renamify tools:
    - renamify_plan
    - renamify_apply

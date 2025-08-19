@@ -14,7 +14,7 @@ Renamify understands different naming conventions and can rename identifiers and
    ```bash
    # Quick install (Linux/macOS)
    curl -fsSL https://docspring.github.io/renamify/install.sh | bash
-   
+
    # Or download from GitHub releases
    # Or see: https://docspring.github.io/renamify/installation
    ```
@@ -47,7 +47,7 @@ Add to your MCP client configuration (e.g., for Claude Desktop or Cursor):
 ### Supported AI Assistants
 
 - **Claude Desktop** - Anthropic's AI assistant
-- **Cursor** - AI-powered code editor  
+- **Cursor** - AI-powered code editor
 - **Continue** - Open-source AI code assistant
 - **Any MCP-compatible client** - Following the MCP specification
 

@@ -46,7 +46,7 @@ import AwesomeLibWidget from './components/AwesomeLibWidget';
 
 // After
 {
-  "name": "awesome_lib", 
+  "name": "awesome_lib",
   "main": "src/awesome_lib/index.js"
 }
 ```
@@ -69,7 +69,7 @@ renamify rename getUserData fetchUserProfile \
 def get_user_data(user_id): ...
 
 # After
-@app.route('/api/fetchUserProfile')  
+@app.route('/api/fetchUserProfile')
 def fetch_user_profile(user_id): ...
 ```
 
@@ -135,7 +135,7 @@ renamify rename redis_url cache_url \
 REDIS_URL=redis://localhost:6379
 redis_url=redis://localhost:6379
 
-# After  
+# After
 CACHE_URL=redis://localhost:6379
 cache_url=redis://localhost:6379
 ```
@@ -164,7 +164,7 @@ renamify rename config settings \
 
 This will:
 - ✅ Change `config` → `settings`
-- ✅ Change `getConfig` → `getSettings`  
+- ✅ Change `getConfig` → `getSettings`
 - ❌ Skip `ConfigurationManager` (excluded match)
 - ❌ Skip `ConfigService` (excluded match)
 - ❌ Skip test files
@@ -181,7 +181,7 @@ renamify rename myproject awesome_project \
 
 After confirmation, you'll see:
 ```
-✅ Applied successfully! 
+✅ Applied successfully!
 
 Next Steps:
 1. cd ../awesome_project
@@ -226,6 +226,6 @@ renamify dry-run old_name new_name | grep -c "│"
 # Create plan and review while system is idle
 renamify plan large_change huge_change --preview json > plan.json
 
-# Apply later when ready  
+# Apply later when ready
 renamify apply --plan plan.json
 ```

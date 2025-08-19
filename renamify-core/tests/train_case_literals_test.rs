@@ -25,15 +25,15 @@ fn main() {
     // - "Renamify-Specific-Settings" -> "Renamed-Renaming-Tool-Specific-Settings"
     // - "Renamify-Core-Engine" -> "Renamed-Renaming-Tool-Core-Engine"
     // - "Renamify-Based-Solution" -> "Renamed-Renaming-Tool-Based-Solution"
-    
+
     let config = "Renamify-Specific-Settings";
     let engine = "Use Renamify-Core-Engine";
     let solution = "The Renamify-Based-Solution";
-    
+
     println!("Testing Renamify-Specific-Settings");
-    
+
     assert_eq!(config, "Renamify-Specific-Settings");
-    
+
     // Edge case: The-Renamify-Tool (Train-Case context)
 }
 

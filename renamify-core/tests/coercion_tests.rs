@@ -263,7 +263,7 @@ fn test_coercion_in_content_matches() {
         temp_dir.path().join("code.rs"),
         r"
 use oldtool_core::OldtoolEngine;
-use my_oldtool_lib::utils;  
+use my_oldtool_lib::utils;
 let oldtool-service = OldtoolService::new();
 let config = oldtool.config.load();
 ",
@@ -457,7 +457,7 @@ fn test_namespace_separator_prevents_coercion() {
 use oldtool::core::Engine;
 use oldtool::utils::helper;
 let path1 = "src/oldtool/main.rs";
-let path2 = "./oldtool/config.toml";  
+let path2 = "./oldtool/config.toml";
 let path3 = "/usr/bin/oldtool";
 let url = "https://github.com/user/oldtool";
 let module = oldtool::scanner::scan();

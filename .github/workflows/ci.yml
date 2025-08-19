@@ -40,6 +40,10 @@ jobs:
         if: runner.os != 'Windows'
         run: cargo fmt --all -- --check
 
+      - name: Check whitespace
+        if: runner.os != 'Windows'
+        run: ./scripts/check-whitespace.sh
+
       - name: Run clippy
         if: runner.os != 'Windows'
         run: cargo clippy --all-targets --all-features

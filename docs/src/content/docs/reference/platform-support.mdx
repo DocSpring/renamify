@@ -9,7 +9,7 @@ It handles platform-specific quirks intelligently.
 ## Supported Platforms
 
 ✅ **Linux** (x86_64, arm64)
-✅ **macOS** (Intel and Apple Silicon)  
+✅ **macOS** (Intel and Apple Silicon)
 ✅ **Windows** (x86_64, arm64)
 
 ## Case-Insensitive Filesystems
@@ -53,7 +53,7 @@ renamify plan old new --include "src\\**\\*.js"
 **Windows**: 260 characters by default
 ```bash
 # Renamify detects and warns about long paths
-❌ Error: Path too long for Windows: 
+❌ Error: Path too long for Windows:
 "C:\very\long\path\that\exceeds\260\characters\..."
 
 Enable long paths or use shorter directory names.
@@ -74,7 +74,7 @@ renamify rename josé maria --preview table
 
 ### Behavior
 - **Symlink files** can be renamed if their names match the pattern
-- **Symlink targets** are never modified  
+- **Symlink targets** are never modified
 - **Directory traversal** does not follow symlinks by default
 
 ### Cross-Platform Differences

@@ -5,7 +5,7 @@ Here’s what exists today:
 **VS Code extensions**
 
 - There's a _Preserve Case_ feature for regex replacements—modifiers like `\u`, `\U`, `\l`, `\L` let you adjust case in replace patterns [YouTube+14Visual Studio Code+14Stack Overflow+14](https://code.visualstudio.com/docs/editing/codebasics?utm_source=chatgpt.com).
-- The “AB” icon toggle preserves case during find/replace [GitHub+3YouTube+3Visual Studio Code+3](https://www.youtube.com/watch?v=JEESpXjbv38&utm_source=chatgpt.com).  
+- The “AB” icon toggle preserves case during find/replace [GitHub+3YouTube+3Visual Studio Code+3](https://www.youtube.com/watch?v=JEESpXjbv38&utm_source=chatgpt.com).
   But nothing matches across different casing styles (snake, kebab, camel, Pascal) automatically, nor does it handle file/directory renaming.
 
 **CLI/file tools**

@@ -50,7 +50,7 @@ renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 
 ### Unrestricted Mode
 - `-u` - Disable .gitignore files
-- `-uu` - Disable all ignore files, include hidden files  
+- `-uu` - Disable all ignore files, include hidden files
 - `-uuu` - Disable all ignore files, include hidden files, process binary files
 
 ## Output Formats
@@ -109,7 +109,7 @@ Outputs structured JSON for programmatic use:
   "id": "a3b7c9d4e8f2a6b1",
   "created_at": "1734567890",
   "old": "getUserName",
-  "new": "fetchUserProfile", 
+  "new": "fetchUserProfile",
   "matches": [
     {
       "file": "src/auth.js",
@@ -208,7 +208,7 @@ The generated plan file (`.renamify/plan.json`) contains:
 {
   "id": "7f3a2b5c9d1e8f4a",
   "created_at": "1734567890",
-  "old": "original_pattern", 
+  "old": "original_pattern",
   "new": "replacement_pattern",
   "styles": ["snake", "kebab", "camel", "pascal", "screaming-snake"],
   "includes": ["**/*"],
@@ -249,7 +249,7 @@ Once you have a plan, you can:
 renamify apply
 ```
 
-### Review Before Applying  
+### Review Before Applying
 ```bash
 # Look at the plan in detail
 cat .renamify/plan.json | jq .
@@ -268,7 +268,7 @@ Running `plan` again will overwrite the existing plan file.
 
 - `0` - Plan created successfully
 - `1` - Conflicts detected in planned changes
-- `2` - Invalid input or arguments  
+- `2` - Invalid input or arguments
 - `3` - Internal error or system issue
 
 ## Performance Tips

@@ -82,12 +82,12 @@ Enable debug logging for troubleshooting:
 <Tabs>
   <TabItem label="Claude Desktop">
     ### Claude Desktop
-    
+
     Location: Platform-specific configuration file
     - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
     - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
     - **Linux**: `~/.config/Claude/claude_desktop_config.json`
-    
+
     Full configuration example:
     ```json
     {
@@ -103,13 +103,13 @@ Enable debug logging for troubleshooting:
     }
     ```
   </TabItem>
-  
+
   <TabItem label="Cursor">
     ### Cursor
-    
+
     Location: Cursor settings file
     - Access via: Settings → Features → MCP → Edit Configuration
-    
+
     ```json
     {
       "mcp": {
@@ -124,12 +124,12 @@ Enable debug logging for troubleshooting:
     }
     ```
   </TabItem>
-  
+
   <TabItem label="Continue">
     ### Continue
-    
+
     Location: `~/.continue/config.json`
-    
+
     ```json
     {
       "models": [...],
@@ -144,17 +144,17 @@ Enable debug logging for troubleshooting:
     }
     ```
   </TabItem>
-  
+
   <TabItem label="VS Code Extension">
     ### VS Code with MCP Extension
-    
+
     If using a generic MCP extension for VS Code:
-    
+
     1. Install an MCP client extension
     2. Open VS Code settings (Cmd/Ctrl + ,)
     3. Search for MCP configuration
     4. Add server configuration:
-    
+
     ```json
     {
       "mcp.servers": {
@@ -173,23 +173,23 @@ Enable debug logging for troubleshooting:
 The MCP Server respects these environment variables:
 
 ### RENAMIFY_PATH
-- **Type:** String  
-- **Default:** `renamify` (searches PATH)  
+- **Type:** String
+- **Default:** `renamify` (searches PATH)
 - **Description:** Path to the renamify binary
 
 ### DEBUG
-- **Type:** String  
-- **Default:** (none)  
+- **Type:** String
+- **Default:** (none)
 - **Description:** Enable debug output with `renamify:*`
 
 ### LOG_LEVEL
-- **Type:** String  
-- **Default:** `info`  
+- **Type:** String
+- **Default:** `info`
 - **Description:** Logging level: `error`, `warn`, `info`, `debug`
 
 ### NO_COLOR
-- **Type:** Boolean  
-- **Default:** `false`  
+- **Type:** Boolean
+- **Default:** `false`
 - **Description:** Disable colored output
 
 ## Default Tool Behaviors

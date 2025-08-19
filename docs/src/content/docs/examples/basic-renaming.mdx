@@ -31,7 +31,7 @@ function getUserName(id) { ... }
 const name = getUserName(userId);
 export { getUserName };
 
-// After  
+// After
 function fetchUserProfile(id) { ... }
 const name = fetchUserProfile(userId);
 export { fetchUserProfile };
@@ -71,7 +71,7 @@ const api_key = config.api_key;
 
 // After
 const secretKey = "...";
-const SECRET_KEY = process.env.SECRET_KEY;  
+const SECRET_KEY = process.env.SECRET_KEY;
 const secret_key = config.secret_key;
 ```
 
@@ -119,7 +119,7 @@ db_manager = DatabaseManager()
 ```
 
 ```python
-# After  
+# After
 class DataManager:
     def __init__(self): ...
 
@@ -134,7 +134,7 @@ If you make a mistake, easily undo:
 # See recent operations
 renamify history
 
-# Undo the last operation  
+# Undo the last operation
 renamify undo abc123-20241201-143022
 
 # Or redo if you change your mind

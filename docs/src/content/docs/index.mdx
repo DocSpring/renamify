@@ -6,7 +6,7 @@ description: Smart search & replace for code and files with case-aware transform
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <span style="font-size: 1.35rem;">
-Smart search & replace for code and files with <br/>**case-aware transformations** 
+Smart search & replace for code and files with <br/>**case-aware transformations**
 and **built-in undo/redo**.
 </span>
 <span style="font-size: 1.35rem;">
@@ -39,7 +39,7 @@ Renamify is a tool that understands different naming conventions and can rename 
 Traditional find-and-replace tools work at the text level, but don't understand code conventions. If you want to rename `getUserName` to `fetchUserProfile`, you need to handle:
 
 - `getUserName` (camelCase)
-- `get_user_name` (snake_case) 
+- `get_user_name` (snake_case)
 - `GetUserName` (PascalCase)
 - `GET_USER_NAME` (SCREAMING_SNAKE_CASE)
 - Files like `get-user-name.js`
@@ -80,7 +80,7 @@ renamify rename getUserName fetchUserProfile
 
 This automatically handles:
 - `getUserName` → `fetchUserProfile`
-- `get_user_name` → `fetch_user_profile`  
+- `get_user_name` → `fetch_user_profile`
 - `GetUserName` → `FetchUserProfile`
 - `GET_USER_NAME` → `FETCH_USER_PROFILE`
 - Files like `getUserName.js` → `fetchUserProfile.js`
@@ -128,7 +128,7 @@ VS Code introduced [case-preserving find and replace](https://devblogs.microsoft
 
 - **More case styles**: Handles snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Title Case, Train-Case, and dot.case
 - **File and directory renaming**: Automatically renames matching files and folders, not just content
-- **Acronym intelligence**: Properly handles `HTTPSConnection`, `XMLParser`, `URLRouter` 
+- **Acronym intelligence**: Properly handles `HTTPSConnection`, `XMLParser`, `URLRouter`
 - **Atomic operations**: All changes succeed or roll back together
 - **Cross-editor**: Works consistently regardless of your editor choice
 - **AI integration**: Can be controlled by AI agents through MCP
@@ -202,7 +202,7 @@ Renamify respects the same ignore rules as ripgrep:
 
 - `.gitignore` - Git's ignore patterns
 - `.ignore` - Generic ignore file
-- `.rgignore` - Ripgrep-specific patterns  
+- `.rgignore` - Ripgrep-specific patterns
 - `.rnignore` - Renamify-specific patterns
 
 It also ignores:
@@ -254,7 +254,7 @@ The history is persistent and survives terminal sessions.
 
 Yes! Renamify properly tokenizes and transforms complex identifiers:
 
-- `getUserAccountDetails` → `fetchCustomerAccountDetails` 
+- `getUserAccountDetails` → `fetchCustomerAccountDetails`
 - `get_user_account_details` → `fetch_customer_account_details`
 - `user-account-service.js` → `customer-account-service.js`
 - `UserAccountDTO` → `CustomerAccountDTO`

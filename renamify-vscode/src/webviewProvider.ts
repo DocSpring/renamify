@@ -178,27 +178,27 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                         <label for="search">Search</label>
                         <input type="text" id="search" placeholder="Enter search term...">
                     </div>
-                    
+
                     <div class="input-group">
                         <label for="replace">Replace</label>
                         <input type="text" id="replace" placeholder="Enter replacement...">
                     </div>
-                    
+
                     <div class="input-group">
                         <label for="include">Files to include</label>
                         <input type="text" id="include" placeholder="e.g., **/*.ts, src/**/*">
                     </div>
-                    
+
                     <div class="input-group">
                         <label for="exclude">Files to exclude</label>
                         <input type="text" id="exclude" placeholder="e.g., node_modules/**, *.min.js">
                     </div>
-                    
+
                     <div class="input-group">
                         <label for="excludeLines">Exclude matching lines (regex)</label>
                         <input type="text" id="excludeLines" placeholder="e.g., ^\\s*//.*">
                     </div>
-                    
+
                     <div class="input-group">
                         <label for="caseStyles">Case styles</label>
                         <div class="case-styles-container">
@@ -234,7 +234,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                             </label>
                         </div>
                     </div>
-                    
+
                     <div class="button-group">
                         <button id="searchBtn" class="primary">Search</button>
                         <button id="planBtn">Create Plan</button>
@@ -242,7 +242,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                         <button id="clearBtn">Clear</button>
                     </div>
                 </div>
-                
+
                 <div class="results-container">
                     <div class="results-header">
                         <span id="resultsSummary"></span>
@@ -253,7 +253,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                     </div>
                     <div id="resultsTree" class="results-tree"></div>
                 </div>
-                
+
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>
             </html>`;

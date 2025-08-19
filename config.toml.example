@@ -13,7 +13,7 @@ rename_dirs = true
 
 # Default unrestricted level
 # 0 = respect all .gitignore files (default)
-# 1 = -u  (don't respect .gitignore files in the repo) 
+# 1 = -u  (don't respect .gitignore files in the repo)
 # 2 = -uu (don't respect .gitignore or .ignore files)
 # 3 = -uuu (don't respect any ignore files, search binary files)
 unrestricted_level = 0

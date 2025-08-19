@@ -459,7 +459,7 @@ fn test() {
     let s1 = format!("prefix_tool_{}.tmp", id);
     let s2 = format!("tool_backup_{}.bak", time);
     let s3 = format!("tool_{}_data", version);
-    
+
     // Pattern without trailing delimiter
     let s4 = format!("tool{}.tmp", id);
     let s5 = format!("{}_tool_{}", prefix, suffix);
@@ -531,7 +531,7 @@ if std::env::var("TOOL_DEBUG_IDENTIFIERS").is_ok() {
     println!("Debug identifiers");
 }
 if std::env::var("TOOL_DEBUG_IDE").is_ok() {
-    println!("Debug IDE");  
+    println!("Debug IDE");
 }
 if std::env::var("TOOL_IDENTIFIER_DEBUG").is_ok() {
     println!("Identifier debug");

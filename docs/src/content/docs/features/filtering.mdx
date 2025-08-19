@@ -1,5 +1,5 @@
 ---
-title: Filtering and Ignore Rules  
+title: Filtering and Ignore Rules
 description: Control which files Renamify processes with includes, excludes, and ignore rules
 ---
 
@@ -52,7 +52,7 @@ renamify plan old_name new_name -uuu
 ```
 
 - ✅ Processes all files
-- ✅ Shows hidden files and directories  
+- ✅ Shows hidden files and directories
 - ✅ Treats binary files as text (dangerous!)
 
 **⚠️ Warning**: Level 3 can corrupt binary files. Use with extreme caution.
@@ -111,7 +111,7 @@ Use `--exclude-match` to skip specific compound words or identifiers that match 
 # Skip specific compound words that contain your pattern
 renamify plan foo bar --exclude-match bazFooQux,FooService
 
-# Useful when a pattern accidentally matches unintended identifiers  
+# Useful when a pattern accidentally matches unintended identifiers
 renamify rename config settings --exclude-match ConfigurationManager
 ```
 
@@ -199,7 +199,7 @@ Renamify uses standard glob patterns:
 # All JavaScript files recursively
 "**/*.js"
 
-# All files in src/ and lib/ directories  
+# All files in src/ and lib/ directories
 "{src,lib}/**"
 
 # TypeScript files but not declaration files
@@ -236,7 +236,7 @@ Renamify automatically prompts to ignore its workspace directory on first use:
 Renamify uses .renamify/ for plans, backups, and history.
 Ignore it now?
   [Y] Repo .gitignore   [l] Local .git/info/exclude   [g] Global excludesfile   [n] No
-Choice (Y/l/g/n): 
+Choice (Y/l/g/n):
 ```
 
 ### Command-Line Control
@@ -275,7 +275,7 @@ renamify rename oldName newName \
   --exclude "**/*.test.*,**/__tests__/**,node_modules/**"
 ```
 
-### Rust Projects  
+### Rust Projects
 ```bash
 # Rust project with tests
 renamify rename old_name new_name \
@@ -284,7 +284,7 @@ renamify rename old_name new_name \
 ```
 
 ### Python Projects
-```bash  
+```bash
 # Python with tests in separate directory
 renamify rename old_name new_name \
   --include "**/*.py" \
@@ -295,5 +295,5 @@ renamify rename old_name new_name \
 ```bash
 # Only process markdown and text files
 renamify rename old_name new_name \
-  --include "**/*.{md,txt,rst}" 
+  --include "**/*.{md,txt,rst}"
 ```

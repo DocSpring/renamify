@@ -13,7 +13,7 @@ fn test_rename_command_with_train_case_patterns() {
 
 ## Configuration
 - Rename-Tool-Specific-Settings for configuration
-- Use Rename-Tool-Core-Engine for processing  
+- Use Rename-Tool-Core-Engine for processing
 - The Rename-Tool-Based-Solution works well
 
 ## In String Literals

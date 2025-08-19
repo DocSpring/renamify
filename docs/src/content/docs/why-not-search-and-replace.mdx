@@ -5,8 +5,8 @@ description: Why don't you just use a search and replace, regex, or sed?
 
 import { LinkCard } from '@astrojs/starlight/components';
 
-Renaming words in a real codebase is often more complex than a simple search-and-replace. Case styles, separators, acronyms, 
-filenames, and imports all need to change in sync. This page shows concrete failure modes of 
+Renaming words in a real codebase is often more complex than a simple search-and-replace. Case styles, separators, acronyms,
+filenames, and imports all need to change in sync. This page shows concrete failure modes of
 naive search or regex, and how Renamify handles them safely.
 
 > TLDR: Renamify tokenizes identifiers, understands case styles and separators, knows common acronyms, respects boundaries, renames files and directories consistently, previews the plan, and applies changes atomically with undo.
@@ -102,7 +102,7 @@ Acronym matching is configurable:
 - `--exclude-acronyms "ID"`
 - `--only-acronyms "API,CLI"`
 
-> Note: snake_case is always lower for matching and rendering. Screaming snake is the uppercase variant. 
+> Note: snake_case is always lower for matching and rendering. Screaming snake is the uppercase variant.
 > Acronym options affect matching detection and case inference, not whether snake uses uppercase.
 
 ## 4. File and directory renaming with consistency

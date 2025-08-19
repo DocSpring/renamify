@@ -47,7 +47,7 @@ done
 detect_platform() {
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
     ARCH=$(uname -m)
-    
+
     case "$OS" in
         linux)
             PLATFORM="linux"
@@ -61,7 +61,7 @@ detect_platform() {
             exit 1
             ;;
     esac
-    
+
     case "$ARCH" in
         x86_64|amd64)
             ARCH="amd64"
@@ -75,18 +75,18 @@ detect_platform() {
             exit 1
             ;;
     esac
-    
+
     ASSET_NAME="renamify-${PLATFORM}-${ARCH}.tar.gz"
 }
 
 # Uninstall function
 uninstall_renamify() {
     echo "🗑️  Uninstalling Renamify..."
-    
+
     # Check common locations
     LOCATIONS=("$HOME/.local/bin/renamify" "/usr/local/bin/renamify" "$HOME/bin/renamify")
     FOUND=false
-    
+
     for loc in "${LOCATIONS[@]}"; do
         if [ -f "$loc" ]; then
             echo "Found renamify at: $loc"
@@ -99,12 +99,12 @@ uninstall_renamify() {
             FOUND=true
         fi
     done
-    
+
     if [ "$FOUND" = false ]; then
         echo "Renamify not found in standard locations."
         echo "If installed elsewhere, please remove manually."
     fi
-    
+
     exit 0
 }
 
@@ -170,13 +170,13 @@ install_renamify() {
     echo "  Architecture: $ARCH"
     echo "  Destination: $INSTALL_DIR"
     echo ""
-    
+
     # Create install directory if needed
     if [ ! -d "$INSTALL_DIR" ]; then
         echo "Creating directory: $INSTALL_DIR"
         mkdir -p "$INSTALL_DIR"
     fi
-    
+
     # Check write permissions
     if [ ! -w "$INSTALL_DIR" ]; then
         if [ "$INSTALL_MODE" = "system" ]; then
@@ -188,16 +188,16 @@ install_renamify() {
             exit 1
         fi
     fi
-    
+
     # Get the latest release URL
     DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET_NAME}"
-    
+
     echo "Downloading from: $DOWNLOAD_URL"
-    
+
     # Create temp directory
     TEMP_DIR=$(mktemp -d)
     trap 'rm -rf "$TEMP_DIR"' EXIT
-    
+
     # Download and extract
     if command -v curl &> /dev/null; then
         curl -fsSL "$DOWNLOAD_URL" | tar xz -C "$TEMP_DIR"
@@ -208,7 +208,7 @@ install_renamify() {
         echo "Please install curl or wget and try again."
         exit 1
     fi
-    
+
     # Move binary to install directory
     if [ "$NEED_SUDO" = true ]; then
         sudo mv "$TEMP_DIR/renamify" "$INSTALL_DIR/"
@@ -217,7 +217,7 @@ install_renamify() {
         mv "$TEMP_DIR/renamify" "$INSTALL_DIR/"
         chmod 755 "$INSTALL_DIR/renamify"
     fi
-    
+
     echo -e "${GREEN}✓ Renamify installed successfully!${NC}"
     echo -e "  Installed to: ${BLUE}$INSTALL_DIR/renamify${NC}"
     echo ""
@@ -241,12 +241,12 @@ verify_installation() {
         if [ -f "$INSTALL_DIR/renamify" ]; then
             echo -e "${YELLOW}⚠️  Renamify installed but not in PATH${NC}"
             echo ""
-            
+
             if ! check_path "$INSTALL_DIR"; then
                 detect_shell
                 echo "Add $INSTALL_DIR to your PATH:"
                 echo ""
-                
+
                 case "$USER_SHELL" in
                     bash)
                         echo "Run this command:"
@@ -288,19 +288,19 @@ main() {
     echo "🔧 Renamify Installer"
     echo "===================="
     echo ""
-    
+
     # Handle uninstall
     if [ "$UNINSTALL" = true ]; then
         uninstall_renamify
     fi
-    
+
     detect_platform
-    
+
     # Check for Homebrew on macOS (but continue with install)
     if [ "$PLATFORM" = "macos" ] && [ "$INSTALL_MODE" = "local" ]; then
         check_homebrew
     fi
-    
+
     install_renamify
     verify_installation
 }

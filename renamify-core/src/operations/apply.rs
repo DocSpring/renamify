@@ -4,7 +4,7 @@ use std::fmt::Write;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// High-level apply operation - equivalent to `renamify apply` command  
+/// High-level apply operation - equivalent to `renamify apply` command
 pub fn apply_operation(
     plan_path: Option<PathBuf>,
     plan_id: Option<String>,

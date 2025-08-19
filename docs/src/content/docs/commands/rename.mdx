@@ -26,7 +26,7 @@ renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 
 ### File Processing
 - `--include <PATTERNS>` - Only process files matching these glob patterns
-- `--exclude <PATTERNS>` - Skip files matching these glob patterns  
+- `--exclude <PATTERNS>` - Skip files matching these glob patterns
 - `--no-rename-files` - Don't rename matching files
 - `--no-rename-dirs` - Don't rename matching directories
 
@@ -36,7 +36,7 @@ renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 
 ### Case Styles
 - `--exclude-styles <STYLES>` - Exclude specific case styles from the default set
-- `--include-styles <STYLES>` - Add additional case styles to the active set  
+- `--include-styles <STYLES>` - Add additional case styles to the active set
 - `--only-styles <STYLES>` - Use only these case styles, ignoring defaults
 
 ### Match Control
@@ -103,7 +103,7 @@ renamify rename old_function new_function --commit
 ```
 
 ### Project-Wide Rename
-```bash  
+```bash
 # Rename entire project including root directory
 renamify rename myproject awesome_project \
   --rename-root \
@@ -133,7 +133,7 @@ $ renamify rename getUserName fetchUserProfile
 
 Files to modify: 12
 ┌─────────────────────────────────────┬──────────┬────────────────────┬─────────────────────┐
-│ File                                │ Lines    │ Old                │ New                 │  
+│ File                                │ Lines    │ Old                │ New                 │
 ├─────────────────────────────────────┼──────────┼────────────────────┼─────────────────────┤
 │ src/auth.js                         │ 23, 45   │ getUserName        │ fetchUserProfile    │
 │ src/auth.js                         │ 12       │ get_user_name      │ fetch_user_profile  │
@@ -143,7 +143,7 @@ Files to modify: 12
 Files to rename: 2
 ┌─────────────────────────────────────┬─────────────────────────────────────┐
 │ Current Path                        │ New Path                            │
-├─────────────────────────────────────┼─────────────────────────────────────┤  
+├─────────────────────────────────────┼─────────────────────────────────────┤
 │ utils/get-user-name.js              │ utils/fetch-user-profile.js         │
 │ tests/getUserName.test.js           │ tests/fetchUserProfile.test.js      │
 └─────────────────────────────────────┴─────────────────────────────────────┘
@@ -161,7 +161,7 @@ Apply these changes? [y/N]: y
 - The preview looks correct and you're confident
 
 **Use `plan`/`apply` when**:
-- Making large, complex renaming operations  
+- Making large, complex renaming operations
 - You need time to review the plan thoroughly
 - Working with teammates who need to review changes
 - You want to save and potentially modify the plan

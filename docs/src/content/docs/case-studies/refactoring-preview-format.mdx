@@ -3,8 +3,8 @@ title: Refactoring --preview
 description: A case study showing how to rename a command-line argument across a codebase
 ---
 
-This case study demonstrates using Renamify to rename a command-line argument across an entire codebase, 
-including documentation, tests, and code. 
+This case study demonstrates using Renamify to rename a command-line argument across an entire codebase,
+including documentation, tests, and code.
 
 ## Background
 
@@ -22,14 +22,14 @@ This refactoring involved:
 
 ## Step 1: Renaming Test Examples
 
-First, I needed to update the test cases in `compound_matcher.rs` and `compound_position_test.rs` that 
+First, I needed to update the test cases in `compound_matcher.rs` and `compound_position_test.rs` that
 used `preview_format` strings as test data. (I had written extra tests during the initial attempt at this rename!)
 These tests verified compound word matching functionality and used:
 
 ```rust
 find_compound_variants(
     "shouldPreviewFormatPlease",
-    "preview_format", 
+    "preview_format",
     "preview",
     &styles,
 );
@@ -48,13 +48,13 @@ I decided to rename "preview_format" to "foo_bar" and "preview" to "foo".
 This one command replaced all of these variants in one shot, and all converted to the right case:
 
 ```
-preview_format_arg, preview_format_option, previewFormatArg, 
-previewFormatOption, PreviewFormatArg, PreviewFormatOption, 
-preview_format, should_preview_format_please, get_preview_format_option, 
-shouldPreviewFormatPlease, getPreviewFormatOption, ShouldPreviewFormatPlease, 
-GetPreviewFormatOption, get_preview_format, load_preview_format, 
-getPreviewFormat, loadPreviewFormat, GetPreviewFormat, LoadPreviewFormat, 
-PreviewFormat, previewFormat 
+preview_format_arg, preview_format_option, previewFormatArg,
+previewFormatOption, PreviewFormatArg, PreviewFormatOption,
+preview_format, should_preview_format_please, get_preview_format_option,
+shouldPreviewFormatPlease, getPreviewFormatOption, ShouldPreviewFormatPlease,
+GetPreviewFormatOption, get_preview_format, load_preview_format,
+getPreviewFormat, loadPreviewFormat, GetPreviewFormat, LoadPreviewFormat,
+PreviewFormat, previewFormat
 ```
 
 Then a `preview` => `foo` rename to handle the remaining cases:
@@ -101,7 +101,7 @@ Some of the changes:
 +            PreviewArg::None => Self::Table, // Default to table if None is somehow converted
          }
      }
- 
+
  ...
 
  @@ -658,7 +658,7 @@ fn handle_plan(

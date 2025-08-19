@@ -21,7 +21,7 @@ rename_dirs = true
 
 # Default unrestricted level
 # 0 = respect all .gitignore files (default)
-# 1 = -u  (don't respect .gitignore files in the repo) 
+# 1 = -u  (don't respect .gitignore files in the repo)
 # 2 = -uu (don't respect .gitignore or .ignore files)
 # 3 = -uuu (don't respect any ignore files, search binary files)
 unrestricted_level = 0
@@ -52,7 +52,7 @@ RENAMIFY_YES=1 renamify plan old new
 
 Useful for:
 - CI/CD environments
-- Automated scripts  
+- Automated scripts
 - Non-interactive contexts
 
 ## Auto-Initialization Settings
@@ -157,7 +157,7 @@ ls -lh .renamify/plan.json
 # For huge plans, consider splitting the work:
 renamify plan old new --include "src/module1/**"  # First part
 renamify apply
-renamify plan old new --include "src/module2/**"  # Second part  
+renamify plan old new --include "src/module2/**"  # Second part
 renamify apply
 ```
 
@@ -196,7 +196,7 @@ max_backup_size_mb = 1000
 # Conflict handling
 conflict_strategy = "ask"  # ask, skip, force
 
-[performance] 
+[performance]
 # Parallel processing
 max_threads = 0  # 0 = auto-detect
 

@@ -144,7 +144,7 @@ Refactor: getUserName → fetchUserProfile
 
 Applied renaming operation def456-20241201-150322:
 - Modified 23 files
-- Renamed 5 files  
+- Renamed 5 files
 - Renamed 2 directories
 
 Operation can be undone with: renamify undo def456-20241201-150322
@@ -173,7 +173,7 @@ Every apply operation creates comprehensive backups:
 
 ### Backup Contents
 - **Original file contents**: Exact copies before modification
-- **Checksums**: SHA-256 hashes for integrity verification  
+- **Checksums**: SHA-256 hashes for integrity verification
 - **Operation metadata**: Plan details, timestamps, file paths
 - **Rename records**: Original → new path mappings
 
@@ -190,14 +190,14 @@ Rolling back all changes...
 
 To fix:
 1. Check file permissions: ls -la src/readonly.js
-2. Make writable: chmod +w src/readonly.js  
+2. Make writable: chmod +w src/readonly.js
 3. Retry: renamify apply
 ```
 
 ### Recovery Steps
 1. **Check file permissions** - Ensure you can write to all files
 2. **Free disk space** - Ensure adequate space for operations
-3. **Close editors** - Some editors may lock files  
+3. **Close editors** - Some editors may lock files
 4. **Retry application** - Most errors are temporary
 
 ### Force Application
@@ -256,7 +256,7 @@ For very large renaming operations:
 ## Exit Codes
 
 - `0` - Applied successfully
-- `1` - Conflicts detected (use `--force-with-conflicts` to override)  
+- `1` - Conflicts detected (use `--force-with-conflicts` to override)
 - `2` - Invalid plan file or arguments
 - `3` - Internal error or system issue
 
@@ -270,7 +270,7 @@ renamify plan old_name new_name --preview table
 # 2. Review the plan
 cat .renamify/plan.json | jq '.stats'
 
-# 3. Apply the plan  
+# 3. Apply the plan
 renamify apply --commit
 
 # 4. Verify and test

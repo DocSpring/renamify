@@ -39,7 +39,7 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
     sudo chmod 755 /usr/local/bin/renamify
     renamify --version
     ```
-    
+
     ### arm64
     ```bash
     curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-linux-arm64.tar.gz | tar xz
@@ -48,7 +48,7 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
     renamify --version
     ```
   </TabItem>
-  
+
   <TabItem label="macOS">
     ### Intel (x86_64)
     ```bash
@@ -57,7 +57,7 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
     sudo chmod 755 /usr/local/bin/renamify
     renamify --version
     ```
-    
+
     ### Apple Silicon (arm64)
     ```bash
     curl -L https://github.com/DocSpring/renamify/releases/latest/download/renamify-macos-arm64.tar.gz | tar xz
@@ -66,38 +66,38 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
     renamify --version
     ```
   </TabItem>
-  
+
   <TabItem label="Windows">
     ### x86_64 / amd64
     ```powershell
     # Download the latest release
     Invoke-WebRequest -Uri "https://github.com/DocSpring/renamify/releases/latest/download/renamify-windows-amd64.zip" -OutFile "renamify.zip"
-    
+
     # Extract to Program Files
     Expand-Archive -Path "renamify.zip" -DestinationPath "$env:ProgramFiles\renamify"
-    
+
     # Add to PATH (requires admin privileges)
     [Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:ProgramFiles\renamify", [EnvironmentVariableTarget]::Machine)
-    
+
     # Verify installation (open new terminal)
     renamify --version
     ```
-    
+
     ### arm64
     ```powershell
     # Download the latest release
     Invoke-WebRequest -Uri "https://github.com/DocSpring/renamify/releases/latest/download/renamify-windows-arm64.zip" -OutFile "renamify.zip"
-    
+
     # Extract to Program Files
     Expand-Archive -Path "renamify.zip" -DestinationPath "$env:ProgramFiles\renamify"
-    
+
     # Add to PATH (requires admin privileges)
     [Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:ProgramFiles\renamify", [EnvironmentVariableTarget]::Machine)
-    
+
     # Verify installation (open new terminal)
     renamify --version
     ```
-    
+
     ### Build from Source (Alternative)
     ```powershell
     # Install Rust for Windows from https://win.rustup.rs/
@@ -114,7 +114,7 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
 
 Coming soon: Install via Cargo, Homebrew, Chocolatey, or Linux package managers.
 
-{/* 
+{/*
 ```bash
 # Cargo
 cargo install renamify

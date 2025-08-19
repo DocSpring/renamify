@@ -1,6 +1,6 @@
 /**
  * Wait for GitHub Actions checks to complete
- * 
+ *
  * @param {Object} params
  * @param {Object} params.github - GitHub API object
  * @param {Object} params.context - GitHub context
@@ -25,7 +25,7 @@ const POLL_INTERVAL_MS = 10 * 1000; // 10 seconds between polls
 module.exports = async ({ github, context, core, checks }) => {
   // Use provided checks or default to all checks
   const REQUIRED_PREFIXES = checks || DEFAULT_REQUIRED_PREFIXES;
-  
+
   if (checks) {
     core.info(`Waiting for specific checks: ${checks.join(", ")}`);
   } else {

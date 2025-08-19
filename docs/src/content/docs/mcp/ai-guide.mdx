@@ -113,19 +113,19 @@ Based on the identifier pattern, intelligently select case styles:
 ### Language-Specific Conventions
 
 **JavaScript/TypeScript**
-- Primary: `camel`, `pascal`  
+- Primary: `camel`, `pascal`
 - Files: `kebab`, `camel`
 
 **Python**
-- Primary: `snake`  
+- Primary: `snake`
 - Classes: `pascal`
 
 **Go**
-- Primary: `camel`, `pascal`  
+- Primary: `camel`, `pascal`
 - Packages: lowercase
 
 **Rust**
-- Primary: `snake`  
+- Primary: `snake`
 - Types: `pascal`
 
 ## Smart Include/Exclude Patterns
@@ -178,7 +178,7 @@ Based on the identifier pattern, intelligently select case styles:
 ### Initial Response
 
 ```
-I'll help you rename [old] to [new] across your codebase. Let me create a 
+I'll help you rename [old] to [new] across your codebase. Let me create a
 renaming plan that will handle all case variations automatically.
 
 [Creating plan...]
@@ -195,7 +195,7 @@ I've created a renaming plan (ID: a3b7c9d4e8f2a6b1) with the following changes:
 • Variants found: UserAccount (15), userAccount (18), user_account (14)
 • Files to rename: 2
 
-The plan will update all variations of "UserAccount" to "CustomerAccount" 
+The plan will update all variations of "UserAccount" to "CustomerAccount"
 maintaining the appropriate case style in each context.
 
 Would you like me to apply these changes?
@@ -307,7 +307,7 @@ AI: I'll rename getUserData to fetchUserInfo. Creating a plan:
 
 [Tool execution]
 
-Found 23 occurrences across 8 files. This includes getUserData, 
+Found 23 occurrences across 8 files. This includes getUserData,
 get_user_data, and related variations. Shall I apply these changes?
 ```
 
@@ -316,7 +316,7 @@ get_user_data, and related variations. Shall I apply these changes?
 ```
 User: "Refactor our authentication system from Auth to Security"
 
-AI: I'll help refactor your authentication system from Auth to Security. 
+AI: I'll help refactor your authentication system from Auth to Security.
 This is a significant change, so let me break it down:
 
 First, let me scan for all Auth-related code:
@@ -340,7 +340,7 @@ This is a large renaming. Would you like me to:
 ```
 User: "Fix the user thing"
 
-AI: I'd like to help fix the user-related code. Could you clarify what 
+AI: I'd like to help fix the user-related code. Could you clarify what
 specifically needs to be renamed? For example:
 - Are you looking to rename "User" to something else?
 - Is there a specific user-related function or variable?

@@ -33,7 +33,7 @@ function ensure_working_directory_is_clean() {
   if [ -n "$(git status --porcelain)" ]; then
     echo "ERROR: Working directory is not clean at stage: ${1}"
     git status
-    git diff | head -n 100 
+    git diff | head -n 100
     exit 1
   fi
 }
@@ -112,7 +112,7 @@ cargo test
 echo "=== Running $DEBUG_AFRT init to add .awesome_file_renaming_tool/ to .gitignore"
 "$DEBUG_AFRT" init
 
-if ! rg .awesome_file_renaming_tool/ .gitignore; then 
+if ! rg .awesome_file_renaming_tool/ .gitignore; then
   echo "ERROR: Did not find .awesome_file_renaming_tool/ in .gitignore!"
   cat .gitignore
   exit 1

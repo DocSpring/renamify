@@ -15,7 +15,7 @@ fn test_compound_replacement_at_start() {
 let foo_bar_arg = 1;
 let foo_bar_option = 2;
 
-// Camel case  
+// Camel case
 let fooBarArg = 3;
 let fooBarOption = 4;
 
@@ -100,7 +100,7 @@ fn test_compound_replacement_in_middle() {
 let should_foo_bar_please = 1;
 let get_foo_bar_option = 2;
 
-// Camel case  
+// Camel case
 let shouldFooBarPlease = 3;
 let getFooBarOption = 4;
 
@@ -185,7 +185,7 @@ fn test_compound_replacement_at_end() {
 let get_foo_bar = 1;
 let load_foo_bar = 2;
 
-// Camel case  
+// Camel case
 let getFooBar = 3;
 let loadFooBar = 4;
 

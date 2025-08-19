@@ -37,7 +37,7 @@ lint-strict: fmt clippy-strict
     taplo format --check *.toml */*.toml
     typos
 
-fix: 
+fix:
     cargo fmt --all
     cargo clippy --all-targets --all-features --fix --allow-dirty
     taplo format *.toml */*.toml

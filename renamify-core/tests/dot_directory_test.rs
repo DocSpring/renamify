@@ -92,7 +92,7 @@ fn test_import_statement_replacement() {
     let test_file = root.join("main.rs");
     std::fs::write(&test_file,
         r"use renamify_core::{
-    apply_plan, ApplyOptions, Plan, PlanOptions, scan_repository, write_plan, 
+    apply_plan, ApplyOptions, Plan, PlanOptions, scan_repository, write_plan,
     write_preview, Style, History, format_history, get_status, undo_renaming, redo_renaming,
 };
 let preview_output = renamify_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;

@@ -7,7 +7,7 @@ Smart case-aware search and replace with file renaming capabilities for VS Code.
 - **Smart Case Conversion**: Automatically detects and converts between different case styles (snake_case, camelCase, PascalCase, kebab-case, etc.)
 - **Atomic Operations**: All changes are applied atomically with full undo/redo support
 - **File & Directory Renaming**: Rename files and directories along with content updates
-- **Advanced Filtering**: 
+- **Advanced Filtering**:
   - Include/exclude files with glob patterns
   - Filter out matches on lines matching a regex pattern (e.g., comments)
   - Respect .gitignore and other ignore files
