@@ -127,14 +127,14 @@ jobs:
         run: pnpm install
 
       - name: Run TypeScript checks
-        run: pnpm run compile
+        run: pnpm compile
 
       - name: Run Biome checks
         if: runner.os != 'Windows'
-        run: pnpm run check
+        run: pnpm check
 
       - name: Build extension
-        run: pnpm run package
+        run: pnpm package
 
       - name: Run tests (Linux)
         if: runner.os == 'Linux'

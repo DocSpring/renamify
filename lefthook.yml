@@ -64,7 +64,7 @@ pre-commit:
           - name: mcp-test
             root: renamify-mcp/
             glob: "*.ts"
-            run: pnpm run test
+            run: pnpm test
 
           - name: mcp-tsc
             root: renamify-mcp/
@@ -85,7 +85,7 @@ pre-commit:
           - name: vscode-tsc
             root: renamify-vscode/
             glob: "*.ts"
-            run: pnpm run compile
+            run: pnpm compile
 
           - name: shellcheck
             glob: "*.sh"
