@@ -21,7 +21,7 @@ describe('RenamifyTools', () => {
     it('should check availability and return error if not available', async () => {
       mockService.checkAvailability.mockResolvedValue(false);
 
-      const result = await tools.plan({ old: 'foo', new: 'bar' });
+      const result = await tools.plan({ search: 'foo', replace: 'bar' });
 
       expect(result).toContain('Renamify CLI is not available');
       expect(result).toContain("Please ensure 'renamify' is installed");
@@ -31,7 +31,7 @@ describe('RenamifyTools', () => {
       mockService.checkAvailability.mockResolvedValue(true);
       mockService.plan.mockResolvedValue('PLAN SUMMARY\nTotal matches: 5');
 
-      const result = await tools.plan({ old: 'foo', new: 'bar' });
+      const result = await tools.plan({ search: 'foo', replace: 'bar' });
 
       expect(result).toContain('PLAN SUMMARY');
       expect(result).toContain('NEXT STEPS:');
@@ -43,7 +43,11 @@ describe('RenamifyTools', () => {
       mockService.checkAvailability.mockResolvedValue(true);
       mockService.plan.mockResolvedValue('PLAN SUMMARY\nTotal matches: 5');
 
-      const result = await tools.plan({ old: 'foo', new: 'bar', dryRun: true });
+      const result = await tools.plan({
+        search: 'foo',
+        replace: 'bar',
+        dryRun: true,
+      });
 
       expect(result).toBe('PLAN SUMMARY\nTotal matches: 5');
       expect(result).not.toContain('NEXT STEPS:');
@@ -53,7 +57,7 @@ describe('RenamifyTools', () => {
       mockService.checkAvailability.mockResolvedValue(true);
       mockService.plan.mockRejectedValue(new Error('No matches found'));
 
-      const result = await tools.plan({ old: 'foo', new: 'bar' });
+      const result = await tools.plan({ search: 'foo', replace: 'bar' });
 
       expect(result).toContain('Error creating plan: No matches found');
     });

@@ -131,8 +131,8 @@ fn find_all_identifiers(content: &[u8]) -> Vec<(usize, usize, String)> {
 pub fn find_enhanced_matches(
     content: &[u8],
     file: &str,
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     variant_map: &BTreeMap<String, String>,
     styles: &[Style],
 ) -> Vec<Match> {
@@ -182,10 +182,10 @@ pub fn find_enhanced_matches(
     // Note: Original style does NOT use boundary checking - it matches exact strings anywhere
     if styles.contains(&Style::Original) {
         // Find the original exact mapping in the variant map
-        if let Some(replacement) = variant_map.get(old) {
-            let old_pattern = old;
-            let new_pattern = replacement;
-            let pattern_bytes = old_pattern.as_bytes();
+        if let Some(replacement) = variant_map.get(search) {
+            let search_pattern = search;
+            let replace_pattern = replacement;
+            let pattern_bytes = search_pattern.as_bytes();
             let mut search_start = 0;
 
             while let Some(pos) = content[search_start..]
@@ -250,8 +250,8 @@ pub fn find_enhanced_matches(
                         column,
                         start: actual_pos,
                         end: end_pos,
-                        variant: old_pattern.to_string(),
-                        text: new_pattern.clone(),
+                        variant: search_pattern.to_string(),
+                        text: replace_pattern.clone(),
                     });
                 }
 
@@ -277,7 +277,7 @@ pub fn find_enhanced_matches(
         }
 
         // Check if this identifier contains our pattern as a compound
-        let compound_matches = find_compound_variants(&identifier, old, new, styles);
+        let compound_matches = find_compound_variants(&identifier, search, replace, styles);
 
         if !compound_matches.is_empty() {
             // We found a compound match!
@@ -350,8 +350,8 @@ pub fn find_enhanced_matches(
 pub fn enhanced_matches_to_hunks(
     matches: &[Match],
     content: &[u8],
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     variant_map: &BTreeMap<String, String>,
     path: &Path,
     styles: &[Style],
@@ -430,8 +430,8 @@ mod tests {
     #[test]
     fn test_enhanced_matching_finds_compounds() {
         let content = b"let preview_format_arg = PreviewFormatArg::new();";
-        let old = "preview_format";
-        let new = "preview";
+        let search = "preview_format";
+        let replace = "preview";
 
         let mut variant_map = BTreeMap::new();
         variant_map.insert("preview_format".to_string(), "preview".to_string());
@@ -439,7 +439,8 @@ mod tests {
 
         let styles = vec![Style::Snake, Style::Pascal];
 
-        let matches = find_enhanced_matches(content, "test.rs", old, new, &variant_map, &styles);
+        let matches =
+            find_enhanced_matches(content, "test.rs", search, replace, &variant_map, &styles);
 
         // Should find both preview_format_arg and PreviewFormatArg
         assert_eq!(matches.len(), 2);

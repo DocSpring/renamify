@@ -61,8 +61,6 @@ expression: normalize_paths(&normalized)
       "variant": "user_name"
     }
   ],
-  "new": "customer_name",
-  "old": "user_name",
   "paths": [
     {
       "kind": "file",
@@ -75,6 +73,8 @@ expression: normalize_paths(&normalized)
       "path": "tests/user_name_tests"
     }
   ],
+  "replace": "customer_name",
+  "search": "user_name",
   "stats": {
     "files_scanned": 25,
     "files_with_matches": 2,

@@ -3,6 +3,7 @@ import type {
   PlanOptions,
   PreviewOptions,
   RenamifyService,
+  SearchOptions,
 } from './renamify-service.js';
 
 export class RenamifyTools {
@@ -10,6 +11,50 @@ export class RenamifyTools {
 
   constructor(renamifyService: RenamifyService) {
     this.renamifyService = renamifyService;
+  }
+
+  /**
+   * Search for identifiers
+   */
+  async search(params: SearchOptions): Promise<string> {
+    // Check if renamify is available
+    const isAvailable = await this.renamifyService.checkAvailability();
+    if (!isAvailable) {
+      return `Error: Renamify CLI is not available. Please ensure 'renamify' is installed and in your PATH.
+
+To install renamify:
+1. Download the latest release from GitHub
+2. Add the binary to your PATH
+3. Or build from source using Rust
+
+For more information, visit: https://github.com/docspring/renamify`;
+    }
+
+    try {
+      const result = await this.renamifyService.search(params);
+
+      // Add helpful context for AI agents
+      const helpText = `
+${result}
+
+SEARCH RESULTS:
+- Found all occurrences of "${params.search}" in various case styles
+- Files and directories that would be renamed are listed above
+
+NEXT STEPS:
+1. Review the search results to see where the identifier appears
+2. Use 'renamify_plan' with a replacement to create a renaming plan
+3. Or refine your search with different paths, includes, or excludes
+
+SEARCH OPTIONS:
+- Use 'includes' to focus on specific file patterns
+- Use 'excludes' to skip certain files or directories
+- Use 'styles' to search for specific case variants only`;
+
+      return params.dryRun ? result : helpText;
+    } catch (error) {
+      return `Error searching: ${error instanceof Error ? error.message : String(error)}`;
+    }
   }
 
   /**

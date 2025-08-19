@@ -2,9 +2,21 @@ import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { type ExecaError, execa } from 'execa';
 
+export type SearchOptions = {
+  search: string;
+  paths?: string[];
+  includes?: string[];
+  excludes?: string[];
+  styles?: string[];
+  preview?: 'table' | 'matches' | 'json' | 'summary';
+  dryRun?: boolean;
+  renameFiles?: boolean;
+  renameDirs?: boolean;
+};
+
 export type PlanOptions = {
-  old: string;
-  new: string;
+  search: string;
+  replace: string;
   paths?: string[];
   includes?: string[];
   excludes?: string[];
@@ -57,8 +69,34 @@ export class RenamifyService {
     return await this.executeCommand(args, 'plan');
   }
 
+  /**
+   * Search for identifiers without replacement
+   */
+  async search(options: SearchOptions): Promise<string> {
+    const args = this.buildSearchArgs(options);
+    return await this.executeCommand(args, 'search');
+  }
+
+  private buildSearchArgs(options: SearchOptions): string[] {
+    const args = ['search', options.search];
+
+    // Add paths after search term
+    if (options.paths?.length) {
+      args.push(...options.paths);
+    }
+
+    this.addIncludeArgs(args, options.includes);
+    this.addExcludeArgs(args, options.excludes);
+    this.addStylesArg(args, options.styles);
+    this.addPreviewArg(args, options.preview);
+    this.addDryRunArg(args, options.dryRun);
+    this.addRenameArgs(args, options.renameFiles, options.renameDirs);
+
+    return args;
+  }
+
   private buildPlanArgs(options: PlanOptions): string[] {
-    const args = ['plan', options.old, options.new];
+    const args = ['plan', options.search, options.replace];
 
     // Add paths after old and new
     if (options.paths?.length) {

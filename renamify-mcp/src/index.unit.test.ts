@@ -121,8 +121,8 @@ describe('index.ts', () => {
       // Test plan handler
       const planHandler = handlers.find((h: any) => h.name === 'renamify_plan');
       const planResult = await planHandler.handler({
-        old: 'oldName',
-        new: 'newName',
+        search: 'oldName',
+        replace: 'newName',
       });
       expect(planResult).toEqual({
         content: [{ type: 'text', text: 'Plan result' }],

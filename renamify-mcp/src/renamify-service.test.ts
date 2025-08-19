@@ -36,8 +36,8 @@ describe('RenamifyService', () => {
       mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as never);
 
       const result = await service.plan({
-        old: 'oldName',
-        new: 'newName',
+        search: 'oldName',
+        replace: 'newName',
       });
 
       expect(result).toBe(mockOutput);
@@ -53,8 +53,8 @@ describe('RenamifyService', () => {
       mockedExeca.mockResolvedValueOnce({ stdout: mockOutput } as never);
 
       await service.plan({
-        old: 'oldName',
-        new: 'newName',
+        search: 'oldName',
+        replace: 'newName',
         includes: ['src/**/*.ts', 'lib/**/*.js'],
         excludes: ['node_modules/**', 'dist/**'],
         styles: ['snake', 'camel', 'pascal'],

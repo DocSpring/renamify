@@ -26,8 +26,8 @@ export function createServer(
       description:
         'Create a renaming plan to replace identifiers across a codebase with case-awareness',
       inputSchema: {
-        old: z.string().describe('The old name/identifier to replace'),
-        new: z.string().describe('The new name/identifier to replace with'),
+        search: z.string().describe('The name/identifier to search for'),
+        replace: z.string().describe('The name/identifier to replace with'),
         paths: z
           .array(z.string())
           .optional()
@@ -72,6 +72,62 @@ export function createServer(
     },
     async (params) => {
       const result = await toolsInstance.plan(params);
+      return { content: [{ type: 'text', text: result }] };
+    }
+  );
+
+  server.registerTool(
+    'renamify_search',
+    {
+      title: 'Search for Identifiers',
+      description:
+        'Search for identifiers across a codebase without making replacements',
+      inputSchema: {
+        search: z.string().describe('The name/identifier to search for'),
+        paths: z
+          .array(z.string())
+          .optional()
+          .describe(
+            'Paths to search (files or directories). Defaults to current directory'
+          ),
+        includes: z
+          .array(z.string())
+          .optional()
+          .describe('Glob patterns for files to include'),
+        excludes: z
+          .array(z.string())
+          .optional()
+          .describe('Glob patterns for files to exclude'),
+        styles: z
+          .array(z.string())
+          .optional()
+          .describe(
+            'Case styles to detect and transform (snake, kebab, camel, pascal, screaming-snake, title, train, dot)'
+          ),
+        preview: z
+          .enum(['table', 'matches', 'json', 'summary'])
+          .optional()
+          .default('summary')
+          .describe('Output format for the search results'),
+        dryRun: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('If true, only preview without creating result file'),
+        renameFiles: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe('Whether to include file renames in search'),
+        renameDirs: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe('Whether to include directory renames in search'),
+      },
+    },
+    async (params) => {
+      const result = await toolsInstance.search(params);
       return { content: [{ type: 'text', text: result }] };
     }
   );

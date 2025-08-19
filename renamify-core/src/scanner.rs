@@ -150,8 +150,8 @@ pub struct Stats {
 pub struct Plan {
     pub id: String,
     pub created_at: String,
-    pub old: String,
-    pub new: String,
+    pub search: String,
+    pub replace: String,
     pub styles: Vec<Style>,
     pub includes: Vec<String>,
     pub excludes: Vec<String>,
@@ -171,8 +171,8 @@ pub fn scan_repository(root: &Path, old: &str, new: &str, options: &PlanOptions)
 /// Multi-path repository scan
 pub fn scan_repository_multi(
     roots: &[PathBuf],
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     options: &PlanOptions,
 ) -> Result<Plan> {
     // Validate the exclude pattern if provided
@@ -184,8 +184,12 @@ pub fn scan_repository_multi(
 
     // Build acronym set from options
     let acronym_set = build_acronym_set(options);
-    let variant_map =
-        generate_variant_map_with_acronyms(old, new, options.styles.as_deref(), &acronym_set);
+    let variant_map = generate_variant_map_with_acronyms(
+        search,
+        replace,
+        options.styles.as_deref(),
+        &acronym_set,
+    );
     let variants: Vec<String> = variant_map.keys().cloned().collect();
     let pattern = build_pattern(&variants)?;
 
@@ -262,8 +266,8 @@ pub fn scan_repository_multi(
             let mut file_matches = crate::compound_scanner::find_enhanced_matches(
                 &content,
                 path.to_str().unwrap_or(""),
-                old,
-                new,
+                search,
+                replace,
                 &variant_map,
                 actual_styles,
             );
@@ -294,7 +298,7 @@ pub fn scan_repository_multi(
         for root in roots {
             let mut root_renames = plan_renames(root, &variant_map, options)?;
             // For search mode (when new is empty), clear the new_path to empty PathBuf
-            if new.is_empty() {
+            if replace.is_empty() {
                 for rename in &mut root_renames {
                     rename.new_path = PathBuf::new();
                 }
@@ -306,7 +310,7 @@ pub fn scan_repository_multi(
         vec![]
     };
 
-    let id = generate_plan_id(old, new, options);
+    let id = generate_plan_id(search, replace, options);
     let created_at = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
@@ -316,8 +320,8 @@ pub fn scan_repository_multi(
     Ok(Plan {
         id,
         created_at,
-        old: old.to_string(),
-        new: new.to_string(),
+        search: search.to_string(),
+        replace: replace.to_string(),
         styles: options.styles.clone().unwrap_or_else(|| {
             vec![
                 Style::Snake,
@@ -716,14 +720,14 @@ fn build_acronym_set(options: &PlanOptions) -> AcronymSet {
 
 /// Generate variant map with custom acronym configuration
 fn generate_variant_map_with_acronyms(
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     styles: Option<&[Style]>,
     acronym_set: &AcronymSet,
 ) -> std::collections::BTreeMap<String, String> {
     // Use the acronym-aware tokenization
-    let old_tokens = crate::case_model::parse_to_tokens_with_acronyms(old, acronym_set);
-    let new_tokens = crate::case_model::parse_to_tokens_with_acronyms(new, acronym_set);
+    let old_tokens = crate::case_model::parse_to_tokens_with_acronyms(search, acronym_set);
+    let new_tokens = crate::case_model::parse_to_tokens_with_acronyms(replace, acronym_set);
 
     let default_styles = [
         Style::Original, // Always include the exact original string
@@ -743,26 +747,26 @@ fn generate_variant_map_with_acronyms(
     for style in styles {
         if *style == Style::Original {
             // Add the original pattern directly
-            map.insert(old.to_string(), new.to_string());
+            map.insert(search.to_string(), replace.to_string());
         } else {
-            let old_variant = crate::case_model::to_style(&old_tokens, *style);
-            let new_variant = crate::case_model::to_style(&new_tokens, *style);
+            let search_variant = crate::case_model::to_style(&old_tokens, *style);
+            let replace_variant = crate::case_model::to_style(&new_tokens, *style);
 
             // Only add if not already in map (Original takes priority)
-            map.entry(old_variant).or_insert(new_variant);
+            map.entry(search_variant).or_insert(replace_variant);
         }
     }
 
     // Add case variants (lowercase and uppercase) but only if not already in map
-    let lower_old = old.to_lowercase();
-    let upper_old = old.to_uppercase();
+    let lower_search = search.to_lowercase();
+    let upper_search = search.to_uppercase();
 
-    if lower_old != old && !map.contains_key(&lower_old) {
-        map.insert(lower_old, new.to_lowercase());
+    if lower_search != search && !map.contains_key(&lower_search) {
+        map.insert(lower_search, replace.to_lowercase());
     }
 
-    if upper_old != old && !map.contains_key(&upper_old) {
-        map.insert(upper_old, new.to_uppercase());
+    if upper_search != search && !map.contains_key(&upper_search) {
+        map.insert(upper_search, replace.to_uppercase());
     }
 
     map
@@ -857,8 +861,8 @@ mod tests {
 
         let mut plan = scan_repository(temp_dir.path(), "old", "new", &opts).unwrap();
 
-        assert_eq!(plan.old, "old");
-        assert_eq!(plan.new, "new");
+        assert_eq!(plan.search, "old");
+        assert_eq!(plan.replace, "new");
         assert_eq!(plan.matches.len(), 0);
         assert_eq!(plan.paths.len(), 0);
         assert_eq!(plan.stats.files_scanned, 0);
@@ -1111,8 +1115,8 @@ mod tests {
         let mut plan = Plan {
             id: "test123".to_string(),
             created_at: "123456789".to_string(),
-            old: "old".to_string(),
-            new: "new".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
             styles: vec![Style::Snake],
             includes: vec![],
             excludes: vec![],

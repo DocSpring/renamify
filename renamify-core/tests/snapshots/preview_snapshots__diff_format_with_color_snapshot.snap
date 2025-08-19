@@ -1,28 +1,27 @@
 ---
 source: renamify-core/tests/preview_snapshots.rs
-assertion_line: 120
 expression: output
 ---
-[1;36m--- src/api/handlers.rs
+[1;37m--- src/api/handlers.rs
 +++ src/api/handlers.rs
 [0m[34m@@ line 42 @@
-[0m[31m-struct UserName {
-[0m[32m+struct CustomerName {
-[0m
+[0m[31m-[0m[48;2;133;33;52;38;2;255;255;255mstruct UserName [0m[48;2;192;82;106;38;2;255;255;255m{[0m
+[32m+[0m[48;2;0;94;36;38;2;255;255;255mstruct CustomerN[0m[48;2;0;169;88;38;2;255;255;255mame {[0m
+
 [34m@@ line 50 @@
-[0m[31m-    fn get_user_name(&self) -> &str {
-[0m[32m+    fn get_customer_name(&self) -> &str {
-[0m
-[1;36m--- src/models/user.rs
+[0m[31m-[0m[48;2;133;33;52;38;2;255;255;255m    fn get_user_name[0m[48;2;192;82;106;38;2;255;255;255m(&self) -[0m[48;2;133;33;52;38;2;255;255;255m> &str {[0m
+[32m+[0m[48;2;0;94;36;38;2;255;255;255m    fn get_customer_[0m[48;2;0;169;88;38;2;255;255;255mname(&self) -[0m[48;2;0;94;36;38;2;255;255;255m> &str {[0m
+
+[1;37m--- src/models/user.rs
 +++ src/models/user.rs
 [0m[34m@@ line 15 @@
-[0m[31m-    let user_name = String::new();
-[0m[32m+    let customer_name = String::new();
-[0m
+[0m[31m-[0m[48;2;133;33;52;38;2;255;255;255m    let user[0m[48;2;192;82;106;38;2;255;255;255m_name = S[0m[48;2;133;33;52;38;2;255;255;255mtring::new();[0m
+[32m+[0m[48;2;0;94;36;38;2;255;255;255m    let cust[0m[48;2;0;169;88;38;2;255;255;255momer_name = S[0m[48;2;0;94;36;38;2;255;255;255mtring::new();[0m
+
 [34m@@ line 25 @@
-[0m[31m-    pub userName: String,
-[0m[32m+    pub customerName: String,
-[0m
+[0m[31m-[0m[48;2;133;33;52;38;2;255;255;255m    pub [0m[48;2;192;82;106;38;2;255;255;255muserName[0m[48;2;133;33;52;38;2;255;255;255m: String,[0m
+[32m+[0m[48;2;0;94;36;38;2;255;255;255m    pub [0m[48;2;0;169;88;38;2;255;255;255mcustomerName[0m[48;2;0;94;36;38;2;255;255;255m: String,[0m
+
 
 [1;36m=== RENAMES ===[0m
 [33mfile[0m [31msrc/models/user_name.rs[0m [37m→[0m [32msrc/models/customer_name.rs[0m

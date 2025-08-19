@@ -20,8 +20,8 @@ fn create_sample_plan() -> Plan {
     Plan {
         id: "abc123def456".to_string(),
         created_at: "1234567890".to_string(),
-        old: "user_name".to_string(),
-        new: "customer_name".to_string(),
+        search: "user_name".to_string(),
+        replace: "customer_name".to_string(),
         styles: vec![Style::Snake, Style::Camel, Style::Pascal],
         includes: vec!["src/**/*.rs".to_string()],
         excludes: vec!["**/test_*.rs".to_string()],
@@ -170,8 +170,8 @@ fn test_empty_plan_table_snapshot() {
     let plan = Plan {
         id: "empty".to_string(),
         created_at: "0".to_string(),
-        old: "old".to_string(),
-        new: "new".to_string(),
+        search: "old".to_string(),
+        replace: "new".to_string(),
         styles: vec![],
         includes: vec![],
         excludes: vec![],
@@ -196,8 +196,8 @@ fn test_empty_plan_diff_snapshot() {
     let plan = Plan {
         id: "empty".to_string(),
         created_at: "0".to_string(),
-        old: "old".to_string(),
-        new: "new".to_string(),
+        search: "old".to_string(),
+        replace: "new".to_string(),
         styles: vec![],
         includes: vec![],
         excludes: vec![],
@@ -229,8 +229,8 @@ fn test_root_directory_rename_handling() {
     let plan = Plan {
         id: "root-test".to_string(),
         created_at: "1234567890".to_string(),
-        old: "oldtool".to_string(),
-        new: "newtool".to_string(),
+        search: "oldtool".to_string(),
+        replace: "newtool".to_string(),
         styles: vec![Style::Snake, Style::Kebab],
         includes: vec![],
         excludes: vec![],

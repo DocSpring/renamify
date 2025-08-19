@@ -8,8 +8,8 @@ use std::path::PathBuf;
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::fn_params_excessive_bools)]
 pub fn rename_operation(
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     paths: Vec<PathBuf>,
     include: &[String],
     exclude: &[String],
@@ -86,8 +86,8 @@ pub fn rename_operation(
         })
         .collect();
 
-    let mut plan = scan_repository_multi(&resolved_paths, old, new, &options)
-        .with_context(|| format!("Failed to scan repository for '{old}' -> '{new}'"))?;
+    let mut plan = scan_repository_multi(&resolved_paths, search, replace, &options)
+        .with_context(|| format!("Failed to scan repository for '{search}' -> '{replace}'"))?;
 
     // Separate root directory renames from other renames
     let (root_renames, other_renames) = separate_root_renames(&plan.paths, &resolved_paths);
@@ -260,6 +260,7 @@ fn generate_preview_output(plan: &Plan, format: &str, use_color: bool) -> Result
     let preview_format = match format {
         "table" => crate::preview::Preview::Table,
         "diff" => crate::preview::Preview::Diff,
+        "matches" => crate::preview::Preview::Matches,
         "json" => crate::preview::Preview::Json,
         "summary" => crate::preview::Preview::Summary,
         _ => return Err(anyhow!("Invalid preview format: {}", format)),
@@ -273,7 +274,7 @@ fn generate_preview_output(plan: &Plan, format: &str, use_color: bool) -> Result
 }
 
 fn show_rename_summary(plan: &Plan, include: &[String], exclude: &[String]) {
-    println!("Renamify plan: {} -> {}", plan.old, plan.new);
+    println!("Renamify plan: {} -> {}", plan.search, plan.replace);
     println!(
         "Edits: {} files, {} replacements",
         plan.stats.files_with_matches, plan.stats.total_matches

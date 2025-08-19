@@ -9,8 +9,8 @@ fn create_test_plan(id: &str, old: &str, new: &str) -> Plan {
     Plan {
         id: id.to_string(),
         created_at: chrono::Local::now().to_rfc3339(),
-        old: old.to_string(),
-        new: new.to_string(),
+        search: old.to_string(),
+        replace: new.to_string(),
         styles: vec![],
         includes: vec![],
         excludes: vec![],

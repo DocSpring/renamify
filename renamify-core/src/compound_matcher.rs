@@ -347,8 +347,8 @@ fn case_insensitive_replace(identifier: &str, old_pattern: &str, new_pattern: &s
 
 /// Generate all compound variants for a given pattern
 pub fn generate_compound_variants(
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     styles: &[Style],
 ) -> BTreeMap<String, String> {
     // For each style, generate compound examples

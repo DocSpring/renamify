@@ -6,8 +6,8 @@ use crate::{PreviewArg, StyleArg};
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_rename(
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     paths: Vec<PathBuf>,
     include: Vec<String>,
     exclude: Vec<String>,
@@ -43,6 +43,7 @@ pub fn handle_rename(
     let preview_format = preview.map(|p| match p {
         PreviewArg::Table => "table".to_string(),
         PreviewArg::Diff => "diff".to_string(),
+        PreviewArg::Matches => "matches".to_string(),
         PreviewArg::Json => "json".to_string(),
         PreviewArg::Summary => "summary".to_string(),
         PreviewArg::None => "none".to_string(),
@@ -50,8 +51,8 @@ pub fn handle_rename(
 
     // Call the core operation
     let result = rename_operation(
-        old,
-        new,
+        search,
+        replace,
         paths,
         &include,
         &exclude,

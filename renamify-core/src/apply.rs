@@ -811,7 +811,7 @@ pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
 
         let commit_message = format!(
             "renamify: rename {} -> {} (#{}))",
-            plan.old, plan.new, plan.id
+            plan.search, plan.replace, plan.id
         );
 
         let output = std::process::Command::new("git")
@@ -908,8 +908,8 @@ mod tests {
         Plan {
             id: "test123".to_string(),
             created_at: chrono::Local::now().to_rfc3339(),
-            old: "old_name".to_string(),
-            new: "new_name".to_string(),
+            search: "old_name".to_string(),
+            replace: "new_name".to_string(),
             styles: vec![],
             includes: vec![],
             excludes: vec![],
@@ -937,8 +937,8 @@ mod tests {
         let mut plan = Plan {
             id: "test_plan_456".to_string(),
             created_at: "2024-01-01".to_string(),
-            old: "old_name".to_string(),
-            new: "new_name".to_string(),
+            search: "old_name".to_string(),
+            replace: "new_name".to_string(),
             styles: vec![],
             includes: vec![],
             excludes: vec![],
@@ -1070,8 +1070,8 @@ mod tests {
         let mut plan = Plan {
             id: "test_affected".to_string(),
             created_at: "2024-01-01".to_string(),
-            old: "old".to_string(),
-            new: "new".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
             styles: vec![],
             includes: vec![],
             excludes: vec![],

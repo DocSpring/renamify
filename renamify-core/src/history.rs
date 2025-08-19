@@ -13,9 +13,9 @@ pub struct HistoryEntry {
     /// Timestamp when the operation was performed
     pub created_at: String,
     /// Original identifier that was replaced
-    pub old: String,
+    pub search: String,
     /// New identifier that replaced the old one
-    pub new: String,
+    pub replace: String,
     /// Naming styles used for the transformation
     pub styles: Vec<String>,
     /// Include patterns used for file filtering
@@ -171,8 +171,8 @@ pub fn create_history_entry<S: ::std::hash::BuildHasher>(
     HistoryEntry {
         id: plan.id.clone(),
         created_at: chrono::Local::now().to_rfc3339(),
-        old: plan.old.clone(),
-        new: plan.new.clone(),
+        search: plan.search.clone(),
+        replace: plan.replace.clone(),
         styles: plan.styles.iter().map(|s| format!("{:?}", s)).collect(),
         includes: plan.includes.clone(),
         excludes: plan.excludes.clone(),
@@ -207,7 +207,7 @@ pub fn format_history(entries: &[&HistoryEntry], json: bool) -> Result<String> {
                 .split('T')
                 .next()
                 .unwrap_or(&entry.created_at);
-            let rename = format!("{} → {}", entry.old, entry.new);
+            let rename = format!("{} → {}", entry.search, entry.replace);
             let files = entry.affected_files.len();
             let renames = entry.renames.len();
 
@@ -304,8 +304,8 @@ mod tests {
         HistoryEntry {
             id: id.to_string(),
             created_at: chrono::Local::now().to_rfc3339(),
-            old: "old_name".to_string(),
-            new: "new_name".to_string(),
+            search: "old_name".to_string(),
+            replace: "new_name".to_string(),
             styles: vec!["Snake".to_string()],
             includes: vec![],
             excludes: vec![],

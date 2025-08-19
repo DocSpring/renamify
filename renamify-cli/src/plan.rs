@@ -7,8 +7,8 @@ use renamify_core::Preview;
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_plan(
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     paths: Vec<PathBuf>,
     include: Vec<String>,
     exclude: Vec<String>,
@@ -47,6 +47,7 @@ pub fn handle_plan(
     let preview_format = preview.map(|p| match p {
         Preview::Table => "table".to_string(),
         Preview::Diff => "diff".to_string(),
+        Preview::Matches => "matches".to_string(),
         Preview::Json => "json".to_string(),
         Preview::Summary => "summary".to_string(),
         Preview::None => "none".to_string(),
@@ -54,8 +55,8 @@ pub fn handle_plan(
 
     // Call the core operation
     let result = plan_operation_with_dry_run(
-        old,
-        new,
+        search,
+        replace,
         paths,
         include,
         exclude,

@@ -68,8 +68,8 @@ mod tests {
         HistoryEntry {
             id: id.to_string(),
             created_at: chrono::Local::now().to_rfc3339(),
-            old: "old".to_string(),
-            new: "new".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
             styles: vec![],
             includes: vec![],
             excludes: vec![],

@@ -8,8 +8,8 @@ use std::path::PathBuf;
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::needless_pass_by_value)]
 pub fn plan_operation(
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     paths: Vec<PathBuf>,
     include: Vec<String>,
     exclude: Vec<String>,
@@ -25,8 +25,8 @@ pub fn plan_operation(
     use_color: bool,
 ) -> Result<String> {
     plan_operation_with_dry_run(
-        old,
-        new,
+        search,
+        replace,
         paths,
         include,
         exclude,
@@ -56,8 +56,8 @@ pub fn plan_operation(
 #[allow(clippy::fn_params_excessive_bools)]
 #[allow(clippy::needless_pass_by_value)]
 pub fn plan_operation_with_dry_run(
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     paths: Vec<PathBuf>,
     include: Vec<String>,
     exclude: Vec<String>,
@@ -142,7 +142,7 @@ pub fn plan_operation_with_dry_run(
         })
         .collect();
 
-    let plan = scan_repository_multi(&resolved_paths, old, new, &plan_options)
+    let plan = scan_repository_multi(&resolved_paths, search, replace, &plan_options)
         .context("Failed to scan repository")?;
 
     // Generate preview content
@@ -253,6 +253,7 @@ fn parse_preview_format(format: &str) -> Result<Preview> {
     match format.to_lowercase().as_str() {
         "table" => Ok(Preview::Table),
         "diff" => Ok(Preview::Diff),
+        "matches" => Ok(Preview::Matches),
         "json" => Ok(Preview::Json),
         "summary" => Ok(Preview::Summary),
         "none" => Ok(Preview::None),

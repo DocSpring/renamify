@@ -1,93 +1,105 @@
 pre-commit:
   parallel: true
-  commands:
-    fix-whitespace:
-      file_types:
-        - text
-      exclude: "**/.*"
-      run: |
-        for file in {staged_files}; do
-          if [[ -f "$file" ]]; then
-            # Remove trailing whitespace (portable sed usage)
-            if [[ "$OSTYPE" == "darwin"* ]]; then
-              sed -i '' 's/[[:space:]]*$//' "$file"
-            else
-              sed -i 's/[[:space:]]*$//' "$file"
-            fi
-            # Ensure file ends with newline
-            if [[ -s "$file" ]] && [[ $(tail -c1 "$file" | wc -l) -eq 0 ]]; then
-              echo >> "$file"
-            fi
-          fi
-        done
-      stage_fixed: true
 
-    fmt:
-      glob: "*.rs"
-      run: cargo fmt --all
-      stage_fixed: true
+  jobs:
+    # Fixes group - runs sequentially to avoid git conflicts
+    - group:
+        parallel: false
+        jobs:
+          - name: fix-whitespace
+            file_types:
+              - text
+            exclude: "**/.*"
+            run: |
+              for file in {staged_files}; do
+                if [[ -f "$file" ]]; then
+                  # Remove trailing whitespace (portable sed usage)
+                  if [[ "$OSTYPE" == "darwin"* ]]; then
+                    sed -i '' 's/[[:space:]]*$//' "$file"
+                  else
+                    sed -i 's/[[:space:]]*$//' "$file"
+                  fi
+                  # Ensure file ends with newline
+                  if [[ -s "$file" ]] && [[ $(tail -c1 "$file" | wc -l) -eq 0 ]]; then
+                    echo >> "$file"
+                  fi
+                fi
+              done
+            stage_fixed: true
 
-    clippy:
-      glob: "*.rs"
-      run: cargo clippy --all-targets --all-features
+          - name: fmt
+            glob: "*.rs"
+            run: cargo fmt --all
+            stage_fixed: true
 
-    toml-fmt:
-      glob: "*.toml"
-      run: taplo format {staged_files}
-      stage_fixed: true
+          - name: toml-fmt
+            glob: "*.toml"
+            run: taplo format {staged_files}
+            stage_fixed: true
 
-    typos:
-      glob: "*.{rs,md,txt,toml,yml,yaml}"
-      run: typos {staged_files}
+    # Checks group - runs in parallel
+    - group:
+        parallel: true
+        jobs:
+          - name: clippy
+            glob: "*.rs"
+            run: cargo clippy --all-targets --all-features
+            stage_fixed: true
 
-    test:
-      glob: "*.rs"
-      run: cargo test
+          - name: typos
+            glob: "*.{rs,md,txt,toml,yml,yaml}"
+            run: typos {staged_files}
+            stage_fixed: true
 
-    mcp-biome:
-      root: renamify-mcp/
-      glob: "*.{ts,js,json}"
-      run: biome check --write
+          - name: test
+            glob: "*.rs"
+            run: cargo test
+            stage_fixed: true
 
-    mcp-test:
-      root: renamify-mcp/
-      glob: "*.ts"
-      run: pnpm run test
+          - name: mcp-biome
+            root: renamify-mcp/
+            glob: "*.{ts,js,json}"
+            run: biome check --write
 
-    mcp-tsc:
-      root: renamify-mcp/
-      glob: "*.ts"
-      run: tsc --noEmit
+          - name: mcp-test
+            root: renamify-mcp/
+            glob: "*.ts"
+            run: pnpm run test
 
-    vscode-biome:
-      root: renamify-vscode/
-      glob: "*.{ts,js,json}"
-      run: biome check --write
+          - name: mcp-tsc
+            root: renamify-mcp/
+            glob: "*.ts"
+            run: tsc --noEmit
 
-    # Too slow, just run this on CI
-    # vscode-test:
-    #   root: renamify-vscode/
-    #   glob: "*.ts"
-    #   run: pnpm test
+          - name: vscode-biome
+            root: renamify-vscode/
+            glob: "*.{ts,js,json}"
+            run: biome check --write
 
-    vscode-tsc:
-      root: renamify-vscode/
-      glob: "*.ts"
-      run: pnpm run compile
+          # Too slow, just run this on CI
+          # - name: vscode-test
+          #   root: renamify-vscode/
+          #   glob: "*.ts"
+          #   run: pnpm test
 
-    shellcheck:
-      glob: "*.sh"
-      run: shellcheck {staged_files}
+          - name: vscode-tsc
+            root: renamify-vscode/
+            glob: "*.ts"
+            run: pnpm run compile
 
-    shellcheck-scripts:
-      glob: "**/scripts/*"
-      exclude: "*.md|*.txt|*.rs|*.toml|*.yml|*.yaml|*.json"
-      run: |
-        for file in {staged_files}; do
-          if head -n 1 "$file" | grep -qE '^#!/(usr/)?bin/(ba)?sh' || [[ "$file" =~ \.sh$ ]]; then
-            shellcheck "$file"
-          fi
-        done
+          - name: shellcheck
+            glob: "*.sh"
+            run: shellcheck {staged_files}
+
+          - name: shellcheck-scripts
+            glob: "**/scripts/*"
+            exclude: "*.md|*.txt|*.rs|*.toml|*.yml|*.yaml|*.json"
+            run: |
+              for file in {staged_files}; do
+                if head -n 1 "$file" | grep -qE '^#!/(usr/)?bin/(ba)?sh' || [[ "$file" =~ \.sh$ ]]; then
+                  shellcheck "$file"
+                fi
+              done
 
 # pre-push:
 #   commands:

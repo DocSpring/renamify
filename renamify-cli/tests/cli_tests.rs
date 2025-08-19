@@ -231,8 +231,8 @@ fn test_plan_command_json_format() {
         .assert()
         .success()
         .stdout(predicate::str::contains("{"))
-        .stdout(predicate::str::contains("\"old\""))
-        .stdout(predicate::str::contains("\"new\""));
+        .stdout(predicate::str::contains("\"search\""))
+        .stdout(predicate::str::contains("\"replace\""));
 }
 
 #[test]
@@ -400,8 +400,8 @@ fn test_apply_command_with_plan() {
     let plan_json = r#"{
         "id": "test123",
         "created_at": "2024-01-01T00:00:00Z",
-        "old": "old_name",
-        "new": "new_name",
+        "search": "old_name",
+        "replace": "new_name",
         "styles": [],
         "includes": [],
         "excludes": [],
@@ -446,8 +446,8 @@ fn test_apply_command_deletes_plan_file() {
     let plan_json = r#"{
         "id": "test456",
         "created_at": "2024-01-01T00:00:00Z",
-        "old": "old_name",
-        "new": "new_name",
+        "search": "old_name",
+        "replace": "new_name",
         "styles": [],
         "includes": [],
         "excludes": [],
@@ -495,8 +495,8 @@ fn test_apply_command_with_custom_plan_path_keeps_file() {
     let plan_json = r#"{
         "id": "test789",
         "created_at": "2024-01-01T00:00:00Z",
-        "old": "old_name",
-        "new": "new_name",
+        "search": "old_name",
+        "replace": "new_name",
         "styles": [],
         "includes": [],
         "excludes": [],
@@ -623,8 +623,8 @@ fn test_history_command_with_entries() {
         {
             "id": "test1",
             "created_at": "2024-01-01T00:00:00Z",
-            "old": "foo",
-            "new": "bar",
+            "search": "foo",
+            "replace": "bar",
             "styles": [],
             "includes": [],
             "excludes": [],
@@ -637,8 +637,8 @@ fn test_history_command_with_entries() {
         {
             "id": "test2",
             "created_at": "2024-01-02T00:00:00Z",
-            "old": "baz",
-            "new": "qux",
+            "search": "baz",
+            "replace": "qux",
             "styles": [],
             "includes": [],
             "excludes": [],

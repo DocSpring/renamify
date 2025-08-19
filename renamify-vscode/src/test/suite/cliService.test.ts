@@ -178,8 +178,8 @@ suite('CLI Service Test Suite', () => {
         JSON.stringify([
           {
             id: 'op-1',
-            old: 'oldName',
-            new: 'newName',
+            search: 'oldName',
+            replace: 'newName',
             created_at: '2024-01-01T00:00:00Z',
             stats: { total_matches: 10 },
           },

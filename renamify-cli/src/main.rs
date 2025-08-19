@@ -55,10 +55,10 @@ enum Commands {
     /// Generate a renaming plan
     Plan {
         /// Old identifier to replace
-        old: String,
+        search: String,
 
         /// New identifier to replace with
-        new: String,
+        replace: String,
 
         /// Paths to search (files or directories). Defaults to current directory
         #[arg(help = "Search paths (files or directories)")]
@@ -200,7 +200,7 @@ enum Commands {
 
         /// Preview output format (defaults from config if not specified)
         #[arg(long, value_enum)]
-        preview: Option<PreviewArg>,
+        preview: Option<SearchPreviewArg>,
 
         /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
         #[arg(long)]
@@ -266,10 +266,10 @@ enum Commands {
     /// Dry-run mode (alias for plan --dry-run)
     DryRun {
         /// Old identifier to replace
-        old: String,
+        search: String,
 
         /// New identifier to replace with
-        new: String,
+        replace: String,
 
         /// Paths to search (files or directories). Defaults to current directory
         #[arg(help = "Search paths (files or directories)")]
@@ -372,10 +372,10 @@ enum Commands {
     /// Plan and apply a renaming in one step (with confirmation)
     Rename {
         /// Old identifier to replace
-        old: String,
+        search: String,
 
         /// New identifier to replace with
-        new: String,
+        replace: String,
 
         /// Paths to search (files or directories). Defaults to current directory
         #[arg(help = "Search paths (files or directories)")]
@@ -512,6 +512,16 @@ impl From<StyleArg> for Style {
 enum PreviewArg {
     Table,
     Diff,
+    Matches,
+    Json,
+    Summary,
+    None,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
+enum SearchPreviewArg {
+    Table,
+    Matches,
     Json,
     Summary,
     None,
@@ -522,6 +532,7 @@ impl PreviewArg {
         match s.to_lowercase().as_str() {
             "table" => Some(Self::Table),
             "diff" => Some(Self::Diff),
+            "matches" => Some(Self::Matches),
             "json" => Some(Self::Json),
             "summary" => Some(Self::Summary),
             "none" => Some(Self::None),
@@ -535,9 +546,22 @@ impl From<PreviewArg> for Preview {
         match arg {
             PreviewArg::Table => Self::Table,
             PreviewArg::Diff => Self::Diff,
+            PreviewArg::Matches => Self::Matches,
             PreviewArg::Json => Self::Json,
             PreviewArg::Summary => Self::Summary,
             PreviewArg::None => Self::Table, // Default to table if None is somehow converted
+        }
+    }
+}
+
+impl From<SearchPreviewArg> for Preview {
+    fn from(arg: SearchPreviewArg) -> Self {
+        match arg {
+            SearchPreviewArg::Table => Self::Table,
+            SearchPreviewArg::Matches => Self::Matches,
+            SearchPreviewArg::Json => Self::Json,
+            SearchPreviewArg::Summary => Self::Summary,
+            SearchPreviewArg::None => Self::Matches, // Default to matches for search
         }
     }
 }
@@ -585,8 +609,8 @@ fn main() {
 
     let result = match cli.command {
         Commands::Plan {
-            old,
-            new,
+            search,
+            replace,
             paths,
             include,
             exclude,
@@ -613,8 +637,8 @@ fn main() {
             });
 
             plan::handle_plan(
-                &old,
-                &new,
+                &search,
+                &replace,
                 paths,
                 include,
                 exclude,
@@ -640,8 +664,8 @@ fn main() {
         },
 
         Commands::DryRun {
-            old,
-            new,
+            search,
+            replace,
             paths,
             include,
             exclude,
@@ -666,8 +690,8 @@ fn main() {
             });
 
             plan::handle_plan(
-                &old,
-                &new,
+                &search,
+                &replace,
                 paths,
                 include,
                 exclude,
@@ -710,9 +734,16 @@ fn main() {
             exclude_acronyms,
             only_acronyms,
         } => {
-            // Use preview format from CLI arg or config default
+            // Use preview format from CLI arg or default to matches for search
             let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
-                Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
+                // For search, default to matches instead of diff
+                let config_format =
+                    Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Matches);
+                if config_format == Preview::Diff {
+                    Preview::Matches // If config has diff, use matches for search
+                } else {
+                    config_format
+                }
             });
 
             // Call plan handler with empty replacement string and dry_run=true
@@ -766,8 +797,8 @@ fn main() {
         } => handle_init(local, global, check, configure_global),
 
         Commands::Rename {
-            old,
-            new,
+            search,
+            replace,
             paths,
             include,
             exclude,
@@ -795,8 +826,8 @@ fn main() {
             let format = preview.or_else(|| PreviewArg::from_str(&config.defaults.preview_format));
 
             rename::handle_rename(
-                &old,
-                &new,
+                &search,
+                &replace,
                 paths,
                 include,
                 exclude,

@@ -445,8 +445,8 @@ fn capitalize_first(s: &str) -> String {
 }
 
 pub fn generate_variant_map(
-    old: &str,
-    new: &str,
+    search: &str,
+    replace: &str,
     styles: Option<&[Style]>,
 ) -> BTreeMap<String, String> {
     let default_styles = [
@@ -461,8 +461,8 @@ pub fn generate_variant_map(
     ];
     let styles = styles.unwrap_or(&default_styles);
 
-    let old_tokens = parse_to_tokens(old);
-    let new_tokens = parse_to_tokens(new);
+    let search_tokens = parse_to_tokens(search);
+    let replace_tokens = parse_to_tokens(replace);
 
     let mut map = BTreeMap::new();
 
@@ -470,26 +470,26 @@ pub fn generate_variant_map(
     for style in styles {
         if *style == Style::Original {
             // Add the original pattern directly
-            map.insert(old.to_string(), new.to_string());
+            map.insert(search.to_string(), replace.to_string());
         } else {
-            let old_variant = to_style(&old_tokens, *style);
-            let new_variant = to_style(&new_tokens, *style);
+            let search_variant = to_style(&search_tokens, *style);
+            let replace_variant = to_style(&replace_tokens, *style);
 
             // Only add if not already in map (Original takes priority)
-            map.entry(old_variant).or_insert(new_variant);
+            map.entry(search_variant).or_insert(replace_variant);
         }
     }
 
     // Add case variants (lowercase and uppercase) but only if not already in map
-    let lower_old = old.to_lowercase();
-    let upper_old = old.to_uppercase();
+    let lower_search = search.to_lowercase();
+    let upper_search = search.to_uppercase();
 
-    if lower_old != old && !map.contains_key(&lower_old) {
-        map.insert(lower_old, new.to_lowercase());
+    if lower_search != search && !map.contains_key(&lower_search) {
+        map.insert(lower_search, replace.to_lowercase());
     }
 
-    if upper_old != old && !map.contains_key(&upper_old) {
-        map.insert(upper_old, new.to_uppercase());
+    if upper_search != search && !map.contains_key(&upper_search) {
+        map.insert(upper_search, replace.to_uppercase());
     }
 
     map
