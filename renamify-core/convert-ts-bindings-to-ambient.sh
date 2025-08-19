@@ -14,6 +14,9 @@ for file in bindings/*.ts; do
   fi
 done
 
-pnpm run format-bindings
+if ! pnpm run format-bindings; then
+  echo "Failed to format bindings/*.d.ts. Please run pnpm install in ./renamify-core" >&2
+  exit 1
+fi
 
 echo "Converted all TypeScript bindings to ambient .d.ts declarations"

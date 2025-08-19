@@ -42,6 +42,9 @@ echo "Cloning renamify to $WORKDIR"
 git clone . "$WORKDIR"
 cd "$WORKDIR"
 
+# Need to install biome for formatting generated TypeScript bindings during tests
+(cd renamify-core && pnpm install)
+
 # Make ripgrep respect the same ignores as the tool
 cp .rnignore .rgignore
 echo .rgignore >> .git/info/exclude
