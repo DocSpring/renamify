@@ -1,4 +1,7 @@
+packages:
+  - "."
+
 onlyBuiltDependencies:
-  - '@vscode/vsce-sign'
+  - "@vscode/vsce-sign"
   - esbuild
   - keytar
