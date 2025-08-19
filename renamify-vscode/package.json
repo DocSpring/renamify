@@ -107,7 +107,8 @@
     "lint": "biome check --write",
     "format": "biome format --write",
     "check": "biome check",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "package": "vsce package --no-dependencies"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.0",
@@ -118,6 +119,7 @@
     "@types/vscode": "^1.85.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.3.8",
+    "@vscode/vsce": "^3.6.0",
     "glob": "^11.0.3",
     "mocha": "^11.7.1",
     "sinon": "^21.0.0",
