@@ -1,4 +1,4 @@
-# <picture><source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logo-white.svg"><source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logo.svg"><img alt="Renamify logo" src="docs/src/assets/logo-white.svg" width="32" height="32" align="center" style="margin-bottom: 6px; margin-right: 7px;"></picture> Renamify
+# <picture><source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logo-white.svg"><source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logo.svg"><img alt="Renamify logo" src="docs/src/assets/logo-white.svg" width="32" height="32" align="absmiddle"></picture> Renamify
 
 Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
 
