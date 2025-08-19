@@ -81,11 +81,11 @@ fn test_plan_command_basic() {
 
     // Verify the preview contains the table content
     let preview_content = preview.unwrap();
-    if !preview_content.contains("test.rs") {
-        eprintln!("Preview content: {:?}", preview_content);
-        eprintln!("Temp dir path: {:?}", temp_dir.path());
-        panic!("Preview doesn't contain 'test.rs'");
-    }
+    assert!(
+        preview_content.contains("test.rs"),
+        "Preview doesn't contain 'test.rs'. Preview content:\n{}",
+        preview_content
+    );
 }
 
 #[test]
@@ -127,8 +127,16 @@ fn test_plan_command_with_styles() {
 
     // Verify the preview contains the table content
     let preview_content = preview.unwrap();
-    assert!(preview_content.contains("test.rs"));
-    assert!(preview_content.contains("old_name") || preview_content.contains("oldName"));
+    assert!(
+        preview_content.contains("test.rs"),
+        "Preview doesn't contain 'test.rs'. Preview content:\n{}",
+        preview_content
+    );
+    assert!(
+        preview_content.contains("old_name") || preview_content.contains("oldName"),
+        "Preview doesn't contain 'old_name' or 'oldName'. Preview content:\n{}",
+        preview_content
+    );
 
     // Test including additional styles
     let (_result2, preview2) = plan_operation(
@@ -158,7 +166,13 @@ fn test_plan_command_with_styles() {
         Some(temp_dir.path()),         // working_dir
     )
     .unwrap();
-    assert!(preview2.unwrap().contains("test.rs"));
+
+    let preview2_content = preview2.unwrap();
+    assert!(
+        preview2_content.contains("test.rs"),
+        "Preview2 doesn't contain 'test.rs'. Preview content:\n{}",
+        preview2_content
+    );
 }
 
 #[test]
@@ -233,7 +247,7 @@ fn test_plan_command_json_format() {
             "plan",
             "old_name",
             "new_name",
-            "--preview",
+            "--output",
             "json",
             "--dry-run",
         ])

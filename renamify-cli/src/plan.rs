@@ -33,6 +33,12 @@ pub fn handle_plan(
     output: OutputFormat,
     quiet: bool,
 ) -> Result<()> {
+    // Error if both preview and JSON output are specified
+    if preview.is_some() && preview != Some(Preview::None) && output == OutputFormat::Json {
+        return Err(anyhow::anyhow!(
+            "Cannot use both --preview and --output json. Use --output json for machine-readable output."
+        ));
+    }
     // Validate that --fixed-table-width is only used with table preview
     if fixed_table_width && preview.is_some() && preview != Some(Preview::Table) {
         return Err(anyhow::anyhow!(
@@ -52,15 +58,14 @@ pub fn handle_plan(
         preview
     };
 
-    // For JSON output, always use json preview format
+    // For JSON output, don't generate preview
     let preview_format = if output == OutputFormat::Json {
-        Some("json".to_string())
+        None
     } else {
         effective_preview.map(|p| match p {
             Preview::Table => "table".to_string(),
             Preview::Diff => "diff".to_string(),
             Preview::Matches => "matches".to_string(),
-            Preview::Json => "json".to_string(),
             Preview::Summary => "summary".to_string(),
             Preview::None => "none".to_string(),
         })

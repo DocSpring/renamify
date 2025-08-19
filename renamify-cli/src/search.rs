@@ -1,5 +1,5 @@
 use anyhow::Result;
-use renamify_core::{plan_operation_with_dry_run, Style};
+use renamify_core::{plan_operation, OutputFormatter, Style};
 use std::path::PathBuf;
 
 use crate::{OutputFormat, StyleArg};
@@ -41,22 +41,21 @@ pub fn handle_search(
         preview
     };
 
-    // For JSON output, always use json preview format
+    // For JSON output, don't generate preview
     let preview_format = if output == OutputFormat::Json {
-        Some("json".to_string())
+        None
     } else {
         effective_preview.map(|p| match p {
             Preview::Table => "table".to_string(),
             Preview::Diff => "diff".to_string(),
             Preview::Matches => "matches".to_string(),
-            Preview::Json => "json".to_string(),
             Preview::Summary => "summary".to_string(),
             Preview::None => "none".to_string(),
         })
     };
 
     // Call the core operation with search mode (empty replace string)
-    let result = plan_operation_with_dry_run(
+    let (result, preview_content) = plan_operation(
         term,
         "", // Empty replacement for search
         paths,
@@ -80,17 +79,22 @@ pub fn handle_search(
         include_acronyms,
         exclude_acronyms,
         only_acronyms,
+        None, // working_dir
     )?;
 
     // Handle output based on format
     match output {
         OutputFormat::Json => {
-            // Result is already JSON from the core with preview=json
-            print!("{}", result);
+            print!("{}", result.format_json());
         }
         OutputFormat::Summary => {
             if !quiet {
-                println!("{}", result);
+                // Print preview content if available
+                if let Some(preview) = preview_content {
+                    println!("{}", preview);
+                }
+                // Print summary
+                print!("{}", result.format_summary());
             }
         }
     }

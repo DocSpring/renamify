@@ -19,6 +19,8 @@ pub struct PlanResult {
     pub total_matches: usize,
     pub renames: usize,
     pub dry_run: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<crate::scanner::Plan>,
 }
 
 /// Result of an apply operation
@@ -93,6 +95,8 @@ pub struct RenameResult {
     pub replacements: usize,
     pub renames: usize,
     pub committed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<crate::scanner::Plan>,
 }
 
 /// Trait for formatting output in different formats
@@ -122,7 +126,8 @@ impl OutputFormatter for PlanResult {
                 "files_with_matches": self.files_with_matches,
                 "total_matches": self.total_matches,
                 "renames": self.renames,
-            }
+            },
+            "plan": self.plan,
         }))
         .unwrap_or_default()
     }
@@ -379,6 +384,7 @@ impl OutputFormatter for RenameResult {
                 "renames": self.renames,
             },
             "committed": self.committed,
+            "plan": self.plan,
         }))
         .unwrap_or_default()
     }

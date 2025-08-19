@@ -50,13 +50,12 @@ pub fn handle_rename(
 
     // Convert preview arg to string format
     let preview_format = if output == OutputFormat::Json {
-        Some("json".to_string())
+        None // Don't generate preview for JSON output
     } else {
         effective_preview.map(|p| match p {
             PreviewArg::Table => "table".to_string(),
             PreviewArg::Diff => "diff".to_string(),
             PreviewArg::Matches => "matches".to_string(),
-            PreviewArg::Json => "json".to_string(),
             PreviewArg::Summary => "summary".to_string(),
             PreviewArg::None => "none".to_string(),
         })

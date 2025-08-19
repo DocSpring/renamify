@@ -148,16 +148,6 @@ fn test_diff_format_with_color_snapshot() {
 }
 
 #[test]
-fn test_json_format_snapshot() {
-    let plan = create_sample_plan();
-    let output = render_plan_with_fixed_width(&plan, Preview::Json, Some(false), true);
-    // Parse and re-serialize to ensure consistent formatting
-    let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
-    let normalized = serde_json::to_string_pretty(&parsed).unwrap();
-    insta::assert_snapshot!(normalize_paths(&normalized));
-}
-
-#[test]
 fn test_summary_format_snapshot() {
     let plan = create_sample_plan();
     let output = render_plan_with_fixed_width(&plan, Preview::Summary, Some(false), true);

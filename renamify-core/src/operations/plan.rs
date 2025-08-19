@@ -124,7 +124,7 @@ pub fn plan_operation(
             .with_context(|| format!("Failed to write plan to {}", plan_out_path.display()))?;
     }
 
-    // Create structured result
+    // Create structured result (include full plan for JSON output)
     let result = PlanResult {
         plan_id: plan.id.clone(),
         search: search.to_string(),
@@ -133,6 +133,7 @@ pub fn plan_operation(
         total_matches: plan.stats.total_matches,
         renames: plan.paths.len(),
         dry_run,
+        plan: Some(plan),
     };
 
     Ok((result, preview_content))
@@ -177,7 +178,6 @@ fn parse_preview_format(format: &str) -> Result<Preview> {
         "table" => Ok(Preview::Table),
         "diff" => Ok(Preview::Diff),
         "matches" => Ok(Preview::Matches),
-        "json" => Ok(Preview::Json),
         "summary" => Ok(Preview::Summary),
         "none" => Ok(Preview::None),
         _ => Err(anyhow::anyhow!("Invalid preview format: {}", format)),

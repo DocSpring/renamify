@@ -585,7 +585,6 @@ enum PreviewArg {
     Table,
     Diff,
     Matches,
-    Json,
     Summary,
     None,
 }
@@ -600,7 +599,6 @@ enum OutputFormat {
 enum SearchPreviewArg {
     Table,
     Matches,
-    Json,
     Summary,
     None,
 }
@@ -611,7 +609,6 @@ impl PreviewArg {
             "table" => Some(Self::Table),
             "diff" => Some(Self::Diff),
             "matches" => Some(Self::Matches),
-            "json" => Some(Self::Json),
             "summary" => Some(Self::Summary),
             "none" => Some(Self::None),
             _ => None,
@@ -625,7 +622,6 @@ impl From<PreviewArg> for Preview {
             PreviewArg::Table => Self::Table,
             PreviewArg::Diff => Self::Diff,
             PreviewArg::Matches => Self::Matches,
-            PreviewArg::Json => Self::Json,
             PreviewArg::Summary => Self::Summary,
             PreviewArg::None => Self::Table, // Default to table if None is somehow converted
         }
@@ -637,7 +633,6 @@ impl From<SearchPreviewArg> for Preview {
         match arg {
             SearchPreviewArg::Table => Self::Table,
             SearchPreviewArg::Matches => Self::Matches,
-            SearchPreviewArg::Json => Self::Json,
             SearchPreviewArg::Summary => Self::Summary,
             SearchPreviewArg::None => Self::Matches, // Default to matches for search
         }
@@ -711,10 +706,14 @@ fn main() {
             output,
             quiet,
         } => {
-            // Use preview format from CLI arg or config default
-            let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
-                Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
-            });
+            // Use preview format from CLI arg or config default (unless JSON output)
+            let format = if output == OutputFormat::Json {
+                None // No preview for JSON output
+            } else {
+                Some(preview.map(std::convert::Into::into).unwrap_or_else(|| {
+                    Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
+                }))
+            };
 
             plan::handle_plan(
                 &search,
@@ -731,7 +730,7 @@ fn main() {
                 only_styles,
                 exclude_match,
                 exclude_matching_lines,
-                Some(format),
+                format,
                 fixed_table_width,
                 plan_out,
                 dry_run,
@@ -768,10 +767,14 @@ fn main() {
             output,
             quiet,
         } => {
-            // Use preview format from CLI arg or config default
-            let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
-                Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
-            });
+            // Use preview format from CLI arg or config default (unless JSON output)
+            let format = if output == OutputFormat::Json {
+                None // No preview for JSON output
+            } else {
+                Some(preview.map(std::convert::Into::into).unwrap_or_else(|| {
+                    Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
+                }))
+            };
 
             plan::handle_plan(
                 &search,
@@ -788,7 +791,7 @@ fn main() {
                 only_styles,
                 exclude_match,
                 exclude_matching_lines,
-                Some(format),
+                format,
                 fixed_table_width,
                 PathBuf::from(".renamify/plan.json"),
                 true, // Always dry-run
@@ -822,17 +825,21 @@ fn main() {
             output,
             quiet,
         } => {
-            // Use preview format from CLI arg or default to matches for search
-            let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
-                // For search, default to matches instead of diff
-                let config_format =
-                    Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Matches);
-                if config_format == Preview::Diff {
-                    Preview::Matches // If config has diff, use matches for search
-                } else {
-                    config_format
-                }
-            });
+            // Use preview format from CLI arg or default to matches for search (unless JSON output)
+            let format = if output == OutputFormat::Json {
+                None // No preview for JSON output
+            } else {
+                Some(preview.map(std::convert::Into::into).unwrap_or_else(|| {
+                    // For search, default to matches instead of diff
+                    let config_format = Preview::from_str(&config.defaults.preview_format)
+                        .unwrap_or(Preview::Matches);
+                    if config_format == Preview::Diff {
+                        Preview::Matches // If config has diff, use matches for search
+                    } else {
+                        config_format
+                    }
+                }))
+            };
 
             // Call plan handler with empty replacement string and dry_run=true
             plan::handle_plan(
@@ -850,7 +857,7 @@ fn main() {
                 only_styles,
                 vec![], // exclude_match not needed for search
                 exclude_matching_lines,
-                Some(format),
+                format,
                 fixed_table_width,
                 PathBuf::from(".renamify/plan.json"),
                 true, // Always dry-run for search

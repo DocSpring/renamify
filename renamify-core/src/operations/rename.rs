@@ -119,6 +119,7 @@ pub fn rename_operation(
                     replacements: 0,
                     renames: 0,
                     committed: false,
+                    plan: Some(plan),
                 },
                 preview,
             ));
@@ -132,6 +133,7 @@ pub fn rename_operation(
                 replacements: 0,
                 renames: 0,
                 committed: false,
+                plan: Some(plan),
             },
             Some("Nothing to do.".to_string()),
         ));
@@ -160,6 +162,7 @@ pub fn rename_operation(
                 replacements: plan.stats.total_matches,
                 renames: plan.paths.len(),
                 committed: false,
+                plan: Some(plan),
             },
             preview_output,
         ));
@@ -176,6 +179,7 @@ pub fn rename_operation(
                 replacements: 0,
                 renames: 0,
                 committed: false,
+                plan: Some(plan),
             },
             Some("Aborted.".to_string()),
         ));
@@ -211,6 +215,7 @@ pub fn rename_operation(
             replacements,
             renames,
             committed: commit,
+            plan: Some(plan),
         },
         preview_output,
     ))
@@ -325,7 +330,6 @@ fn generate_preview_output(plan: &Plan, format: &str, use_color: bool) -> Result
         "table" => crate::preview::Preview::Table,
         "diff" => crate::preview::Preview::Diff,
         "matches" => crate::preview::Preview::Matches,
-        "json" => crate::preview::Preview::Json,
         "summary" => crate::preview::Preview::Summary,
         _ => return Err(anyhow!("Invalid preview format: {}", format)),
     };

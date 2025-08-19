@@ -1,11 +1,9 @@
 mod diff;
-mod json;
 mod matches;
 mod summary;
 mod table;
 
 pub use diff::render_diff;
-pub use json::render_json;
 pub use matches::render_matches;
 pub use summary::render_summary;
 pub use table::render_table;
@@ -19,7 +17,6 @@ pub enum Preview {
     Table,
     Diff,
     Matches,
-    Json,
     Summary,
     None,
 }
@@ -32,7 +29,6 @@ impl std::str::FromStr for Preview {
             "table" => Ok(Self::Table),
             "diff" => Ok(Self::Diff),
             "matches" => Ok(Self::Matches),
-            "json" => Ok(Self::Json),
             "summary" => Ok(Self::Summary),
             "none" => Ok(Self::None),
             _ => Err(format!("Invalid preview format: {}", s)),
@@ -74,7 +70,6 @@ pub fn render_plan_with_fixed_width(
         Preview::Table => render_table(plan, use_color, fixed_width),
         Preview::Diff => render_diff(plan, use_color),
         Preview::Matches => render_matches(plan, use_color),
-        Preview::Json => render_json(plan),
         Preview::Summary => render_summary(plan),
         Preview::None => String::new(), // Return empty string for no preview
     }
@@ -168,7 +163,6 @@ mod tests {
         assert_eq!(Preview::from_str("table"), Ok(Preview::Table));
         assert_eq!(Preview::from_str("diff"), Ok(Preview::Diff));
         assert_eq!(Preview::from_str("matches"), Ok(Preview::Matches));
-        assert_eq!(Preview::from_str("json"), Ok(Preview::Json));
         assert_eq!(Preview::from_str("summary"), Ok(Preview::Summary));
         assert_eq!(Preview::from_str("none"), Ok(Preview::None));
         assert_eq!(Preview::from_str("TABLE"), Ok(Preview::Table));
@@ -273,17 +267,6 @@ mod tests {
         // Should NOT show just the word alone
         assert!(!result.contains("-old_func\n"));
         assert!(!result.contains("+new_func\n"));
-    }
-
-    #[test]
-    fn test_render_json() {
-        let plan = create_test_plan();
-        let result = render_json(&plan);
-        let parsed: Plan = serde_json::from_str(&result).unwrap();
-
-        assert_eq!(parsed.id, plan.id);
-        assert_eq!(parsed.matches.len(), plan.matches.len());
-        assert_eq!(parsed.paths.len(), plan.paths.len());
     }
 
     #[test]
@@ -500,23 +483,6 @@ mod tests {
         assert!(
             !diff_no_color.contains("\u{1b}["),
             "Diff format should not have colors when disabled"
-        );
-
-        // JSON format should never have colors regardless of setting
-        let json_colored = render_plan(&plan, Preview::Json, Some(true));
-        let json_no_color = render_plan(&plan, Preview::Json, Some(false));
-
-        assert!(
-            !json_colored.contains("\u{1b}["),
-            "JSON format should never have colors"
-        );
-        assert!(
-            !json_no_color.contains("\u{1b}["),
-            "JSON format should never have colors"
-        );
-        assert_eq!(
-            json_colored, json_no_color,
-            "JSON output should be identical regardless of color setting"
         );
     }
 }
