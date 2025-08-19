@@ -1,5 +1,4 @@
 use renamify_core::{apply_operation, scan_repository, undo_operation, PlanOptions};
-use serde_json;
 use tempfile::TempDir;
 
 #[test]
@@ -53,7 +52,7 @@ fn test_preserve_trailing_whitespace_in_patches() {
     let plan = scan_repository(root, "old_name", "new_name", &options).unwrap();
 
     // Verify we found matches
-    assert!(plan.matches.len() > 0, "Should find matches in the file");
+    assert!(!plan.matches.is_empty(), "Should find matches in the file");
 
     // Write the plan to the expected location
     let plan_path = renamify_dir.join("plan.json");

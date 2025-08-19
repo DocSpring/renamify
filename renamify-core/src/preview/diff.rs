@@ -228,7 +228,7 @@ pub fn render_diff(plan: &Plan, use_color: bool) -> String {
                     };
                     output.push_str(&highlighted);
                 } else {
-                    write!(output, "{}{}\n", sign, change_text).unwrap();
+                    writeln!(output, "{}{}", sign, change_text).unwrap();
                 }
             }
             output.push('\n');

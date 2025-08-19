@@ -138,30 +138,25 @@ impl OutputFormatter for PlanResult {
 
         if self.replace.is_empty() {
             // Search mode
-            write!(output, "Search results for '{}'\n", self.search).unwrap();
+            writeln!(output, "Search results for '{}'", self.search).unwrap();
         } else {
             // Plan mode
-            write!(
-                output,
-                "Renamify plan: {} -> {}\n",
-                self.search, self.replace
-            )
-            .unwrap();
+            writeln!(output, "Renamify plan: {} -> {}", self.search, self.replace).unwrap();
         }
 
-        write!(
+        writeln!(
             output,
-            "Edits: {} files, {} replacements\n",
+            "Edits: {} files, {} replacements",
             self.files_with_matches, self.total_matches
         )
         .unwrap();
 
         if self.renames > 0 {
-            write!(output, "Renames: {} items\n", self.renames).unwrap();
+            writeln!(output, "Renames: {} items", self.renames).unwrap();
         }
 
         if !self.dry_run {
-            write!(output, "Plan ID: {}\n", self.plan_id).unwrap();
+            writeln!(output, "Plan ID: {}", self.plan_id).unwrap();
         }
 
         output
@@ -194,15 +189,15 @@ impl OutputFormatter for ApplyResult {
     fn format_summary(&self) -> String {
         let mut output = format!("Changes applied successfully. Plan ID: {}\n", self.plan_id);
 
-        write!(
+        writeln!(
             output,
-            "✓ Applied {} replacements across {} files\n",
+            "✓ Applied {} replacements across {} files",
             self.replacements, self.files_changed
         )
         .unwrap();
 
         if self.renames > 0 {
-            write!(output, "✓ Renamed {} items\n", self.renames).unwrap();
+            writeln!(output, "✓ Renamed {} items", self.renames).unwrap();
         }
 
         if self.committed {
@@ -240,11 +235,11 @@ impl OutputFormatter for UndoResult {
         let mut output = format!("Successfully undid operation {}\n", self.history_id);
 
         if self.files_restored > 0 {
-            write!(output, "✓ Restored {} files\n", self.files_restored).unwrap();
+            writeln!(output, "✓ Restored {} files", self.files_restored).unwrap();
         }
 
         if self.renames_reverted > 0 {
-            write!(output, "✓ Reverted {} renames\n", self.renames_reverted).unwrap();
+            writeln!(output, "✓ Reverted {} renames", self.renames_reverted).unwrap();
         }
 
         write!(output, "Redo with: renamify redo {}", self.history_id).unwrap();
@@ -278,15 +273,15 @@ impl OutputFormatter for RedoResult {
     fn format_summary(&self) -> String {
         let mut output = format!("Successfully redid operation {}\n", self.history_id);
 
-        write!(
+        writeln!(
             output,
-            "✓ Applied {} replacements across {} files\n",
+            "✓ Applied {} replacements across {} files",
             self.replacements, self.files_changed
         )
         .unwrap();
 
         if self.renames > 0 {
-            write!(output, "✓ Renamed {} items\n", self.renames).unwrap();
+            writeln!(output, "✓ Renamed {} items", self.renames).unwrap();
         }
 
         output
@@ -309,21 +304,21 @@ impl OutputFormatter for StatusResult {
         let mut output = String::new();
 
         if let Some(ref plan) = self.pending_plan {
-            write!(
+            writeln!(
                 output,
-                "Pending plan: {} ({} -> {})\n",
+                "Pending plan: {} ({} -> {})",
                 plan.id, plan.search, plan.replace
             )
             .unwrap();
-            write!(output, "Created: {}\n", plan.created_at).unwrap();
+            writeln!(output, "Created: {}", plan.created_at).unwrap();
         } else {
             output.push_str("No pending plan\n");
         }
 
-        write!(output, "History entries: {}\n", self.history_count).unwrap();
+        writeln!(output, "History entries: {}", self.history_count).unwrap();
 
         if let Some(ref last_op) = self.last_operation {
-            write!(output, "Last operation: {}\n", last_op).unwrap();
+            writeln!(output, "Last operation: {}", last_op).unwrap();
         }
 
         output
@@ -369,7 +364,7 @@ impl OutputFormatter for HistoryResult {
                 output.push_str(" [REVERTED]");
             }
 
-            write!(output, ") {}\n", entry.timestamp).unwrap();
+            writeln!(output, ") {}", entry.timestamp).unwrap();
         }
 
         output
@@ -409,7 +404,7 @@ impl OutputFormatter for RenameResult {
         );
 
         if self.renames > 0 {
-            write!(output, "✓ Renamed {} items\n", self.renames).unwrap();
+            writeln!(output, "✓ Renamed {} items", self.renames).unwrap();
         }
 
         if self.committed {

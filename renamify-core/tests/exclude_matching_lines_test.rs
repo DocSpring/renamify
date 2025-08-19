@@ -21,8 +21,10 @@ fn old_name() {
     )
     .unwrap();
 
-    let mut options = PlanOptions::default();
-    options.exclude_matching_lines = Some(r"^\s*//".to_string()); // Exclude comment lines
+    let options = PlanOptions {
+        exclude_matching_lines: Some(r"^\s*//".to_string()), // Exclude comment lines
+        ..Default::default()
+    };
 
     let plan = scan_repository_multi(
         &[temp_dir.path().to_path_buf()],
@@ -68,8 +70,10 @@ regular_old_name = "test"
     )
     .unwrap();
 
-    let mut options = PlanOptions::default();
-    options.exclude_matching_lines = Some(r"(^\s*#|DEBUG)".to_string()); // Exclude comments and DEBUG lines
+    let options = PlanOptions {
+        exclude_matching_lines: Some(r"(^\s*#|DEBUG)".to_string()), // Exclude comments and DEBUG lines
+        ..Default::default()
+    };
 
     let plan = scan_repository_multi(
         &[temp_dir.path().to_path_buf()],
@@ -121,8 +125,10 @@ const result = oldName();
     )
     .unwrap();
 
-    let mut options = PlanOptions::default();
-    options.exclude_matching_lines = Some(r"(TODO|FIXME|NOTE)".to_string()); // Exclude TODO/FIXME/NOTE lines
+    let options = PlanOptions {
+        exclude_matching_lines: Some(r"(TODO|FIXME|NOTE)".to_string()), // Exclude TODO/FIXME/NOTE lines
+        ..Default::default()
+    };
 
     let plan = scan_repository_multi(
         &[temp_dir.path().to_path_buf()],
@@ -162,8 +168,10 @@ old_name line 3
     )
     .unwrap();
 
-    let mut options = PlanOptions::default();
-    options.exclude_matching_lines = None; // No exclusion pattern
+    let options = PlanOptions {
+        exclude_matching_lines: None, // No exclusion pattern
+        ..Default::default()
+    };
 
     let plan = scan_repository_multi(
         &[temp_dir.path().to_path_buf()],
@@ -185,8 +193,10 @@ fn test_exclude_matching_lines_invalid_regex() {
     let test_file = temp_dir.path().join("test.txt");
     fs::write(&test_file, "old_name test").unwrap();
 
-    let mut options = PlanOptions::default();
-    options.exclude_matching_lines = Some(r"[invalid(regex".to_string()); // Invalid regex
+    let options = PlanOptions {
+        exclude_matching_lines: Some(r"[invalid(regex".to_string()), // Invalid regex
+        ..Default::default()
+    };
 
     // Should handle invalid regex gracefully
     let result = scan_repository_multi(
@@ -222,8 +232,10 @@ normal old_name line
     )
     .unwrap();
 
-    let mut options = PlanOptions::default();
-    options.exclude_matching_lines = Some(r"^SKIP:".to_string()); // Case-sensitive pattern
+    let options = PlanOptions {
+        exclude_matching_lines: Some(r"^SKIP:".to_string()), // Case-sensitive pattern
+        ..Default::default()
+    };
 
     let plan = scan_repository_multi(
         &[temp_dir.path().to_path_buf()],
@@ -256,8 +268,10 @@ fn test_exclude_matching_lines_multiline_context() {
     )
     .unwrap();
 
-    let mut options = PlanOptions::default();
-    options.exclude_matching_lines = Some(r"^\s*#".to_string()); // Exclude Python comments
+    let options = PlanOptions {
+        exclude_matching_lines: Some(r"^\s*#".to_string()), // Exclude Python comments
+        ..Default::default()
+    };
 
     let plan = scan_repository_multi(
         &[temp_dir.path().to_path_buf()],

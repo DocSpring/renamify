@@ -22,7 +22,7 @@ let x = old_tool();
 
     // Run plan with --exclude-matching-lines to filter out comment lines
     let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.current_dir(temp_dir.path()).args(&[
+    cmd.current_dir(temp_dir.path()).args([
         "plan",
         "old_tool",
         "new_tool",
@@ -72,7 +72,7 @@ production:
 
     // Run dry-run with exclusion pattern
     let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.current_dir(temp_dir.path()).args(&[
+    cmd.current_dir(temp_dir.path()).args([
         "dry-run",
         "old_service",
         "new_service",
@@ -116,7 +116,7 @@ old_command --version
 
     // Create a plan first with exclusions
     let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.current_dir(temp_dir.path()).args(&[
+    cmd.current_dir(temp_dir.path()).args([
         "plan",
         "old_command",
         "new_command",
@@ -131,7 +131,7 @@ old_command --version
 
     // Apply the plan (defaults to .renamify/plan.json)
     let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.current_dir(temp_dir.path()).args(&["apply"]);
+    cmd.current_dir(temp_dir.path()).args(["apply"]);
 
     cmd.assert().success();
 
@@ -169,7 +169,7 @@ fn test_exclude_matching_lines_invalid_regex_error() {
 
     // Run with invalid regex pattern
     let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.current_dir(temp_dir.path()).args(&[
+    cmd.current_dir(temp_dir.path()).args([
         "plan",
         "old",
         "new",
@@ -204,7 +204,7 @@ old_module.function()
 
     // Run with complex exclusion pattern for Python linter comments
     let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.current_dir(temp_dir.path()).args(&[
+    cmd.current_dir(temp_dir.path()).args([
         "plan",
         "old_module",
         "new_module",
@@ -227,7 +227,7 @@ old_module.function()
 fn test_exclude_matching_lines_help_text() {
     // Verify the help text includes the new option
     let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.args(&["plan", "--help"]);
+    cmd.args(["plan", "--help"]);
 
     cmd.assert()
         .success()

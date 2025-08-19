@@ -25,17 +25,14 @@ pub fn apply_operation(
             (Some(PathBuf::from(id)), None)
         } else {
             // It's an ID
-            (None, Some(id.to_string()))
+            (None, Some(id))
         }
     } else {
         (None, None)
     };
 
-    let (mut plan, used_default_plan_file) = load_plan_from_source_with_tracking(
-        plan_path.map(|p| p.to_path_buf()),
-        plan_id,
-        &renamify_dir,
-    )?;
+    let (mut plan, used_default_plan_file) =
+        load_plan_from_source_with_tracking(plan_path, plan_id, &renamify_dir)?;
 
     // Save stats before applying
     let files_changed = plan.stats.files_with_matches;
@@ -78,7 +75,7 @@ pub fn apply_operation(
 
 fn load_plan_from_source_with_tracking(
     plan_path: Option<PathBuf>,
-    plan_id: Option<String>,
+    plan_id: Option<&str>,
     renamify_dir: &Path,
 ) -> Result<(Plan, Option<PathBuf>)> {
     match (plan_path, plan_id) {

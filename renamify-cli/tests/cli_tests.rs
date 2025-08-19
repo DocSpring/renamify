@@ -826,7 +826,7 @@ fn test_init_command_local_flag() {
         .args(["init", "--local"])
         .assert()
         .success()
-        .stderr(predicates::str::contains(&path_str(&[
+        .stderr(predicates::str::contains(path_str(&[
             ".git", "info", "exclude",
         ])));
 
