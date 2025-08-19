@@ -18,7 +18,7 @@ pub fn status_operation(working_dir: Option<&Path>) -> Result<StatusResult> {
             id: plan.id.clone(),
             search: plan.search.clone(),
             replace: plan.replace.clone(),
-            created_at: plan.created_at.clone(),
+            created_at: plan.created_at,
         })
     } else {
         None

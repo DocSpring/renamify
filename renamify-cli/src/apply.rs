@@ -10,7 +10,7 @@ pub fn handle_apply(
     output: OutputFormat,
     quiet: bool,
 ) -> Result<()> {
-    let result = apply_operation(None, plan_id, commit, force, None)?;
+    let result = apply_operation(None, plan_id.as_deref(), commit, force, None)?;
 
     // Handle output based on format
     match output {

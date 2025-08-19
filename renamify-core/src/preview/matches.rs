@@ -5,6 +5,7 @@ use std::fmt::Write;
 use std::path::Path;
 
 /// Render search results as a focused matches view
+#[allow(clippy::too_many_lines)]
 pub fn render_matches(plan: &Plan, use_color: bool) -> String {
     let mut output = String::new();
 

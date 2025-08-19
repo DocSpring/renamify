@@ -33,9 +33,10 @@ pub fn plan_operation(
     only_acronyms: Vec<String>,
     working_dir: Option<&std::path::Path>,
 ) -> Result<(PlanResult, Option<String>)> {
-    let current_dir = working_dir
-        .map(|p| p.to_path_buf())
-        .unwrap_or_else(|| std::env::current_dir().expect("Failed to get current directory"));
+    let current_dir = working_dir.map_or_else(
+        || std::env::current_dir().expect("Failed to get current directory"),
+        std::path::Path::to_path_buf,
+    );
 
     // Use provided paths or default to current directory
     let search_paths = if paths.is_empty() {

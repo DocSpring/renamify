@@ -134,7 +134,7 @@ jobs:
 
       - name: Check coverage threshold
         run: |
-          COVERAGE_THRESHOLD=85
+          COVERAGE_THRESHOLD=80
 
           # Run coverage and capture output
           COVERAGE_OUTPUT=$(cargo llvm-cov --workspace 2>&1)

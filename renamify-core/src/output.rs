@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fmt;
+use std::fmt::Write;
 
 /// Output format for CLI commands
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutputFormat {
     Summary,
     Json,
@@ -137,26 +138,30 @@ impl OutputFormatter for PlanResult {
 
         if self.replace.is_empty() {
             // Search mode
-            output.push_str(&format!("Search results for '{}'\n", self.search));
+            write!(output, "Search results for '{}'\n", self.search).unwrap();
         } else {
             // Plan mode
-            output.push_str(&format!(
+            write!(
+                output,
                 "Renamify plan: {} -> {}\n",
                 self.search, self.replace
-            ));
+            )
+            .unwrap();
         }
 
-        output.push_str(&format!(
+        write!(
+            output,
             "Edits: {} files, {} replacements\n",
             self.files_with_matches, self.total_matches
-        ));
+        )
+        .unwrap();
 
         if self.renames > 0 {
-            output.push_str(&format!("Renames: {} items\n", self.renames));
+            write!(output, "Renames: {} items\n", self.renames).unwrap();
         }
 
         if !self.dry_run {
-            output.push_str(&format!("Plan ID: {}\n", self.plan_id));
+            write!(output, "Plan ID: {}\n", self.plan_id).unwrap();
         }
 
         output
@@ -189,20 +194,22 @@ impl OutputFormatter for ApplyResult {
     fn format_summary(&self) -> String {
         let mut output = format!("Changes applied successfully. Plan ID: {}\n", self.plan_id);
 
-        output.push_str(&format!(
+        write!(
+            output,
             "✓ Applied {} replacements across {} files\n",
             self.replacements, self.files_changed
-        ));
+        )
+        .unwrap();
 
         if self.renames > 0 {
-            output.push_str(&format!("✓ Renamed {} items\n", self.renames));
+            write!(output, "✓ Renamed {} items\n", self.renames).unwrap();
         }
 
         if self.committed {
             output.push_str("✓ Changes committed to git\n");
         }
 
-        output.push_str(&format!("Undo with: renamify undo {}", self.plan_id));
+        write!(output, "Undo with: renamify undo {}", self.plan_id).unwrap();
 
         output
     }
@@ -233,14 +240,14 @@ impl OutputFormatter for UndoResult {
         let mut output = format!("Successfully undid operation {}\n", self.history_id);
 
         if self.files_restored > 0 {
-            output.push_str(&format!("✓ Restored {} files\n", self.files_restored));
+            write!(output, "✓ Restored {} files\n", self.files_restored).unwrap();
         }
 
         if self.renames_reverted > 0 {
-            output.push_str(&format!("✓ Reverted {} renames\n", self.renames_reverted));
+            write!(output, "✓ Reverted {} renames\n", self.renames_reverted).unwrap();
         }
 
-        output.push_str(&format!("Redo with: renamify redo {}", self.history_id));
+        write!(output, "Redo with: renamify redo {}", self.history_id).unwrap();
 
         output
     }
@@ -271,13 +278,15 @@ impl OutputFormatter for RedoResult {
     fn format_summary(&self) -> String {
         let mut output = format!("Successfully redid operation {}\n", self.history_id);
 
-        output.push_str(&format!(
+        write!(
+            output,
             "✓ Applied {} replacements across {} files\n",
             self.replacements, self.files_changed
-        ));
+        )
+        .unwrap();
 
         if self.renames > 0 {
-            output.push_str(&format!("✓ Renamed {} items\n", self.renames));
+            write!(output, "✓ Renamed {} items\n", self.renames).unwrap();
         }
 
         output
@@ -300,19 +309,21 @@ impl OutputFormatter for StatusResult {
         let mut output = String::new();
 
         if let Some(ref plan) = self.pending_plan {
-            output.push_str(&format!(
+            write!(
+                output,
                 "Pending plan: {} ({} -> {})\n",
                 plan.id, plan.search, plan.replace
-            ));
-            output.push_str(&format!("Created: {}\n", plan.created_at));
+            )
+            .unwrap();
+            write!(output, "Created: {}\n", plan.created_at).unwrap();
         } else {
             output.push_str("No pending plan\n");
         }
 
-        output.push_str(&format!("History entries: {}\n", self.history_count));
+        write!(output, "History entries: {}\n", self.history_count).unwrap();
 
         if let Some(ref last_op) = self.last_operation {
-            output.push_str(&format!("Last operation: {}\n", last_op));
+            write!(output, "Last operation: {}\n", last_op).unwrap();
         }
 
         output
@@ -338,7 +349,8 @@ impl OutputFormatter for HistoryResult {
 
         let mut output = String::new();
         for entry in &self.entries {
-            output.push_str(&format!(
+            write!(
+                output,
                 "{} [{}] {} -> {} ({} files, {} replacements",
                 entry.id,
                 entry.operation,
@@ -346,17 +358,18 @@ impl OutputFormatter for HistoryResult {
                 entry.replace,
                 entry.files_changed,
                 entry.replacements
-            ));
+            )
+            .unwrap();
 
             if entry.renames > 0 {
-                output.push_str(&format!(", {} renames", entry.renames));
+                write!(output, ", {} renames", entry.renames).unwrap();
             }
 
             if entry.reverted {
                 output.push_str(" [REVERTED]");
             }
 
-            output.push_str(&format!(") {}\n", entry.timestamp));
+            write!(output, ") {}\n", entry.timestamp).unwrap();
         }
 
         output
@@ -396,14 +409,14 @@ impl OutputFormatter for RenameResult {
         );
 
         if self.renames > 0 {
-            output.push_str(&format!("✓ Renamed {} items\n", self.renames));
+            write!(output, "✓ Renamed {} items\n", self.renames).unwrap();
         }
 
         if self.committed {
             output.push_str("✓ Changes committed to git\n");
         }
 
-        output.push_str(&format!("Undo with: renamify undo {}", self.plan_id));
+        write!(output, "Undo with: renamify undo {}", self.plan_id).unwrap();
 
         output
     }

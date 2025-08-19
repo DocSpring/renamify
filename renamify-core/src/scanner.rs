@@ -135,8 +135,8 @@ pub struct MatchHunk {
     pub patch_hash: Option<String>, // SHA256 hash of the patch file for this change
 }
 
-/// Helper function to check if a PathBuf is empty (for serde skip)
-fn is_empty_path(p: &PathBuf) -> bool {
+/// Helper function to check if a `PathBuf` is empty (for serde skip)
+fn is_empty_path(p: &Path) -> bool {
     p.as_os_str().is_empty()
 }
 
@@ -431,13 +431,7 @@ fn generate_hunks(
 
     // Compile the exclude pattern if provided
     let exclude_line_regex = if let Some(ref pattern) = options.exclude_matching_lines {
-        match Regex::new(pattern) {
-            Ok(re) => Some(re),
-            Err(_) => {
-                // If regex is invalid, skip all filtering (will be caught at higher level)
-                None
-            },
-        }
+        Regex::new(pattern).ok()
     } else {
         None
     };

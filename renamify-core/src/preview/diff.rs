@@ -209,7 +209,7 @@ pub fn render_diff(plan: &Plan, use_color: bool) -> String {
                         ChangeTag::Delete => {
                             let highlighted_line = highlight_line_with_hunks(
                                 change_text,
-                                &line_hunk_group,
+                                line_hunk_group,
                                 true,
                                 use_color,
                             );
@@ -218,7 +218,7 @@ pub fn render_diff(plan: &Plan, use_color: bool) -> String {
                         ChangeTag::Insert => {
                             let highlighted_line = highlight_line_with_hunks(
                                 change_text,
-                                &line_hunk_group,
+                                line_hunk_group,
                                 false,
                                 use_color,
                             );
@@ -228,7 +228,7 @@ pub fn render_diff(plan: &Plan, use_color: bool) -> String {
                     };
                     output.push_str(&highlighted);
                 } else {
-                    output.push_str(&format!("{}{}\n", sign, change_text));
+                    write!(output, "{}{}\n", sign, change_text).unwrap();
                 }
             }
             output.push('\n');

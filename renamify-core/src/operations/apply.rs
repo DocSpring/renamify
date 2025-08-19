@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 
 /// Apply operation - returns structured data
 pub fn apply_operation(
-    plan_path: Option<PathBuf>,
-    plan_id: Option<String>,
+    plan_path: Option<&Path>,
+    plan_id: Option<&str>,
     commit: bool,
     force: bool,
     working_dir: Option<&Path>,
@@ -15,20 +15,27 @@ pub fn apply_operation(
     let renamify_dir = current_dir.join(".renamify");
 
     // Load the plan - check if plan_id looks like a path
-    let (plan_path, plan_id) = if let Some(ref id) = plan_id {
-        if id.contains('/') || id.ends_with(".json") {
+    let (plan_path, plan_id) = if let Some(id) = plan_id {
+        if id.contains('/')
+            || Path::new(id)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+        {
             // It's a path
             (Some(PathBuf::from(id)), None)
         } else {
             // It's an ID
-            (None, Some(id.clone()))
+            (None, Some(id.to_string()))
         }
     } else {
         (None, None)
     };
 
-    let (mut plan, used_default_plan_file) =
-        load_plan_from_source_with_tracking(plan_path, plan_id, &renamify_dir)?;
+    let (mut plan, used_default_plan_file) = load_plan_from_source_with_tracking(
+        plan_path.map(|p| p.to_path_buf()),
+        plan_id,
+        &renamify_dir,
+    )?;
 
     // Save stats before applying
     let files_changed = plan.stats.files_with_matches;

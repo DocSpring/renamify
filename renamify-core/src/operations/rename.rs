@@ -68,7 +68,7 @@ pub fn rename_operation(
         plan_out: PathBuf::from(".renamify/temp_plan.json"),
         coerce_separators: crate::scanner::CoercionMode::Auto,
         exclude_match: exclude_match.to_owned(),
-        exclude_matching_lines: exclude_matching_lines.map(|s| s.to_string()),
+        exclude_matching_lines: exclude_matching_lines.map(std::string::ToString::to_string),
         no_acronyms,
         include_acronyms: include_acronyms.to_owned(),
         exclude_acronyms: exclude_acronyms.to_owned(),
@@ -197,10 +197,13 @@ pub fn rename_operation(
     if !root_renames.is_empty() && !rename_root && !no_rename_root {
         let snippet = generate_root_rename_snippet(&root_renames);
         if let Some(ref mut preview) = preview_output {
-            preview.push_str(&format!(
+            use std::fmt::Write;
+            write!(
+                preview,
                 "\n\nNext step (root directory rename):\n{}",
                 snippet
-            ));
+            )
+            .unwrap();
         } else {
             preview_output = Some(format!("Next step (root directory rename):\n{}", snippet));
         }
