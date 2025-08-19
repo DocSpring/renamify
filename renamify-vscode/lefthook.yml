@@ -1,0 +1,49 @@
+# Lefthook configuration for VS Code extension
+# See https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      run: pnpm run format
+      glob: "*.{js,ts,json,md}"
+      stage_fixed: true
+    
+    lint:
+      run: pnpm run check
+      glob: "*.{js,ts}"
+    
+    typecheck:
+      run: pnpm run compile
+      glob: "*.ts"
+    
+    test:
+      run: pnpm test
+      # Only run tests if source files change
+      glob: "{src,media}/**/*.{js,ts}"
+
+pre-push:
+  parallel: false
+  commands:
+    test:
+      run: pnpm test
+    
+    build:
+      run: pnpm run package
+
+commit-msg:
+  commands:
+    conventional:
+      run: |
+        # Enforce conventional commit format
+        commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+$'
+        if ! grep -qE "$commit_regex" "$1"; then
+          echo "❌ Commit message must follow Conventional Commits format:"
+          echo "   <type>(<scope>): <subject>"
+          echo ""
+          echo "Examples:"
+          echo "   feat: add new search feature"
+          echo "   fix(cli): correct argument parsing"
+          echo "   docs: update README"
+          exit 1
+        fi

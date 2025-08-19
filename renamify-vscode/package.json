@@ -1,0 +1,127 @@
+{
+  "name": "renamify",
+  "displayName": "Renamify",
+  "description": "Smart case-aware search and replace with file renaming",
+  "version": "0.1.0",
+  "publisher": "DocSpring",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DocSpring/renamify"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "search",
+    "replace",
+    "rename",
+    "refactor",
+    "case-conversion"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "renamify",
+          "title": "Renamify",
+          "icon": "resources/renamify-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "renamify": [
+        {
+          "type": "webview",
+          "id": "renamify.searchView",
+          "name": "Search & Replace"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "renamify.search",
+        "title": "Renamify: Open Search Panel"
+      },
+      {
+        "command": "renamify.plan",
+        "title": "Renamify: Create Plan"
+      },
+      {
+        "command": "renamify.apply",
+        "title": "Renamify: Apply Changes"
+      },
+      {
+        "command": "renamify.undo",
+        "title": "Renamify: Undo Last Operation"
+      },
+      {
+        "command": "renamify.history",
+        "title": "Renamify: Show History"
+      },
+      {
+        "command": "renamify.clearResults",
+        "title": "Renamify: Clear Results"
+      }
+    ],
+    "configuration": {
+      "title": "Renamify",
+      "properties": {
+        "renamify.cliPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to renamify CLI binary (leave empty to auto-detect)"
+        },
+        "renamify.respectGitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Honor .gitignore files"
+        },
+        "renamify.showContextLines": {
+          "type": "number",
+          "default": 2,
+          "description": "Number of context lines to show in results"
+        },
+        "renamify.autoSaveBeforeApply": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save all files before applying changes"
+        },
+        "renamify.confirmBeforeApply": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show confirmation dialog before applying changes"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "pnpm run compile && pnpm run check",
+    "lint": "biome check --write",
+    "format": "biome format --write",
+    "check": "biome check",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.0",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "~24.3.0",
+    "@types/sinon": "^17.0.2",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.3.8",
+    "glob": "^11.0.3",
+    "mocha": "^11.7.1",
+    "sinon": "^21.0.0",
+    "typescript": "^5.9.2",
+    "ultracite": "^5.2.4"
+  }
+}

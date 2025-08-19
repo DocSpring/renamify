@@ -38,6 +38,22 @@ pre-commit:
       glob: "*.ts"
       run: tsc --noEmit
 
+    vscode-biome:
+      root: renamify-vscode/
+      glob: "*.{ts,js,json}"
+      run: biome check --write
+
+    # Too slow, just run this on CI
+    # vscode-test:
+    #   root: renamify-vscode/
+    #   glob: "*.ts"
+    #   run: pnpm test
+
+    vscode-tsc:
+      root: renamify-vscode/
+      glob: "*.ts"
+      run: pnpm run compile
+
     shellcheck:
       glob: "*.sh"
       run: shellcheck {staged_files}

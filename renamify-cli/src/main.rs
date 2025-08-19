@@ -84,7 +84,7 @@ enum Commands {
         #[arg(long = "no-rename-dirs")]
         no_rename_dirs: bool,
 
-        /// Case styles to exclude from the default set (snake, kebab, camel, pascal, screaming-snake)
+        /// Case styles to exclude from the default set (original, snake, kebab, camel, pascal, screaming-snake, train, screaming-train)
         #[arg(
             long,
             value_enum,
@@ -93,7 +93,7 @@ enum Commands {
         )]
         exclude_styles: Vec<StyleArg>,
 
-        /// Additional case styles to include (title, train, dot)
+        /// Additional case styles to include (title, dot)
         #[arg(
             long,
             value_enum,
@@ -219,7 +219,7 @@ enum Commands {
         #[arg(long = "no-rename-dirs")]
         no_rename_dirs: bool,
 
-        /// Case styles to exclude from the default set (snake, kebab, camel, pascal, screaming-snake)
+        /// Case styles to exclude from the default set (original, snake, kebab, camel, pascal, screaming-snake, train, screaming-train)
         #[arg(
             long,
             value_enum,
@@ -228,7 +228,7 @@ enum Commands {
         )]
         exclude_styles: Vec<StyleArg>,
 
-        /// Additional case styles to include (title, train, dot)
+        /// Additional case styles to include (title, dot)
         #[arg(
             long,
             value_enum,
@@ -321,7 +321,7 @@ enum Commands {
         #[arg(long = "no-rename-dirs")]
         no_rename_dirs: bool,
 
-        /// Case styles to exclude from the default set (snake, kebab, camel, pascal, screaming-snake)
+        /// Case styles to exclude from the default set (original, snake, kebab, camel, pascal, screaming-snake, train, screaming-train)
         #[arg(
             long,
             value_enum,
@@ -330,7 +330,7 @@ enum Commands {
         )]
         exclude_styles: Vec<StyleArg>,
 
-        /// Additional case styles to include (title, train, dot)
+        /// Additional case styles to include (title, dot)
         #[arg(
             long,
             value_enum,

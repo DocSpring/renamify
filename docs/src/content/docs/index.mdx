@@ -10,22 +10,8 @@ Smart search & replace for code and files with <br/>**case-aware transformations
 and **built-in undo/redo**.
 </span>
 <span style="font-size: 1.35rem;">
-An **MCP Server**, **CLI tool**, and **VS Code / Cursor Extension** _(coming soon)_
+An **MCP Server**, **CLI tool**, and **VS Code / Cursor Extension**
 </span>
-
-## 🤖 MCP Server for AI Agents
-
-<LinkCard
-  title="Use Renamify with AI Assistants"
-  href="/renamify/mcp/overview"
-  description="Connect Renamify to Claude, Cursor, and other AI tools via the Model Context Protocol (MCP) for intelligent, automated refactoring."
-/>
-
-The Renamify MCP Server enables AI agents to:
-- **Plan refactorings** with case-aware transformations
-- **Preview changes** in AI-friendly formats
-- **Apply changes atomically** with full undo/redo support
-- **Manage refactoring history** across your codebase
 
 ## Features
 
@@ -48,7 +34,7 @@ The Renamify MCP Server enables AI agents to:
 
 ## What is Renamify?
 
-Renamify is a command-line tool that understands different naming conventions and can rename both file contents and the files themselves in a single atomic operation. It's designed for developers who need to refactor codebases safely and efficiently.
+Renamify is a tool that understands different naming conventions and can rename both file contents and the files themselves in a single atomic operation. It's designed for developers (and AI agents) who need to refactor codebases safely and efficiently.
 
 Traditional find-and-replace tools work at the text level, but don't understand code conventions. If you want to rename `getUserName` to `fetchUserProfile`, you need to handle:
 
@@ -60,6 +46,20 @@ Traditional find-and-replace tools work at the text level, but don't understand 
 - Directories like `user-name/`
 
 Renamify handles all of these automatically in a single operation.
+
+## 🤖 MCP Server for AI Agents
+
+<LinkCard
+  title="Use Renamify with AI Assistants"
+  href="/renamify/mcp/overview"
+  description="Connect Renamify to Claude, Cursor, and other AI tools via the Model Context Protocol (MCP) for intelligent, automated refactoring."
+/>
+
+The Renamify MCP Server enables AI agents to:
+- **Plan refactorings** with case-aware transformations
+- **Preview changes** in AI-friendly formats
+- **Apply changes atomically** with full undo/redo support
+- **Manage refactoring history** across your codebase
 
 ## Installation
 

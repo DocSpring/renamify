@@ -26,8 +26,8 @@ impl Style {
             Self::Camel,
             Self::Pascal,
             Self::ScreamingSnake,
-            Self::Train,          // Include Train-Case in defaults
-            Self::ScreamingTrain, // Include ScreamingTrain for ALL-CAPS-PATTERNS
+            Self::Train,
+            Self::ScreamingTrain,
         ]
     }
 }

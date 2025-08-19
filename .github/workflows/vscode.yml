@@ -1,0 +1,88 @@
+name: VS Code Extension CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "renamify-vscode/**"
+      - ".github/workflows/vscode.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "renamify-vscode/**"
+      - ".github/workflows/vscode.yml"
+
+jobs:
+  vscode_test:
+    name: Test VS Code Extension
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: renamify-vscode
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        node-version: [18.x, 20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Preserve line endings to prevent Biome formatting issues on Windows
+          autocrlf: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('renamify-vscode/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run TypeScript checks
+        run: pnpm run compile
+
+      - name: Run Biome checks
+        if: runner.os != 'Windows'
+        run: pnpm run check
+
+      - name: Build extension
+        run: pnpm run package
+
+      - name: Run tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a pnpm test
+
+      - name: Run tests (macOS/Windows)
+        if: runner.os != 'Linux'
+        run: pnpm test
+
+      - name: Upload VSIX artifact
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.x'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension
+          path: renamify-vscode/*.vsix

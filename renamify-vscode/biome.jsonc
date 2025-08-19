@@ -1,0 +1,37 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "extends": ["ultracite"],
+  "javascript": {
+    "globals": ["suite", "test", "setup", "teardown", "acquireVsCodeApi"]
+  },
+  "linter": {
+    "rules": {
+      "performance": {
+        "noNamespaceImport": "off"
+      },
+      "style": {
+        "useConsistentMemberAccessibility": "off",
+        "noParameterProperties": "off",
+        "useFilenamingConvention": "off",
+        "noMagicNumbers": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noConsole": "off",
+        "noEmptyBlockStatements": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts", "**/*.spec.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ]
+}

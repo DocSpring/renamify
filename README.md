@@ -1,4 +1,4 @@
-# <img src="docs/src/assets/logo.svg" width="32" height="32" alt="Renamify logo" align="center"> Renamify
+# <picture><source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logo-white.svg"><source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logo.svg"><img alt="Renamify logo" src="docs/src/assets/logo-white.svg" width="32" height="32" align="center"></picture> Renamify
 
 Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
 
@@ -11,8 +11,8 @@ Smart search & replace for code and files with case-aware transformations and bu
 
 ✅ **CLI tool** - Production ready with full Windows, macOS, and Linux support  
 ✅ **MCP server** - AI integrations for Claude, Cursor, and other MCP-compatible tools  
-✅ **Documentation** - Comprehensive guides at [docspring.github.io/renamify](https://docspring.github.io/renamify/)  
-🚧 **VS Code extension** - Coming soon  
+✅ **VS Code / Cursor extension**
+✅ **Documentation** - Comprehensive guides at [docspring.github.io/renamify](https://docspring.github.io/renamify/)
 
 ## Installation
 
@@ -45,7 +45,6 @@ See [MCP Server documentation](https://docspring.github.io/renamify/mcp/overview
 
 ## Help Wanted
 
-- **VS Code/Cursor Extension**: We're looking for TypeScript developers to help build the IDE extension
 - **Package Managers**: Help us get Renamify into Homebrew, AUR, Scoop, Chocolatey, etc.
 - **Language-Specific Features**: Contribute language-aware renaming (imports, modules, namespaces)
 - **Documentation**: Help improve our docs, add more examples, fix any inaccuracies
