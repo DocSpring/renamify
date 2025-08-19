@@ -1,0 +1,44 @@
+/* Custom styles for Renamify docs */
+
+/* Logo styling - white in dark mode, black in light mode */
+:root {
+  --renamify-logo-color: #000000;
+}
+
+:root[data-theme="dark"] {
+  --renamify-logo-color: #ffffff;
+}
+
+/* Apply color to the logo SVG and control size */
+.site-title img,
+header .logo img,
+.sl-flex img[alt="Renamify"] {
+  filter: brightness(0) invert(0);
+  width: 28px;
+  height: 28px;
+}
+
+:root[data-theme="dark"] .site-title img,
+:root[data-theme="dark"] header .logo img,
+:root[data-theme="dark"] .sl-flex img[alt="Renamify"] {
+  filter: brightness(0) invert(1);
+}
+
+/* Alternative approach using stroke color directly */
+.site-title svg,
+header svg.logo {
+  stroke: var(--renamify-logo-color);
+  color: var(--renamify-logo-color);
+}
+
+/* Title text styling - matching the logo colors */
+.site-title,
+header .sl-flex a[href="/renamify/"] {
+  font-weight: 600;
+  color: var(--renamify-logo-color) !important;
+}
+
+/* Reduce gap between logo and title */
+.site-title {
+  gap: 0.8rem !important;
+}

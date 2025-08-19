@@ -1,4 +1,4 @@
-# Renamify
+# <img src="docs/src/assets/logo.svg" width="32" height="32" alt="Renamify logo" align="center"> Renamify
 
 Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
 

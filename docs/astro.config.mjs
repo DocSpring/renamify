@@ -16,6 +16,9 @@ export default defineConfig({
       logo: {
         src: "./src/assets/logo.svg",
       },
+      customCss: [
+        "./src/styles/custom.css",
+      ],
       editLink: {
         baseUrl: "https://github.com/DocSpring/renamify/edit/main/docs",
       },
