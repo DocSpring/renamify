@@ -73,7 +73,7 @@ jobs:
           echo "Current directory: $(pwd)"
           echo "Workspace: ${{ github.workspace }}"
 
-          # Convert Windows path to Unix path for bash
+          # Convert Windows path to Unix path for bash commands
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             WORKSPACE=$(echo "${{ github.workspace }}" | sed 's|\\|/|g' | sed 's|D:|/d|')
           else
@@ -84,13 +84,19 @@ jobs:
 
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             chmod +x "$WORKSPACE/renamify-bin/renamify.exe"
-            echo "$WORKSPACE/renamify-bin" >> $GITHUB_PATH
+            # Use original Windows path format for GITHUB_PATH
+            echo "${{ github.workspace }}\renamify-bin" >> $GITHUB_PATH
           else
             chmod +x "$WORKSPACE/renamify-bin/renamify"
-            echo "$WORKSPACE/renamify-bin" >> $GITHUB_PATH
+            echo "${{ github.workspace }}/renamify-bin" >> $GITHUB_PATH
           fi
 
-      - name: Verify renamify is available
+      - name: Verify renamify is available (Windows)
+        if: runner.os == 'Windows'
+        run: renamify.exe --version
+
+      - name: Verify renamify is available (Unix)
+        if: runner.os != 'Windows'
         run: renamify --version
 
       - name: Setup Node.js
