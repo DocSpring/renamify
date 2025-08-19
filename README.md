@@ -8,12 +8,10 @@ Smart search & replace for code and files with case-aware transformations and bu
 [![VS Code](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml)
 [![Docs](https://github.com/DocSpring/renamify/actions/workflows/docs.yml/badge.svg)](https://docspring.github.io/renamify/)
 
-## What's Available
-
-✅ **CLI tool** - Production ready with full Windows, macOS, and Linux support<br>
-✅ **MCP server** - AI integrations for Claude, Cursor, and other MCP-compatible tools<br>
-✅ **VS Code / Cursor extension** - Instant renaming without leaving your editor<br>
-✅ **Documentation** - Comprehensive guides at [docspring.github.io/renamify](https://docspring.github.io/renamify/)
+- **CLI tool** - Production ready with full Windows, macOS, and Linux support<br>
+- **MCP server** - AI integrations for Claude, Cursor, and other MCP-compatible tools<br>
+- **VS Code / Cursor extension** - Instant renaming without leaving your editor<br>
+- **Documentation** - Comprehensive guides at [docspring.github.io/renamify](https://docspring.github.io/renamify/)
 
 ## Installation
 
