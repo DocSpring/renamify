@@ -1,6 +1,27 @@
 pre-commit:
   parallel: true
   commands:
+    fix-whitespace:
+      file_types:
+        - text
+      exclude: "**/.*"
+      run: |
+        for file in {staged_files}; do
+          if [[ -f "$file" ]]; then
+            # Remove trailing whitespace (portable sed usage)
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+              sed -i '' 's/[[:space:]]*$//' "$file"
+            else
+              sed -i 's/[[:space:]]*$//' "$file"
+            fi
+            # Ensure file ends with newline
+            if [[ -s "$file" ]] && [[ $(tail -c1 "$file" | wc -l) -eq 0 ]]; then
+              echo >> "$file"
+            fi
+          fi
+        done
+      stage_fixed: true
+
     fmt:
       glob: "*.rs"
       run: cargo fmt --all
