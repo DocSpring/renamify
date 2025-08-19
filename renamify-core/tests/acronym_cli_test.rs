@@ -19,6 +19,7 @@ fn test_no_acronyms_flag() {
     // Test with acronyms disabled
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: true, // Disable acronym detection
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -73,6 +74,7 @@ fn test_include_acronyms_flag() {
     // Test with custom acronyms included
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec!["K8S".to_string(), "GCP".to_string()], // Add custom acronyms
         exclude_acronyms: vec![],
@@ -119,6 +121,7 @@ fn test_exclude_acronyms_flag() {
     // Test with ID excluded from acronyms
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec!["ID".to_string()], // Exclude ID from acronyms
@@ -165,6 +168,7 @@ fn test_only_acronyms_flag() {
     // Test with only AWS as an acronym (replacing the default list)
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -218,6 +222,7 @@ fn test_acronym_case_insensitive() {
     // Test with api in lowercase
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec!["api".to_string()], // lowercase
         exclude_acronyms: vec![],

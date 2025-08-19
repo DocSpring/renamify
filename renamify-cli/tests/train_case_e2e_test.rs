@@ -236,6 +236,7 @@ The Rename-Tool-Based-Solution is working.
         &[],    // include_styles
         &[],    // only_styles
         &[],    // exclude_match
+        None,   // exclude_matching_lines
         None,   // preview_format
         false,  // commit
         false,  // large

@@ -23,6 +23,7 @@ URL="https://github.com/DocSpring/renamed_renaming_tool"
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -113,6 +114,7 @@ curl -L "https://raw.githubusercontent.com/DocSpring/oldproject/main/install.sh"
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -216,6 +218,7 @@ let oldtool_debug_identifiers = true;
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -271,6 +274,7 @@ let normal_backup = "oldtool_backup";
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -332,6 +336,7 @@ import: @mycompany/oldtool
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -392,6 +397,7 @@ let tool_ide_support = true;
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -464,6 +470,7 @@ fn test() {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -535,6 +542,7 @@ if std::env::var("TOOL_IDENTIFIER_DEBUG").is_ok() {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],

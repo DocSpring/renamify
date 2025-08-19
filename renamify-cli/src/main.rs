@@ -110,6 +110,10 @@ enum Commands {
         #[arg(long, value_delimiter = ',')]
         exclude_match: Vec<String>,
 
+        /// Exclude matches on lines matching this regex pattern
+        #[arg(long)]
+        exclude_matching_lines: Option<String>,
+
         /// Preview output format (defaults from config if not specified)
         #[arg(long, value_enum)]
         preview: Option<PreviewArg>,
@@ -241,6 +245,10 @@ enum Commands {
         #[arg(long, value_delimiter = ',')]
         exclude_match: Vec<String>,
 
+        /// Exclude matches on lines matching this regex pattern
+        #[arg(long)]
+        exclude_matching_lines: Option<String>,
+
         /// Preview output format (defaults from config if not specified)
         #[arg(long, value_enum)]
         preview: Option<PreviewArg>,
@@ -338,6 +346,10 @@ enum Commands {
         /// Specific matches to exclude (e.g., compound words to ignore)
         #[arg(long, value_delimiter = ',')]
         exclude_match: Vec<String>,
+
+        /// Exclude matches on lines matching this regex pattern
+        #[arg(long)]
+        exclude_matching_lines: Option<String>,
 
         /// Show preview before confirmation prompt
         #[arg(long, value_enum)]
@@ -508,6 +520,7 @@ fn main() {
             include_styles,
             only_styles,
             exclude_match,
+            exclude_matching_lines,
             preview,
             fixed_table_width,
             plan_out,
@@ -536,6 +549,7 @@ fn main() {
                 include_styles,
                 only_styles,
                 exclude_match,
+                exclude_matching_lines,
                 Some(format),
                 fixed_table_width,
                 plan_out,
@@ -561,6 +575,7 @@ fn main() {
             include_styles,
             only_styles,
             exclude_match,
+            exclude_matching_lines,
             preview,
             fixed_table_width,
             no_acronyms,
@@ -587,6 +602,7 @@ fn main() {
                 include_styles,
                 only_styles,
                 exclude_match,
+                exclude_matching_lines,
                 Some(format),
                 fixed_table_width,
                 PathBuf::from(".renamify/plan.json"),
@@ -633,6 +649,7 @@ fn main() {
             include_styles,
             only_styles,
             exclude_match,
+            exclude_matching_lines,
             preview,
             commit,
             large,
@@ -662,6 +679,7 @@ fn main() {
                 include_styles,
                 only_styles,
                 exclude_match,
+                exclude_matching_lines,
                 format,
                 commit,
                 large,

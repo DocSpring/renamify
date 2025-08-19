@@ -25,6 +25,7 @@ let simple = renamify;
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -122,6 +123,7 @@ fn test_format_string_placeholders_are_replaced() {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -180,6 +182,7 @@ In format string: renamify_{}.tmp
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],

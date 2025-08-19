@@ -27,6 +27,7 @@ type FooBarOption = i32;",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -111,6 +112,7 @@ type GetFooBarOption = i32;",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -195,6 +197,7 @@ type LoadFooBar = i32;",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -271,6 +274,7 @@ let fooBar = getFooBar();",
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],

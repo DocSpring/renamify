@@ -47,6 +47,7 @@ pub fn process() {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
@@ -162,6 +163,7 @@ fn test_train_case_exact_patterns() {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],

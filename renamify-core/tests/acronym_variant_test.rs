@@ -24,6 +24,7 @@ fn test_acronym_affects_case_variants() {
     // Test WITH B2B as an acronym
     let options_with = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec!["B2B".to_string()], // Add B2B as acronym
         exclude_acronyms: vec![],
@@ -59,6 +60,7 @@ fn test_acronym_affects_case_variants() {
     // Test WITHOUT B2B as an acronym (not in default list)
     let options_without = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![], // Don't add B2B
         exclude_acronyms: vec![],
@@ -117,6 +119,7 @@ fn test_custom_acronym_generation() {
     // Test with K8S as a custom acronym
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec!["K8S".to_string()], // Add K8S as acronym
         exclude_acronyms: vec![],
@@ -180,6 +183,7 @@ fn test_excluded_acronym_variants() {
     // Test with ID excluded
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec!["ID".to_string()], // Exclude ID
@@ -234,6 +238,7 @@ fn test_only_acronyms_list() {
     // Test with only XML in the acronym list
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],

@@ -59,6 +59,7 @@ See [MCP Server documentation](https://docspring.github.io/renamify/mcp/overview
 - **File and directory renaming**: Rename everything in one atomic operation
 - **Respects ignore files**: Works with `.gitignore`, `.ignore`, `.rgignore`, `.rnignore`
 - **Cross-platform**: Full support for Linux, macOS, and Windows
+- **Line filtering**: Exclude matches on lines matching a regex pattern (e.g., skip comments, TODOs)
 
 ## Quick Examples
 
@@ -75,6 +76,10 @@ renamify undo
 # See what would change with different preview formats
 renamify plan myProject betterName --preview table
 renamify plan myProject betterName --preview diff
+
+# Exclude matches in comments and TODO lines
+renamify plan old_name new_name --exclude-matching-lines '^//'
+renamify plan old_name new_name --exclude-matching-lines '(TODO|FIXME)'
 ```
 
 ## Demo

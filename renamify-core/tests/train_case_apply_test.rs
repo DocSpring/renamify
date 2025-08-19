@@ -29,6 +29,7 @@ fn test_train_case_patterns_are_replaced_in_apply() {
 
     let options = PlanOptions {
         exclude_match: vec![],
+        exclude_matching_lines: None,
         no_acronyms: false,
         include_acronyms: vec![],
         exclude_acronyms: vec![],

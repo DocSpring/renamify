@@ -37,6 +37,7 @@ renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 
 ### Match Control
 - `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
+- `--exclude-matching-lines <REGEX>` - Skip matches on lines matching this regex pattern (e.g., `^//` for comments, `(TODO|FIXME)` for todo markers)
 
 ### Acronym Handling
 - `--no-acronyms` - Disable acronym detection and transformation
@@ -144,6 +145,21 @@ renamify plan old_name new_name src/ tests/
 ```bash
 # Just see what would change, don't create a plan file
 renamify plan old_name new_name --dry-run
+```
+
+### Excluding Lines by Pattern
+```bash
+# Skip matches in comment lines (starting with //)
+renamify plan old_name new_name --exclude-matching-lines '^//'
+
+# Skip matches in lines containing TODO or FIXME
+renamify plan old_name new_name --exclude-matching-lines '(TODO|FIXME)'
+
+# Combine with other options
+renamify plan old_name new_name \
+  --exclude-matching-lines '^\\s*#' \  # Skip Python comments
+  --exclude-styles kebab \              # Don't generate kebab-case variants
+  --preview diff                        # Show as diff
 ```
 
 ### Custom Plan Location

@@ -38,6 +38,7 @@ pub fn plan_operation(
         include_styles,
         only_styles,
         exclude_match,
+        None, // exclude_matching_lines - not exposed in simple API
         plan_out,
         preview_format,
         false, // dry_run
@@ -68,6 +69,7 @@ pub fn plan_operation_with_dry_run(
     include_styles: &[Style],
     only_styles: &[Style],
     exclude_match: Vec<String>,
+    exclude_matching_lines: Option<String>,
     plan_out: Option<PathBuf>,
     preview_format: Option<&String>, // "table", "diff", "json", "summary", "none"
     dry_run: bool,
@@ -119,6 +121,7 @@ pub fn plan_operation_with_dry_run(
         plan_out: plan_out_path.clone(),
         coerce_separators: crate::scanner::CoercionMode::Auto,
         exclude_match,
+        exclude_matching_lines,
         no_acronyms,
         include_acronyms,
         exclude_acronyms,

@@ -20,6 +20,7 @@ pub fn rename_operation(
     include_styles: &[Style],
     only_styles: &[Style],
     exclude_match: &[String],
+    exclude_matching_lines: Option<&String>,
     preview_format: Option<&String>, // "table", "diff", "json", "none"
     commit: bool,
     large: bool,
@@ -64,6 +65,7 @@ pub fn rename_operation(
         plan_out: PathBuf::from(".renamify/temp_plan.json"), // temporary, will be stored in history
         coerce_separators: crate::scanner::CoercionMode::Auto,
         exclude_match: exclude_match.to_owned(),
+        exclude_matching_lines: exclude_matching_lines.map(|s| s.to_string()),
         no_acronyms,
         include_acronyms: include_acronyms.to_owned(),
         exclude_acronyms: exclude_acronyms.to_owned(),

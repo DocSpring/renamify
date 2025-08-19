@@ -8,6 +8,7 @@ use content_inspector::ContentType;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use ignore::WalkBuilder;
 use memmap2::Mmap;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
@@ -45,11 +46,12 @@ pub struct PlanOptions {
     pub rename_root: bool, // Allow renaming the root directory
     pub plan_out: PathBuf,
     pub coerce_separators: CoercionMode,
-    pub exclude_match: Vec<String>,    // Specific matches to exclude
-    pub no_acronyms: bool,             // Disable acronym detection
+    pub exclude_match: Vec<String>, // Specific matches to exclude
+    pub exclude_matching_lines: Option<String>, // Regex to exclude lines matching this pattern
+    pub no_acronyms: bool,          // Disable acronym detection
     pub include_acronyms: Vec<String>, // Additional acronyms to recognize
     pub exclude_acronyms: Vec<String>, // Default acronyms to exclude
-    pub only_acronyms: Vec<String>,    // Replace default list with these acronyms
+    pub only_acronyms: Vec<String>, // Replace default list with these acronyms
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -80,6 +82,7 @@ impl Default for PlanOptions {
             plan_out: PathBuf::from(".renamify/plan.json"),
             coerce_separators: CoercionMode::Auto,
             exclude_match: vec![],
+            exclude_matching_lines: None,
             no_acronyms: false, // Default: enable acronym detection
             include_acronyms: vec![],
             exclude_acronyms: vec![],
@@ -165,6 +168,13 @@ pub fn scan_repository_multi(
     new: &str,
     options: &PlanOptions,
 ) -> Result<Plan> {
+    // Validate the exclude pattern if provided
+    if let Some(ref pattern) = options.exclude_matching_lines {
+        Regex::new(pattern).map_err(|e| {
+            anyhow::anyhow!("Invalid regex pattern for --exclude-matching-lines: {}", e)
+        })?;
+    }
+
     // Build acronym set from options
     let acronym_set = build_acronym_set(options);
     let variant_map =
@@ -370,6 +380,19 @@ fn generate_hunks(
     let lines: Vec<&[u8]> = content.lines_with_terminator().collect();
     let mut hunks = Vec::new();
 
+    // Compile the exclude pattern if provided
+    let exclude_line_regex = if let Some(ref pattern) = options.exclude_matching_lines {
+        match Regex::new(pattern) {
+            Ok(re) => Some(re),
+            Err(_) => {
+                // If regex is invalid, skip all filtering (will be caught at higher level)
+                None
+            },
+        }
+    } else {
+        None
+    };
+
     for m in matches {
         // Check if this match should be excluded
         if options.exclude_match.contains(&m.variant) || options.exclude_match.contains(&m.text) {
@@ -383,6 +406,13 @@ fn generate_hunks(
 
         let line = lines[line_idx];
         let line_string = String::from_utf8_lossy(line).to_string();
+
+        // Check if this line should be excluded based on regex pattern
+        if let Some(ref regex) = exclude_line_regex {
+            if regex.is_match(&line_string) {
+                continue;
+            }
+        }
 
         // Check if this is a compound match (text field contains replacement)
         // or an exact match (use variant map)

@@ -64,6 +64,7 @@ fn test_plan_command_basic() {
         &[],                                 // include_styles
         &[],                                 // only_styles
         vec![],                              // exclude_match
+        None,                                // exclude_matching_lines
         None,                                // plan_out
         Some(&"table".to_string()),          // preview_format
         true,                                // dry_run
@@ -103,6 +104,7 @@ fn test_plan_command_with_styles() {
         &[],                                 // include_styles
         &[],                                 // only_styles
         vec![],                              // exclude_match
+        None,                                // exclude_matching_lines
         None,                                // plan_out
         Some(&"table".to_string()),          // preview_format
         true,                                // dry_run
@@ -134,6 +136,7 @@ fn test_plan_command_with_styles() {
         &[Style::Title, Style::Train],       // include_styles
         &[],                                 // only_styles
         vec![],                              // exclude_match
+        None,                                // exclude_matching_lines
         None,                                // plan_out
         Some(&"table".to_string()),          // preview_format
         true,                                // dry_run
