@@ -1,10 +1,13 @@
-use crate::{apply_plan, scan_repository_multi, ApplyOptions, LockFile, Plan, PlanOptions, Style};
+use crate::{
+    apply_plan, output::RenameResult, scan_repository_multi, ApplyOptions, LockFile, Plan,
+    PlanOptions, Style,
+};
 use anyhow::{anyhow, Context, Result};
-use std::fmt::Write;
 use std::fs;
 use std::io::{self, IsTerminal, Write as IoWrite};
 use std::path::PathBuf;
 
+/// Rename operation - returns structured data
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::fn_params_excessive_bools)]
 pub fn rename_operation(
@@ -21,7 +24,7 @@ pub fn rename_operation(
     only_styles: &[Style],
     exclude_match: &[String],
     exclude_matching_lines: Option<&String>,
-    preview_format: Option<&String>, // "table", "diff", "json", "none"
+    preview_format: Option<&String>,
     commit: bool,
     large: bool,
     force_with_conflicts: bool,
@@ -34,7 +37,7 @@ pub fn rename_operation(
     only_acronyms: &[String],
     auto_approve: bool,
     use_color: bool,
-) -> Result<String> {
+) -> Result<(RenameResult, Option<String>)> {
     let current_dir = std::env::current_dir().context("Failed to get current directory")?;
 
     // Use provided paths or default to current directory
@@ -56,13 +59,13 @@ pub fn rename_operation(
     let options = PlanOptions {
         includes: include.to_owned(),
         excludes: exclude.to_owned(),
-        respect_gitignore: true, // ignored, we use unrestricted instead
+        respect_gitignore: true,
         unrestricted_level,
         styles,
         rename_files,
         rename_dirs,
-        rename_root: false, // Default: do not allow root directory renames
-        plan_out: PathBuf::from(".renamify/temp_plan.json"), // temporary, will be stored in history
+        rename_root: false,
+        plan_out: PathBuf::from(".renamify/temp_plan.json"),
         coerce_separators: crate::scanner::CoercionMode::Auto,
         exclude_match: exclude_match.to_owned(),
         exclude_matching_lines: exclude_matching_lines.map(|s| s.to_string()),
@@ -81,7 +84,6 @@ pub fn rename_operation(
             } else {
                 current_dir.join(path)
             };
-            // Canonicalize to remove . and .. components
             absolute_path.canonicalize().unwrap_or(absolute_path)
         })
         .collect();
@@ -104,52 +106,114 @@ pub fn rename_operation(
     if plan.stats.total_matches == 0 && plan.paths.is_empty() {
         if !root_renames.is_empty() && !no_rename_root {
             let snippet = generate_root_rename_snippet(&root_renames);
-            return Ok(format!("Only root directory rename detected. Use --rename-root to perform it or see suggested snippet:\n{}", snippet));
+            let preview = Some(format!(
+                "Only root directory rename detected. Use --rename-root to perform it or see suggested snippet:\n{}",
+                snippet
+            ));
+            return Ok((
+                RenameResult {
+                    plan_id: plan.id.clone(),
+                    search: search.to_string(),
+                    replace: replace.to_string(),
+                    files_changed: 0,
+                    replacements: 0,
+                    renames: 0,
+                    committed: false,
+                },
+                preview,
+            ));
         }
-        return Ok("Nothing to do.".to_string());
+        return Ok((
+            RenameResult {
+                plan_id: plan.id.clone(),
+                search: search.to_string(),
+                replace: replace.to_string(),
+                files_changed: 0,
+                replacements: 0,
+                renames: 0,
+                committed: false,
+            },
+            Some("Nothing to do.".to_string()),
+        ));
     }
 
     // Safety checks
     validate_operation_safety(&plan, auto_approve, large, force_with_conflicts)?;
 
-    // Show preview if requested
+    // Generate preview if requested
+    let mut preview_output = None;
     if let Some(format) = preview_format.as_ref() {
         if *format != "none" {
-            let preview_output = generate_preview_output(&plan, format, use_color)?;
-            println!("{preview_output}");
-            println!(); // Add spacing before summary
+            let preview = generate_preview_output(&plan, format, use_color)?;
+            preview_output = Some(preview);
         }
     }
 
-    // Show summary
-    show_rename_summary(&plan, include, exclude);
-
     // If dry-run, stop here
     if dry_run {
-        return Ok("Dry run completed.".to_string());
+        return Ok((
+            RenameResult {
+                plan_id: plan.id.clone(),
+                search: search.to_string(),
+                replace: replace.to_string(),
+                files_changed: plan.stats.files_with_matches,
+                replacements: plan.stats.total_matches,
+                renames: plan.paths.len(),
+                committed: false,
+            },
+            preview_output,
+        ));
     }
 
     // Get confirmation unless auto-approved
     if !auto_approve && !get_user_confirmation()? {
-        return Ok("Aborted.".to_string());
+        return Ok((
+            RenameResult {
+                plan_id: plan.id.clone(),
+                search: search.to_string(),
+                replace: replace.to_string(),
+                files_changed: 0,
+                replacements: 0,
+                renames: 0,
+                committed: false,
+            },
+            Some("Aborted.".to_string()),
+        ));
     }
 
     // Apply the changes
-    let result = apply_rename_changes(&mut plan, commit, force_with_conflicts)?;
+    let history_id = plan.id.clone();
+    let files_changed = plan.stats.files_with_matches;
+    let replacements = plan.stats.total_matches;
+    let renames = plan.paths.len();
 
-    // Show completion message and handle root renames
-    let mut output = result;
+    apply_rename_changes(&mut plan, commit, force_with_conflicts)?;
+
+    // Add root rename snippet to preview if needed
     if !root_renames.is_empty() && !rename_root && !no_rename_root {
         let snippet = generate_root_rename_snippet(&root_renames);
-        write!(
-            output,
-            "\n\nNext step (root directory rename):\n{}",
-            snippet
-        )
-        .unwrap();
+        if let Some(ref mut preview) = preview_output {
+            preview.push_str(&format!(
+                "\n\nNext step (root directory rename):\n{}",
+                snippet
+            ));
+        } else {
+            preview_output = Some(format!("Next step (root directory rename):\n{}", snippet));
+        }
     }
 
-    Ok(output)
+    Ok((
+        RenameResult {
+            plan_id: history_id,
+            search: search.to_string(),
+            replace: replace.to_string(),
+            files_changed,
+            replacements,
+            renames,
+            committed: commit,
+        },
+        preview_output,
+    ))
 }
 
 fn build_styles_list(
@@ -175,7 +239,7 @@ fn build_styles_list(
         }
 
         if active_styles.is_empty() {
-            None // Use default styles
+            None
         } else {
             Some(active_styles)
         }
@@ -273,26 +337,6 @@ fn generate_preview_output(plan: &Plan, format: &str, use_color: bool) -> Result
     ))
 }
 
-fn show_rename_summary(plan: &Plan, include: &[String], exclude: &[String]) {
-    println!("Renamify plan: {} -> {}", plan.search, plan.replace);
-    println!(
-        "Edits: {} files, {} replacements",
-        plan.stats.files_with_matches, plan.stats.total_matches
-    );
-
-    if !plan.paths.is_empty() {
-        println!("Renames: {} items", plan.paths.len());
-    }
-
-    if !include.is_empty() {
-        println!("Include patterns: {}", include.join(", "));
-    }
-
-    if !exclude.is_empty() {
-        println!("Exclude patterns: {}", exclude.join(", "));
-    }
-}
-
 fn get_user_confirmation() -> Result<bool> {
     print!("Apply? [y/N]: ");
     IoWrite::flush(&mut io::stdout()).context("Failed to flush stdout")?;
@@ -306,11 +350,7 @@ fn get_user_confirmation() -> Result<bool> {
     Ok(input == "y" || input == "yes")
 }
 
-fn apply_rename_changes(
-    plan: &mut Plan,
-    commit: bool,
-    force_with_conflicts: bool,
-) -> Result<String> {
+fn apply_rename_changes(plan: &mut Plan, commit: bool, force_with_conflicts: bool) -> Result<()> {
     // Create the renamify directory if it doesn't exist
     let renamify_dir = PathBuf::from(".renamify");
     fs::create_dir_all(&renamify_dir)?;
@@ -319,7 +359,8 @@ fn apply_rename_changes(
     let history_id = plan.id.clone();
     let backup_dir = renamify_dir.join("backups");
 
-    println!("Applying changes...");
+    // Don't print to stdout when we're returning structured data
+    eprintln!("Applying changes...");
 
     // Apply the plan
     let apply_options = ApplyOptions {
@@ -333,24 +374,7 @@ fn apply_rename_changes(
     };
 
     apply_plan(plan, &apply_options).context("Failed to apply renaming plan")?;
-
-    // Build completion message
-    let mut output = format!(
-        "✓ Applied {} replacements across {} files",
-        plan.stats.total_matches, plan.stats.files_with_matches
-    );
-
-    if !plan.paths.is_empty() {
-        write!(output, "\n✓ Renamed {} items", plan.paths.len()).unwrap();
-    }
-
-    if commit {
-        output.push_str("\n✓ Changes committed to git");
-    }
-
-    write!(output, "\nUndo with: renamify undo {history_id}").unwrap();
-
-    Ok(output)
+    Ok(())
 }
 
 fn generate_root_rename_snippet(root_renames: &[crate::scanner::Rename]) -> String {

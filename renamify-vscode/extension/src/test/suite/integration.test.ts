@@ -18,12 +18,13 @@ suite('Integration Test Suite', () => {
     const service = new RenamifyCliService();
 
     // Test basic search with default case styles
-    const results = await service.search('test', 'renamed', {
+    const results = await service.search('test', {
       caseStyles: ['original', 'snake', 'kebab', 'camel', 'pascal'],
     });
 
-    // Results should be an array (may be empty if no matches)
-    assert.ok(Array.isArray(results));
+    // Results should be a Plan object
+    assert.ok(results.id);
+    assert.ok(Array.isArray(results.matches));
   });
 
   test('CLI service uses --only-styles argument correctly', async function () {
@@ -48,7 +49,7 @@ suite('Integration Test Suite', () => {
     const service = new RenamifyCliService(mockSpawn as any);
 
     try {
-      await service.search('test', 'renamed', {
+      await service.search('test', {
         caseStyles: ['snake', 'kebab'],
       });
     } catch {

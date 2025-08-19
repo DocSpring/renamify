@@ -93,7 +93,7 @@
         },
         "renamify.confirmBeforeApply": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Show confirmation dialog before applying changes"
         }
       }
@@ -102,7 +102,7 @@
   "scripts": {
     "check": "biome check",
     "compile:extension": "rm -rf dist && tsc -p extension",
-    "compile:webview": "rm media/*.js media/*.js.map && tsc -p webview && cat webview/amd-loader.js media/webview.js > media/bundle.js",
+    "compile:webview": "rm media/*.js media/*.js.map && tsc -p webview && ./scripts/bundle-webview.sh",
     "compile": "pnpm compile:extension && pnpm compile:webview",
     "format": "biome format --write",
     "lint": "biome check --write",
@@ -114,7 +114,8 @@
     "test": "pnpm test:extension && pnpm test:webview",
     "vscode:prepublish": "pnpm compile",
     "watch:extension": "tsc -watch -p extension",
-    "watch:webview": "tsc -watch -p webview",
+    "watch:webview": "concurrently \"tsc -watch -p webview\" \"pnpm watch:webview:bundle\"",
+    "watch:webview:bundle": "nodemon --watch media/webview.js --exec ./scripts/bundle-webview.sh",
     "watch": "concurrently \"pnpm watch:extension\" \"pnpm watch:webview\""
   },
   "devDependencies": {
@@ -134,6 +135,7 @@
     "glob": "^11.0.3",
     "jsdom": "^26.1.0",
     "mocha": "^11.7.1",
+    "nodemon": "^3.1.10",
     "requirejs": "^2.3.7",
     "sinon": "^21.0.0",
     "typescript": "^5.9.2",

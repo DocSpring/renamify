@@ -21,6 +21,7 @@ pub mod history;
 pub mod id_resolver;
 pub mod lock;
 pub mod operations;
+pub mod output;
 pub mod pattern;
 pub mod preview;
 pub mod rename;
@@ -38,8 +39,12 @@ pub use history::{
 pub use id_resolver::{resolve_id, OperationType};
 pub use lock::LockFile;
 pub use operations::{
-    apply_operation, plan_operation, plan_operation_with_dry_run, redo_operation, rename_operation,
-    undo_operation,
+    apply_operation, history_operation, plan_operation, redo_operation, rename_operation,
+    status_operation, undo_operation,
+};
+pub use output::{
+    ApplyResult, HistoryItem, HistoryResult, OutputFormat, OutputFormatter, PendingPlan,
+    PlanResult, RedoResult, RenameResult, StatusResult, UndoResult,
 };
 pub use pattern::{build_pattern, find_matches, is_boundary, Match, MatchPattern};
 pub use preview::{render_plan, write_preview, Preview};

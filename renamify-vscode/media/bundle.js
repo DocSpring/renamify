@@ -277,6 +277,27 @@ define("webview", ["require", "exports", "formatter"], function (require, export
             resultsSummary.textContent = '';
             openInEditorLink.style.display = 'none';
         }
+        function normalizePathForDisplay(path) {
+            let normalizedPath = path;
+            // Normalize path separators to forward slashes
+            normalizedPath = normalizedPath.replace(/\\/g, '/');
+            // Strip workspace root if present
+            const windowWithRoot = window;
+            if (windowWithRoot.workspaceRoot) {
+                let workspaceRoot = windowWithRoot.workspaceRoot.replace(/\\/g, '/');
+                if (!workspaceRoot.endsWith('/')) {
+                    workspaceRoot += '/';
+                }
+                if (normalizedPath.startsWith(workspaceRoot)) {
+                    normalizedPath = normalizedPath.substring(workspaceRoot.length);
+                }
+            }
+            // Remove leading ./ if present
+            if (normalizedPath.startsWith('./')) {
+                normalizedPath = normalizedPath.substring(2);
+            }
+            return normalizedPath;
+        }
         function openPreviewInEditor() {
             const searchTerm = searchInput.value.trim();
             const replaceTerm = replaceInput.value.trim();
@@ -297,7 +318,7 @@ define("webview", ["require", "exports", "formatter"], function (require, export
             resultsTree.innerHTML =
                 '<div class="loading"><div class="spinner"></div><p>Searching...</p></div>';
         }
-        function renderResults(results) {
+        function renderResults(results, paths = []) {
             currentResults = results;
             if (!results || results.length === 0) {
                 resultsTree.innerHTML = '<div class="empty-state">No results found</div>';
@@ -319,7 +340,82 @@ define("webview", ["require", "exports", "formatter"], function (require, export
                 const fileItem = createFileItem(fileResult, index);
                 resultsTree.appendChild(fileItem);
             });
+            // Add file/directory renames section if there are any paths
+            if (paths.length > 0) {
+                const isReplaceMode = replaceInput.value.trim() !== '';
+                const pathsSection = createPathsSection(paths, isReplaceMode);
+                resultsTree.appendChild(pathsSection);
+            }
             updateExpandCollapseButtons();
+        }
+        function createPathsSection(paths, isReplaceMode = false) {
+            const section = document.createElement('div');
+            section.className = 'paths-section';
+            const header = document.createElement('div');
+            header.className = 'paths-header';
+            const title = document.createElement('h3');
+            title.textContent = isReplaceMode
+                ? 'File & Directory Renames'
+                : 'Files & Directories';
+            title.className = 'paths-title';
+            const count = document.createElement('span');
+            count.className = 'paths-count';
+            // Determine the label based on count and mode
+            let label;
+            if (paths.length === 1) {
+                label = isReplaceMode ? 'rename' : 'match';
+            }
+            else {
+                label = isReplaceMode ? 'renames' : 'matches';
+            }
+            count.textContent = `${paths.length} ${label}`;
+            header.appendChild(title);
+            header.appendChild(count);
+            section.appendChild(header);
+            const pathsList = document.createElement('div');
+            pathsList.className = 'paths-list';
+            for (const pathRename of paths) {
+                const pathItem = document.createElement('div');
+                pathItem.className = `path-item path-${pathRename.kind}`;
+                const icon = document.createElement('span');
+                icon.className = 'path-icon';
+                icon.innerHTML = pathRename.kind === 'dir' ? '📁' : '📄';
+                const pathInfo = document.createElement('div');
+                pathInfo.className = 'path-info';
+                if (isReplaceMode && pathRename.new_path) {
+                    // Replace mode - show old -> new path
+                    const oldPath = document.createElement('div');
+                    oldPath.className = 'path-old';
+                    oldPath.textContent = normalizePathForDisplay(pathRename.path);
+                    const arrow = document.createElement('div');
+                    arrow.className = 'path-arrow';
+                    arrow.textContent = '↓';
+                    const newPath = document.createElement('div');
+                    newPath.className = 'path-new';
+                    newPath.textContent = normalizePathForDisplay(pathRename.new_path);
+                    pathInfo.appendChild(oldPath);
+                    pathInfo.appendChild(arrow);
+                    pathInfo.appendChild(newPath);
+                }
+                else {
+                    // Search mode - show only the path
+                    const pathElement = document.createElement('div');
+                    pathElement.className = 'path-only';
+                    pathElement.textContent = normalizePathForDisplay(pathRename.path);
+                    pathInfo.appendChild(pathElement);
+                }
+                if (pathRename.coercion_applied) {
+                    const coercion = document.createElement('div');
+                    coercion.className = 'path-coercion';
+                    coercion.textContent = pathRename.coercion_applied;
+                    pathInfo.appendChild(coercion);
+                }
+                pathItem.appendChild(icon);
+                pathItem.appendChild(pathInfo);
+                pathsList.appendChild(pathItem);
+            }
+            section.appendChild(pathsList);
+            return section;
         }
         function createFileItem(fileResult, index) {
             const fileItem = document.createElement('div');
@@ -333,24 +429,7 @@ define("webview", ["require", "exports", "formatter"], function (require, export
                 ? getChevronDown()
                 : getChevronRight();
             // Split filename into basename and directory
-            let fullPath = fileResult.file;
-            // Normalize path separators to forward slashes
-            fullPath = fullPath.replace(/\\/g, '/');
-            // Strip workspace root if present
-            const windowWithRoot = window;
-            if (windowWithRoot.workspaceRoot) {
-                let workspaceRoot = windowWithRoot.workspaceRoot.replace(/\\/g, '/');
-                if (!workspaceRoot.endsWith('/')) {
-                    workspaceRoot += '/';
-                }
-                if (fullPath.startsWith(workspaceRoot)) {
-                    fullPath = fullPath.substring(workspaceRoot.length);
-                }
-            }
-            // Remove leading ./ if present
-            if (fullPath.startsWith('./')) {
-                fullPath = fullPath.substring(2);
-            }
+            const fullPath = normalizePathForDisplay(fileResult.file);
             // Split into basename and directory
             const lastSlash = fullPath.lastIndexOf('/');
             const basename = lastSlash >= 0 ? fullPath.substring(lastSlash + 1) : fullPath;
@@ -492,7 +571,7 @@ define("webview", ["require", "exports", "formatter"], function (require, export
             const message = event.data;
             switch (message.type) {
                 case 'searchResults':
-                    renderResults(message.results);
+                    renderResults(message.results, message.paths);
                     break;
                 case 'clearResults':
                     clearResults();

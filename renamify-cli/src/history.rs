@@ -1,14 +1,22 @@
-use anyhow::{Context, Result};
-use renamify_core::{format_history, History};
-use std::path::PathBuf;
+use anyhow::Result;
+use renamify_core::{history_operation, OutputFormatter};
 
-pub fn handle_history(limit: Option<usize>) -> Result<()> {
-    let renamify_dir = PathBuf::from(".renamify");
-    let history = History::load(&renamify_dir).context("Failed to load history")?;
+use crate::OutputFormat;
 
-    let entries = history.list_entries(limit);
-    let formatted = format_history(&entries, false)?;
+pub fn handle_history(limit: Option<usize>, output: OutputFormat, quiet: bool) -> Result<()> {
+    let result = history_operation(limit, None)?;
 
-    println!("{}", formatted);
+    // Handle output based on format
+    match output {
+        OutputFormat::Json => {
+            print!("{}", result.format_json());
+        },
+        OutputFormat::Summary => {
+            if !quiet {
+                print!("{}", result.format_summary());
+            }
+        },
+    }
+
     Ok(())
 }

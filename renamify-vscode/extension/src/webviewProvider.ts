@@ -7,6 +7,7 @@ import type {
   OpenPreviewMessage,
   PlanMessage,
   SearchMessage,
+  SearchResult,
   WebviewMessage,
 } from './types';
 
@@ -65,25 +66,71 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
   private async handleSearch(data: SearchMessage) {
     try {
-      // If replace is provided, use plan with --dry-run, otherwise use search
-      const results = data.replace
-        ? await this._cliService.createPlan(data.search, data.replace, {
+      let results: SearchResult[];
+      let paths: Rename[] = [];
+
+      if (data.replace) {
+        // If replace is provided, use plan with --dry-run to get both matches and paths
+        const planResult = await this._cliService.createPlan(
+          data.search,
+          data.replace,
+          {
             include: data.include,
             exclude: data.exclude,
             excludeMatchingLines: data.excludeMatchingLines,
             caseStyles: data.caseStyles,
             dryRun: true,
-          })
-        : await this._cliService.search(data.search, '', {
-            include: data.include,
-            exclude: data.exclude,
-            excludeMatchingLines: data.excludeMatchingLines,
-            caseStyles: data.caseStyles,
-          });
+          }
+        );
+
+        // When dryRun is true with replace, we get a Plan object
+        const plan = planResult as Plan;
+
+        // Convert plan matches to SearchResult format
+        const fileMap = new Map<string, MatchHunk[]>();
+        for (const match of plan.matches) {
+          if (!fileMap.has(match.file)) {
+            fileMap.set(match.file, []);
+          }
+          fileMap.get(match.file)?.push(match);
+        }
+
+        results = Array.from(fileMap.entries()).map(([file, matches]) => ({
+          file,
+          matches,
+        }));
+
+        paths = plan.paths;
+      } else {
+        // Search-only mode - use search command to get full results including paths
+        const plan = await this._cliService.search(data.search, {
+          include: data.include,
+          exclude: data.exclude,
+          excludeMatchingLines: data.excludeMatchingLines,
+          caseStyles: data.caseStyles,
+        });
+
+        // Convert plan matches to SearchResult format
+        const fileMap = new Map<string, MatchHunk[]>();
+        for (const match of plan.matches) {
+          if (!fileMap.has(match.file)) {
+            fileMap.set(match.file, []);
+          }
+          fileMap.get(match.file)?.push(match);
+        }
+
+        results = Array.from(fileMap.entries()).map(([file, matches]) => ({
+          file,
+          matches,
+        }));
+
+        paths = plan.paths;
+      }
 
       this._view?.webview.postMessage({
         type: 'searchResults',
         results,
+        paths,
       });
     } catch (error) {
       // Don't show error messages for debounced searches

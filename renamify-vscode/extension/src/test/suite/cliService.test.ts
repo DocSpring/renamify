@@ -43,7 +43,7 @@ suite('CLI Service Test Suite', () => {
 
     mockSpawn.returns(mockProcess);
 
-    const searchPromise = cliService.search('oldName', 'newName', {
+    const searchPromise = cliService.search('oldName', {
       include: '**/*.ts',
       exclude: 'node_modules/**',
       caseStyles: ['camel', 'pascal'],
@@ -54,6 +54,13 @@ suite('CLI Service Test Suite', () => {
       mockProcess.stdout.emit(
         'data',
         JSON.stringify({
+          id: 'test-plan',
+          created_at: '2024-01-01T00:00:00Z',
+          search: 'oldName',
+          replace: 'newName',
+          styles: [],
+          includes: [],
+          excludes: [],
           matches: [
             {
               file: 'test.ts',
@@ -64,6 +71,14 @@ suite('CLI Service Test Suite', () => {
               context: 'const oldName = 123;',
             },
           ],
+          paths: [],
+          stats: {
+            files_scanned: 1,
+            total_matches: 1,
+            matches_by_variant: {},
+            files_with_matches: 1,
+          },
+          version: '1.0.0',
         })
       );
       mockProcess.emit('close', 0);
@@ -86,9 +101,9 @@ suite('CLI Service Test Suite', () => {
     assert.ok(args.includes('--only-styles'));
     assert.ok(args.includes('camel,pascal'));
 
-    assert.strictEqual(results.length, 1);
-    assert.strictEqual(results[0].file, 'test.ts');
-    assert.strictEqual(results[0].matches.length, 1);
+    assert.strictEqual(results.matches.length, 1);
+    assert.strictEqual(results.matches[0].file, 'test.ts');
+    assert.strictEqual(results.id, 'test-plan');
   });
 
   test('Create plan should not use --dry-run flag', async () => {
@@ -150,7 +165,7 @@ suite('CLI Service Test Suite', () => {
 
     mockSpawn.returns(mockProcess);
 
-    const searchPromise = cliService.search('oldName', 'newName', {});
+    const searchPromise = cliService.search('oldName', {});
 
     setTimeout(() => {
       mockProcess.stderr.emit('data', 'Error: Something went wrong');

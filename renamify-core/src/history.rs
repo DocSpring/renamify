@@ -60,8 +60,13 @@ impl History {
             let file = File::open(path)
                 .with_context(|| format!("Failed to open history file: {}", path.display()))?;
             let reader = BufReader::new(file);
-            serde_json::from_reader(reader)
-                .with_context(|| format!("Failed to parse history file: {}", path.display()))?
+            match serde_json::from_reader(reader) {
+                Ok(entries) => entries,
+                Err(e) => {
+                    eprintln!("Warning: Failed to parse history file {}: {}. Starting with fresh history.", path.display(), e);
+                    Vec::new()
+                },
+            }
         } else {
             Vec::new()
         };

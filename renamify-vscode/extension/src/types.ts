@@ -80,6 +80,7 @@ export type WebviewMessage =
 export type SearchResultsMessage = {
   type: 'searchResults';
   results: SearchResult[];
+  paths: Rename[];
 };
 
 export type PlanCreatedMessage = {

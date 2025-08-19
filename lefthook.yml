@@ -44,17 +44,14 @@ pre-commit:
           - name: clippy
             glob: "*.rs"
             run: cargo clippy --all-targets --all-features
-            stage_fixed: true
 
           - name: typos
             glob: "*.{rs,md,txt,toml,yml,yaml}"
             run: typos {staged_files}
-            stage_fixed: true
 
           - name: test
             glob: "*.rs"
             run: cargo test
-            stage_fixed: true
 
           - name: mcp-biome
             root: renamify-mcp/

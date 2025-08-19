@@ -1,61 +1,13 @@
 use crate::{
-    scan_repository_multi, write_plan, write_preview, LockFile, PlanOptions, Preview, Style,
+    output::PlanResult, scan_repository_multi, write_plan, LockFile, PlanOptions, Preview, Style,
 };
 use anyhow::{Context, Result};
 use std::path::PathBuf;
 
-/// High-level plan operation - equivalent to `renamify plan` command
-#[allow(clippy::too_many_arguments)]
-#[allow(clippy::needless_pass_by_value)]
-pub fn plan_operation(
-    search: &str,
-    replace: &str,
-    paths: Vec<PathBuf>,
-    include: Vec<String>,
-    exclude: Vec<String>,
-    unrestricted_level: u8,
-    rename_files: bool,
-    rename_dirs: bool,
-    exclude_styles: &[Style],
-    include_styles: &[Style],
-    only_styles: &[Style],
-    exclude_match: Vec<String>,
-    plan_out: Option<PathBuf>,
-    preview_format: Option<&String>, // "table", "summary", "none"
-    use_color: bool,
-) -> Result<String> {
-    plan_operation_with_dry_run(
-        search,
-        replace,
-        paths,
-        include,
-        exclude,
-        true, // respect_gitignore
-        unrestricted_level,
-        rename_files,
-        rename_dirs,
-        exclude_styles,
-        include_styles,
-        only_styles,
-        exclude_match,
-        None, // exclude_matching_lines - not exposed in simple API
-        plan_out,
-        preview_format,
-        false, // dry_run
-        false, // fixed_table_width - not applicable for non-dry-run
-        use_color,
-        false,  // no_acronyms - use defaults
-        vec![], // include_acronyms
-        vec![], // exclude_acronyms
-        vec![], // only_acronyms
-    )
-}
-
-/// High-level plan operation with full options - supports both plan and dry-run commands
+/// Plan operation - returns structured data
 #[allow(clippy::too_many_arguments)]
 #[allow(clippy::fn_params_excessive_bools)]
-#[allow(clippy::needless_pass_by_value)]
-pub fn plan_operation_with_dry_run(
+pub fn plan_operation(
     search: &str,
     replace: &str,
     paths: Vec<PathBuf>,
@@ -71,7 +23,7 @@ pub fn plan_operation_with_dry_run(
     exclude_match: Vec<String>,
     exclude_matching_lines: Option<String>,
     plan_out: Option<PathBuf>,
-    preview_format: Option<&String>, // "table", "diff", "json", "summary", "none"
+    preview_format: Option<&String>,
     dry_run: bool,
     fixed_table_width: bool,
     use_color: bool,
@@ -79,8 +31,11 @@ pub fn plan_operation_with_dry_run(
     include_acronyms: Vec<String>,
     exclude_acronyms: Vec<String>,
     only_acronyms: Vec<String>,
-) -> Result<String> {
-    let current_dir = std::env::current_dir().context("Failed to get current directory")?;
+    working_dir: Option<&std::path::Path>,
+) -> Result<(PlanResult, Option<String>)> {
+    let current_dir = working_dir
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| std::env::current_dir().expect("Failed to get current directory"));
 
     // Use provided paths or default to current directory
     let search_paths = if paths.is_empty() {
@@ -89,16 +44,10 @@ pub fn plan_operation_with_dry_run(
         paths
     };
 
-    // Acquire lock (only for non-dry-run operations)
+    // Check for .renamify lock
     let renamify_dir = current_dir.join(".renamify");
-    let _lock = if dry_run {
-        None
-    } else {
-        Some(
-            LockFile::acquire(&renamify_dir)
-                .context("Failed to acquire lock for renamify operation")?,
-        )
-    };
+    let _lock = LockFile::acquire(&renamify_dir)
+        .context("Failed to acquire lock for renamify operation")?;
 
     // Build styles list
     let styles = build_styles_list(
@@ -113,11 +62,11 @@ pub fn plan_operation_with_dry_run(
         includes: include,
         excludes: exclude,
         respect_gitignore,
-        unrestricted_level: unrestricted_level.min(3), // Cap at 3 for safety
+        unrestricted_level: unrestricted_level.min(3),
         styles,
         rename_files,
         rename_dirs,
-        rename_root: false, // Default: do not allow root directory renames in plan
+        rename_root: false,
         plan_out: plan_out_path.clone(),
         coerce_separators: crate::scanner::CoercionMode::Auto,
         exclude_match,
@@ -137,7 +86,6 @@ pub fn plan_operation_with_dry_run(
             } else {
                 current_dir.join(path)
             };
-            // Canonicalize to remove . and .. components
             absolute_path.canonicalize().unwrap_or(absolute_path)
         })
         .collect();
@@ -150,69 +98,44 @@ pub fn plan_operation_with_dry_run(
         if *format == "none" {
             None
         } else {
-            let preview_format = parse_preview_format(format)?;
-            let content = if fixed_table_width {
-                crate::preview::render_plan_with_fixed_width(
-                    &plan,
-                    preview_format,
-                    Some(use_color),
-                    true,
-                )
-            } else {
-                crate::preview::render_plan(&plan, preview_format, Some(use_color))
-            };
-            Some(content)
+            let preview = parse_preview_format(format)?;
+            let use_color = if *format == "json" { false } else { use_color };
+            Some(crate::preview::render_plan_with_fixed_width(
+                &plan,
+                preview,
+                Some(use_color),
+                fixed_table_width,
+            ))
         }
     } else {
         None
     };
 
-    // Write plan unless dry-run
+    // Write the plan to disk unless dry-run
     if !dry_run {
-        write_plan(&plan, &plan_out_path).context("Failed to write plan")?;
-
-        // Return both preview content and file path message for non-dry-run
-        let file_message = format!("Plan written to: {}", plan_out_path.display());
-        if let Some(content) = preview_content {
-            return Ok(format!("{}\n\n{}", content, file_message));
-        } else if preview_format.as_ref().is_none_or(|f| *f != "json") {
-            return Ok(file_message);
+        // Create the directory if it doesn't exist
+        if let Some(parent) = plan_out_path.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("Failed to create directory {}", parent.display()))?;
         }
+
+        // Write the plan
+        write_plan(&plan, &plan_out_path)
+            .with_context(|| format!("Failed to write plan to {}", plan_out_path.display()))?;
     }
 
-    // Check for conflicts and warn
-    if let Some(conflicts) = check_for_conflicts(&plan) {
-        let warning = format!("Warning: {} conflicts detected", conflicts);
-        if !dry_run {
-            eprintln!("\n{}", warning);
-            eprintln!("Use --force-with-conflicts to apply anyway");
-        }
-        return Ok(warning);
-    }
+    // Create structured result
+    let result = PlanResult {
+        plan_id: plan.id.clone(),
+        search: search.to_string(),
+        replace: replace.to_string(),
+        files_with_matches: plan.stats.files_with_matches,
+        total_matches: plan.stats.total_matches,
+        renames: plan.paths.len(),
+        dry_run,
+    };
 
-    // Return preview content for dry-run operations, summary for others
-    if dry_run {
-        if let Some(content) = preview_content {
-            Ok(content)
-        } else {
-            Ok(format!(
-                "Generated plan with {} matches and {} renames",
-                plan.stats.total_matches,
-                plan.paths.len()
-            ))
-        }
-    } else {
-        Ok(format!(
-            "Generated plan with {} matches and {} renames{}",
-            plan.stats.total_matches,
-            plan.paths.len(),
-            if dry_run {
-                ""
-            } else {
-                &format!(". Saved to {}", plan_out_path.display())
-            }
-        ))
-    }
+    Ok((result, preview_content))
 }
 
 #[allow(clippy::needless_pass_by_value)]
@@ -239,7 +162,7 @@ fn build_styles_list(
         }
 
         if active_styles.is_empty() {
-            None // Use default styles
+            None
         } else {
             Some(active_styles)
         }
@@ -259,11 +182,4 @@ fn parse_preview_format(format: &str) -> Result<Preview> {
         "none" => Ok(Preview::None),
         _ => Err(anyhow::anyhow!("Invalid preview format: {}", format)),
     }
-}
-
-fn check_for_conflicts(_plan: &crate::scanner::Plan) -> Option<usize> {
-    // Check if there are any rename conflicts
-    // This is a placeholder - would need to check the actual conflicts
-    // from the rename module
-    None
 }

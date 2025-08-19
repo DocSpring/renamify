@@ -54,6 +54,6 @@ suite('Extension Test Suite', () => {
     assert.strictEqual(config.get('respectGitignore'), true);
     assert.strictEqual(config.get('showContextLines'), 2);
     assert.strictEqual(config.get('autoSaveBeforeApply'), true);
-    assert.strictEqual(config.get('confirmBeforeApply'), true);
+    assert.strictEqual(config.get('confirmBeforeApply'), false);
   });
 });

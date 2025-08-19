@@ -145,6 +145,14 @@ enum Commands {
         /// Use only these acronyms (replaces default list)
         #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
         only_acronyms: Vec<String>,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
     },
 
     /// Search for identifiers without creating a plan
@@ -221,6 +229,14 @@ enum Commands {
         /// Use only these acronyms (replaces default list)
         #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
         only_acronyms: Vec<String>,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
     },
 
     /// Apply a renaming plan
@@ -239,28 +255,68 @@ enum Commands {
         /// Force apply even with conflicts
         #[arg(long)]
         force_with_conflicts: bool,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
     },
 
     /// Undo a previous renaming
     Undo {
         /// History ID to undo (use 'latest' for the most recent non-revert entry)
         id: String,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
     },
 
     /// Redo a previously undone renaming
     Redo {
         /// History ID to redo (use 'latest' for the most recent reverted entry)
         id: String,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
     },
 
     /// Show renaming status
-    Status,
+    Status {
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
+    },
 
     /// Show renaming history
     History {
         /// Limit number of entries
         #[arg(long)]
         limit: Option<usize>,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
     },
 
     /// Dry-run mode (alias for plan --dry-run)
@@ -348,6 +404,14 @@ enum Commands {
         /// Use only these acronyms (replaces default list)
         #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
         only_acronyms: Vec<String>,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
     },
 
     /// Initialize renamify in the current repository
@@ -474,6 +538,14 @@ enum Commands {
         /// Use only these acronyms (replaces default list)
         #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
         only_acronyms: Vec<String>,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
     },
 }
 
@@ -516,6 +588,12 @@ enum PreviewArg {
     Json,
     Summary,
     None,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
+enum OutputFormat {
+    Summary,
+    Json,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
@@ -630,6 +708,8 @@ fn main() {
             include_acronyms,
             exclude_acronyms,
             only_acronyms,
+            output,
+            quiet,
         } => {
             // Use preview format from CLI arg or config default
             let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
@@ -660,6 +740,8 @@ fn main() {
                 include_acronyms,
                 exclude_acronyms,
                 only_acronyms,
+                output,
+                quiet,
             )
         },
 
@@ -683,6 +765,8 @@ fn main() {
             include_acronyms,
             exclude_acronyms,
             only_acronyms,
+            output,
+            quiet,
         } => {
             // Use preview format from CLI arg or config default
             let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
@@ -713,6 +797,8 @@ fn main() {
                 include_acronyms,
                 exclude_acronyms,
                 only_acronyms,
+                output,
+                quiet,
             )
         },
 
@@ -733,6 +819,8 @@ fn main() {
             include_acronyms,
             exclude_acronyms,
             only_acronyms,
+            output,
+            quiet,
         } => {
             // Use preview format from CLI arg or default to matches for search
             let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
@@ -771,6 +859,8 @@ fn main() {
                 include_acronyms,
                 exclude_acronyms,
                 only_acronyms,
+                output,
+                quiet,
             )
         },
 
@@ -779,15 +869,21 @@ fn main() {
             atomic: _,
             commit,
             force_with_conflicts,
-        } => apply::handle_apply(id, commit, force_with_conflicts),
+            output,
+            quiet,
+        } => apply::handle_apply(id, commit, force_with_conflicts, output, quiet),
 
-        Commands::Undo { id } => undo::handle_undo(&id),
+        Commands::Undo { id, output, quiet } => undo::handle_undo(&id, output, quiet),
 
-        Commands::Redo { id } => redo::handle_redo(&id),
+        Commands::Redo { id, output, quiet } => redo::handle_redo(&id, output, quiet),
 
-        Commands::Status => status::handle_status(),
+        Commands::Status { output, quiet } => status::handle_status(output, quiet),
 
-        Commands::History { limit } => history::handle_history(limit),
+        Commands::History {
+            limit,
+            output,
+            quiet,
+        } => history::handle_history(limit, output, quiet),
 
         Commands::Init {
             local,
@@ -821,6 +917,8 @@ fn main() {
             include_acronyms,
             exclude_acronyms,
             only_acronyms,
+            output,
+            quiet,
         } => {
             // Use preview format from CLI arg or config default
             let format = preview.or_else(|| PreviewArg::from_str(&config.defaults.preview_format));
@@ -853,6 +951,8 @@ fn main() {
                 only_acronyms,
                 cli.yes,
                 use_color,
+                output,
+                quiet,
             )
         },
     };

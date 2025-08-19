@@ -1,23 +1,40 @@
-use crate::{apply_plan, scanner::Plan, ApplyOptions};
+use crate::{apply_plan, output::ApplyResult, scanner::Plan, ApplyOptions};
 use anyhow::{anyhow, Context, Result};
-use std::fmt::Write;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// High-level apply operation - equivalent to `renamify apply` command
+/// Apply operation - returns structured data
 pub fn apply_operation(
     plan_path: Option<PathBuf>,
     plan_id: Option<String>,
     commit: bool,
     force: bool,
     working_dir: Option<&Path>,
-) -> Result<String> {
+) -> Result<ApplyResult> {
     let current_dir = working_dir.unwrap_or_else(|| Path::new("."));
     let renamify_dir = current_dir.join(".renamify");
 
-    // Load the plan and track if using default plan file
+    // Load the plan - check if plan_id looks like a path
+    let (plan_path, plan_id) = if let Some(ref id) = plan_id {
+        if id.contains('/') || id.ends_with(".json") {
+            // It's a path
+            (Some(PathBuf::from(id)), None)
+        } else {
+            // It's an ID
+            (None, Some(id.clone()))
+        }
+    } else {
+        (None, None)
+    };
+
     let (mut plan, used_default_plan_file) =
         load_plan_from_source_with_tracking(plan_path, plan_id, &renamify_dir)?;
+
+    // Save stats before applying
+    let files_changed = plan.stats.files_with_matches;
+    let replacements = plan.stats.total_matches;
+    let renames = plan.paths.len();
+    let plan_id = plan.id.clone();
 
     // Apply the plan
     let apply_options = ApplyOptions {
@@ -32,9 +49,6 @@ pub fn apply_operation(
 
     apply_plan(&mut plan, &apply_options)?;
 
-    // Write success message to stderr
-    eprintln!("Plan applied successfully!");
-
     // Delete the plan.json file after successful apply (only if using default path)
     if let Some(default_plan_path) = used_default_plan_file {
         if let Err(e) = fs::remove_file(&default_plan_path) {
@@ -46,22 +60,13 @@ pub fn apply_operation(
         }
     }
 
-    let mut result = format!(
-        "✓ Applied {} replacements across {} files",
-        plan.stats.total_matches, plan.stats.files_with_matches
-    );
-
-    if !plan.paths.is_empty() {
-        write!(result, "\n✓ Renamed {} items", plan.paths.len()).unwrap();
-    }
-
-    if commit {
-        result.push_str("\n✓ Changes committed to git");
-    }
-
-    write!(result, "\nUndo with: renamify undo {}", plan.id).unwrap();
-
-    Ok(result)
+    Ok(ApplyResult {
+        plan_id,
+        files_changed,
+        replacements,
+        renames,
+        committed: commit,
+    })
 }
 
 fn load_plan_from_source_with_tracking(
@@ -70,67 +75,39 @@ fn load_plan_from_source_with_tracking(
     renamify_dir: &Path,
 ) -> Result<(Plan, Option<PathBuf>)> {
     match (plan_path, plan_id) {
-        (Some(path), _) => {
-            // External call with explicit path - don't delete afterwards
-            let plan_content = fs::read_to_string(&path)
-                .with_context(|| format!("Failed to read plan from {}", path.display()))?;
-            let plan = serde_json::from_str(&plan_content)
-                .with_context(|| format!("Failed to parse plan from {}", path.display()))?;
+        (Some(path), None) => {
+            // Load from specified path
+            let content = fs::read_to_string(&path)
+                .with_context(|| format!("Failed to read plan file {}", path.display()))?;
+            let plan = serde_json::from_str(&content)
+                .with_context(|| format!("Failed to parse plan file {}", path.display()))?;
             Ok((plan, None))
         },
         (None, Some(id)) => {
-            // Positional argument provided - determine what it is
-            if std::path::Path::new(&id)
-                .extension()
-                .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
-                || Path::new(&id).exists()
-            {
-                // It's a file path
-                let path = PathBuf::from(id);
-                let plan_content = fs::read_to_string(&path)
-                    .with_context(|| format!("Failed to read plan from {}", path.display()))?;
-                let plan = serde_json::from_str(&plan_content)
-                    .with_context(|| format!("Failed to parse plan from {}", path.display()))?;
-                Ok((plan, None))
-            } else if id == "latest" {
-                // "latest" means use the default plan.json
-                let plan_file = renamify_dir.join("plan.json");
-                if !plan_file.exists() {
-                    return Err(anyhow!("No default plan found at {}", plan_file.display()));
-                }
-                let plan_content =
-                    fs::read_to_string(&plan_file).context("Failed to read default plan")?;
-                let plan =
-                    serde_json::from_str(&plan_content).context("Failed to parse default plan")?;
-                Ok((plan, Some(plan_file)))
-            } else {
-                // It's a plan ID - load from plans directory
-                let plans_dir = renamify_dir.join("plans");
-                let plan_file = plans_dir.join(format!("{}.json", id));
-                if !plan_file.exists() {
-                    return Err(anyhow!("Plan file not found: {}", plan_file.display()));
-                }
-                let plan_content = fs::read_to_string(&plan_file)
-                    .with_context(|| format!("Failed to read plan {}", id))?;
-                let plan = serde_json::from_str(&plan_content)
-                    .with_context(|| format!("Failed to parse plan {}", id))?;
-                Ok((plan, None))
+            // For plan IDs, we need to look for the plan file in .renamify/plans/
+            // The history only stores metadata, not the full plan
+            let plan_path = renamify_dir.join("plans").join(format!("{}.json", id));
+            if !plan_path.exists() {
+                return Err(anyhow!("Plan with ID {} not found", id));
             }
+
+            let content = fs::read_to_string(&plan_path)?;
+            let plan = serde_json::from_str(&content)?;
+            Ok((plan, None))
         },
         (None, None) => {
-            // Default: load most recent plan - DELETE this file after success
-            let plan_file = renamify_dir.join("plan.json");
-            if !plan_file.exists() {
+            // Load from default plan.json
+            let default_plan_path = renamify_dir.join("plan.json");
+            if !default_plan_path.exists() {
                 return Err(anyhow!(
-                    "No plan specified and no default plan found at {}",
-                    plan_file.display()
+                    "No plan file found. Create one with 'renamify plan' first."
                 ));
             }
-            let plan_content =
-                fs::read_to_string(&plan_file).context("Failed to read default plan")?;
-            let plan =
-                serde_json::from_str(&plan_content).context("Failed to parse default plan")?;
-            Ok((plan, Some(plan_file)))
+
+            let content = fs::read_to_string(&default_plan_path)?;
+            let plan = serde_json::from_str(&content)?;
+            Ok((plan, Some(default_plan_path)))
         },
+        (Some(_), Some(_)) => Err(anyhow!("Cannot specify both plan path and plan ID")),
     }
 }

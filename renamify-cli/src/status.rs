@@ -1,11 +1,22 @@
-use anyhow::{Context, Result};
-use renamify_core::get_status;
-use std::path::PathBuf;
+use anyhow::Result;
+use renamify_core::{status_operation, OutputFormatter};
 
-pub fn handle_status() -> Result<()> {
-    let renamify_dir = PathBuf::from(".renamify");
-    let status = get_status(&renamify_dir).context("Failed to get status")?;
+use crate::OutputFormat;
 
-    print!("{}", status.format());
+pub fn handle_status(output: OutputFormat, quiet: bool) -> Result<()> {
+    let result = status_operation(None)?;
+
+    // Handle output based on format
+    match output {
+        OutputFormat::Json => {
+            print!("{}", result.format_json());
+        },
+        OutputFormat::Summary => {
+            if !quiet {
+                print!("{}", result.format_summary());
+            }
+        },
+    }
+
     Ok(())
 }

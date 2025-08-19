@@ -106,25 +106,37 @@ suite('Integration Test Suite', () => {
       // Mock the CLI service search method
       const originalSearch = cliService.search;
       cliService.search = () => {
-        return Promise.resolve([
-          {
-            file: 'test.ts',
-            matches: [
-              {
-                file: 'test.ts',
-                line: 10,
-                col: 5,
-                variant: 'oldName',
-                content: 'oldName',
-                replace: 'newName',
-                start: 5,
-                end: 12,
-                line_before: 'const oldName = 123;',
-                line_after: 'const newName = 123;',
-              },
-            ],
+        return Promise.resolve({
+          id: 'test-plan',
+          created_at: '2024-01-01T00:00:00Z',
+          search: 'oldName',
+          replace: 'newName',
+          styles: [],
+          includes: [],
+          excludes: [],
+          matches: [
+            {
+              file: 'test.ts',
+              line: 10,
+              col: 5,
+              variant: 'oldName',
+              content: 'oldName',
+              replace: 'newName',
+              start: 5,
+              end: 12,
+              line_before: 'const oldName = 123;',
+              line_after: 'const newName = 123;',
+            },
+          ],
+          paths: [],
+          stats: {
+            files_scanned: 1,
+            total_matches: 1,
+            matches_by_variant: {},
+            files_with_matches: 1,
           },
-        ]);
+          version: '1.0.0',
+        });
       };
 
       await messageHandler({
@@ -239,8 +251,8 @@ suite('Integration Test Suite', () => {
     );
     assert.strictEqual(
       config.get('confirmBeforeApply'),
-      true,
-      'confirmBeforeApply should default to true'
+      false,
+      'confirmBeforeApply should default to false'
     );
 
     // Test that cliPath can be configured

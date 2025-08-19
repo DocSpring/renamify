@@ -6,6 +6,10 @@ import type { SearchOptions, SearchResult, Status } from './types';
 
 export type { SearchOptions, SearchResult } from './types';
 
+// Regex patterns for extracting plan IDs from text output
+const PLAN_ID_PATTERN = /Plan ID:\s*([a-f0-9]+)/i;
+const ID_PATTERN = /ID:\s*([a-f0-9]+)/i;
+
 export class RenamifyCliService {
   private readonly cliPath: string;
   private readonly spawnFn: typeof spawn;
@@ -61,19 +65,8 @@ export class RenamifyCliService {
     );
   }
 
-  async search(
-    searchTerm: string,
-    replaceTerm: string,
-    options: SearchOptions
-  ): Promise<SearchResult[]> {
-    const args = [
-      'plan',
-      searchTerm,
-      replaceTerm,
-      '--dry-run',
-      '--preview',
-      'json',
-    ];
+  async search(searchTerm: string, options: SearchOptions): Promise<Plan> {
+    const args = ['search', searchTerm, '--preview', 'json'];
 
     if (options.include) {
       args.push('--include', options.include);
@@ -97,7 +90,7 @@ export class RenamifyCliService {
     }
 
     const result = await this.runCli(args);
-    return this.parseSearchResults(result);
+    return JSON.parse(result);
   }
 
   async createPlan(
@@ -134,9 +127,7 @@ export class RenamifyCliService {
 
     const result = await this.runCli(args);
 
-    if (options.dryRun) {
-      return this.parseSearchResults(result);
-    }
+    // Always return the full Plan object, whether dry-run or not
     return JSON.parse(result);
   }
 
@@ -144,8 +135,8 @@ export class RenamifyCliService {
     searchTerm: string,
     replaceTerm: string,
     options: SearchOptions
-  ): Promise<void> {
-    const args = ['rename', searchTerm, replaceTerm, '--auto-approve'];
+  ): Promise<{ planId: string }> {
+    const args = ['rename', searchTerm, replaceTerm, '-y'];
 
     if (options.include) {
       args.push('--include', options.include);
@@ -168,7 +159,22 @@ export class RenamifyCliService {
       args.push('-u');
     }
 
-    await this.runCli(args);
+    const result = await this.runCli(args);
+
+    // Parse the plan ID from the output
+    try {
+      const planData = JSON.parse(result);
+      return { planId: planData.id };
+    } catch {
+      // If we can't parse JSON, try to extract plan ID from text output
+      const planIdMatch =
+        result.match(PLAN_ID_PATTERN) || result.match(ID_PATTERN);
+      if (planIdMatch) {
+        return { planId: planIdMatch[1] };
+      }
+      // Fallback if no plan ID found
+      return { planId: 'unknown' };
+    }
   }
 
   async apply(planId?: string): Promise<void> {
@@ -243,46 +249,5 @@ export class RenamifyCliService {
         reject(err);
       });
     });
-  }
-
-  private parseSearchResults(jsonStr: string): SearchResult[] {
-    try {
-      const data = JSON.parse(jsonStr);
-
-      if (!data.matches) {
-        return [];
-      }
-
-      const results: SearchResult[] = [];
-      const fileMap = new Map<string, MatchHunk[]>();
-
-      for (const match of data.matches) {
-        const file = match.file;
-        if (!fileMap.has(file)) {
-          fileMap.set(file, []);
-        }
-
-        fileMap.get(file)?.push({
-          file: match.file,
-          line: match.line,
-          col: match.col,
-          start: match.start,
-          end: match.end,
-          content: match.content,
-          replace: match.replace,
-          variant: match.variant,
-          line_before: match.line_before,
-          line_after: match.line_after,
-        });
-      }
-
-      for (const [file, matches] of fileMap) {
-        results.push({ file, matches });
-      }
-
-      return results;
-    } catch (_error) {
-      return [];
-    }
   }
 }

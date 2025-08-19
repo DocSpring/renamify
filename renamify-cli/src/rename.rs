@@ -1,8 +1,8 @@
 use anyhow::Result;
-use renamify_core::{rename_operation, Style};
+use renamify_core::{rename_operation, OutputFormatter, Style};
 use std::path::PathBuf;
 
-use crate::{PreviewArg, StyleArg};
+use crate::{OutputFormat, PreviewArg, StyleArg};
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_rename(
@@ -33,24 +33,37 @@ pub fn handle_rename(
     only_acronyms: Vec<String>,
     auto_approve: bool,
     use_color: bool,
+    output: OutputFormat,
+    quiet: bool,
 ) -> Result<()> {
     // Convert CLI style args to core Style enum
     let exclude_styles: Vec<Style> = exclude_styles.into_iter().map(Into::into).collect();
     let include_styles: Vec<Style> = include_styles.into_iter().map(Into::into).collect();
     let only_styles: Vec<Style> = only_styles.into_iter().map(Into::into).collect();
 
+    // Handle quiet mode - overrides preview to none unless output is json
+    let effective_preview = if quiet && output != OutputFormat::Json {
+        None
+    } else {
+        preview
+    };
+
     // Convert preview arg to string format
-    let preview_format = preview.map(|p| match p {
-        PreviewArg::Table => "table".to_string(),
-        PreviewArg::Diff => "diff".to_string(),
-        PreviewArg::Matches => "matches".to_string(),
-        PreviewArg::Json => "json".to_string(),
-        PreviewArg::Summary => "summary".to_string(),
-        PreviewArg::None => "none".to_string(),
-    });
+    let preview_format = if output == OutputFormat::Json {
+        Some("json".to_string())
+    } else {
+        effective_preview.map(|p| match p {
+            PreviewArg::Table => "table".to_string(),
+            PreviewArg::Diff => "diff".to_string(),
+            PreviewArg::Matches => "matches".to_string(),
+            PreviewArg::Json => "json".to_string(),
+            PreviewArg::Summary => "summary".to_string(),
+            PreviewArg::None => "none".to_string(),
+        })
+    };
 
     // Call the core operation
-    let result = rename_operation(
+    let (result, preview_content) = rename_operation(
         search,
         replace,
         paths,
@@ -79,7 +92,22 @@ pub fn handle_rename(
         use_color,
     )?;
 
-    // Print the result
-    println!("{}", result);
+    // Handle output based on format
+    match output {
+        OutputFormat::Json => {
+            print!("{}", result.format_json());
+        },
+        OutputFormat::Summary => {
+            if !quiet {
+                // Print preview content if available
+                if let Some(preview) = preview_content {
+                    println!("{}", preview);
+                }
+                // Print summary
+                print!("{}", result.format_summary());
+            }
+        },
+    }
+
     Ok(())
 }

@@ -2,7 +2,8 @@ use assert_cmd::Command;
 use assert_fs::prelude::*;
 use assert_fs::TempDir;
 use predicates::prelude::*;
-use renamify_core::{plan_operation_with_dry_run, Style};
+use renamify_core::{plan_operation, Style};
+use std::path::PathBuf;
 
 /// Helper function to create a cross-platform path string for testing
 fn path_str(components: &[&str]) -> String {
@@ -50,35 +51,41 @@ fn test_plan_command_basic() {
         .write_str("fn old_name() { let old_name = 42; }")
         .unwrap();
 
-    let result = plan_operation_with_dry_run(
+    let (_result, preview) = plan_operation(
         "old_name",
         "new_name",
-        vec![temp_dir.path().to_path_buf()], // paths
-        vec![],                              // include
-        vec![],                              // exclude
-        true,                                // respect_gitignore
-        0,                                   // unrestricted_level
-        true,                                // rename_files
-        true,                                // rename_dirs
-        &[],                                 // exclude_styles
-        &[],                                 // include_styles
-        &[],                                 // only_styles
-        vec![],                              // exclude_match
-        None,                                // exclude_matching_lines
-        None,                                // plan_out
-        Some(&"table".to_string()),          // preview_format
-        true,                                // dry_run
-        true,                                // fixed_table_width - for consistent test output
-        false,                               // use_color
-        false,                               // no_acronyms
-        vec![],                              // include_acronyms
-        vec![],                              // exclude_acronyms
-        vec![],                              // only_acronyms
+        vec![PathBuf::from(".")],   // paths
+        vec![],                     // include
+        vec![],                     // exclude
+        true,                       // respect_gitignore
+        0,                          // unrestricted_level
+        true,                       // rename_files
+        true,                       // rename_dirs
+        &[],                        // exclude_styles
+        &[],                        // include_styles
+        &[],                        // only_styles
+        vec![],                     // exclude_match
+        None,                       // exclude_matching_lines
+        None,                       // plan_out
+        Some(&"table".to_string()), // preview_format
+        true,                       // dry_run
+        true,                       // fixed_table_width - for consistent test output
+        false,                      // use_color
+        false,                      // no_acronyms
+        vec![],                     // include_acronyms
+        vec![],                     // exclude_acronyms
+        vec![],                     // only_acronyms
+        Some(temp_dir.path()),      // working_dir
     )
     .unwrap();
 
-    // Verify the result contains the table content
-    assert!(result.contains("test.rs"));
+    // Verify the preview contains the table content
+    let preview_content = preview.unwrap();
+    if !preview_content.contains("test.rs") {
+        eprintln!("Preview content: {:?}", preview_content);
+        eprintln!("Temp dir path: {:?}", temp_dir.path());
+        panic!("Preview doesn't contain 'test.rs'");
+    }
 }
 
 #[test]
@@ -90,66 +97,68 @@ fn test_plan_command_with_styles() {
         .unwrap();
 
     // Test excluding styles (exclude kebab and pascal, keeping snake and camel)
-    let result = plan_operation_with_dry_run(
+    let (_result, preview) = plan_operation(
         "old-name",
         "new-name",
-        vec![temp_dir.path().to_path_buf()], // paths
-        vec![],                              // include
-        vec![],                              // exclude
-        true,                                // respect_gitignore
-        0,                                   // unrestricted_level
-        true,                                // rename_files
-        true,                                // rename_dirs
+        vec![PathBuf::from(".")],                              // paths
+        vec![],                                                // include
+        vec![],                                                // exclude
+        true,                                                  // respect_gitignore
+        0,                                                     // unrestricted_level
+        true,                                                  // rename_files
+        true,                                                  // rename_dirs
         &[Style::Kebab, Style::Pascal, Style::ScreamingSnake], // exclude_styles
-        &[],                                 // include_styles
-        &[],                                 // only_styles
-        vec![],                              // exclude_match
-        None,                                // exclude_matching_lines
-        None,                                // plan_out
-        Some(&"table".to_string()),          // preview_format
-        true,                                // dry_run
-        true,                                // fixed_table_width - for consistent test output
-        false,                               // use_color
-        false,                               // no_acronyms
-        vec![],                              // include_acronyms
-        vec![],                              // exclude_acronyms
-        vec![],                              // only_acronyms
+        &[],                                                   // include_styles
+        &[],                                                   // only_styles
+        vec![],                                                // exclude_match
+        None,                                                  // exclude_matching_lines
+        None,                                                  // plan_out
+        Some(&"table".to_string()),                            // preview_format
+        true,                                                  // dry_run
+        true,                  // fixed_table_width - for consistent test output
+        false,                 // use_color
+        false,                 // no_acronyms
+        vec![],                // include_acronyms
+        vec![],                // exclude_acronyms
+        vec![],                // only_acronyms
+        Some(temp_dir.path()), // working_dir
     )
     .unwrap();
 
-    // Verify the result contains the table content
-    assert!(result.contains("test.rs"));
-    assert!(result.contains("old_name") || result.contains("oldName"));
+    // Verify the preview contains the table content
+    let preview_content = preview.unwrap();
+    assert!(preview_content.contains("test.rs"));
+    assert!(preview_content.contains("old_name") || preview_content.contains("oldName"));
 
     // Test including additional styles
-    let result2 = plan_operation_with_dry_run(
+    let (_result2, preview2) = plan_operation(
         "old-name",
         "new-name",
-        vec![temp_dir.path().to_path_buf()], // paths
-        vec![],                              // include
-        vec![],                              // exclude
-        true,                                // respect_gitignore
-        0,                                   // unrestricted_level
-        true,                                // rename_files
-        true,                                // rename_dirs
-        &[],                                 // exclude_styles
-        &[Style::Title, Style::Train],       // include_styles
-        &[],                                 // only_styles
-        vec![],                              // exclude_match
-        None,                                // exclude_matching_lines
-        None,                                // plan_out
-        Some(&"table".to_string()),          // preview_format
-        true,                                // dry_run
-        true,                                // fixed_table_width - for consistent test output
-        false,                               // use_color
-        false,                               // no_acronyms
-        vec![],                              // include_acronyms
-        vec![],                              // exclude_acronyms
-        vec![],                              // only_acronyms
+        vec![PathBuf::from(".")],      // paths
+        vec![],                        // include
+        vec![],                        // exclude
+        true,                          // respect_gitignore
+        0,                             // unrestricted_level
+        true,                          // rename_files
+        true,                          // rename_dirs
+        &[],                           // exclude_styles
+        &[Style::Title, Style::Train], // include_styles
+        &[],                           // only_styles
+        vec![],                        // exclude_match
+        None,                          // exclude_matching_lines
+        None,                          // plan_out
+        Some(&"table".to_string()),    // preview_format
+        true,                          // dry_run
+        true,                          // fixed_table_width - for consistent test output
+        false,                         // use_color
+        false,                         // no_acronyms
+        vec![],                        // include_acronyms
+        vec![],                        // exclude_acronyms
+        vec![],                        // only_acronyms
+        Some(temp_dir.path()),         // working_dir
     )
     .unwrap();
-
-    assert!(result2.contains("test.rs"));
+    assert!(preview2.unwrap().contains("test.rs"));
 }
 
 #[test]
@@ -379,7 +388,7 @@ fn test_apply_command_missing_plan() {
         .args(["apply", "nonexistent.json"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Failed to read plan"));
+        .stderr(predicate::str::contains("Failed to read plan file"));
 }
 
 #[test]
@@ -419,10 +428,10 @@ fn test_apply_command_with_plan() {
     let plan_path = renamify_dir.child("plan.json");
     plan_path.write_str(plan_json).unwrap();
 
-    // Apply the plan using file path as positional argument
+    // Apply the plan (uses default plan.json)
     let mut cmd = Command::cargo_bin("renamify").unwrap();
     cmd.current_dir(temp_dir.path())
-        .args(["apply", ".renamify/plan.json"])
+        .arg("apply")
         .assert()
         .success()
         .stdout(predicate::str::contains("Applied"));
@@ -525,7 +534,7 @@ fn test_apply_command_with_custom_plan_path_keeps_file() {
         .args(["apply", "custom_plan.json"])
         .assert()
         .success()
-        .stderr(predicate::str::contains("Plan applied successfully!"));
+        .stdout(predicate::str::contains("Changes applied successfully"));
 
     // Verify custom plan file still exists (should NOT be deleted)
     assert!(custom_plan_file.exists());
@@ -585,9 +594,9 @@ fn test_status_command() {
         .arg("status")
         .assert()
         .success()
-        // Status shows "No plans applied yet" when empty
-        .stdout(predicate::str::contains("No plans applied yet"))
-        .stdout(predicate::str::contains("Working tree"));
+        // Status shows "No pending plan" when empty
+        .stdout(predicate::str::contains("No pending plan"))
+        .stdout(predicate::str::contains("History entries"));
 }
 
 #[test]
@@ -606,10 +615,8 @@ fn test_history_command_empty() {
         .arg("history")
         .assert()
         .success()
-        // Empty history shows an empty table
-        .stdout(predicate::str::contains("ID"))
-        .stdout(predicate::str::contains("Date"))
-        .stdout(predicate::str::contains("Rename"));
+        // Empty history shows message
+        .stdout(predicate::str::contains("No history entries found"));
 }
 
 #[test]
@@ -663,8 +670,8 @@ fn test_history_command_with_entries() {
         .success()
         .stdout(predicate::str::contains("test1"))
         .stdout(predicate::str::contains("test2"))
-        .stdout(predicate::str::contains("foo → bar"))
-        .stdout(predicate::str::contains("baz → qux"));
+        .stdout(predicate::str::contains("foo -> bar"))
+        .stdout(predicate::str::contains("baz -> qux"));
 
     // Test with limit - should show only one entry
     let mut cmd = Command::cargo_bin("renamify").unwrap();

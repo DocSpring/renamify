@@ -1,14 +1,13 @@
 use anyhow::Result;
-use renamify_core::{plan_operation, OutputFormatter, Style};
+use renamify_core::{plan_operation_with_dry_run, Style};
 use std::path::PathBuf;
 
 use crate::{OutputFormat, StyleArg};
 use renamify_core::Preview;
 
 #[allow(clippy::too_many_arguments)]
-pub fn handle_plan(
-    search: &str,
-    replace: &str,
+pub fn handle_search(
+    term: &str,
     paths: Vec<PathBuf>,
     include: Vec<String>,
     exclude: Vec<String>,
@@ -19,12 +18,9 @@ pub fn handle_plan(
     exclude_styles: Vec<StyleArg>,
     include_styles: Vec<StyleArg>,
     only_styles: Vec<StyleArg>,
-    exclude_match: Vec<String>,
     exclude_matching_lines: Option<String>,
     preview: Option<Preview>,
     fixed_table_width: bool,
-    plan_out: PathBuf,
-    dry_run: bool,
     use_color: bool,
     no_acronyms: bool,
     include_acronyms: Vec<String>,
@@ -33,13 +29,6 @@ pub fn handle_plan(
     output: OutputFormat,
     quiet: bool,
 ) -> Result<()> {
-    // Validate that --fixed-table-width is only used with table preview
-    if fixed_table_width && preview.is_some() && preview != Some(Preview::Table) {
-        return Err(anyhow::anyhow!(
-            "--fixed-table-width can only be used with --preview table"
-        ));
-    }
-
     // Convert CLI style args to core Style enum
     let exclude_styles: Vec<Style> = exclude_styles.into_iter().map(Into::into).collect();
     let include_styles: Vec<Style> = include_styles.into_iter().map(Into::into).collect();
@@ -66,10 +55,10 @@ pub fn handle_plan(
         })
     };
 
-    // Call the core operation
-    let (result, preview_content) = plan_operation(
-        search,
-        replace,
+    // Call the core operation with search mode (empty replace string)
+    let result = plan_operation_with_dry_run(
+        term,
+        "", // Empty replacement for search
         paths,
         include,
         exclude,
@@ -80,35 +69,30 @@ pub fn handle_plan(
         &exclude_styles,
         &include_styles,
         &only_styles,
-        exclude_match,
+        vec![], // exclude_match not used for search
         exclude_matching_lines,
-        Some(plan_out.clone()),
+        None, // No plan output for search
         preview_format.as_ref(),
-        dry_run,
+        true, // Always dry-run for search
         fixed_table_width,
         use_color,
         no_acronyms,
         include_acronyms,
         exclude_acronyms,
         only_acronyms,
-        None, // working_dir
     )?;
 
     // Handle output based on format
     match output {
         OutputFormat::Json => {
-            print!("{}", result.format_json());
-        },
+            // Result is already JSON from the core with preview=json
+            print!("{}", result);
+        }
         OutputFormat::Summary => {
             if !quiet {
-                // Print preview content if available
-                if let Some(preview) = preview_content {
-                    println!("{}", preview);
-                }
-                // Print summary
-                print!("{}", result.format_summary());
+                println!("{}", result);
             }
-        },
+        }
     }
 
     Ok(())

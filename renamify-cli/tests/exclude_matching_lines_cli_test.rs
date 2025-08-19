@@ -129,9 +129,9 @@ old_command --version
     // Verify the plan was created
     assert!(temp_dir.path().join(".renamify/plan.json").exists());
 
-    // Apply the plan
+    // Apply the plan (defaults to .renamify/plan.json)
     let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.current_dir(temp_dir.path()).args(&["apply", "latest"]);
+    cmd.current_dir(temp_dir.path()).args(&["apply"]);
 
     cmd.assert().success();
 
