@@ -49,7 +49,7 @@ jobs:
           workflow: ci.yml
           workflow_conclusion: success
           name: renamify-linux-x64
-          path: renamify-bin
+          path: ../renamify-bin
 
       - name: Download renamify binary (macOS)
         if: runner.os == 'macOS'
@@ -58,7 +58,7 @@ jobs:
           workflow: ci.yml
           workflow_conclusion: success
           name: renamify-macos-x64
-          path: renamify-bin
+          path: ../renamify-bin
 
       - name: Download renamify binary (Windows)
         if: runner.os == 'Windows'
@@ -67,18 +67,18 @@ jobs:
           workflow: ci.yml
           workflow_conclusion: success
           name: renamify-windows-x64
-          path: renamify-bin
+          path: ../renamify-bin
 
       - name: Make binary executable and add to PATH
         shell: bash
         run: |
-          ls -la renamify-bin/
+          ls -la ../renamify-bin/
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            chmod +x renamify-bin/renamify.exe
-            echo "$(pwd)/renamify-bin" >> $GITHUB_PATH
+            chmod +x ../renamify-bin/renamify.exe
+            echo "$(cd .. && pwd)/renamify-bin" >> $GITHUB_PATH
           else
-            chmod +x renamify-bin/renamify
-            echo "$(pwd)/renamify-bin" >> $GITHUB_PATH
+            chmod +x ../renamify-bin/renamify
+            echo "$(cd .. && pwd)/renamify-bin" >> $GITHUB_PATH
           fi
 
       - name: Verify renamify is available
