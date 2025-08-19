@@ -16,8 +16,8 @@ for file in $(git ls-files); do
   # Skip if file doesn't exist
   [[ -f "$file" ]] || continue
 
-  # Check if it's a text file using the file command
-  if ! file "$file" | grep -q "text\|ASCII\|UTF"; then
+  # Check if it's a text file using our shared script
+  if ! ./scripts/is-text-file.sh "$file"; then
     continue
   fi
 
