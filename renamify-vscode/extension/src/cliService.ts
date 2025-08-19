@@ -2,16 +2,9 @@ import { spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import type {
-  HistoryEntry,
-  Match,
-  Plan,
-  SearchOptions,
-  SearchResult,
-  Status,
-} from './types';
+import type { SearchOptions, SearchResult, Status } from './types';
 
-export type { Match, SearchOptions, SearchResult } from './types';
+export type { SearchOptions, SearchResult } from './types';
 
 export class RenamifyCliService {
   private readonly cliPath: string;
@@ -261,7 +254,7 @@ export class RenamifyCliService {
       }
 
       const results: SearchResult[] = [];
-      const fileMap = new Map<string, Match[]>();
+      const fileMap = new Map<string, MatchHunk[]>();
 
       for (const match of data.matches) {
         const file = match.file;
@@ -270,11 +263,16 @@ export class RenamifyCliService {
         }
 
         fileMap.get(file)?.push({
+          file: match.file,
           line: match.line,
-          column: match.col || match.column,
-          text: match.line_before || match.text,
-          replacement: match.line_after || match.replacement,
-          context: match.context,
+          col: match.col,
+          start: match.start,
+          end: match.end,
+          content: match.content,
+          replace: match.replace,
+          variant: match.variant,
+          line_before: match.line_before,
+          line_after: match.line_after,
         });
       }
 

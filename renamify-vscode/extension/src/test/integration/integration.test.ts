@@ -63,10 +63,7 @@ suite('Integration Test Suite', () => {
     assert.ok(mockWebview.html.includes('dot.case'));
 
     // Check for action buttons
-    assert.ok(mockWebview.html.includes('id="searchBtn"'));
-    assert.ok(mockWebview.html.includes('id="planBtn"'));
     assert.ok(mockWebview.html.includes('id="applyBtn"'));
-    assert.ok(mockWebview.html.includes('id="clearBtn"'));
     assert.ok(mockWebview.html.includes('id="expandAll"'));
     assert.ok(mockWebview.html.includes('id="collapseAll"'));
   });
@@ -114,11 +111,16 @@ suite('Integration Test Suite', () => {
             file: 'test.ts',
             matches: [
               {
+                file: 'test.ts',
                 line: 10,
-                column: 5,
-                text: 'oldName',
-                replacement: 'newName',
-                context: 'const oldName = 123;',
+                col: 5,
+                variant: 'oldName',
+                content: 'oldName',
+                replace: 'newName',
+                start: 5,
+                end: 12,
+                line_before: 'const oldName = 123;',
+                line_after: 'const newName = 123;',
               },
             ],
           },
@@ -132,7 +134,7 @@ suite('Integration Test Suite', () => {
         include: '**/*.ts',
         exclude: 'node_modules/**',
         excludeMatchingLines: '^\\s*//',
-        caseStyles: ['camelCase', 'PascalCase'],
+        caseStyles: ['camel', 'pascal'],
       });
 
       // Restore original method

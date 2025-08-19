@@ -1,27 +1,61 @@
+// VS Code webview API types
+// MatchHunk type is available globally from typeRoots
+
+import { formatMergedMatchText } from './formatter';
+
+type VsCodeApi = {
+  postMessage(message: unknown): void;
+  setState(state: unknown): void;
+  getState(): unknown;
+};
+
+declare function acquireVsCodeApi(): VsCodeApi;
+
+type SearchResult = {
+  file: string;
+  matches: MatchHunk[];
+};
+
 (() => {
   const vscode = acquireVsCodeApi();
 
-  let currentResults = [];
-  const expandedFiles = new Set();
+  let currentResults: SearchResult[] = [];
+  const expandedFiles = new Set<number>();
 
   // DOM elements
-  const searchInput = document.getElementById('search');
-  const replaceInput = document.getElementById('replace');
-  const includeInput = document.getElementById('include');
-  const excludeInput = document.getElementById('exclude');
-  const excludeLinesInput = document.getElementById('excludeLines');
-  const applyBtn = document.getElementById('applyBtn');
-  const expandAllBtn = document.getElementById('expandAll');
-  const collapseAllBtn = document.getElementById('collapseAll');
-  const resultsSummary = document.getElementById('resultsSummary');
-  const resultsTree = document.getElementById('resultsTree');
-  const openInEditorLink = document.getElementById('openInEditor');
-  const caseStylesHeader = document.getElementById('caseStylesHeader');
-  const caseStylesContainer = document.getElementById('caseStylesContainer');
-  const checkedCount = document.getElementById('checkedCount');
+  const searchInput = document.getElementById('search') as HTMLInputElement;
+  const replaceInput = document.getElementById('replace') as HTMLInputElement;
+  const includeInput = document.getElementById('include') as HTMLInputElement;
+  const excludeInput = document.getElementById('exclude') as HTMLInputElement;
+  const excludeLinesInput = document.getElementById(
+    'excludeLines'
+  ) as HTMLInputElement;
+  const applyBtn = document.getElementById('applyBtn') as HTMLButtonElement;
+  const expandAllBtn = document.getElementById(
+    'expandAll'
+  ) as HTMLButtonElement;
+  const collapseAllBtn = document.getElementById(
+    'collapseAll'
+  ) as HTMLButtonElement;
+  const resultsSummary = document.getElementById(
+    'resultsSummary'
+  ) as HTMLSpanElement;
+  const resultsTree = document.getElementById('resultsTree') as HTMLDivElement;
+  const openInEditorLink = document.getElementById(
+    'openInEditor'
+  ) as HTMLAnchorElement;
+  const caseStylesHeader = document.getElementById(
+    'caseStylesHeader'
+  ) as HTMLDivElement;
+  const caseStylesContainer = document.getElementById(
+    'caseStylesContainer'
+  ) as HTMLDivElement;
+  const checkedCount = document.getElementById(
+    'checkedCount'
+  ) as HTMLSpanElement;
 
   // Debounce timer
-  let searchDebounceTimer = null;
+  let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Event listeners
   applyBtn.addEventListener('click', applyChanges);
@@ -40,16 +74,24 @@
 
     if (isCollapsed) {
       caseStylesContainer.classList.remove('collapsed');
-      expandIcon.textContent = '▼';
+      if (expandIcon) {
+        expandIcon.innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
+      }
     } else {
       caseStylesContainer.classList.add('collapsed');
-      expandIcon.textContent = '▶';
+      if (expandIcon) {
+        expandIcon.innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg);"><path d="m18 15-6-6-6 6"/></svg>';
+      }
     }
   });
 
   // Debounced auto-search on input
   function debouncedSearch() {
-    clearTimeout(searchDebounceTimer);
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
     searchDebounceTimer = setTimeout(() => {
       performSearch();
     }, 300); // 300ms debounce
@@ -66,12 +108,14 @@
     const checked = document.querySelectorAll(
       '.case-styles-container input[type="checkbox"]:checked'
     ).length;
-    checkedCount.textContent = checked;
+    checkedCount.textContent = checked.toString();
   }
 
-  for (const checkbox of document.querySelectorAll(
+  const checkboxes = document.querySelectorAll(
     '.case-styles-container input[type="checkbox"]'
-  )) {
+  ) as NodeListOf<HTMLInputElement>;
+
+  for (const checkbox of Array.from(checkboxes)) {
     checkbox.addEventListener('change', () => {
       updateCheckedCount();
       debouncedSearch();
@@ -81,11 +125,11 @@
   // Initial count update
   updateCheckedCount();
 
-  function getSelectedCaseStyles() {
-    const checkboxes = document.querySelectorAll(
+  function getSelectedCaseStyles(): string[] {
+    const checkedBoxes = document.querySelectorAll(
       '.case-styles-container input[type="checkbox"]:checked'
-    );
-    return Array.from(checkboxes).map((cb) => cb.value);
+    ) as NodeListOf<HTMLInputElement>;
+    return Array.from(checkedBoxes).map((cb) => cb.value);
   }
 
   function performSearch() {
@@ -164,7 +208,7 @@
       '<div class="loading"><div class="spinner"></div><p>Searching...</p></div>';
   }
 
-  function renderResults(results) {
+  function renderResults(results: SearchResult[]) {
     currentResults = results;
 
     if (!results || results.length === 0) {
@@ -198,17 +242,22 @@
     updateExpandCollapseButtons();
   }
 
-  function createFileItem(fileResult, index) {
+  function createFileItem(
+    fileResult: SearchResult,
+    index: number
+  ): HTMLDivElement {
     const fileItem = document.createElement('div');
     fileItem.className = 'file-item';
-    fileItem.dataset.index = index;
+    fileItem.dataset.index = index.toString();
 
     const fileHeader = document.createElement('div');
     fileHeader.className = 'file-header';
 
     const expandIcon = document.createElement('span');
     expandIcon.className = 'expand-icon';
-    expandIcon.textContent = expandedFiles.has(index) ? '▼' : '▶';
+    expandIcon.innerHTML = expandedFiles.has(index)
+      ? getChevronDown()
+      : getChevronRight();
 
     // Split filename into basename and directory
     let fullPath = fileResult.file;
@@ -217,8 +266,9 @@
     fullPath = fullPath.replace(/\\/g, '/');
 
     // Strip workspace root if present
-    if (window.workspaceRoot) {
-      let workspaceRoot = window.workspaceRoot.replace(/\\/g, '/');
+    const windowWithRoot = window as Window & { workspaceRoot?: string };
+    if (windowWithRoot.workspaceRoot) {
+      let workspaceRoot = windowWithRoot.workspaceRoot.replace(/\\/g, '/');
       if (!workspaceRoot.endsWith('/')) {
         workspaceRoot += '/';
       }
@@ -257,7 +307,7 @@
 
     const matchCount = document.createElement('span');
     matchCount.className = 'match-count';
-    matchCount.textContent = fileResult.matches.length;
+    matchCount.textContent = fileResult.matches.length.toString();
 
     fileHeader.appendChild(expandIcon);
     fileHeader.appendChild(fileNameContainer);
@@ -279,20 +329,35 @@
     return fileItem;
   }
 
-  function renderMatches(container, fileResult) {
+  function renderMatches(container: HTMLDivElement, fileResult: SearchResult) {
     container.innerHTML = '';
 
+    // Group matches by line number
+    const matchesByLine = new Map<number, MatchHunk[]>();
     for (const match of fileResult.matches) {
+      const lineNum = match.line;
+      if (!matchesByLine.has(lineNum)) {
+        matchesByLine.set(lineNum, []);
+      }
+      matchesByLine.get(lineNum)?.push(match);
+    }
+
+    // Render each unique line with all its matches merged
+    for (const [lineNum, matches] of matchesByLine) {
       const matchItem = document.createElement('div');
       matchItem.className = 'match-item';
 
       const lineNumber = document.createElement('span');
       lineNumber.className = 'line-number';
-      lineNumber.textContent = `${match.line}:`;
+      lineNumber.textContent = lineNum.toString();
 
       const matchText = document.createElement('span');
       matchText.className = 'match-text';
-      matchText.innerHTML = formatMatchText(match);
+      matchText.innerHTML = formatMergedMatchText(
+        matches,
+        searchInput.value,
+        replaceInput.value
+      );
 
       matchItem.appendChild(lineNumber);
       matchItem.appendChild(matchText);
@@ -301,7 +366,7 @@
         vscode.postMessage({
           type: 'openFile',
           file: fileResult.file,
-          line: match.line,
+          line: lineNum,
         });
       });
 
@@ -309,59 +374,24 @@
     }
   }
 
-  function formatMatchText(match) {
-    const context = match.context || match.text;
-    const searchTerm = searchInput.value;
-    const replaceTerm = replaceInput.value;
-
-    // Create a container div for horizontal scrolling
-    let formatted = '<div class="match-content">';
-
-    // Escape HTML
-    let escapedContext = escapeHtml(context);
-
-    // Highlight search term with red background and strikethrough
-    if (searchTerm) {
-      const searchRegex = new RegExp(escapeRegExp(searchTerm), 'gi');
-      escapedContext = escapedContext.replace(searchRegex, (m) => {
-        return `<span class="search-match">${m}</span>`;
-      });
-    }
-
-    formatted += escapedContext;
-
-    // Show replacement with green background
-    if (replaceTerm && searchTerm) {
-      const searchRegex = new RegExp(escapeRegExp(searchTerm), 'gi');
-      const matches = context.match(searchRegex);
-      if (matches) {
-        formatted += ' → ';
-        let replaced = context;
-        for (const m of matches) {
-          replaced = replaced.replace(m, replaceTerm);
-        }
-        formatted += `<span class="replace-match">${escapeHtml(
-          replaceTerm
-        )}</span>`;
-      }
-    }
-
-    formatted += '</div>';
-    return formatted;
-  }
-
-  function toggleFile(index) {
-    const fileItem = resultsTree.querySelector(`[data-index="${index}"]`);
-    const expandIcon = fileItem.querySelector('.expand-icon');
-    const matchesContainer = fileItem.querySelector('.file-matches');
+  function toggleFile(index: number) {
+    const fileItem = resultsTree.querySelector(
+      `[data-index="${index}"]`
+    ) as HTMLDivElement;
+    const expandIcon = fileItem.querySelector(
+      '.expand-icon'
+    ) as HTMLSpanElement;
+    const matchesContainer = fileItem.querySelector(
+      '.file-matches'
+    ) as HTMLDivElement;
 
     if (expandedFiles.has(index)) {
       expandedFiles.delete(index);
-      expandIcon.textContent = '▶';
+      expandIcon.innerHTML = getChevronRight();
       matchesContainer.classList.remove('expanded');
     } else {
       expandedFiles.add(index);
-      expandIcon.textContent = '▼';
+      expandIcon.innerHTML = getChevronDown();
       matchesContainer.classList.add('expanded');
 
       if (matchesContainer.children.length === 0) {
@@ -390,11 +420,17 @@
     currentResults.forEach((_, index) => {
       if (!expandedFiles.has(index)) {
         expandedFiles.add(index);
-        const fileItem = resultsTree.querySelector(`[data-index="${index}"]`);
+        const fileItem = resultsTree.querySelector(
+          `[data-index="${index}"]`
+        ) as HTMLDivElement;
         if (fileItem) {
-          const expandIcon = fileItem.querySelector('.expand-icon');
-          const matchesContainer = fileItem.querySelector('.file-matches');
-          expandIcon.textContent = '▼';
+          const expandIcon = fileItem.querySelector(
+            '.expand-icon'
+          ) as HTMLSpanElement;
+          const matchesContainer = fileItem.querySelector(
+            '.file-matches'
+          ) as HTMLDivElement;
+          expandIcon.innerHTML = getChevronDown();
           matchesContainer.classList.add('expanded');
 
           if (matchesContainer.children.length === 0) {
@@ -408,23 +444,28 @@
 
   function collapseAll() {
     expandedFiles.clear();
-    for (const fileItem of resultsTree.querySelectorAll('.file-item')) {
-      const expandIcon = fileItem.querySelector('.expand-icon');
-      const matchesContainer = fileItem.querySelector('.file-matches');
-      expandIcon.textContent = '▶';
+    const fileItems = resultsTree.querySelectorAll(
+      '.file-item'
+    ) as NodeListOf<HTMLDivElement>;
+    for (const fileItem of Array.from(fileItems)) {
+      const expandIcon = fileItem.querySelector(
+        '.expand-icon'
+      ) as HTMLSpanElement;
+      const matchesContainer = fileItem.querySelector(
+        '.file-matches'
+      ) as HTMLDivElement;
+      expandIcon.innerHTML = getChevronRight();
       matchesContainer.classList.remove('expanded');
     }
     updateExpandCollapseButtons();
   }
 
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+  function getChevronDown(): string {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-180deg);"><path d="m18 15-6-6-6 6"/></svg>';
   }
 
-  function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  function getChevronRight(): string {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-270deg);"><path d="m18 15-6-6-6 6"/></svg>';
   }
 
   // Handle messages from extension
@@ -452,7 +493,14 @@
   });
 
   // Restore state if any
-  const state = vscode.getState();
+  const state = vscode.getState() as {
+    search?: string;
+    replace?: string;
+    include?: string;
+    exclude?: string;
+    excludeLines?: string;
+    results?: SearchResult[];
+  } | null;
   if (state) {
     searchInput.value = state.search || '';
     replaceInput.value = state.replace || '';
@@ -504,4 +552,9 @@
 
   // Initial button state
   updateApplyButton();
+
+  // Trigger initial search if search input has content
+  if (searchInput.value.trim()) {
+    performSearch();
+  }
 })();

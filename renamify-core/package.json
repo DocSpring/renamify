@@ -1,0 +1,11 @@
+{
+  "name": "renamify-core",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "format-bindings": "biome format --write bindings/"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4"
+  }
+}

@@ -7,61 +7,14 @@ export type SearchOptions = {
   caseStyles?: string[];
 };
 
-export type Match = {
-  line: number;
-  column: number;
-  text: string;
-  replacement: string;
-  context: string;
-};
+// Match type is now imported from Rust bindings above
 
 export type SearchResult = {
   file: string;
-  matches: Match[];
+  matches: MatchHunk[];
 };
 
-export type Plan = {
-  id: string;
-  created_at: string;
-  search: string;
-  replace: string;
-  styles: string[];
-  includes: string[];
-  excludes: string[];
-  matches: PlanMatch[];
-  paths: Rename[];
-  stats: PlanStats;
-  version: string;
-};
-
-export type PlanMatch = {
-  file: string;
-  line: number;
-  column: number;
-  text: string;
-  replacement: string;
-  context: string;
-};
-
-export type Rename = {
-  old_path: string;
-  new_path: string;
-  type: 'file' | 'directory';
-};
-
-export type PlanStats = {
-  total_matches?: number;
-  files_affected?: number;
-  paths?: number;
-};
-
-export type HistoryEntry = {
-  id: string;
-  search: string;
-  replace: string;
-  created_at: string;
-  stats?: PlanStats;
-};
+// Plan, Rename, PlanStats, and HistoryEntry are now imported from Rust bindings above
 
 export type Status = {
   current_plan?: Plan;

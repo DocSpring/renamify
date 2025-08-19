@@ -16,6 +16,7 @@ use std::fs::{self, File};
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
+use ts_rs::TS;
 
 /// Normalize a path by removing Windows long path prefix if present
 fn normalize_path(path: &Path) -> PathBuf {
@@ -34,19 +35,24 @@ fn normalize_path(path: &Path) -> PathBuf {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct PlanOptions {
     pub includes: Vec<String>,
     pub excludes: Vec<String>,
     pub respect_gitignore: bool, // Deprecated, use unrestricted_level instead
-    pub unrestricted_level: u8,  // 0=default, 1=-u, 2=-uu, 3=-uuu
+    #[ts(type = "number")]
+    pub unrestricted_level: u8, // 0=default, 1=-u, 2=-uu, 3=-uuu
+    #[ts(optional)]
     pub styles: Option<Vec<Style>>,
     pub rename_files: bool,
     pub rename_dirs: bool,
     pub rename_root: bool, // Allow renaming the root directory
+    #[ts(type = "string")]
     pub plan_out: PathBuf,
     pub coerce_separators: CoercionMode,
     pub exclude_match: Vec<String>, // Specific matches to exclude
+    #[ts(optional)]
     pub exclude_matching_lines: Option<String>, // Regex to exclude lines matching this pattern
     pub no_acronyms: bool,          // Disable acronym detection
     pub include_acronyms: Vec<String>, // Additional acronyms to recognize
@@ -54,7 +60,8 @@ pub struct PlanOptions {
     pub only_acronyms: Vec<String>, // Replace default list with these acronyms
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum CoercionMode {
     Auto,                          // Default: automatically detect and apply
     Off,                           // Disable coercion
@@ -91,28 +98,40 @@ impl Default for PlanOptions {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct MatchHunk {
+    #[ts(type = "string")]
     pub file: PathBuf,
+    #[ts(type = "number")]
     pub line: u64,
+    #[ts(type = "number")]
     pub col: u32,
     pub variant: String,
     pub content: String, // The word/variant being replaced
     #[serde(skip_serializing_if = "String::is_empty")]
     pub replace: String, // The replacement word/variant
+    #[ts(type = "number")]
     pub start: usize,
+    #[ts(type = "number")]
     pub end: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     pub line_before: Option<String>, // Full line context for diff preview
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     pub line_after: Option<String>, // Full line with replacement for diff preview
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     pub coercion_applied: Option<String>, // Details about coercion if applied
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "string")]
     pub original_file: Option<PathBuf>, // Original file path before any renames
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "string")]
     pub renamed_file: Option<PathBuf>, // File path after renames (if different)
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     pub patch_hash: Option<String>, // SHA256 hash of the patch file for this change
 }
 
@@ -121,32 +140,44 @@ fn is_empty_path(p: &PathBuf) -> bool {
     p.as_os_str().is_empty()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct Rename {
+    #[ts(type = "string")]
     pub path: PathBuf,
     #[serde(skip_serializing_if = "is_empty_path")]
+    #[ts(type = "string")]
     pub new_path: PathBuf,
     pub kind: RenameKind,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     pub coercion_applied: Option<String>, // Details about coercion if applied
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "lowercase")]
+#[ts(rename_all = "lowercase")]
 pub enum RenameKind {
     File,
     Dir,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct Stats {
+    #[ts(type = "number")]
     pub files_scanned: usize,
+    #[ts(type = "number")]
     pub total_matches: usize,
+    #[ts(type = "Record<string, number>")]
     pub matches_by_variant: HashMap<String, usize>,
+    #[ts(type = "number")]
     pub files_with_matches: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct Plan {
     pub id: String,
     pub created_at: String,
@@ -160,6 +191,7 @@ pub struct Plan {
     pub stats: Stats,
     pub version: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "Array<string>")]
     pub created_directories: Option<Vec<PathBuf>>, // Directories created during apply that should be removed on undo
 }
 

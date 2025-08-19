@@ -5,10 +5,10 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["Renamify Contributors"]
+authors = ["DocSpring"]
 license = "MIT"
-repository = "https://github.com/ndbroadbent/renamify"
-homepage = "https://github.com/ndbroadbent/renamify"
+repository = "https://github.com/DocSpring/renamify"
+homepage = "https://github.com/DocSpring/renamify"
 
 [workspace.dependencies]
 # Core dependencies
@@ -16,6 +16,7 @@ anyhow = "1"
 thiserror = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+ts-rs = "11.0"
 regex = "1.11"
 bstr = "1"
 ignore = "0.4"

@@ -241,7 +241,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
   private _getHtmlForWebview(webview: vscode.Webview) {
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js')
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'bundle.js')
     );
 
     const styleUri = webview.asWebviewUri(

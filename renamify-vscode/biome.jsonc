@@ -1,6 +1,9 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
   "extends": ["ultracite"],
+  "files": {
+    "includes": ["**", "!media/webview.js", "!media/bundle.js"]
+  },
   "javascript": {
     "globals": ["suite", "test", "setup", "teardown", "acquireVsCodeApi"]
   },

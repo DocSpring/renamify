@@ -211,6 +211,7 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - Use simple hyphen, not the em dash
 - If showing apt commands, always include `-y`
 - Prefer actionable diffs and files over long explanations
+- NEVER use "for now" or implement temporary solutions - everything must be done properly the first time
 
 ## Testing Guidelines
 

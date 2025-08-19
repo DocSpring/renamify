@@ -186,9 +186,10 @@ describe('MCP Server', () => {
 
     const tools = responseObj.result.tools;
     expect(tools).toBeInstanceOf(Array);
-    expect(tools.length).toBe(7);
+    expect(tools.length).toBe(8);
 
     const toolNames = tools.map((t: { name: string }) => t.name);
+    expect(toolNames).toContain('renamify_search');
     expect(toolNames).toContain('renamify_plan');
     expect(toolNames).toContain('renamify_apply');
     expect(toolNames).toContain('renamify_undo');

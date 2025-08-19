@@ -17,7 +17,7 @@
     "lint": "biome check --write",
     "format": "biome format --write",
     "check": "biome check",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm build"
   },
   "keywords": [
     "mcp",

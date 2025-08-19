@@ -171,7 +171,9 @@ export class RenamifyService {
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
         throw new Error(
-          `Renamify ${operation} failed: ${execaError.stderr || execaError.message}`
+          `Renamify ${operation} failed: ${
+            execaError.stderr || execaError.message
+          }`
         );
       }
       throw error;

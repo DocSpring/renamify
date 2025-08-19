@@ -18,6 +18,8 @@
 # Runtime directory (created at runtime, not tracked in VCS)
 .renamify/
 
+renamify-core/node_modules/
+
 # Dir for e2e tests
 renamify-e2e-test/
 
@@ -40,3 +42,6 @@ coverage/
 /fuzz/corpus/
 
 *snapshot.snap.new
+
+renamify-core/bindings/*.js
+renamify-core/bindings/*.js.map

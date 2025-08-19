@@ -64,10 +64,10 @@ jobs:
 
       - name: Run Biome checks
         if: runner.os != 'Windows'
-        run: pnpm run check
+        run: pnpm check
 
       - name: Build
-        run: pnpm run build
+        run: pnpm build
 
       - name: Run tests with coverage
         run: pnpm exec vitest run --coverage

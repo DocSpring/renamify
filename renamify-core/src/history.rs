@@ -4,9 +4,11 @@ use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
+use ts_rs::TS;
 
 /// Represents a single entry in the renaming history
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct HistoryEntry {
     /// Unique identifier for this plan/operation
     pub id: String,
@@ -23,14 +25,19 @@ pub struct HistoryEntry {
     /// Exclude patterns used for file filtering
     pub excludes: Vec<String>,
     /// Files that were modified (path -> checksum after apply)
+    #[ts(type = "Record<string, string>")]
     pub affected_files: HashMap<PathBuf, String>,
     /// Renames that were performed (from -> to)
+    #[ts(type = "Array<[string, string]>")]
     pub renames: Vec<(PathBuf, PathBuf)>,
     /// Path to the backup directory for this operation
+    #[ts(type = "string")]
     pub backups_path: PathBuf,
     /// If this is a revert operation, the ID of the operation being reverted
+    #[ts(optional)]
     pub revert_of: Option<String>,
     /// If this is a redo operation, the ID of the original operation
+    #[ts(optional)]
     pub redo_of: Option<String>,
 }
 

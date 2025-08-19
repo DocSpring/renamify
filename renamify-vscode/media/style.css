@@ -251,11 +251,10 @@ button:disabled {
 }
 
 .file-matches {
-  margin-left: 20px;
+  margin-left: 0;
   display: none;
   overflow-x: auto;
   overflow-y: hidden;
-  max-width: calc(100vw - 40px);
 }
 
 .file-matches.expanded {
@@ -263,7 +262,7 @@ button:disabled {
 }
 
 .match-item {
-  padding: 2px 8px;
+  padding: 2px 0;
   margin: 2px 0;
   cursor: pointer;
   border-radius: 2px;
@@ -271,6 +270,7 @@ button:disabled {
   font-size: var(--vscode-editor-font-size);
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   white-space: nowrap;
 }
 
@@ -281,31 +281,60 @@ button:disabled {
 .line-number {
   color: var(--vscode-editorLineNumber-foreground);
   margin-right: 8px;
-  min-width: 40px;
+  margin-left: 0;
+  min-width: 30px;
   display: inline-block;
   flex-shrink: 0;
+  text-align: right;
+  padding: 0;
 }
 
 .match-text {
   white-space: nowrap;
   overflow: visible;
+  flex: 1;
 }
 
-.search-match {
-  background: rgba(255, 0, 0, 0.3);
-  text-decoration: line-through;
-  padding: 1px 2px;
+.diff-line {
+  display: block;
+  width: 100%;
+  margin: 1px 0;
+  padding: 1px 8px 1px 2px;
   border-radius: 2px;
+  font-family: var(--vscode-editor-font-family);
+  box-sizing: border-box;
 }
 
-.replace-match {
-  background: rgba(0, 255, 0, 0.3);
-  padding: 1px 2px;
+.diff-line.removed {
+  background: rgba(255, 0, 0, 0.1);
+  border-left: 2px solid rgba(255, 0, 0, 0.4);
+}
+
+.diff-line.added {
+  background: rgba(0, 255, 0, 0.1);
+  border-left: 2px solid rgba(0, 255, 0, 0.4);
+}
+
+.search-line {
+  display: block;
+  padding: 1px 4px;
+}
+
+.search-highlight {
+  background: rgba(255, 0, 0, 0.2);
   border-radius: 2px;
+  padding: 0 1px;
+}
+
+.replace-highlight {
+  background: rgba(0, 255, 0, 0.2);
+  border-radius: 2px;
+  padding: 0 1px;
 }
 
 .match-content {
-  display: inline-block;
+  display: block;
+  width: 100%;
   white-space: nowrap;
   overflow-x: visible;
 }

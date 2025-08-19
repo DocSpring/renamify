@@ -43,7 +43,7 @@ jobs:
         run: cd docs && pnpm install
 
       - name: Build with Astro
-        run: cd docs && pnpm run build
+        run: cd docs && pnpm build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

@@ -4,14 +4,14 @@
     "target": "ES2022",
     "lib": ["ES2022"],
     "sourceMap": true,
+    "outDir": "../dist",
     "rootDir": "src",
-    "outDir": "out",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "exclude": ["node_modules", ".vscode-test"],
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "../../renamify-core/bindings/*.d.ts"],
+  "exclude": ["node_modules"]
 }

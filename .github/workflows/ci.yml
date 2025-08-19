@@ -33,6 +33,23 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: renamify-core/pnpm-lock.yaml
+
+      - name: Install renamify-core dependencies
+        run: |
+          cd renamify-core
+          pnpm install
+
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 

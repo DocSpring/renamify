@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "amd",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "sourceMap": true,
+    "outDir": "../media",
+    "outFile": "../media/webview.js",
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["../node_modules/@types"]
+  },
+  "include": ["src/**/*", "../../renamify-core/bindings/*.d.ts"],
+  "exclude": ["node_modules", "src/**/*.test.ts", "src/**/*.test.js"]
+}

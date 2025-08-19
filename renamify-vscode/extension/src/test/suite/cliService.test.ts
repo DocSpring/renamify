@@ -46,7 +46,7 @@ suite('CLI Service Test Suite', () => {
     const searchPromise = cliService.search('oldName', 'newName', {
       include: '**/*.ts',
       exclude: 'node_modules/**',
-      caseStyles: ['camelCase', 'PascalCase'],
+      caseStyles: ['camel', 'pascal'],
     });
 
     // Simulate successful CLI response
@@ -84,7 +84,7 @@ suite('CLI Service Test Suite', () => {
     assert.ok(args.includes('--exclude'));
     assert.ok(args.includes('node_modules/**'));
     assert.ok(args.includes('--only-styles'));
-    assert.ok(args.includes('camelCase,PascalCase'));
+    assert.ok(args.includes('camel,pascal'));
 
     assert.strictEqual(results.length, 1);
     assert.strictEqual(results[0].file, 'test.ts');

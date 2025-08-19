@@ -37,7 +37,7 @@ cd renamify-vscode
 pnpm install
 
 # Compile TypeScript
-pnpm run compile
+pnpm compile
 
 # Run tests
 pnpm test
