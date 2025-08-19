@@ -72,14 +72,22 @@ jobs:
           # Debug: show where we are and what's available
           echo "Current directory: $(pwd)"
           echo "Workspace: ${{ github.workspace }}"
-          ls -la ${{ github.workspace }}/renamify-bin/
+
+          # Convert Windows path to Unix path for bash
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            WORKSPACE=$(echo "${{ github.workspace }}" | sed 's|\\|/|g' | sed 's|D:|/d|')
+          else
+            WORKSPACE="${{ github.workspace }}"
+          fi
+
+          ls -la "$WORKSPACE/renamify-bin/"
 
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            chmod +x ${{ github.workspace }}/renamify-bin/renamify.exe
-            echo "${{ github.workspace }}/renamify-bin" >> $GITHUB_PATH
+            chmod +x "$WORKSPACE/renamify-bin/renamify.exe"
+            echo "$WORKSPACE/renamify-bin" >> $GITHUB_PATH
           else
-            chmod +x ${{ github.workspace }}/renamify-bin/renamify
-            echo "${{ github.workspace }}/renamify-bin" >> $GITHUB_PATH
+            chmod +x "$WORKSPACE/renamify-bin/renamify"
+            echo "$WORKSPACE/renamify-bin" >> $GITHUB_PATH
           fi
 
       - name: Verify renamify is available
