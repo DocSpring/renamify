@@ -34,12 +34,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: renamify-core/pnpm-lock.yaml
 
-      - uses: pnpm/action-setup@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
           version: 8
-          run_install: false
 
       - name: Install ripgrep
         shell: bash
