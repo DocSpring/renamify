@@ -27,7 +27,7 @@ jobs:
         with:
           script: |
             const script = require('./.github/wait-for-checks.js');
-            await script({ github, context, core, checks: ["Test on", "Code Coverage", "Check MSRV", "Self-Hosting Demo"] });
+            await script({ github, context, core });
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
