@@ -163,7 +163,7 @@ impl History {
 pub fn create_history_entry<S: ::std::hash::BuildHasher>(
     plan: &crate::Plan,
     affected_files: HashMap<PathBuf, String, S>,
-    renames: Vec<(PathBuf, PathBuf)>,
+    paths: Vec<(PathBuf, PathBuf)>,
     backups_path: PathBuf,
     revert_of: Option<String>,
     redo_of: Option<String>,
@@ -177,7 +177,7 @@ pub fn create_history_entry<S: ::std::hash::BuildHasher>(
         includes: plan.includes.clone(),
         excludes: plan.excludes.clone(),
         affected_files: affected_files.into_iter().collect(),
-        renames,
+        renames: paths,
         backups_path,
         revert_of,
         redo_of,

@@ -198,14 +198,14 @@ pub fn plan_operation_with_dry_run(
             Ok(format!(
                 "Generated plan with {} matches and {} renames",
                 plan.stats.total_matches,
-                plan.renames.len()
+                plan.paths.len()
             ))
         }
     } else {
         Ok(format!(
             "Generated plan with {} matches and {} renames{}",
             plan.stats.total_matches,
-            plan.renames.len(),
+            plan.paths.len(),
             if dry_run {
                 ""
             } else {

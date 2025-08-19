@@ -98,6 +98,7 @@ pub struct MatchHunk {
     pub col: u32,
     pub variant: String,
     pub content: String, // The word/variant being replaced
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub replace: String, // The replacement word/variant
     pub start: usize,
     pub end: usize,
@@ -115,10 +116,16 @@ pub struct MatchHunk {
     pub patch_hash: Option<String>, // SHA256 hash of the patch file for this change
 }
 
+/// Helper function to check if a PathBuf is empty (for serde skip)
+fn is_empty_path(p: &PathBuf) -> bool {
+    p.as_os_str().is_empty()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rename {
-    pub from: PathBuf,
-    pub to: PathBuf,
+    pub path: PathBuf,
+    #[serde(skip_serializing_if = "is_empty_path")]
+    pub new_path: PathBuf,
     pub kind: RenameKind,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coercion_applied: Option<String>, // Details about coercion if applied
@@ -149,7 +156,7 @@ pub struct Plan {
     pub includes: Vec<String>,
     pub excludes: Vec<String>,
     pub matches: Vec<MatchHunk>,
-    pub renames: Vec<Rename>,
+    pub paths: Vec<Rename>,
     pub stats: Stats,
     pub version: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -282,10 +289,16 @@ pub fn scan_repository_multi(
         }
     }
 
-    let renames = if options.rename_files || options.rename_dirs {
+    let paths = if options.rename_files || options.rename_dirs {
         let mut all_renames = Vec::new();
         for root in roots {
             let mut root_renames = plan_renames(root, &variant_map, options)?;
+            // For search mode (when new is empty), clear the new_path to empty PathBuf
+            if new.is_empty() {
+                for rename in &mut root_renames {
+                    rename.new_path = PathBuf::new();
+                }
+            }
             all_renames.append(&mut root_renames);
         }
         all_renames
@@ -317,7 +330,7 @@ pub fn scan_repository_multi(
         includes: options.includes.clone(),
         excludes: options.excludes.clone(),
         matches,
-        renames,
+        paths,
         stats,
         version: "1.0.0".to_string(),
         created_directories: None,
@@ -847,7 +860,7 @@ mod tests {
         assert_eq!(plan.old, "old");
         assert_eq!(plan.new, "new");
         assert_eq!(plan.matches.len(), 0);
-        assert_eq!(plan.renames.len(), 0);
+        assert_eq!(plan.paths.len(), 0);
         assert_eq!(plan.stats.files_scanned, 0);
     }
 
@@ -1053,28 +1066,28 @@ mod tests {
     fn test_rename_sorting() {
         let mut renames = vec![
             Rename {
-                from: PathBuf::from("/a/b/file.txt"),
-                to: PathBuf::from("/a/b/new.txt"),
+                path: PathBuf::from("/a/b/file.txt"),
+                new_path: PathBuf::from("/a/b/new.txt"),
                 kind: RenameKind::File,
                 coercion_applied: None,
             },
             Rename {
-                from: PathBuf::from("/a/dir"),
-                to: PathBuf::from("/a/new_dir"),
+                path: PathBuf::from("/a/dir"),
+                new_path: PathBuf::from("/a/new_dir"),
                 kind: RenameKind::Dir,
                 coercion_applied: None,
             },
             Rename {
-                from: PathBuf::from("/a/b/c/deep.txt"),
-                to: PathBuf::from("/a/b/c/new_deep.txt"),
+                path: PathBuf::from("/a/b/c/deep.txt"),
+                new_path: PathBuf::from("/a/b/c/new_deep.txt"),
                 kind: RenameKind::File,
                 coercion_applied: None,
             },
         ];
 
         renames.sort_by(|a, b| {
-            let a_depth = a.from.components().count();
-            let b_depth = b.from.components().count();
+            let a_depth = a.path.components().count();
+            let b_depth = b.path.components().count();
 
             match (
                 matches!(a.kind, RenameKind::Dir),
@@ -1087,7 +1100,7 @@ mod tests {
         });
 
         assert!(matches!(renames[0].kind, RenameKind::Dir));
-        assert_eq!(renames[1].from.components().count(), 5);
+        assert_eq!(renames[1].path.components().count(), 5);
     }
 
     #[test]
@@ -1104,7 +1117,7 @@ mod tests {
             includes: vec![],
             excludes: vec![],
             matches: vec![],
-            renames: vec![],
+            paths: vec![],
             stats: Stats {
                 files_scanned: 1,
                 total_matches: 0,

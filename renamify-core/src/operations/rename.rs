@@ -90,10 +90,10 @@ pub fn rename_operation(
         .with_context(|| format!("Failed to scan repository for '{old}' -> '{new}'"))?;
 
     // Separate root directory renames from other renames
-    let (root_renames, other_renames) = separate_root_renames(&plan.renames, &resolved_paths);
+    let (root_renames, other_renames) = separate_root_renames(&plan.paths, &resolved_paths);
 
     // Update plan with filtered renames
-    plan.renames = filter_renames_by_root_policy(
+    plan.paths = filter_renames_by_root_policy(
         root_renames.clone(),
         other_renames,
         rename_root,
@@ -101,7 +101,7 @@ pub fn rename_operation(
     );
 
     // Check if there's anything to do after filtering
-    if plan.stats.total_matches == 0 && plan.renames.is_empty() {
+    if plan.stats.total_matches == 0 && plan.paths.is_empty() {
         if !root_renames.is_empty() && !no_rename_root {
             let snippet = generate_root_rename_snippet(&root_renames);
             return Ok(format!("Only root directory rename detected. Use --rename-root to perform it or see suggested snippet:\n{}", snippet));
@@ -186,16 +186,16 @@ fn build_styles_list(
 }
 
 fn separate_root_renames(
-    renames: &[crate::scanner::Rename],
+    paths: &[crate::scanner::Rename],
     resolved_paths: &[PathBuf],
 ) -> (Vec<crate::scanner::Rename>, Vec<crate::scanner::Rename>) {
-    renames.iter().cloned().partition(|rename| {
+    paths.iter().cloned().partition(|rename| {
         resolved_paths.iter().any(|root_path| {
-            rename.from.parent().is_none()
+            rename.path.parent().is_none()
                 || rename
-                    .from
+                    .path
                     .canonicalize()
-                    .unwrap_or_else(|_| rename.from.clone())
+                    .unwrap_or_else(|_| rename.path.clone())
                     == root_path
                         .canonicalize()
                         .unwrap_or_else(|_| root_path.clone())
@@ -236,7 +236,7 @@ fn validate_operation_safety(
 
     // Safety check: Size guard for large changes
     let file_count = plan.stats.files_with_matches;
-    let rename_count = plan.renames.len();
+    let rename_count = plan.paths.len();
     if (file_count > 500 || rename_count > 100) && !large {
         return Err(anyhow!(
             "Large change detected ({} files, {} renames). Use large=true to acknowledge.",
@@ -279,8 +279,8 @@ fn show_rename_summary(plan: &Plan, include: &[String], exclude: &[String]) {
         plan.stats.files_with_matches, plan.stats.total_matches
     );
 
-    if !plan.renames.is_empty() {
-        println!("Renames: {} items", plan.renames.len());
+    if !plan.paths.is_empty() {
+        println!("Renames: {} items", plan.paths.len());
     }
 
     if !include.is_empty() {
@@ -339,8 +339,8 @@ fn apply_rename_changes(
         plan.stats.total_matches, plan.stats.files_with_matches
     );
 
-    if !plan.renames.is_empty() {
-        write!(output, "\n✓ Renamed {} items", plan.renames.len()).unwrap();
+    if !plan.paths.is_empty() {
+        write!(output, "\n✓ Renamed {} items", plan.paths.len()).unwrap();
     }
 
     if commit {
@@ -359,5 +359,5 @@ fn generate_root_rename_snippet(root_renames: &[crate::scanner::Rename]) -> Stri
 
     // Generate a snippet for the root rename
     let rename = &root_renames[0];
-    format!("mv {} {}", rename.from.display(), rename.to.display())
+    format!("mv {} {}", rename.path.display(), rename.new_path.display())
 }

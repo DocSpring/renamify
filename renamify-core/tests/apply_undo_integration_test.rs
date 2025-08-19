@@ -15,7 +15,7 @@ fn create_test_plan(id: &str, old: &str, new: &str) -> Plan {
         includes: vec![],
         excludes: vec![],
         matches: vec![],
-        renames: vec![],
+        paths: vec![],
         stats: Stats {
             files_scanned: 0,
             total_matches: 0,
@@ -111,9 +111,9 @@ fn test_apply_undo_file_rename_only() {
 
     // Create plan with file rename only
     let mut plan = create_test_plan("file_rename_only", "old_name", "new_name");
-    plan.renames.push(Rename {
-        from: old_file.clone(),
-        to: temp_dir.path().join("new_name.txt"),
+    plan.paths.push(Rename {
+        path: old_file.clone(),
+        new_path: temp_dir.path().join("new_name.txt"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
@@ -156,9 +156,9 @@ fn test_apply_undo_dir_rename_only() {
 
     // Create plan with directory rename only
     let mut plan = create_test_plan("dir_rename_only", "old_name", "new_name");
-    plan.renames.push(Rename {
-        from: old_dir.clone(),
-        to: temp_dir.path().join("new_name_dir"),
+    plan.paths.push(Rename {
+        path: old_dir.clone(),
+        new_path: temp_dir.path().join("new_name_dir"),
         kind: RenameKind::Dir,
         coercion_applied: None,
     });
@@ -206,9 +206,9 @@ fn test_apply_undo_content_and_file_rename() {
     let mut plan = create_test_plan("content_and_file", "old_name", "new_name");
 
     // File rename
-    plan.renames.push(Rename {
-        from: old_file.clone(),
-        to: temp_dir.path().join("new_name.rs"),
+    plan.paths.push(Rename {
+        path: old_file.clone(),
+        new_path: temp_dir.path().join("new_name.rs"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
@@ -294,9 +294,9 @@ fn test_apply_undo_content_and_dir_rename() {
     let mut plan = create_test_plan("content_and_dir", "old_name", "new_name");
 
     // Directory rename
-    plan.renames.push(Rename {
-        from: old_dir.clone(),
-        to: temp_dir.path().join("new_name_dir"),
+    plan.paths.push(Rename {
+        path: old_dir.clone(),
+        new_path: temp_dir.path().join("new_name_dir"),
         kind: RenameKind::Dir,
         coercion_applied: None,
     });
@@ -385,17 +385,17 @@ fn test_apply_undo_file_and_dir_rename() {
     let mut plan = create_test_plan("file_and_dir", "old_name", "new_name");
 
     // Directory rename
-    plan.renames.push(Rename {
-        from: old_dir.clone(),
-        to: temp_dir.path().join("new_name_dir"),
+    plan.paths.push(Rename {
+        path: old_dir.clone(),
+        new_path: temp_dir.path().join("new_name_dir"),
         kind: RenameKind::Dir,
         coercion_applied: None,
     });
 
     // File rename - should use the new directory path
-    plan.renames.push(Rename {
-        from: old_file.clone(),
-        to: temp_dir.path().join("new_name_dir").join("new_name.txt"),
+    plan.paths.push(Rename {
+        path: old_file.clone(),
+        new_path: temp_dir.path().join("new_name_dir").join("new_name.txt"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
@@ -447,17 +447,17 @@ fn test_apply_undo_all_changes() {
     let mut plan = create_test_plan("all_changes", "old_name", "new_name");
 
     // Directory rename
-    plan.renames.push(Rename {
-        from: old_dir.clone(),
-        to: temp_dir.path().join("new_name_dir"),
+    plan.paths.push(Rename {
+        path: old_dir.clone(),
+        new_path: temp_dir.path().join("new_name_dir"),
         kind: RenameKind::Dir,
         coercion_applied: None,
     });
 
     // File rename - should use the new directory path
-    plan.renames.push(Rename {
-        from: old_file.clone(),
-        to: temp_dir.path().join("new_name_dir").join("new_name.rs"),
+    plan.paths.push(Rename {
+        path: old_file.clone(),
+        new_path: temp_dir.path().join("new_name_dir").join("new_name.rs"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
@@ -599,9 +599,9 @@ fn test_apply_undo_multiple_files_in_renamed_dir() {
     let mut plan = create_test_plan("multi_files", "old_name", "new_name");
 
     // Directory rename
-    plan.renames.push(Rename {
-        from: old_dir.clone(),
-        to: temp_dir.path().join("new_name_lib"),
+    plan.paths.push(Rename {
+        path: old_dir.clone(),
+        new_path: temp_dir.path().join("new_name_lib"),
         kind: RenameKind::Dir,
         coercion_applied: None,
     });

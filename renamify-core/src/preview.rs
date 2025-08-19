@@ -10,7 +10,7 @@ use std::path::Path;
 /// Check if a rename represents a root directory rename
 /// A root directory rename is when the from path equals the current working directory
 fn is_root_directory_rename(rename: &Rename) -> bool {
-    let from_path = &rename.from;
+    let from_path = &rename.path;
 
     // Check if this rename is for the current working directory
     std::env::current_dir()
@@ -180,14 +180,14 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
     }
 
     // Add rename rows (root directory renames should not be in plans unless explicitly requested)
-    for rename in &plan.renames {
+    for rename in &plan.paths {
         // Make paths relative to current directory for cleaner display
         let from_str = match std::env::current_dir()
             .ok()
-            .and_then(|cwd| rename.from.strip_prefix(cwd).ok())
+            .and_then(|cwd| rename.path.strip_prefix(cwd).ok())
         {
             Some(relative_path) => relative_path.display().to_string(),
-            None => rename.from.display().to_string(),
+            None => rename.path.display().to_string(),
         };
 
         let kind_str = match rename.kind {
@@ -211,10 +211,10 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
             // For plan, show the rename with arrow
             let to_str = match std::env::current_dir()
                 .ok()
-                .and_then(|cwd| rename.to.strip_prefix(cwd).ok())
+                .and_then(|cwd| rename.new_path.strip_prefix(cwd).ok())
             {
                 Some(relative_path) => relative_path.display().to_string(),
-                None => rename.to.display().to_string(),
+                None => rename.new_path.display().to_string(),
             };
 
             if use_color {
@@ -233,7 +233,7 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
     // Add footer with totals
     let total_matches = plan.stats.total_matches;
     let total_files = plan.stats.files_with_matches;
-    let total_paths = plan.renames.len();
+    let total_paths = plan.paths.len();
 
     if use_color {
         table.add_row(vec![
@@ -403,7 +403,7 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
     }
 
     // Add rename section
-    if !plan.renames.is_empty() {
+    if !plan.paths.is_empty() {
         if use_color {
             write!(
                 output,
@@ -415,7 +415,7 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
             output.push_str("\n=== RENAMES ===\n");
         }
 
-        for rename in &plan.renames {
+        for rename in &plan.paths {
             let kind = match rename.kind {
                 RenameKind::File => "file",
                 RenameKind::Dir => "dir",
@@ -426,9 +426,9 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
                     output,
                     "{} {} {} {}",
                     AnsiColor::Yellow.paint(kind),
-                    AnsiColor::Red.paint(rename.from.display().to_string()),
+                    AnsiColor::Red.paint(rename.path.display().to_string()),
                     AnsiColor::White.paint("→"),
-                    AnsiColor::Green.paint(rename.to.display().to_string())
+                    AnsiColor::Green.paint(rename.new_path.display().to_string())
                 )
                 .unwrap();
             } else {
@@ -436,8 +436,8 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
                     output,
                     "{} {} → {}",
                     kind,
-                    rename.from.display(),
-                    rename.to.display()
+                    rename.path.display(),
+                    rename.new_path.display()
                 )
                 .unwrap();
             }
@@ -469,7 +469,7 @@ fn render_summary(plan: &Plan) -> String {
     }
     writeln!(output, "Matches: {}", plan.stats.total_matches).unwrap();
     writeln!(output, "Files: {}", plan.stats.files_with_matches).unwrap();
-    writeln!(output, "Paths: {}", plan.renames.len()).unwrap();
+    writeln!(output, "Paths: {}", plan.paths.len()).unwrap();
     writeln!(output).unwrap();
 
     // Content changes grouped by file
@@ -521,10 +521,10 @@ fn render_summary(plan: &Plan) -> String {
     }
 
     // File and directory renames
-    if !plan.renames.is_empty() {
+    if !plan.paths.is_empty() {
         writeln!(output).unwrap();
         writeln!(output, "PATHS").unwrap();
-        for rename in &plan.renames {
+        for rename in &plan.paths {
             let kind = match rename.kind {
                 RenameKind::File => "file",
                 RenameKind::Dir => "dir",
@@ -533,10 +533,10 @@ fn render_summary(plan: &Plan) -> String {
             // Make paths relative for cleaner display
             let from_str = match std::env::current_dir()
                 .ok()
-                .and_then(|cwd| rename.from.strip_prefix(cwd).ok())
+                .and_then(|cwd| rename.path.strip_prefix(cwd).ok())
             {
                 Some(relative_path) => relative_path.display().to_string(),
-                None => rename.from.display().to_string(),
+                None => rename.path.display().to_string(),
             };
 
             if is_search {
@@ -546,10 +546,10 @@ fn render_summary(plan: &Plan) -> String {
                 // For plan, show the rename
                 let to_str = match std::env::current_dir()
                     .ok()
-                    .and_then(|cwd| rename.to.strip_prefix(cwd).ok())
+                    .and_then(|cwd| rename.new_path.strip_prefix(cwd).ok())
                 {
                     Some(relative_path) => relative_path.display().to_string(),
-                    None => rename.to.display().to_string(),
+                    None => rename.new_path.display().to_string(),
                 };
                 writeln!(output, "{}: {} -> {}", kind, from_str, to_str).unwrap();
             }
@@ -623,9 +623,9 @@ mod tests {
                     patch_hash: None,
                 },
             ],
-            renames: vec![Rename {
-                from: PathBuf::from("old_name.txt"),
-                to: PathBuf::from("new_name.txt"),
+            paths: vec![Rename {
+                path: PathBuf::from("old_name.txt"),
+                new_path: PathBuf::from("new_name.txt"),
                 kind: RenameKind::File,
                 coercion_applied: None,
             }],
@@ -716,7 +716,7 @@ mod tests {
                 renamed_file: None,
                 patch_hash: None,
             }],
-            renames: vec![],
+            paths: vec![],
             stats: Stats {
                 files_scanned: 1,
                 total_matches: 1,
@@ -746,7 +746,7 @@ mod tests {
 
         assert_eq!(parsed.id, plan.id);
         assert_eq!(parsed.matches.len(), plan.matches.len());
-        assert_eq!(parsed.renames.len(), plan.renames.len());
+        assert_eq!(parsed.paths.len(), plan.paths.len());
     }
 
     #[test]
@@ -782,7 +782,7 @@ mod tests {
             includes: vec![],
             excludes: vec![],
             matches: vec![],
-            renames: vec![],
+            paths: vec![],
             stats: Stats {
                 files_scanned: 0,
                 total_matches: 0,
@@ -864,8 +864,8 @@ mod tests {
 
         // Test case that should be considered a root directory rename (current working directory)
         let root_rename = Rename {
-            from: current_dir.clone(),
-            to: PathBuf::from("renamed_renaming_tool"),
+            path: current_dir.clone(),
+            new_path: PathBuf::from("renamed_renaming_tool"),
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
@@ -876,8 +876,8 @@ mod tests {
 
         // Test case for a relative path - should NOT be considered root unless it matches current dir
         let relative_rename = Rename {
-            from: PathBuf::from("project"),
-            to: PathBuf::from("renamed_renaming_tool"),
+            path: PathBuf::from("project"),
+            new_path: PathBuf::from("renamed_renaming_tool"),
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
@@ -888,8 +888,8 @@ mod tests {
 
         // Test cases that should NOT be considered root directory renames
         let subdir_rename = Rename {
-            from: current_dir.join("subdir"),
-            to: PathBuf::from("renamed-renaming-tool-subdir"),
+            path: current_dir.join("subdir"),
+            new_path: PathBuf::from("renamed-renaming-tool-subdir"),
             kind: RenameKind::Dir,
             coercion_applied: None,
         };
@@ -899,8 +899,8 @@ mod tests {
         );
 
         let different_path_rename = Rename {
-            from: PathBuf::from("/some/other/path"),
-            to: PathBuf::from("/some/other/new_path"),
+            path: PathBuf::from("/some/other/path"),
+            new_path: PathBuf::from("/some/other/new_path"),
             kind: RenameKind::Dir,
             coercion_applied: None,
         };

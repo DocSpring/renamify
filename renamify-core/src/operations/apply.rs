@@ -51,8 +51,8 @@ pub fn apply_operation(
         plan.stats.total_matches, plan.stats.files_with_matches
     );
 
-    if !plan.renames.is_empty() {
-        write!(result, "\n✓ Renamed {} items", plan.renames.len()).unwrap();
+    if !plan.paths.is_empty() {
+        write!(result, "\n✓ Renamed {} items", plan.paths.len()).unwrap();
     }
 
     if commit {

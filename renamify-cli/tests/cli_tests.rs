@@ -406,7 +406,7 @@ fn test_apply_command_with_plan() {
         "includes": [],
         "excludes": [],
         "matches": [],
-        "renames": [],
+        "paths": [],
         "stats": {
             "files_scanned": 1,
             "total_matches": 0,
@@ -452,7 +452,7 @@ fn test_apply_command_deletes_plan_file() {
         "includes": [],
         "excludes": [],
         "matches": [],
-        "renames": [],
+        "paths": [],
         "stats": {
             "files_scanned": 1,
             "total_matches": 0,
@@ -501,7 +501,7 @@ fn test_apply_command_with_custom_plan_path_keeps_file() {
         "includes": [],
         "excludes": [],
         "matches": [],
-        "renames": [],
+        "paths": [],
         "stats": {
             "files_scanned": 1,
             "total_matches": 0,

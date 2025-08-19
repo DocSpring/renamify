@@ -63,16 +63,16 @@ expression: normalize_paths(&normalized)
   ],
   "new": "customer_name",
   "old": "user_name",
-  "renames": [
+  "paths": [
     {
-      "from": "src/models/user_name.rs",
       "kind": "file",
-      "to": "src/models/customer_name.rs"
+      "new_path": "src/models/customer_name.rs",
+      "path": "src/models/user_name.rs"
     },
     {
-      "from": "tests/user_name_tests",
       "kind": "dir",
-      "to": "tests/customer_name_tests"
+      "new_path": "tests/customer_name_tests",
+      "path": "tests/user_name_tests"
     }
   ],
   "stats": {

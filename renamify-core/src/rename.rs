@@ -172,8 +172,8 @@ pub fn plan_renames_with_conflicts(
                     };
 
                     collected_renames.push(Rename {
-                        from: normalize_path(path),
-                        to: normalize_path(&new_path),
+                        path: normalize_path(path),
+                        new_path: normalize_path(&new_path),
                         kind,
                         coercion_applied,
                     });
@@ -188,7 +188,7 @@ pub fn plan_renames_with_conflicts(
         collected_renames.retain(|rename| {
             // Check if this rename is for the root directory (current working directory)
             if let Ok(current_dir) = std::env::current_dir() {
-                rename.from != current_dir
+                rename.path != current_dir
             } else {
                 // If we can't get current dir, keep the rename (safe default)
                 true
@@ -200,14 +200,14 @@ pub fn plan_renames_with_conflicts(
     collected_renames.sort_by(|a, b| {
         let a_is_dir = matches!(a.kind, RenameKind::Dir);
         let b_is_dir = matches!(b.kind, RenameKind::Dir);
-        let a_depth = a.from.components().count();
-        let b_depth = b.from.components().count();
+        let a_depth = a.path.components().count();
+        let b_depth = b.path.components().count();
 
         match (a_is_dir, b_is_dir) {
             (true, false) => std::cmp::Ordering::Less,
             (false, true) => std::cmp::Ordering::Greater,
             (true, true) => b_depth.cmp(&a_depth), // Deeper dirs first
-            (false, false) => a.from.cmp(&b.from), // Stable sort for files
+            (false, false) => a.path.cmp(&b.path), // Stable sort for files
         }
     });
 
@@ -218,11 +218,11 @@ pub fn plan_renames_with_conflicts(
 
     for rename in &collected_renames {
         // Check for Windows reserved names
-        if let Some(file_name) = rename.to.file_name() {
+        if let Some(file_name) = rename.new_path.file_name() {
             if is_windows_reserved(&file_name.to_string_lossy()) {
                 conflicts.push(RenameConflict {
-                    sources: vec![rename.from.clone()],
-                    target: rename.to.clone(),
+                    sources: vec![rename.path.clone()],
+                    target: rename.new_path.clone(),
                     kind: ConflictKind::WindowsReserved,
                 });
                 continue;
@@ -231,17 +231,17 @@ pub fn plan_renames_with_conflicts(
 
         // Check for case-only changes on case-insensitive filesystem
         if case_insensitive_fs {
-            let from_lower = rename.from.to_string_lossy().to_lowercase();
-            let to_lower = rename.to.to_string_lossy().to_lowercase();
+            let from_lower = rename.path.to_string_lossy().to_lowercase();
+            let to_lower = rename.new_path.to_string_lossy().to_lowercase();
 
             if from_lower != to_lower {
                 // Not a case-only change, it's a real rename
-            } else if rename.from != rename.to {
+            } else if rename.path != rename.new_path {
                 // Case-only change detected
                 requires_staging = true;
                 conflicts.push(RenameConflict {
-                    sources: vec![rename.from.clone()],
-                    target: rename.to.clone(),
+                    sources: vec![rename.path.clone()],
+                    target: rename.new_path.clone(),
                     kind: ConflictKind::CaseInsensitive,
                 });
             }
@@ -249,9 +249,9 @@ pub fn plan_renames_with_conflicts(
 
         // Track targets for collision detection
         target_map
-            .entry(rename.to.clone())
+            .entry(rename.new_path.clone())
             .or_default()
-            .push(rename.from.clone());
+            .push(rename.path.clone());
     }
 
     // Find multiple-to-one conflicts
@@ -274,7 +274,7 @@ pub fn plan_renames_with_conflicts(
 
     let valid_renames: Vec<Rename> = collected_renames
         .into_iter()
-        .filter(|r| !conflict_targets.contains(&r.to))
+        .filter(|r| !conflict_targets.contains(&r.new_path))
         .collect();
 
     Ok(RenamePlan {
@@ -350,26 +350,26 @@ mod tests {
     fn test_rename_depth_sorting() {
         let renames = vec![
             Rename {
-                from: PathBuf::from("/a/b/c/file.txt"),
-                to: PathBuf::from("/a/b/c/new.txt"),
+                path: PathBuf::from("/a/b/c/file.txt"),
+                new_path: PathBuf::from("/a/b/c/new.txt"),
                 kind: RenameKind::File,
                 coercion_applied: None,
             },
             Rename {
-                from: PathBuf::from("/a/dir"),
-                to: PathBuf::from("/a/newdir"),
+                path: PathBuf::from("/a/dir"),
+                new_path: PathBuf::from("/a/newdir"),
                 kind: RenameKind::Dir,
                 coercion_applied: None,
             },
             Rename {
-                from: PathBuf::from("/a/b/deep_dir"),
-                to: PathBuf::from("/a/b/new_deep"),
+                path: PathBuf::from("/a/b/deep_dir"),
+                new_path: PathBuf::from("/a/b/new_deep"),
                 kind: RenameKind::Dir,
                 coercion_applied: None,
             },
             Rename {
-                from: PathBuf::from("/file.txt"),
-                to: PathBuf::from("/new.txt"),
+                path: PathBuf::from("/file.txt"),
+                new_path: PathBuf::from("/new.txt"),
                 kind: RenameKind::File,
                 coercion_applied: None,
             },
@@ -379,22 +379,22 @@ mod tests {
         sorted.sort_by(|a, b| {
             let a_is_dir = matches!(a.kind, RenameKind::Dir);
             let b_is_dir = matches!(b.kind, RenameKind::Dir);
-            let a_depth = a.from.components().count();
-            let b_depth = b.from.components().count();
+            let a_depth = a.path.components().count();
+            let b_depth = b.path.components().count();
 
             match (a_is_dir, b_is_dir) {
                 (true, false) => std::cmp::Ordering::Less,
                 (false, true) => std::cmp::Ordering::Greater,
                 (true, true) => b_depth.cmp(&a_depth),
-                (false, false) => a.from.cmp(&b.from),
+                (false, false) => a.path.cmp(&b.path),
             }
         });
 
         // Verify directories come first, deepest first
         assert!(matches!(sorted[0].kind, RenameKind::Dir));
-        assert_eq!(sorted[0].from, PathBuf::from("/a/b/deep_dir"));
+        assert_eq!(sorted[0].path, PathBuf::from("/a/b/deep_dir"));
         assert!(matches!(sorted[1].kind, RenameKind::Dir));
-        assert_eq!(sorted[1].from, PathBuf::from("/a/dir"));
+        assert_eq!(sorted[1].path, PathBuf::from("/a/dir"));
 
         // Then files
         assert!(matches!(sorted[2].kind, RenameKind::File));
@@ -459,7 +459,7 @@ mod tests {
 
         // Should only rename the file, not the directory
         assert_eq!(plan.renames.len(), 1);
-        assert!(plan.renames[0].from.to_string_lossy().contains("old_file"));
+        assert!(plan.renames[0].path.to_string_lossy().contains("old_file"));
     }
 
     #[test]
@@ -516,7 +516,7 @@ mod tests {
             .iter()
             .map(|r| {
                 let path_str = r
-                    .from
+                    .path
                     .strip_prefix(temp_dir.path())
                     .unwrap()
                     .to_string_lossy()
@@ -567,7 +567,7 @@ mod tests {
             .iter()
             .map(|r| {
                 let path_str = r
-                    .from
+                    .path
                     .strip_prefix(temp_dir.path())
                     .unwrap()
                     .to_string_lossy()

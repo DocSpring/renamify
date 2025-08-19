@@ -59,16 +59,16 @@ fn test_gitignore_target_directory_is_never_scanned() {
     );
 
     // Verify no renames in target directory
-    for rename in &plan.renames {
+    for rename in &plan.paths {
         assert!(
-            !rename.from.starts_with(repo_path.join("target")),
+            !rename.path.starts_with(repo_path.join("target")),
             "Should not rename files in target/: {:?}",
-            rename.from
+            rename.path
         );
         assert!(
-            !rename.to.starts_with(repo_path.join("target")),
+            !rename.new_path.starts_with(repo_path.join("target")),
             "Should not rename files to target/: {:?}",
-            rename.to
+            rename.new_path
         );
     }
 }

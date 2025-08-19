@@ -131,7 +131,7 @@ fn test_end_to_end_coercion_with_files() {
 
     // Check file renames are coerced properly
     let file_renames: Vec<_> = plan
-        .renames
+        .paths
         .iter()
         .filter(|r| r.kind == RenameKind::File)
         .collect();
@@ -140,8 +140,8 @@ fn test_end_to_end_coercion_with_files() {
     assert!(
         file_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "oldtool-core.rs"
-                && r.to.file_name().unwrap() == "newtool-core.rs"),
+            .any(|r| r.path.file_name().unwrap() == "oldtool-core.rs"
+                && r.new_path.file_name().unwrap() == "newtool-core.rs"),
         "kebab-case file should be coerced to kebab-case"
     );
 
@@ -149,8 +149,8 @@ fn test_end_to_end_coercion_with_files() {
     assert!(
         file_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "oldtool_utils.py"
-                && r.to.file_name().unwrap() == "newtool_utils.py"),
+            .any(|r| r.path.file_name().unwrap() == "oldtool_utils.py"
+                && r.new_path.file_name().unwrap() == "newtool_utils.py"),
         "snake_case file should be coerced to snake_case"
     );
 
@@ -158,14 +158,14 @@ fn test_end_to_end_coercion_with_files() {
     assert!(
         file_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "OldtoolService.java"
-                && r.to.file_name().unwrap() == "NewtoolService.java"),
+            .any(|r| r.path.file_name().unwrap() == "OldtoolService.java"
+                && r.new_path.file_name().unwrap() == "NewtoolService.java"),
         "PascalCase file should be coerced to PascalCase"
     );
 
     // Check directory renames are coerced properly
     let dir_renames: Vec<_> = plan
-        .renames
+        .paths
         .iter()
         .filter(|r| r.kind == RenameKind::Dir)
         .collect();
@@ -174,8 +174,8 @@ fn test_end_to_end_coercion_with_files() {
     assert!(
         dir_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "oldtool-plugins"
-                && r.to.file_name().unwrap() == "newtool-plugins"),
+            .any(|r| r.path.file_name().unwrap() == "oldtool-plugins"
+                && r.new_path.file_name().unwrap() == "newtool-plugins"),
         "kebab-case directory should be coerced to kebab-case"
     );
 
@@ -183,14 +183,14 @@ fn test_end_to_end_coercion_with_files() {
     assert!(
         dir_renames
             .iter()
-            .any(|r| r.from.file_name().unwrap() == "oldtool_tests"
-                && r.to.file_name().unwrap() == "newtool_tests"),
+            .any(|r| r.path.file_name().unwrap() == "oldtool_tests"
+                && r.new_path.file_name().unwrap() == "newtool_tests"),
         "snake_case directory should be coerced to snake_case"
     );
 
     // Check that coercion_applied field is set for coerced renames
     let coerced_renames = plan
-        .renames
+        .paths
         .iter()
         .filter(|r| r.coercion_applied.is_some())
         .count();
@@ -229,22 +229,22 @@ fn test_coercion_disabled() {
 
     // Without coercion, should get newtool-core.rs (mixed style)
     let file_renames: Vec<_> = plan
-        .renames
+        .paths
         .iter()
         .filter(|r| r.kind == RenameKind::File)
         .collect();
 
     assert!(
         file_renames.iter().any(
-            |r| r.from.file_name().unwrap() == "oldtool-core.rs"
-                && r.to.file_name().unwrap() == "newtool-core.rs" // Mixed style without coercion
+            |r| r.path.file_name().unwrap() == "oldtool-core.rs"
+                && r.new_path.file_name().unwrap() == "newtool-core.rs" // Mixed style without coercion
         ),
         "Without coercion should produce mixed style"
     );
 
     // No coercion_applied should be set
     let coerced_renames = plan
-        .renames
+        .paths
         .iter()
         .filter(|r| r.coercion_applied.is_some())
         .count();

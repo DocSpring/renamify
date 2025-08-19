@@ -163,9 +163,9 @@ pub fn undo_renaming(id: &str, renamify_dir: &Path) -> Result<()> {
 
     // First, rename directories back (this moves all their contents)
     let mut dir_mappings = Vec::new();
-    for rename in &plan.renames {
+    for rename in &plan.paths {
         if matches!(rename.kind, crate::scanner::RenameKind::Dir) {
-            dir_mappings.push((rename.from.clone(), rename.to.clone()));
+            dir_mappings.push((rename.path.clone(), rename.new_path.clone()));
         }
     }
 
@@ -184,24 +184,24 @@ pub fn undo_renaming(id: &str, renamify_dir: &Path) -> Result<()> {
 
     // Now handle file renames, adjusting paths if they were inside renamed directories
     let mut file_renames = Vec::new();
-    for rename in &plan.renames {
+    for rename in &plan.paths {
         if matches!(rename.kind, crate::scanner::RenameKind::File) {
-            let mut adjusted_from = rename.from.clone();
-            let mut adjusted_to = rename.to.clone();
+            let mut adjusted_from = rename.path.clone();
+            let mut adjusted_to = rename.new_path.clone();
 
             // Check if this file was inside a directory that we just renamed
             for (dir_from, dir_to) in &dir_mappings {
                 // If the file's original paths were inside a renamed directory, adjust them
-                if rename.to.starts_with(dir_to) {
+                if rename.new_path.starts_with(dir_to) {
                     // The file's "to" path was inside a renamed directory
                     // After undoing the directory rename, the file is now at the original directory location
-                    if let Ok(relative) = rename.to.strip_prefix(dir_to) {
+                    if let Ok(relative) = rename.new_path.strip_prefix(dir_to) {
                         adjusted_to = dir_from.join(relative);
                     }
                 }
-                if rename.from.starts_with(dir_from) {
+                if rename.path.starts_with(dir_from) {
                     // Keep the original "from" path as is
-                    adjusted_from.clone_from(&rename.from);
+                    adjusted_from.clone_from(&rename.path);
                 }
             }
 
@@ -472,9 +472,9 @@ mod tests {
                 renamed_file: None,
                 patch_hash: Some(hash),
             }],
-            renames: vec![crate::scanner::Rename {
-                from: temp_dir.path().join("old_name.txt"),
-                to: temp_dir.path().join("new_name.txt"),
+            paths: vec![crate::scanner::Rename {
+                path: temp_dir.path().join("old_name.txt"),
+                new_path: temp_dir.path().join("new_name.txt"),
                 kind: crate::scanner::RenameKind::File,
                 coercion_applied: None,
             }],
@@ -928,7 +928,7 @@ mod tests {
                 renamed_file: None,
                 patch_hash: Some(hash),
             }],
-            renames: vec![],
+            paths: vec![],
             stats: crate::scanner::Stats {
                 files_scanned: 1,
                 total_matches: 1,
@@ -1096,16 +1096,16 @@ mod tests {
                     patch_hash: Some(hash2),
                 },
             ],
-            renames: vec![
+            paths: vec![
                 crate::scanner::Rename {
-                    from: old_dir.clone(),
-                    to: new_dir.clone(),
+                    path: old_dir.clone(),
+                    new_path: new_dir.clone(),
                     kind: crate::scanner::RenameKind::Dir,
                     coercion_applied: None,
                 },
                 crate::scanner::Rename {
-                    from: old_file.clone(),
-                    to: renamed_file.clone(),
+                    path: old_file.clone(),
+                    new_path: renamed_file.clone(),
                     kind: crate::scanner::RenameKind::File,
                     coercion_applied: None,
                 },
@@ -1244,9 +1244,9 @@ mod tests {
             includes: vec![],
             excludes: vec![],
             matches: vec![],
-            renames: vec![crate::scanner::Rename {
-                from: temp_dir.path().join("newname.txt"),
-                to: new_file.clone(),
+            paths: vec![crate::scanner::Rename {
+                path: temp_dir.path().join("newname.txt"),
+                new_path: new_file.clone(),
                 kind: crate::scanner::RenameKind::File,
                 coercion_applied: None,
             }],

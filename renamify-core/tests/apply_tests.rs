@@ -13,7 +13,7 @@ fn create_test_plan(id: &str, old: &str, new: &str) -> Plan {
         includes: vec![],
         excludes: vec![],
         matches: vec![],
-        renames: vec![],
+        paths: vec![],
         stats: Stats {
             files_scanned: 0,
             total_matches: 0,
@@ -106,15 +106,15 @@ fn test_apply_renames() {
 
     // Create plan with renames
     let mut plan = create_test_plan("test_renames", "old_name", "new_name");
-    plan.renames.push(Rename {
-        from: old_file.clone(),
-        to: temp_dir.path().join("new_name.txt"),
+    plan.paths.push(Rename {
+        path: old_file.clone(),
+        new_path: temp_dir.path().join("new_name.txt"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
-    plan.renames.push(Rename {
-        from: old_dir.clone(),
-        to: temp_dir.path().join("new_name_dir"),
+    plan.paths.push(Rename {
+        path: old_dir.clone(),
+        new_path: temp_dir.path().join("new_name_dir"),
         kind: RenameKind::Dir,
         coercion_applied: None,
     });
@@ -195,9 +195,9 @@ fn test_case_only_rename() {
 
     // Create plan for case-only rename
     let mut plan = create_test_plan("test_case", "oldname", "OldName");
-    plan.renames.push(Rename {
-        from: lower_file.clone(),
-        to: temp_dir.path().join("OldName.txt"),
+    plan.paths.push(Rename {
+        path: lower_file.clone(),
+        new_path: temp_dir.path().join("OldName.txt"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
@@ -295,9 +295,9 @@ fn test_skip_symlinks() {
 
     // Create plan trying to rename symlink
     let mut plan = create_test_plan("test_symlink", "link", "new_link");
-    plan.renames.push(Rename {
-        from: symlink_path,
-        to: temp_dir.path().join("new_link.txt"),
+    plan.paths.push(Rename {
+        path: symlink_path,
+        new_path: temp_dir.path().join("new_link.txt"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
@@ -452,38 +452,38 @@ fn test_apply_with_both_renames_and_content_changes() {
     let mut plan = create_test_plan("test_both", "old_name", "new_name");
 
     // Add renames
-    plan.renames.push(Rename {
-        from: old_file1.clone(),
-        to: temp_dir.path().join("new_name.rs"),
+    plan.paths.push(Rename {
+        path: old_file1.clone(),
+        new_path: temp_dir.path().join("new_name.rs"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
 
-    plan.renames.push(Rename {
-        from: old_dir.clone(),
-        to: temp_dir.path().join("new_name_dir"),
+    plan.paths.push(Rename {
+        path: old_dir.clone(),
+        new_path: temp_dir.path().join("new_name_dir"),
         kind: RenameKind::Dir,
         coercion_applied: None,
     });
 
-    plan.renames.push(Rename {
-        from: old_file2.clone(),
-        to: temp_dir.path().join("new_name.txt"),
+    plan.paths.push(Rename {
+        path: old_file2.clone(),
+        new_path: temp_dir.path().join("new_name.txt"),
         kind: RenameKind::File,
         coercion_applied: None,
     });
 
     // Case 5 renames: BOTH directory and file inside it get renamed
-    plan.renames.push(Rename {
-        from: service_dir.clone(),
-        to: temp_dir.path().join("new_name_service"),
+    plan.paths.push(Rename {
+        path: service_dir.clone(),
+        new_path: temp_dir.path().join("new_name_service"),
         kind: RenameKind::Dir,
         coercion_applied: None,
     });
 
-    plan.renames.push(Rename {
-        from: service_file.clone(),
-        to: service_dir.join("src").join("new_name-service.ts"), // Using old path - will be adjusted during apply
+    plan.paths.push(Rename {
+        path: service_file.clone(),
+        new_path: service_dir.join("src").join("new_name-service.ts"), // Using old path - will be adjusted during apply
         kind: RenameKind::File,
         coercion_applied: None,
     });

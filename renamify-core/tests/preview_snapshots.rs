@@ -91,16 +91,16 @@ fn create_sample_plan() -> Plan {
                 patch_hash: None,
             },
         ],
-        renames: vec![
+        paths: vec![
             Rename {
-                from: PathBuf::from("src/models/user_name.rs"),
-                to: PathBuf::from("src/models/customer_name.rs"),
+                path: PathBuf::from("src/models/user_name.rs"),
+                new_path: PathBuf::from("src/models/customer_name.rs"),
                 kind: RenameKind::File,
                 coercion_applied: None,
             },
             Rename {
-                from: PathBuf::from("tests/user_name_tests"),
-                to: PathBuf::from("tests/customer_name_tests"),
+                path: PathBuf::from("tests/user_name_tests"),
+                new_path: PathBuf::from("tests/customer_name_tests"),
                 kind: RenameKind::Dir,
                 coercion_applied: None,
             },
@@ -176,7 +176,7 @@ fn test_empty_plan_table_snapshot() {
         includes: vec![],
         excludes: vec![],
         matches: vec![],
-        renames: vec![],
+        paths: vec![],
         stats: Stats {
             files_scanned: 0,
             total_matches: 0,
@@ -202,7 +202,7 @@ fn test_empty_plan_diff_snapshot() {
         includes: vec![],
         excludes: vec![],
         matches: vec![],
-        renames: vec![],
+        paths: vec![],
         stats: Stats {
             files_scanned: 0,
             total_matches: 0,
@@ -250,11 +250,11 @@ fn test_root_directory_rename_handling() {
             renamed_file: None,
             patch_hash: None,
         }],
-        renames: vec![
+        paths: vec![
             // Only regular directory rename - root directory rename is filtered out
             Rename {
-                from: PathBuf::from("/project/oldtool-core"),
-                to: PathBuf::from("/project/newtool-core"),
+                path: PathBuf::from("/project/oldtool-core"),
+                new_path: PathBuf::from("/project/newtool-core"),
                 kind: RenameKind::Dir,
                 coercion_applied: None,
             },
