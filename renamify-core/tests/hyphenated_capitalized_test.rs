@@ -49,7 +49,7 @@ fn test_hyphenated_capitalized_replacement() {
     // Debug: Print all matches
     println!("\n=== All matches found ===");
     for m in &plan.matches {
-        println!("'{}' -> '{}'", m.before, m.after);
+        println!("'{}' -> '{}'", m.content, m.replace);
     }
 
     // Should find and replace:
@@ -69,7 +69,7 @@ fn test_hyphenated_capitalized_replacement() {
     let has_pascal_specific = plan
         .matches
         .iter()
-        .any(|m| m.before == "Tool-specific" && m.after == "NewToolName-specific");
+        .any(|m| m.content == "Tool-specific" && m.replace == "NewToolName-specific");
     assert!(
         has_pascal_specific,
         "Should replace 'Tool-specific' with 'NewToolName-specific'"
@@ -78,7 +78,7 @@ fn test_hyphenated_capitalized_replacement() {
     let has_pascal_compatible = plan
         .matches
         .iter()
-        .any(|m| m.before == "Tool-compatible" && m.after == "NewToolName-compatible");
+        .any(|m| m.content == "Tool-compatible" && m.replace == "NewToolName-compatible");
     assert!(
         has_pascal_compatible,
         "Should replace 'Tool-compatible' with 'NewToolName-compatible'"
@@ -87,7 +87,7 @@ fn test_hyphenated_capitalized_replacement() {
     let has_pascal_engine = plan
         .matches
         .iter()
-        .any(|m| m.before == "Tool-engine" && m.after == "NewToolName-engine");
+        .any(|m| m.content == "Tool-engine" && m.replace == "NewToolName-engine");
     assert!(
         has_pascal_engine,
         "Should replace 'Tool-engine' with 'NewToolName-engine'"
@@ -96,7 +96,7 @@ fn test_hyphenated_capitalized_replacement() {
     let has_kebab_specific = plan
         .matches
         .iter()
-        .any(|m| m.before == "tool-specific" && m.after == "new-tool-name-specific");
+        .any(|m| m.content == "tool-specific" && m.replace == "new-tool-name-specific");
     assert!(
         has_kebab_specific,
         "Should replace 'tool-specific' with 'new-tool-name-specific'"
@@ -105,7 +105,7 @@ fn test_hyphenated_capitalized_replacement() {
     let has_train_cli = plan
         .matches
         .iter()
-        .any(|m| m.before == "Tool-CLI" && m.after == "New-Tool-Name-CLI");
+        .any(|m| m.content == "Tool-CLI" && m.replace == "New-Tool-Name-CLI");
     assert!(
         has_train_cli,
         "Should replace 'Tool-CLI' with 'New-Tool-Name-CLI'"
@@ -156,7 +156,7 @@ fn test_train_case_replacement() {
     // Debug: Print all matches
     println!("\n=== Train-Case matches found ===");
     for m in &plan.matches {
-        println!("'{}' -> '{}'", m.before, m.after);
+        println!("'{}' -> '{}'", m.content, m.replace);
     }
 
     // With Train-Case enabled, should replace:
@@ -165,7 +165,7 @@ fn test_train_case_replacement() {
     // - "Tool-Based-Solution" -> "New-Tool-Name-Based-Solution"
 
     let has_train_specific = plan.matches.iter().any(|m| {
-        m.before == "Tool-Specific-Settings" && m.after == "New-Tool-Name-Specific-Settings"
+        m.content == "Tool-Specific-Settings" && m.replace == "New-Tool-Name-Specific-Settings"
     });
     assert!(
         has_train_specific,
@@ -175,7 +175,7 @@ fn test_train_case_replacement() {
     let has_train_core = plan
         .matches
         .iter()
-        .any(|m| m.before == "Tool-Core-Engine" && m.after == "New-Tool-Name-Core-Engine");
+        .any(|m| m.content == "Tool-Core-Engine" && m.replace == "New-Tool-Name-Core-Engine");
     assert!(
         has_train_core,
         "Should replace 'Tool-Core-Engine' with 'New-Tool-Name-Core-Engine'"
@@ -184,7 +184,7 @@ fn test_train_case_replacement() {
     let has_train_based = plan
         .matches
         .iter()
-        .any(|m| m.before == "Tool-Based-Solution" && m.after == "New-Tool-Name-Based-Solution");
+        .any(|m| m.content == "Tool-Based-Solution" && m.replace == "New-Tool-Name-Based-Solution");
     assert!(
         has_train_based,
         "Should replace 'Tool-Based-Solution' with 'New-Tool-Name-Based-Solution'"
@@ -236,7 +236,7 @@ fn test_mixed_hyphenated_patterns() {
     // Debug: Print all matches
     println!("\n=== Mixed hyphenated matches found ===");
     for m in &plan.matches {
-        println!("'{}' -> '{}'", m.before, m.after);
+        println!("'{}' -> '{}'", m.content, m.replace);
     }
 
     // Verify various patterns are handled appropriately
@@ -299,35 +299,35 @@ use foo_bar_baz_qux_utils;
 
     println!("\n=== Four-component PascalCase matches ===");
     for m in &plan.matches {
-        println!("'{}' -> '{}'", m.before, m.after);
+        println!("'{}' -> '{}'", m.content, m.replace);
     }
 
     // Check PascalCase replacement
     let has_pascal = plan
         .matches
         .iter()
-        .any(|m| m.before == "FooBarBazQux" && m.after == "AlphaBetaGammaDelta");
+        .any(|m| m.content == "FooBarBazQux" && m.replace == "AlphaBetaGammaDelta");
     assert!(has_pascal, "Should replace PascalCase FooBarBazQux");
 
     // Check PascalCase with suffix
     let has_pascal_client = plan
         .matches
         .iter()
-        .any(|m| m.before == "FooBarBazQuxClient" && m.after == "AlphaBetaGammaDeltaClient");
+        .any(|m| m.content == "FooBarBazQuxClient" && m.replace == "AlphaBetaGammaDeltaClient");
     assert!(has_pascal_client, "Should replace FooBarBazQuxClient");
 
     // Check snake_case replacement
     let has_snake = plan
         .matches
         .iter()
-        .any(|m| m.before == "foo_bar_baz_qux" && m.after == "alpha_beta_gamma_delta");
+        .any(|m| m.content == "foo_bar_baz_qux" && m.replace == "alpha_beta_gamma_delta");
     assert!(has_snake, "Should replace snake_case foo_bar_baz_qux");
 
     // Check hyphenated PascalCase
     let has_hyphen_pascal = plan
         .matches
         .iter()
-        .any(|m| m.before == "FooBarBazQux-config" && m.after == "AlphaBetaGammaDelta-config");
+        .any(|m| m.content == "FooBarBazQux-config" && m.replace == "AlphaBetaGammaDelta-config");
     assert!(has_hyphen_pascal, "Should replace FooBarBazQux-config");
 }
 
@@ -387,7 +387,7 @@ fn test_pascal_case_with_hyphen_suffix() {
 
     println!("\n=== PascalCase-hyphenated matches ===");
     for m in &plan.matches {
-        println!("'{}' -> '{}'", m.before, m.after);
+        println!("'{}' -> '{}'", m.content, m.replace);
     }
 
     // Should find and replace:
@@ -396,10 +396,9 @@ fn test_pascal_case_with_hyphen_suffix() {
     // - "FooBarBazQux-compatible" -> "AlphaBetaGammaDelta-compatible"
     // - "foo_bar_baz_qux-specific" -> "alpha_beta_gamma_delta-specific"
 
-    let has_pascal_specific = plan
-        .matches
-        .iter()
-        .any(|m| m.before == "FooBarBazQux-specific" && m.after == "AlphaBetaGammaDelta-specific");
+    let has_pascal_specific = plan.matches.iter().any(|m| {
+        m.content == "FooBarBazQux-specific" && m.replace == "AlphaBetaGammaDelta-specific"
+    });
     assert!(
         has_pascal_specific,
         "Should replace 'FooBarBazQux-specific' with 'AlphaBetaGammaDelta-specific'"
@@ -408,14 +407,14 @@ fn test_pascal_case_with_hyphen_suffix() {
     let has_pascal_engine = plan
         .matches
         .iter()
-        .any(|m| m.before == "FooBarBazQux-engine" && m.after == "AlphaBetaGammaDelta-engine");
+        .any(|m| m.content == "FooBarBazQux-engine" && m.replace == "AlphaBetaGammaDelta-engine");
     assert!(
         has_pascal_engine,
         "Should replace 'FooBarBazQux-engine' with 'AlphaBetaGammaDelta-engine'"
     );
 
     let has_pascal_compatible = plan.matches.iter().any(|m| {
-        m.before == "FooBarBazQux-compatible" && m.after == "AlphaBetaGammaDelta-compatible"
+        m.content == "FooBarBazQux-compatible" && m.replace == "AlphaBetaGammaDelta-compatible"
     });
     assert!(
         has_pascal_compatible,
@@ -423,7 +422,7 @@ fn test_pascal_case_with_hyphen_suffix() {
     );
 
     let has_snake_specific = plan.matches.iter().any(|m| {
-        m.before == "foo_bar_baz_qux-specific" && m.after == "alpha_beta_gamma_delta-specific"
+        m.content == "foo_bar_baz_qux-specific" && m.replace == "alpha_beta_gamma_delta-specific"
     });
     assert!(
         has_snake_specific,
@@ -431,10 +430,9 @@ fn test_pascal_case_with_hyphen_suffix() {
     );
 
     // Check Train-Case variant (capitalized suffix)
-    let has_train_specific = plan
-        .matches
-        .iter()
-        .any(|m| m.before == "FooBarBazQux-Specific" && m.after == "AlphaBetaGammaDelta-Specific");
+    let has_train_specific = plan.matches.iter().any(|m| {
+        m.content == "FooBarBazQux-Specific" && m.replace == "AlphaBetaGammaDelta-Specific"
+    });
     println!(
         "Checking for FooBarBazQux-Specific -> AlphaBetaGammaDelta-Specific: {}",
         has_train_specific

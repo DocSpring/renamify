@@ -69,8 +69,8 @@ pub fn process() {
     // Debug: Print all matches
     println!("\n=== All Train-Case literal matches found ===");
     for m in &plan.matches {
-        if m.before.contains('-') && m.before.chars().next().is_some_and(|c| c.is_uppercase()) {
-            println!("'{}' -> '{}'", m.before, m.after);
+        if m.content.contains('-') && m.content.chars().next().is_some_and(|c| c.is_uppercase()) {
+            println!("'{}' -> '{}'", m.content, m.replace);
         }
     }
 
@@ -79,7 +79,7 @@ pub fn process() {
         .matches
         .iter()
         .filter(|m| {
-            m.before.contains('-') && m.before.chars().next().is_some_and(|c| c.is_uppercase())
+            m.content.contains('-') && m.content.chars().next().is_some_and(|c| c.is_uppercase())
         })
         .collect();
 
@@ -98,8 +98,8 @@ pub fn process() {
 
     // Check that specific patterns are replaced correctly
     let has_specific_settings = plan.matches.iter().any(|m| {
-        m.before == "Renamify-Specific-Settings"
-            && m.after == "Renamed-Renaming-Tool-Specific-Settings"
+        m.content == "Renamify-Specific-Settings"
+            && m.replace == "Renamed-Renaming-Tool-Specific-Settings"
     });
     assert!(
         has_specific_settings,
@@ -107,7 +107,7 @@ pub fn process() {
     );
 
     let has_core_engine = plan.matches.iter().any(|m| {
-        m.before == "Renamify-Core-Engine" && m.after == "Renamed-Renaming-Tool-Core-Engine"
+        m.content == "Renamify-Core-Engine" && m.replace == "Renamed-Renaming-Tool-Core-Engine"
     });
     assert!(
         has_core_engine,
@@ -115,7 +115,8 @@ pub fn process() {
     );
 
     let has_based_solution = plan.matches.iter().any(|m| {
-        m.before == "Renamify-Based-Solution" && m.after == "Renamed-Renaming-Tool-Based-Solution"
+        m.content == "Renamify-Based-Solution"
+            && m.replace == "Renamed-Renaming-Tool-Based-Solution"
     });
     assert!(
         has_based_solution,
@@ -126,7 +127,7 @@ pub fn process() {
     let has_the_tool = plan
         .matches
         .iter()
-        .any(|m| m.before.contains("Renamify-Tool"));
+        .any(|m| m.content.contains("Renamify-Tool"));
     if has_the_tool {
         println!("Found The-Renamify-Tool pattern");
     }
@@ -149,11 +150,11 @@ fn test_train_case_exact_patterns() {
     // - "Renamify-Specific-Settings" -> "Renamed-Renaming-Tool-Specific-Settings"
     // - "Renamify-Core-Engine" -> "Renamed-Renaming-Tool-Core-Engine"
     // - "Renamify-Based-Solution" -> "Renamed-Renaming-Tool-Based-Solution"
-        m.before == "Renamify-Specific-Settings"
+        m.content == "Renamify-Specific-Settings"
         "Should replace 'Renamify-Specific-Settings' with 'Renamed-Renaming-Tool-Specific-Settings'"
-        m.before == "Renamify-Core-Engine" && m.after == "Renamed-Renaming-Tool-Core-Engine"
+        m.content == "Renamify-Core-Engine" && m.replace == "Renamed-Renaming-Tool-Core-Engine"
         "Should replace 'Renamify-Core-Engine' with 'Renamed-Renaming-Tool-Core-Engine'"
-        m.before == "Renamify-Based-Solution"
+        m.content == "Renamify-Based-Solution"
         "Should replace 'Renamify-Based-Solution' with 'Renamed-Renaming-Tool-Based-Solution'"
 - The-Renamify-Tool (Train-Case context)
         Style::Train, // Include Train-Case for patterns like Renamify-Core-Engine
@@ -186,19 +187,19 @@ fn test_train_case_exact_patterns() {
     let specific_settings_count = plan
         .matches
         .iter()
-        .filter(|m| m.before == "Renamify-Specific-Settings")
+        .filter(|m| m.content == "Renamify-Specific-Settings")
         .count();
 
     let core_engine_count = plan
         .matches
         .iter()
-        .filter(|m| m.before == "Renamify-Core-Engine")
+        .filter(|m| m.content == "Renamify-Core-Engine")
         .count();
 
     let based_solution_count = plan
         .matches
         .iter()
-        .filter(|m| m.before == "Renamify-Based-Solution")
+        .filter(|m| m.content == "Renamify-Based-Solution")
         .count();
 
     println!(

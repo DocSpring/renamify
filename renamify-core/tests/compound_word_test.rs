@@ -55,7 +55,7 @@ fn getFooBarOption() -> FooBarOption { }",
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.before, hunk.after
+            hunk.line, hunk.col, hunk.content, hunk.replace
         );
         if let Some(line_after) = &hunk.line_after {
             println!("  After: {line_after}");
@@ -81,7 +81,7 @@ fn getFooBarOption() -> FooBarOption { }",
     let foo_bar_arg_replacements: Vec<_> = plan
         .matches
         .iter()
-        .filter(|h| h.before == "FooBarArg")
+        .filter(|h| h.content == "FooBarArg")
         .collect();
 
     assert!(
@@ -91,7 +91,7 @@ fn getFooBarOption() -> FooBarOption { }",
 
     for hunk in &foo_bar_arg_replacements {
         assert_eq!(
-            hunk.after, "FooArg",
+            hunk.replace, "FooArg",
             "FooBarArg should be replaced with FooArg"
         );
     }
@@ -141,7 +141,10 @@ match foo_bar_type {
     println!("\n=== Compound Snake Case Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
     for hunk in &plan.matches {
-        println!("Line {}: '{}' -> '{}'", hunk.line, hunk.before, hunk.after);
+        println!(
+            "Line {}: '{}' -> '{}'",
+            hunk.line, hunk.content, hunk.replace
+        );
     }
 
     // Should find and replace:
@@ -161,13 +164,16 @@ match foo_bar_type {
         let replacements: Vec<_> = plan
             .matches
             .iter()
-            .filter(|h| h.before == *compound)
+            .filter(|h| h.content == *compound)
             .collect();
         assert!(!replacements.is_empty(), "Should find {compound}");
 
         let expected = compound.replace("foo_bar", "foo");
         for hunk in &replacements {
-            assert_eq!(hunk.after, expected, "{compound} should become {expected}");
+            assert_eq!(
+                hunk.replace, expected,
+                "{compound} should become {expected}"
+            );
         }
     }
 }
@@ -215,7 +221,7 @@ function setFooBarType(fooBarType) {
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.before, hunk.after
+            hunk.line, hunk.col, hunk.content, hunk.replace
         );
     }
 
@@ -239,11 +245,11 @@ function setFooBarType(fooBarType) {
     ];
 
     for (from, to) in &camel_compounds {
-        let replacements: Vec<_> = plan.matches.iter().filter(|h| h.before == *from).collect();
+        let replacements: Vec<_> = plan.matches.iter().filter(|h| h.content == *from).collect();
         assert!(!replacements.is_empty(), "Should find {from}");
 
         for hunk in &replacements {
-            assert_eq!(hunk.after, *to, "{from} should become {to}");
+            assert_eq!(hunk.replace, *to, "{from} should become {to}");
         }
     }
 }
@@ -303,7 +309,7 @@ fn getFooBarOption() -> FooBarOption { }",
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.before, hunk.after
+            hunk.line, hunk.col, hunk.content, hunk.replace
         );
     }
 
@@ -324,7 +330,7 @@ fn getFooBarOption() -> FooBarOption { }",
     );
 
     // Verify we found the camelCase function name
-    let camel_match = plan.matches.iter().find(|h| h.before == "getFooBarOption");
+    let camel_match = plan.matches.iter().find(|h| h.content == "getFooBarOption");
     assert!(
         camel_match.is_some(),
         "Should find getFooBarOption when Camel style is included"
@@ -371,7 +377,7 @@ fn test_multiple_compounds_same_line() {
     println!("\n=== Multiple Compounds Same Line Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
     for hunk in &plan.matches {
-        println!("Col {}: '{}' -> '{}'", hunk.col, hunk.before, hunk.after);
+        println!("Col {}: '{}' -> '{}'", hunk.col, hunk.content, hunk.replace);
     }
 
     // Should find:
@@ -425,28 +431,28 @@ fn test_compound_case_preservation_bug() {
 
     println!("\n=== Case Preservation Test ===");
     for hunk in &plan.matches {
-        println!("'{}' -> '{}'", hunk.before, hunk.after);
+        println!("'{}' -> '{}'", hunk.content, hunk.replace);
     }
 
     // Find the FooBarOption replacement
-    let pascal_option = plan.matches.iter().find(|h| h.before == "FooBarOption");
+    let pascal_option = plan.matches.iter().find(|h| h.content == "FooBarOption");
 
     assert!(pascal_option.is_some(), "Should find FooBarOption");
 
     let hunk = pascal_option.unwrap();
     assert_eq!(
-        hunk.after, "BazaarQuxicleOption",
+        hunk.replace, "BazaarQuxicleOption",
         "FooBarOption should become BazaarQuxicleOption (PascalCase preserved), not bazaarQuxicleOption"
     );
 
     // Also check the camelCase function name is handled correctly
-    let camel_func = plan.matches.iter().find(|h| h.before == "getFooBarOption");
+    let camel_func = plan.matches.iter().find(|h| h.content == "getFooBarOption");
 
     assert!(camel_func.is_some(), "Should find getFooBarOption");
 
     let func_hunk = camel_func.unwrap();
     assert_eq!(
-        func_hunk.after, "getBazaarQuxicleOption",
+        func_hunk.replace, "getBazaarQuxicleOption",
         "getFooBarOption should become getBazaarQuxicleOption (camelCase preserved)"
     );
 }

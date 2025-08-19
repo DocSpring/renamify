@@ -61,7 +61,7 @@ temp_dir.child(".renamify").create_dir_all().unwrap();
         .matches
         .iter()
         .filter(|h| {
-            h.before == "renamify"
+            h.content == "renamify"
                 && h.line_before
                     .as_ref()
                     .is_some_and(|l| l.contains(".renamify"))
@@ -131,7 +131,7 @@ coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.before, hunk.after
+            hunk.line, hunk.col, hunk.content, hunk.replace
         );
     }
 
@@ -143,8 +143,8 @@ coerce_separators: renamify_core::scanner::CoercionMode::Auto,
 
     // Verify each is properly replaced
     for hunk in &plan.matches {
-        assert_eq!(hunk.before, "renamify_core");
-        assert_eq!(hunk.after, "renamed_renaming_tool_core");
+        assert_eq!(hunk.content, "renamify_core");
+        assert_eq!(hunk.replace, "renamed_renaming_tool_core");
     }
 }
 
@@ -199,7 +199,7 @@ Commands:
         println!(
             "Line {}: '{}'",
             hunk.line,
-            hunk.line_before.as_ref().unwrap_or(&hunk.before)
+            hunk.line_before.as_ref().unwrap_or(&hunk.content)
         );
     }
 
@@ -251,8 +251,8 @@ impl From<PreviewFormatArg> for PreviewFormat {",
             "Line {}, Col {}: '{}' -> '{}' in '{}'",
             hunk.line,
             hunk.col,
-            hunk.before,
-            hunk.after,
+            hunk.content,
+            hunk.replace,
             hunk.line_before.as_ref().unwrap_or(&String::new())
         );
     }

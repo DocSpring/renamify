@@ -45,8 +45,8 @@ fn test_no_acronyms_flag() {
         1,
         "XMLHttpRequest should still match as exact string when acronyms are disabled"
     );
-    assert_eq!(plan.matches[0].before, "XMLHttpRequest");
-    assert_eq!(plan.matches[0].after, "NewRequest");
+    assert_eq!(plan.matches[0].content, "XMLHttpRequest");
+    assert_eq!(plan.matches[0].replace, "NewRequest");
 
     // But API_KEY would still match since it's an exact match
     let plan2 = scan_repository(&root, "API_KEY", "NEW_KEY", &options).unwrap();
@@ -98,8 +98,8 @@ fn test_include_acronyms_flag() {
         !plan.matches.is_empty(),
         "K8SCluster should be found with K8S as an acronym"
     );
-    assert_eq!(plan.matches[0].before, "K8SCluster");
-    assert_eq!(plan.matches[0].after, "KubeCluster");
+    assert_eq!(plan.matches[0].content, "K8SCluster");
+    assert_eq!(plan.matches[0].replace, "KubeCluster");
 
     let plan2 = scan_repository(&root, "GCPProvider", "CloudProvider", &options).unwrap();
     assert!(
@@ -147,8 +147,8 @@ fn test_exclude_acronyms_flag() {
         1,
         "getUserID should still match as exact string when ID is excluded from acronyms"
     );
-    assert_eq!(plan.matches[0].before, "getUserID");
-    assert_eq!(plan.matches[0].after, "getUserIdentifier");
+    assert_eq!(plan.matches[0].content, "getUserID");
+    assert_eq!(plan.matches[0].replace, "getUserIdentifier");
 }
 
 #[test]

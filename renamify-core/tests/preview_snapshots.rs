@@ -31,8 +31,8 @@ fn create_sample_plan() -> Plan {
                 line: 15,
                 col: 12,
                 variant: "user_name".to_string(),
-                before: "user_name".to_string(),
-                after: "customer_name".to_string(),
+                content: "user_name".to_string(),
+                replace: "customer_name".to_string(),
                 start: 11,
                 end: 20,
                 line_before: Some("    let user_name = String::new();".to_string()),
@@ -47,8 +47,8 @@ fn create_sample_plan() -> Plan {
                 line: 25,
                 col: 8,
                 variant: "userName".to_string(),
-                before: "userName".to_string(),
-                after: "customerName".to_string(),
+                content: "userName".to_string(),
+                replace: "customerName".to_string(),
                 start: 7,
                 end: 15,
                 line_before: Some("    pub userName: String,".to_string()),
@@ -63,8 +63,8 @@ fn create_sample_plan() -> Plan {
                 line: 42,
                 col: 16,
                 variant: "UserName".to_string(),
-                before: "UserName".to_string(),
-                after: "CustomerName".to_string(),
+                content: "UserName".to_string(),
+                replace: "CustomerName".to_string(),
                 start: 7,
                 end: 15,
                 line_before: Some("struct UserName {".to_string()),
@@ -79,8 +79,8 @@ fn create_sample_plan() -> Plan {
                 line: 50,
                 col: 20,
                 variant: "user_name".to_string(),
-                before: "user_name".to_string(),
-                after: "customer_name".to_string(),
+                content: "user_name".to_string(),
+                replace: "customer_name".to_string(),
                 start: 11,
                 end: 20,
                 line_before: Some("    fn get_user_name(&self) -> &str {".to_string()),
@@ -239,8 +239,8 @@ fn test_root_directory_rename_handling() {
             line: 1,
             col: 0,
             variant: "oldtool".to_string(),
-            before: "oldtool".to_string(),
-            after: "newtool".to_string(),
+            content: "oldtool".to_string(),
+            replace: "newtool".to_string(),
             start: 2,
             end: 9,
             line_before: Some("# Oldtool".to_string()),
@@ -276,23 +276,27 @@ fn test_root_directory_rename_handling() {
     // Verify that the subdirectory rename is in the table
     assert!(
         normalized.contains("oldtool-core"),
-        "Regular directory should appear in table"
+        "Regular directory should appear in table, got {}",
+        normalized
     );
     assert!(
         normalized.contains("newtool-core"),
-        "Regular directory rename should appear in table"
+        "Regular directory rename should appear in table, got {}",
+        normalized
     );
 
     // No Next Steps section should exist for plan preview (only for apply/rename commands)
     assert!(
         !normalized.contains("Next Steps"),
-        "Plan preview should not have Next Steps section"
+        "Plan preview should not have Next Steps section, got {}",
+        normalized
     );
 
     // Verify the totals show only 1 rename (not 2)
     assert!(
-        normalized.contains("1 files, 1 renames"),
-        "Should show only 1 rename in totals"
+        normalized.contains("1 files, 1 paths"),
+        "Should show only 1 rename in totals, got {}",
+        normalized
     );
 
     insta::assert_snapshot!(normalized);

@@ -36,7 +36,7 @@ let x = old_tool();
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     // Should report matches but not from comment lines
-    assert!(stdout.contains("Total matches:"));
+    assert!(stdout.contains("Matches:"));
     assert!(stdout.contains("test.rs"));
 
     // The count should be 4:
@@ -46,7 +46,7 @@ let x = old_tool();
     // 4. function call (line 18)
     // Line 14 is excluded (starts with //)
     assert!(
-        stdout.contains("Total matches: 4") || stdout.contains("4 matches"),
+        stdout.contains("Matches: 4") || stdout.contains("4 matches"),
         "Expected 4 matches (inline comment is not excluded), got output: {}",
         stdout
     );
@@ -218,7 +218,7 @@ old_module.function()
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     // Should find matches but not in linter comments
-    assert!(stdout.contains("Total matches:"));
+    assert!(stdout.contains("Matches:"));
     // Should match: import, docstring, from import, and function call (4 matches)
     // Should NOT match: the three linter comment lines
 }

@@ -370,7 +370,7 @@ pub fn enhanced_matches_to_hunks(
         let line_string = String::from_utf8_lossy(line).to_string();
 
         // Determine if this is a compound match or exact match
-        let (before, after) = if variant_map.contains_key(&m.variant) {
+        let (content, replace) = if variant_map.contains_key(&m.variant) {
             // Exact match - use the variant map
             let new_variant = variant_map.get(&m.variant).unwrap_or(&m.variant);
             (m.variant.clone(), new_variant.clone())
@@ -381,9 +381,9 @@ pub fn enhanced_matches_to_hunks(
 
         // Generate the full line with replacement
         let line_before = Some(line_string.clone());
-        let line_after = if let Some(col) = line_string.find(&before) {
+        let line_after = if let Some(col) = line_string.find(&content) {
             let mut new_line = line_string.clone();
-            new_line.replace_range(col..col + before.len(), &after);
+            new_line.replace_range(col..col + content.len(), &replace);
             Some(new_line)
         } else {
             None
@@ -393,9 +393,9 @@ pub fn enhanced_matches_to_hunks(
             file: normalize_path(path),
             line: m.line as u64,
             col: u32::try_from(m.column).unwrap_or(u32::MAX),
-            variant: before.clone(),
-            before,
-            after,
+            variant: content.clone(),
+            content,
+            replace,
             start: m.start,
             end: m.end,
             line_before,

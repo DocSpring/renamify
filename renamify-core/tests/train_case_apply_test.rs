@@ -52,8 +52,8 @@ fn test_train_case_patterns_are_replaced_in_apply() {
     // Debug: Print matches found
     println!("\n=== Matches found in plan ===");
     for m in &plan.matches {
-        if m.before.contains("-") {
-            println!("'{}' -> '{}'", m.before, m.after);
+        if m.content.contains("-") {
+            println!("'{}' -> '{}'", m.content, m.replace);
         }
     }
 

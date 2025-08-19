@@ -55,7 +55,7 @@ let mixed = renamify_someCAMEL-case;
     // Debug: print the plan to see what was matched
     println!("\nMatches found:");
     for m in &plan.matches {
-        println!("  {} at {}:{} -> {}", m.before, m.line, m.col, m.after);
+        println!("  {} at {}:{} -> {}", m.content, m.line, m.col, m.replace);
     }
 
     // Debug: print variant mappings

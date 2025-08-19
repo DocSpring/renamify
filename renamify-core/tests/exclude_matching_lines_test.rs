@@ -40,7 +40,7 @@ fn old_name() {
         let line_content = match_hunk
             .line_before
             .as_ref()
-            .unwrap_or(&match_hunk.before);
+            .unwrap_or(&match_hunk.content);
         assert!(
             !line_content.trim_start().starts_with("//"),
             "Found match in comment line: {}",
@@ -87,7 +87,7 @@ regular_old_name = "test"
         let line_content = match_hunk
             .line_before
             .as_ref()
-            .unwrap_or(&match_hunk.before);
+            .unwrap_or(&match_hunk.content);
         assert!(
             !line_content.trim_start().starts_with("#"),
             "Found match in comment line: {}",
@@ -140,7 +140,7 @@ const result = oldName();
         let line_content = match_hunk
             .line_before
             .as_ref()
-            .unwrap_or(&match_hunk.before);
+            .unwrap_or(&match_hunk.content);
         assert!(!line_content.contains("TODO"), "Found match in TODO line");
         assert!(!line_content.contains("FIXME"), "Found match in FIXME line");
         assert!(!line_content.contains("NOTE"), "Found match in NOTE line");

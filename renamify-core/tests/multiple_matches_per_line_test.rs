@@ -103,8 +103,8 @@ fn test_module_path_replacement() {
 
     // Verify replacements
     for hunk in &plan.matches {
-        assert_eq!(hunk.before, "renamify_core");
-        assert_eq!(hunk.after, "smart_search_core");
+        assert_eq!(hunk.content, "renamify_core");
+        assert_eq!(hunk.replace, "smart_search_core");
     }
 }
 
@@ -199,7 +199,7 @@ fn test_consecutive_occurrences() {
     for hunk in &plan.matches {
         println!(
             "Match: '{}' -> '{}' at col {}",
-            hunk.before, hunk.after, hunk.col
+            hunk.content, hunk.replace, hunk.col
         );
     }
 
@@ -208,8 +208,8 @@ fn test_consecutive_occurrences() {
         plan.stats.total_matches, 1,
         "Should find the compound identifier"
     );
-    assert_eq!(plan.matches[0].before, "old_name_old_name");
-    assert_eq!(plan.matches[0].after, "new_name_new_name");
+    assert_eq!(plan.matches[0].content, "old_name_old_name");
+    assert_eq!(plan.matches[0].replace, "new_name_new_name");
 }
 
 #[test]

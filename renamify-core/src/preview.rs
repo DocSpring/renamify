@@ -116,6 +116,7 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
     }
 
     // Set headers
+    let is_search = plan.new.is_empty();
     if use_color {
         table.set_header(vec![
             Cell::new("File").fg(Color::Cyan),
@@ -188,34 +189,51 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
             Some(relative_path) => relative_path.display().to_string(),
             None => rename.from.display().to_string(),
         };
-        let to_str = match std::env::current_dir()
-            .ok()
-            .and_then(|cwd| rename.to.strip_prefix(cwd).ok())
-        {
-            Some(relative_path) => relative_path.display().to_string(),
-            None => rename.to.display().to_string(),
-        };
+
         let kind_str = match rename.kind {
-            RenameKind::File => "Rename (File)",
-            RenameKind::Dir => "Rename (Dir)",
+            RenameKind::File => "File",
+            RenameKind::Dir => "Dir",
         };
 
-        if use_color {
-            table.add_row(vec![
-                Cell::new(&from_str),
-                Cell::new(kind_str).fg(Color::Blue),
-                Cell::new(""),
-                Cell::new(format!("→ {}", to_str)).fg(Color::Magenta),
-            ]);
+        if is_search {
+            // For search, just show the path without rename arrow
+            if use_color {
+                table.add_row(vec![
+                    Cell::new(&from_str),
+                    Cell::new(kind_str).fg(Color::Blue),
+                    Cell::new(""),
+                    Cell::new(""),
+                ]);
+            } else {
+                table.add_row(vec![&from_str, kind_str, "", ""]);
+            }
         } else {
-            table.add_row(vec![&from_str, kind_str, "", &format!("→ {}", to_str)]);
+            // For plan, show the rename with arrow
+            let to_str = match std::env::current_dir()
+                .ok()
+                .and_then(|cwd| rename.to.strip_prefix(cwd).ok())
+            {
+                Some(relative_path) => relative_path.display().to_string(),
+                None => rename.to.display().to_string(),
+            };
+
+            if use_color {
+                table.add_row(vec![
+                    Cell::new(&from_str),
+                    Cell::new(kind_str).fg(Color::Blue),
+                    Cell::new(""),
+                    Cell::new(format!("→ {}", to_str)).fg(Color::Magenta),
+                ]);
+            } else {
+                table.add_row(vec![&from_str, kind_str, "", &format!("→ {}", to_str)]);
+            }
         }
     }
 
     // Add footer with totals
     let total_matches = plan.stats.total_matches;
     let total_files = plan.stats.files_with_matches;
-    let total_renames = plan.renames.len();
+    let total_paths = plan.renames.len();
 
     if use_color {
         table.add_row(vec![
@@ -226,7 +244,7 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
         ]);
         table.add_row(vec![
             Cell::new("TOTALS").fg(Color::Cyan),
-            Cell::new(format!("{} files, {} renames", total_files, total_renames)).fg(Color::White),
+            Cell::new(format!("{} files, {} paths", total_files, total_paths)).fg(Color::White),
             Cell::new(total_matches.to_string()).fg(Color::Yellow),
             Cell::new(format!("{} variants", plan.stats.matches_by_variant.len())).fg(Color::White),
         ]);
@@ -234,7 +252,7 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
         table.add_row(vec!["─────────", "─────────", "─────────", "─────────"]);
         table.add_row(vec![
             "TOTALS",
-            &format!("{} files, {} renames", total_files, total_renames),
+            &format!("{} files, {} paths", total_files, total_paths),
             &total_matches.to_string(),
             &format!("{} variants", plan.stats.matches_by_variant.len()),
         ]);
@@ -247,6 +265,7 @@ fn render_table(plan: &Plan, use_color: bool, fixed_table_width: bool) -> String
 fn render_diff(plan: &Plan, use_color: bool) -> String {
     use std::fmt::Write;
     let mut output = String::new();
+    let is_search = plan.new.is_empty();
 
     // Group hunks by file
     let mut file_hunks: HashMap<&Path, Vec<&MatchHunk>> = HashMap::new();
@@ -314,7 +333,7 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
                 line_before.clone()
             } else {
                 // Fallback: just use the word itself if no line context
-                first_hunk.before.clone()
+                first_hunk.content.clone()
             };
 
             // For the after text, if we have multiple hunks we need to apply all changes
@@ -324,7 +343,7 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
                     line_after.clone()
                 } else {
                     // Fallback: just the replacement word
-                    first_hunk.after.clone()
+                    first_hunk.replace.clone()
                 }
             } else {
                 // Multiple hunks on same line - apply all replacements
@@ -337,9 +356,9 @@ fn render_diff(plan: &Plan, use_color: bool) -> String {
                 // Apply replacements from right to left to maintain positions
                 for hunk in sorted_hunks {
                     let col = hunk.col as usize;
-                    if col < after_line.len() && after_line[col..].starts_with(&hunk.before) {
-                        let end = col + hunk.before.len();
-                        after_line.replace_range(col..end, &hunk.after);
+                    if col < after_line.len() && after_line[col..].starts_with(&hunk.content) {
+                        let end = col + hunk.content.len();
+                        after_line.replace_range(col..end, &hunk.replace);
                     }
                 }
 
@@ -439,17 +458,23 @@ fn render_summary(plan: &Plan) -> String {
     let mut output = String::new();
 
     // Header with basic info
-    writeln!(output, "PLAN SUMMARY").unwrap();
-    writeln!(output, "Old: {}", plan.old).unwrap();
-    writeln!(output, "New: {}", plan.new).unwrap();
-    writeln!(output, "Total matches: {}", plan.stats.total_matches).unwrap();
-    writeln!(output, "Files affected: {}", plan.stats.files_with_matches).unwrap();
-    writeln!(output, "Renames: {}", plan.renames.len()).unwrap();
+    let is_search = plan.new.is_empty();
+    if is_search {
+        writeln!(output, "SEARCH RESULTS").unwrap();
+        writeln!(output, "Search: {}", plan.old).unwrap();
+    } else {
+        writeln!(output, "PLAN SUMMARY").unwrap();
+        writeln!(output, "Old: {}", plan.old).unwrap();
+        writeln!(output, "New: {}", plan.new).unwrap();
+    }
+    writeln!(output, "Matches: {}", plan.stats.total_matches).unwrap();
+    writeln!(output, "Files: {}", plan.stats.files_with_matches).unwrap();
+    writeln!(output, "Paths: {}", plan.renames.len()).unwrap();
     writeln!(output).unwrap();
 
     // Content changes grouped by file
     if !plan.matches.is_empty() {
-        writeln!(output, "CONTENT CHANGES").unwrap();
+        writeln!(output, "CONTENT").unwrap();
 
         // Group matches by file
         let mut file_stats: HashMap<&Path, HashMap<String, usize>> = HashMap::new();
@@ -493,12 +518,12 @@ fn render_summary(plan: &Plan) -> String {
             }
             writeln!(output, "]").unwrap();
         }
-        writeln!(output).unwrap();
     }
 
     // File and directory renames
     if !plan.renames.is_empty() {
-        writeln!(output, "RENAMES").unwrap();
+        writeln!(output).unwrap();
+        writeln!(output, "PATHS").unwrap();
         for rename in &plan.renames {
             let kind = match rename.kind {
                 RenameKind::File => "file",
@@ -513,15 +538,21 @@ fn render_summary(plan: &Plan) -> String {
                 Some(relative_path) => relative_path.display().to_string(),
                 None => rename.from.display().to_string(),
             };
-            let to_str = match std::env::current_dir()
-                .ok()
-                .and_then(|cwd| rename.to.strip_prefix(cwd).ok())
-            {
-                Some(relative_path) => relative_path.display().to_string(),
-                None => rename.to.display().to_string(),
-            };
 
-            writeln!(output, "{}: {} -> {}", kind, from_str, to_str).unwrap();
+            if is_search {
+                // For search, just show the matching file/dir
+                writeln!(output, "{}: {}", kind, from_str).unwrap();
+            } else {
+                // For plan, show the rename
+                let to_str = match std::env::current_dir()
+                    .ok()
+                    .and_then(|cwd| rename.to.strip_prefix(cwd).ok())
+                {
+                    Some(relative_path) => relative_path.display().to_string(),
+                    None => rename.to.display().to_string(),
+                };
+                writeln!(output, "{}: {} -> {}", kind, from_str, to_str).unwrap();
+            }
         }
     }
 
@@ -564,8 +595,8 @@ mod tests {
                     line: 10,
                     col: 5,
                     variant: "old_name".to_string(),
-                    before: "old_name".to_string(),
-                    after: "new_name".to_string(),
+                    content: "old_name".to_string(),
+                    replace: "new_name".to_string(),
                     start: 4,
                     end: 12,
                     line_before: Some("let old_name = 42;".to_string()),
@@ -580,8 +611,8 @@ mod tests {
                     line: 20,
                     col: 10,
                     variant: "oldName".to_string(),
-                    before: "oldName".to_string(),
-                    after: "newName".to_string(),
+                    content: "oldName".to_string(),
+                    replace: "newName".to_string(),
                     start: 3,
                     end: 10,
                     line_before: Some("return oldName;".to_string()),
@@ -673,8 +704,8 @@ mod tests {
                 col: 12,
                 variant: "old_func".to_string(),
                 // Word-level replacement for apply
-                before: "old_func".to_string(),
-                after: "new_func".to_string(),
+                content: "old_func".to_string(),
+                replace: "new_func".to_string(),
                 start: 17,
                 end: 25,
                 // Full line context for diff preview
@@ -727,16 +758,16 @@ mod tests {
         assert!(result.contains("PLAN SUMMARY"));
         assert!(result.contains("Old: old_name"));
         assert!(result.contains("New: new_name"));
-        assert!(result.contains("Total matches: 2"));
-        assert!(result.contains("Files affected: 1"));
+        assert!(result.contains("Matches: 2"));
+        assert!(result.contains("Files: 1"));
 
         // Check content changes section
-        assert!(result.contains("CONTENT CHANGES"));
+        assert!(result.contains("CONTENT"));
         assert!(result.contains("src/main.rs: 2 matches"));
         assert!(result.contains("[oldName: 1, old_name: 1]"));
 
         // Check renames section
-        assert!(result.contains("RENAMES"));
+        assert!(result.contains("PATHS"));
         assert!(result.contains("file: old_name.txt -> new_name.txt"));
     }
 

@@ -40,9 +40,9 @@ github.com/DocSpring/oldproject
 
     // Should preserve lowercase after slash
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' after slash separator"
             );
         }
@@ -88,9 +88,9 @@ MACRO(oldproject)
 
     // Should preserve lowercase after parenthesis
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' after parenthesis"
             );
         }
@@ -136,9 +136,9 @@ SETTINGS[oldproject]
 
     // Should preserve lowercase after bracket
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' after bracket"
             );
         }
@@ -184,9 +184,9 @@ Module:oldproject
 
     // Should preserve lowercase after colon
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' after colon"
             );
         }
@@ -234,9 +234,9 @@ fn test_coercion_preserves_case_after_at_sign() {
 
     // Should preserve lowercase after slash in npm scope
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' in npm scope"
             );
         }
@@ -282,9 +282,9 @@ System.oldproject.init();
 
     // Should preserve lowercase after dot
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' after dot separator"
             );
         }
@@ -330,9 +330,9 @@ project=oldproject
 
     // Should preserve lowercase after equals
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' after equals sign"
             );
         }
@@ -378,9 +378,9 @@ fn test_coercion_preserves_case_after_space() {
 
     // Should preserve lowercase after space
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' after space"
             );
         }
@@ -429,9 +429,9 @@ fn test_coercion_preserves_case_with_quotes() {
 
     // Should preserve lowercase in all contexts
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' in quoted strings"
             );
         }
@@ -478,9 +478,9 @@ MyClass{oldproject}
 
     // Should preserve lowercase in template contexts
     for m in &plan.matches {
-        if m.before == "oldproject" {
+        if m.content == "oldproject" {
             assert_eq!(
-                m.after, "newproject",
+                m.replace, "newproject",
                 "Should be 'newproject' not 'Newproject' in template/brace contexts"
             );
         }
@@ -526,10 +526,10 @@ const OLDPROJECT_VERSION = "1.0";
 
     // These should apply coercion appropriately
     for m in &plan.matches {
-        match m.before.as_str() {
-            "oldproject_config" => assert_eq!(m.after, "newproject_config"),
-            "OldprojectManager" => assert_eq!(m.after, "NewprojectManager"),
-            "OLDPROJECT_VERSION" => assert_eq!(m.after, "NEWPROJECT_VERSION"),
+        match m.content.as_str() {
+            "oldproject_config" => assert_eq!(m.replace, "newproject_config"),
+            "OldprojectManager" => assert_eq!(m.replace, "NewprojectManager"),
+            "OLDPROJECT_VERSION" => assert_eq!(m.replace, "NEWPROJECT_VERSION"),
             _ => {},
         }
     }

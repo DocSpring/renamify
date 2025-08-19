@@ -147,6 +147,82 @@ enum Commands {
         only_acronyms: Vec<String>,
     },
 
+    /// Search for identifiers without creating a plan
+    Search {
+        /// Identifier to search for
+        term: String,
+
+        /// Paths to search (files or directories). Defaults to current directory
+        #[arg(help = "Search paths (files or directories)")]
+        paths: Vec<PathBuf>,
+
+        /// Include glob patterns
+        #[arg(long, value_delimiter = ',')]
+        include: Vec<String>,
+
+        /// Exclude glob patterns
+        #[arg(long, value_delimiter = ',')]
+        exclude: Vec<String>,
+
+        /// Rename files and directories (default: true)
+        #[arg(long, default_value_t = true)]
+        rename_files: bool,
+
+        /// Rename directories (default: true)
+        #[arg(long, default_value_t = true)]
+        rename_dirs: bool,
+
+        /// Case styles to exclude from the search
+        #[arg(
+            long,
+            value_enum,
+            value_delimiter = ',',
+            conflicts_with = "only_styles"
+        )]
+        exclude_styles: Vec<StyleArg>,
+
+        /// Additional case styles to include
+        #[arg(
+            long,
+            value_enum,
+            value_delimiter = ',',
+            conflicts_with = "only_styles"
+        )]
+        include_styles: Vec<StyleArg>,
+
+        /// Use only these case styles (overrides defaults)
+        #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
+        only_styles: Vec<StyleArg>,
+
+        /// Exclude matches on lines matching this regex pattern
+        #[arg(long)]
+        exclude_matching_lines: Option<String>,
+
+        /// Preview output format (defaults from config if not specified)
+        #[arg(long, value_enum)]
+        preview: Option<PreviewArg>,
+
+        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
+        #[arg(long)]
+        fixed_table_width: bool,
+
+        /// Disable acronym detection (treat CLI, API, etc. as regular words)
+        #[arg(long)]
+        no_acronyms: bool,
+
+        /// Additional acronyms to recognize (comma-separated, e.g., "AWS,GCP,K8S")
+        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
+        include_acronyms: Vec<String>,
+
+        /// Default acronyms to exclude (comma-separated, e.g., "ID,UI")
+        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
+        exclude_acronyms: Vec<String>,
+
+        /// Use only these acronyms (replaces default list)
+        #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
+        only_acronyms: Vec<String>,
+    },
+
     /// Apply a renaming plan
     Apply {
         /// Plan ID or path to apply (optional - defaults to .renamify/plan.json)
@@ -494,6 +570,7 @@ fn main() {
             | Commands::Apply { .. }
             | Commands::DryRun { .. }
             | Commands::Rename { .. }
+            | Commands::Search { .. }
     );
 
     if needs_renamify_dir && !cli.no_auto_init {
@@ -607,6 +684,57 @@ fn main() {
                 fixed_table_width,
                 PathBuf::from(".renamify/plan.json"),
                 true, // Always dry-run
+                use_color,
+                no_acronyms,
+                include_acronyms,
+                exclude_acronyms,
+                only_acronyms,
+            )
+        },
+
+        Commands::Search {
+            term,
+            paths,
+            include,
+            exclude,
+            rename_files,
+            rename_dirs,
+            exclude_styles,
+            include_styles,
+            only_styles,
+            exclude_matching_lines,
+            preview,
+            fixed_table_width,
+            no_acronyms,
+            include_acronyms,
+            exclude_acronyms,
+            only_acronyms,
+        } => {
+            // Use preview format from CLI arg or config default
+            let format = preview.map(std::convert::Into::into).unwrap_or_else(|| {
+                Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
+            });
+
+            // Call plan handler with empty replacement string and dry_run=true
+            plan::handle_plan(
+                &term,
+                "", // Empty replacement string for search
+                paths,
+                include,
+                exclude,
+                true, // respect_gitignore (use default true for search)
+                cli.unrestricted,
+                rename_files,
+                rename_dirs,
+                exclude_styles,
+                include_styles,
+                only_styles,
+                vec![], // exclude_match not needed for search
+                exclude_matching_lines,
+                Some(format),
+                fixed_table_width,
+                PathBuf::from(".renamify/plan.json"),
+                true, // Always dry-run for search
                 use_color,
                 no_acronyms,
                 include_acronyms,

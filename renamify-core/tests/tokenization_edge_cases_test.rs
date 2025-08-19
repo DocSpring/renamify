@@ -44,14 +44,14 @@ URL="https://github.com/DocSpring/renamed_renaming_tool"
     // Debug output
     println!("Found {} matches:", plan.matches.len());
     for m in &plan.matches {
-        println!("  '{}' -> '{}'", m.before, m.after);
+        println!("  '{}' -> '{}'", m.content, m.replace);
     }
 
     // Should find the lowercase variant after the slash
     assert!(
         plan.matches
             .iter()
-            .any(|m| m.before == "renamed_renaming_tool" && m.after == "mytool"),
+            .any(|m| m.content == "renamed_renaming_tool" && m.replace == "mytool"),
         "Should find lowercase 'renamed_renaming_tool'"
     );
 
@@ -62,7 +62,7 @@ URL="https://github.com/DocSpring/renamed_renaming_tool"
     // Apply the changes to simulate the transformation
     let mut content = std::fs::read_to_string(&test_file).unwrap();
     for m in &plan.matches {
-        content = content.replace(&m.before, &m.after);
+        content = content.replace(&m.content, &m.replace);
     }
     std::fs::write(&test_file, content).unwrap();
 
@@ -72,7 +72,7 @@ URL="https://github.com/DocSpring/renamed_renaming_tool"
     // Debug output for round-trip
     println!("Round-trip found {} matches:", plan2.matches.len());
     for m in &plan2.matches {
-        println!("  '{}' -> '{}'", m.before, m.after);
+        println!("  '{}' -> '{}'", m.content, m.replace);
     }
 
     // Should find mytool and replace it back
@@ -80,7 +80,7 @@ URL="https://github.com/DocSpring/renamed_renaming_tool"
         plan2
             .matches
             .iter()
-            .any(|m| m.before == "mytool" && m.after == "renamed_renaming_tool"),
+            .any(|m| m.content == "mytool" && m.replace == "renamed_renaming_tool"),
         "Round-trip should find 'mytool' and replace it back"
     );
 }
@@ -136,14 +136,14 @@ curl -L "https://raw.githubusercontent.com/DocSpring/oldproject/main/install.sh"
 
     println!("First rename matches:");
     for m in &plan1.matches {
-        println!("  '{}' -> '{}'", m.before, m.after);
+        println!("  '{}' -> '{}'", m.content, m.replace);
     }
 
     // Should only find lowercase "oldproject" (not "Oldproject")
     assert!(
         plan1.matches.iter().all(|m| {
-            if m.before.to_lowercase() == "oldproject" {
-                m.before == "oldproject" // Should be lowercase
+            if m.content.to_lowercase() == "oldproject" {
+                m.content == "oldproject" // Should be lowercase
             } else {
                 true
             }
@@ -154,7 +154,7 @@ curl -L "https://raw.githubusercontent.com/DocSpring/oldproject/main/install.sh"
     // Apply the changes manually to simulate the transformation
     let mut content = std::fs::read_to_string(&test_file).unwrap();
     for m in &plan1.matches {
-        content = content.replace(&m.before, &m.after);
+        content = content.replace(&m.content, &m.replace);
     }
     std::fs::write(&test_file, content).unwrap();
 
@@ -163,13 +163,13 @@ curl -L "https://raw.githubusercontent.com/DocSpring/oldproject/main/install.sh"
 
     println!("Round-trip matches:");
     for m in &plan2.matches {
-        println!("  '{}' -> '{}'", m.before, m.after);
+        println!("  '{}' -> '{}'", m.content, m.replace);
     }
 
     // Apply the round-trip changes
     let mut content = std::fs::read_to_string(&test_file).unwrap();
     for m in &plan2.matches {
-        content = content.replace(&m.before, &m.after);
+        content = content.replace(&m.content, &m.replace);
     }
     std::fs::write(&test_file, content).unwrap();
 
@@ -240,17 +240,17 @@ let oldtool_debug_identifiers = true;
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "OLDTOOL_DEBUG_IDENTIFIERS"));
+        .any(|m| m.content == "OLDTOOL_DEBUG_IDENTIFIERS"));
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "oldtool_debug_identifiers"));
+        .any(|m| m.content == "oldtool_debug_identifiers"));
 
     // Should NOT split at "IDE" within "IDENTIFIERS"
     assert!(!plan
         .matches
         .iter()
-        .any(|m| m.before.contains("IDE_NTIFIERS")));
+        .any(|m| m.content.contains("IDE_NTIFIERS")));
 }
 
 #[test]
@@ -295,26 +295,26 @@ let normal_backup = "oldtool_backup";
     // Debug output
     println!("Found {} matches:", plan.matches.len());
     for m in &plan.matches {
-        println!("  '{}' -> '{}'", m.before, m.after);
+        println!("  '{}' -> '{}'", m.content, m.replace);
     }
 
     // Should find both with and without trailing underscore
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "oldtool_backup_" && m.after == "newtool_backup_"));
+        .any(|m| m.content == "oldtool_backup_" && m.replace == "newtool_backup_"));
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "oldtool_backup" && m.after == "newtool_backup"));
+        .any(|m| m.content == "oldtool_backup" && m.replace == "newtool_backup"));
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "oldtool_temp_" && m.after == "newtool_temp_"));
+        .any(|m| m.content == "oldtool_temp_" && m.replace == "newtool_temp_"));
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "oldtool_prefix_" && m.after == "newtool_prefix_"));
+        .any(|m| m.content == "oldtool_prefix_" && m.replace == "newtool_prefix_"));
 }
 
 #[test]
@@ -357,7 +357,7 @@ import: @mycompany/oldtool
     // Debug all matches
     println!("Found {} matches:", plan.matches.len());
     for m in &plan.matches {
-        println!("Match: '{}' -> '{}'", m.before, m.after);
+        println!("Match: '{}' -> '{}'", m.content, m.replace);
     }
 
     // Should replace only "oldtool", not affect "MyCompany" case
@@ -367,7 +367,7 @@ import: @mycompany/oldtool
     let lowercase_matches = plan
         .matches
         .iter()
-        .filter(|m| m.before == "oldtool" && m.after == "newtool")
+        .filter(|m| m.content == "oldtool" && m.replace == "newtool")
         .count();
     assert!(
         lowercase_matches >= 2,
@@ -419,29 +419,29 @@ let tool_ide_support = true;
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "TOOL_IDENTIFIERS" && m.after == "APP_IDENTIFIERS"));
+        .any(|m| m.content == "TOOL_IDENTIFIERS" && m.replace == "APP_IDENTIFIERS"));
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "TOOL_IDE_SUPPORT" && m.after == "APP_IDE_SUPPORT"));
+        .any(|m| m.content == "TOOL_IDE_SUPPORT" && m.replace == "APP_IDE_SUPPORT"));
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "tool_identifiers" && m.after == "app_identifiers"));
+        .any(|m| m.content == "tool_identifiers" && m.replace == "app_identifiers"));
     assert!(plan
         .matches
         .iter()
-        .any(|m| m.before == "tool_ide_support" && m.after == "app_ide_support"));
+        .any(|m| m.content == "tool_ide_support" && m.replace == "app_ide_support"));
 
     // Should NOT create broken patterns
     assert!(!plan
         .matches
         .iter()
-        .any(|m| m.after.contains("IDE_NTIFIERS")));
+        .any(|m| m.replace.contains("IDE_NTIFIERS")));
     assert!(!plan
         .matches
         .iter()
-        .any(|m| m.after.contains("ide_ntifiers")));
+        .any(|m| m.replace.contains("ide_ntifiers")));
 }
 
 #[test]
@@ -490,20 +490,20 @@ fn test() {
 
     // Debug output
     for m in &plan.matches {
-        println!("Format string match: '{}' -> '{}'", m.before, m.after);
+        println!("Format string match: '{}' -> '{}'", m.content, m.replace);
     }
 
     // Should find these compounds with trailing underscores
     assert!(
         plan.matches
             .iter()
-            .any(|m| m.before == "prefix_tool_" && m.after == "prefix_app_"),
+            .any(|m| m.content == "prefix_tool_" && m.replace == "prefix_app_"),
         "Should find 'prefix_tool_' with trailing underscore"
     );
     assert!(
         plan.matches
             .iter()
-            .any(|m| m.before == "tool_backup_" && m.after == "app_backup_"),
+            .any(|m| m.content == "tool_backup_" && m.replace == "app_backup_"),
         "Should find 'tool_backup_' with trailing underscore"
     );
 
@@ -511,7 +511,7 @@ fn test() {
     assert!(
         plan.matches
             .iter()
-            .any(|m| m.before == "tool" && m.after == "app"),
+            .any(|m| m.content == "tool" && m.replace == "app"),
         "Should find standalone 'tool'"
     );
 }
@@ -563,41 +563,41 @@ if std::env::var("TOOL_IDENTIFIER_DEBUG").is_ok() {
     // Debug output
     println!("Found {} matches:", plan.matches.len());
     for m in &plan.matches {
-        println!("  '{}' -> '{}'", m.before, m.after);
+        println!("  '{}' -> '{}'", m.content, m.replace);
     }
 
     // All environment variable names should be found and replaced correctly
     assert!(
         plan.matches
             .iter()
-            .any(|m| m.before == "TOOL_DEBUG_IDENTIFIERS"
-                && m.after == "APPLICATION_DEBUG_IDENTIFIERS"),
+            .any(|m| m.content == "TOOL_DEBUG_IDENTIFIERS"
+                && m.replace == "APPLICATION_DEBUG_IDENTIFIERS"),
         "TOOL_DEBUG_IDENTIFIERS should be found as a complete identifier"
     );
 
     assert!(
         plan.matches
             .iter()
-            .any(|m| m.before == "TOOL_DEBUG_IDE" && m.after == "APPLICATION_DEBUG_IDE"),
+            .any(|m| m.content == "TOOL_DEBUG_IDE" && m.replace == "APPLICATION_DEBUG_IDE"),
         "TOOL_DEBUG_IDE should be found as a complete identifier"
     );
 
     assert!(
         plan.matches
             .iter()
-            .any(|m| m.before == "TOOL_IDENTIFIER_DEBUG"
-                && m.after == "APPLICATION_IDENTIFIER_DEBUG"),
+            .any(|m| m.content == "TOOL_IDENTIFIER_DEBUG"
+                && m.replace == "APPLICATION_IDENTIFIER_DEBUG"),
         "TOOL_IDENTIFIER_DEBUG should be found as a complete identifier"
     );
 
     // Should NOT have any partial matches that break words
     for m in &plan.matches {
         assert!(
-            !m.after.contains("_IDE_NTIFIERS"),
+            !m.replace.contains("_IDE_NTIFIERS"),
             "Should not break IDENTIFIERS into IDE_NTIFIERS"
         );
         assert!(
-            !m.after.contains("_IDE_NTIFIER"),
+            !m.replace.contains("_IDE_NTIFIER"),
             "Should not break IDENTIFIER into IDE_NTIFIER"
         );
     }

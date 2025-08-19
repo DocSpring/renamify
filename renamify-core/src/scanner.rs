@@ -97,8 +97,8 @@ pub struct MatchHunk {
     pub line: u64,
     pub col: u32,
     pub variant: String,
-    pub before: String, // The word/variant being replaced
-    pub after: String,  // The replacement word/variant
+    pub content: String, // The word/variant being replaced
+    pub replace: String, // The replacement word/variant
     pub start: usize,
     pub end: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -417,7 +417,7 @@ fn generate_hunks(
         // Check if this is a compound match (text field contains replacement)
         // or an exact match (use variant map)
         let is_compound_match = !variant_map.contains_key(&m.variant);
-        let (before, mut after) = if is_compound_match {
+        let (content, mut replace) = if is_compound_match {
             // Compound match - text field has the replacement
             (m.variant.clone(), m.text.clone())
         } else {
@@ -430,15 +430,15 @@ fn generate_hunks(
         // Apply coercion if enabled
         if options.coerce_separators == CoercionMode::Auto {
             // Find the match position within the line and extract context
-            if let Some(match_pos) = line_string.find(&before) {
+            if let Some(match_pos) = line_string.find(&content) {
                 let identifier_context =
-                    extract_immediate_context(&line_string, match_pos, match_pos + before.len());
+                    extract_immediate_context(&line_string, match_pos, match_pos + content.len());
 
                 if is_compound_match {
                     // For compound matches, check if style coercion was already applied by the compound matcher
                     // by detecting if the replacement uses a consistent style that matches the context
                     if let Some(detected_style) =
-                        detect_compound_coercion(&identifier_context, &before, &after)
+                        detect_compound_coercion(&identifier_context, &content, &replace)
                     {
                         coercion_applied = Some(format!(
                             "Compound coercion applied: {} style",
@@ -448,12 +448,12 @@ fn generate_hunks(
                 } else {
                     // For exact matches, apply normal coercion
                     if let Some((_coerced, reason)) =
-                        crate::coercion::apply_coercion(&identifier_context, &before, &after)
+                        crate::coercion::apply_coercion(&identifier_context, &content, &replace)
                     {
                         if let Some(coerced_variant) =
-                            apply_coercion_to_variant(&identifier_context, &before, &after)
+                            apply_coercion_to_variant(&identifier_context, &content, &replace)
                         {
-                            after = coerced_variant;
+                            replace = coerced_variant;
                             coercion_applied = Some(reason);
                         }
                     }
@@ -468,19 +468,19 @@ fn generate_hunks(
         // Use the column position from the match to ensure we replace the right occurrence
         let match_col = m.column;
         let line_after =
-            if match_col < line_string.len() && line_string[match_col..].starts_with(&before) {
+            if match_col < line_string.len() && line_string[match_col..].starts_with(&content) {
                 let mut after_line = String::new();
                 after_line.push_str(&line_string[..match_col]);
-                after_line.push_str(&after);
-                after_line.push_str(&line_string[match_col + before.len()..]);
+                after_line.push_str(&replace);
+                after_line.push_str(&line_string[match_col + content.len()..]);
                 after_line
             } else {
                 // Fallback: try to find the match in the line
-                if let Some(match_pos) = line_string.find(&before) {
+                if let Some(match_pos) = line_string.find(&content) {
                     let mut after_line = String::new();
                     after_line.push_str(&line_string[..match_pos]);
-                    after_line.push_str(&after);
-                    after_line.push_str(&line_string[match_pos + before.len()..]);
+                    after_line.push_str(&replace);
+                    after_line.push_str(&line_string[match_pos + content.len()..]);
                     after_line
                 } else {
                     // Could not find the match in the line - this shouldn't happen
@@ -493,8 +493,8 @@ fn generate_hunks(
             line: m.line as u64,
             col: u32::try_from(m.column).unwrap_or(u32::MAX),
             variant: m.variant.clone(),
-            before,
-            after,
+            content,
+            replace,
             line_before: Some(line_before),
             line_after: Some(line_after),
             start: m.start,
@@ -605,7 +605,7 @@ fn apply_coercion_to_variant(
 /// Detect if compound coercion was applied by checking if the replacement style matches the context style
 fn detect_compound_coercion(
     context: &str,
-    _before: &str,
+    _match: &str,
     after: &str,
 ) -> Option<crate::coercion::Style> {
     let context_style = crate::coercion::detect_style(context);
@@ -893,8 +893,8 @@ mod tests {
         assert_eq!(hunks.len(), 2);
         assert_eq!(hunks[0].variant, "old_name");
         // The before/after fields contain just the words
-        assert_eq!(hunks[0].before, "old_name");
-        assert_eq!(hunks[0].after, "new_name");
+        assert_eq!(hunks[0].content, "old_name");
+        assert_eq!(hunks[0].replace, "new_name");
         // The line context is in separate fields
         assert_eq!(
             hunks[0].line_before.as_ref().unwrap(),
@@ -906,8 +906,8 @@ mod tests {
         );
 
         assert_eq!(hunks[1].variant, "oldName");
-        assert_eq!(hunks[1].before, "oldName");
-        assert_eq!(hunks[1].after, "newName");
+        assert_eq!(hunks[1].content, "oldName");
+        assert_eq!(hunks[1].replace, "newName");
         assert_eq!(
             hunks[1].line_before.as_ref().unwrap(),
             "old_name and oldName here"
@@ -965,16 +965,16 @@ mod tests {
         // First line replacement
         assert_eq!(hunks[0].variant, "old_name");
         assert_eq!(hunks[0].line, 1);
-        assert_eq!(hunks[0].before, "old_name");
-        assert_eq!(hunks[0].after, "new_name");
+        assert_eq!(hunks[0].content, "old_name");
+        assert_eq!(hunks[0].replace, "new_name");
         assert_eq!(hunks[0].line_before.as_ref().unwrap(), "fn old_name() {\n");
         assert_eq!(hunks[0].line_after.as_ref().unwrap(), "fn new_name() {\n");
 
         // Second line replacement
         assert_eq!(hunks[1].variant, "oldName");
         assert_eq!(hunks[1].line, 2);
-        assert_eq!(hunks[1].before, "oldName");
-        assert_eq!(hunks[1].after, "newName");
+        assert_eq!(hunks[1].content, "oldName");
+        assert_eq!(hunks[1].replace, "newName");
         assert_eq!(
             hunks[1].line_before.as_ref().unwrap(),
             "    println!(\"oldName\");\n"
@@ -987,8 +987,8 @@ mod tests {
         // Third line replacement
         assert_eq!(hunks[2].variant, "old_name");
         assert_eq!(hunks[2].line, 3);
-        assert_eq!(hunks[2].before, "old_name");
-        assert_eq!(hunks[2].after, "new_name");
+        assert_eq!(hunks[2].content, "old_name");
+        assert_eq!(hunks[2].replace, "new_name");
         assert_eq!(hunks[2].line_before.as_ref().unwrap(), "    old_name();\n");
         assert_eq!(hunks[2].line_after.as_ref().unwrap(), "    new_name();\n");
     }

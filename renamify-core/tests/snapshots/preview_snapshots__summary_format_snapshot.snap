@@ -5,14 +5,14 @@ expression: normalized
 PLAN SUMMARY
 Old: user_name
 New: customer_name
-Total matches: 6
-Files affected: 2
-Renames: 2
+Matches: 6
+Files: 2
+Paths: 2
 
-CONTENT CHANGES
+CONTENT
 src/api/handlers.rs: 2 matches [UserName: 1, user_name: 1]
 src/models/user.rs: 2 matches [userName: 1, user_name: 1]
 
-RENAMES
+PATHS
 file: src/models/user_name.rs -> src/models/customer_name.rs
 dir: tests/user_name_tests -> tests/customer_name_tests

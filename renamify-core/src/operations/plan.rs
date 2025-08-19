@@ -161,10 +161,6 @@ pub fn plan_operation_with_dry_run(
             } else {
                 crate::preview::render_plan(&plan, preview_format, Some(use_color))
             };
-            // For dry-run operations (like tests), print the preview
-            if dry_run {
-                println!("{}", content);
-            }
             Some(content)
         }
     } else {

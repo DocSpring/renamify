@@ -48,7 +48,7 @@ fn test_acronym_affects_case_variants() {
         plan_with.matches.len()
     );
     for m in &plan_with.matches {
-        println!("  {} -> {}", m.before, m.after);
+        println!("  {} -> {}", m.content, m.replace);
     }
     // Should find all variants: b2b_sales, b2bSales, B2bSales
     assert!(
@@ -85,7 +85,7 @@ fn test_acronym_affects_case_variants() {
         plan_without.matches.len()
     );
     for m in &plan_without.matches {
-        println!("  {} -> {}", m.before, m.after);
+        println!("  {} -> {}", m.content, m.replace);
     }
     // IMPORTANT: Alphanumeric sequences like "b2b" should always be kept as single tokens
     // regardless of acronym status. This ensures consistent tokenization and round-trip preservation.
@@ -141,7 +141,7 @@ fn test_custom_acronym_generation() {
     // Debug: Print what was found
     println!("Found {} matches:", plan.matches.len());
     for m in &plan.matches {
-        println!("  {} -> {}", m.before, m.after);
+        println!("  {} -> {}", m.content, m.replace);
     }
 
     // Should find all variants: k8s_cluster, k8sCluster, K8sCluster, K8SCluster
@@ -152,7 +152,7 @@ fn test_custom_acronym_generation() {
     );
 
     // Check that different case styles are matched
-    let variants: Vec<String> = plan.matches.iter().map(|m| m.before.clone()).collect();
+    let variants: Vec<String> = plan.matches.iter().map(|m| m.content.clone()).collect();
     assert!(
         variants.contains(&"k8s_cluster".to_string()),
         "Should find snake_case variant"
@@ -204,7 +204,7 @@ fn test_excluded_acronym_variants() {
 
     // With ID excluded, getUserID won't be matched as a variant of user_id
     // Only user_id and userId should match
-    let variants: Vec<String> = plan.matches.iter().map(|m| m.before.clone()).collect();
+    let variants: Vec<String> = plan.matches.iter().map(|m| m.content.clone()).collect();
     assert!(
         variants.contains(&"user_id".to_string()),
         "Should find snake_case"
@@ -264,7 +264,11 @@ fn test_only_acronyms_list() {
 
     // Search for HTTP patterns - should not find HTTPAPI variant
     let plan_http = scan_repository(&root, "httpApi", "webApi", &options).unwrap();
-    let variants: Vec<String> = plan_http.matches.iter().map(|m| m.before.clone()).collect();
+    let variants: Vec<String> = plan_http
+        .matches
+        .iter()
+        .map(|m| m.content.clone())
+        .collect();
     assert!(
         variants.contains(&"httpApi".to_string()),
         "Should find exact match"

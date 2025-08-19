@@ -300,7 +300,7 @@ let config = oldtool.config.load();
     for (i, m) in content_matches.iter().enumerate() {
         println!(
             "{}: '{}' -> '{}' (coercion: {:?})",
-            i, m.before, m.after, m.coercion_applied
+            i, m.content, m.replace, m.coercion_applied
         );
     }
 
@@ -320,10 +320,10 @@ let config = oldtool.config.load();
     // Check specific coercions
     let snake_case_match = content_matches
         .iter()
-        .find(|m| m.before.contains("oldtool_core") && m.coercion_applied.is_some());
+        .find(|m| m.content.contains("oldtool_core") && m.coercion_applied.is_some());
     if let Some(m) = snake_case_match {
         assert!(
-            m.after.contains("newtool_core"),
+            m.replace.contains("newtool_core"),
             "snake_case context should produce snake_case replacement"
         );
     }
@@ -437,12 +437,12 @@ let regex_pattern = r"oldtool[_-](\w+)";
     // Check that coerced matches use the right separators
     let has_underscores = content_matches
         .iter()
-        .any(|m| m.after.contains("newtool_") || m.after.contains("_newtool"));
+        .any(|m| m.replace.contains("newtool_") || m.replace.contains("_newtool"));
     assert!(has_underscores, "Should have snake_case replacements");
 
     let has_hyphens = content_matches
         .iter()
-        .any(|m| m.after.contains("newtool-") || m.after.contains("-newtool"));
+        .any(|m| m.replace.contains("newtool-") || m.replace.contains("-newtool"));
     assert!(has_hyphens, "Should have kebab-case replacements");
 }
 
@@ -492,9 +492,9 @@ let nested = oldtool::core::pattern::Match;
     // All "oldtool" matches should be replaced with "newtool" (lowercase)
     // regardless of context, because separators prevent coercion
     for m in content_matches {
-        if m.before == "oldtool" {
+        if m.content == "oldtool" {
             assert_eq!(
-                m.after, "newtool",
+                m.replace, "newtool",
                 "Should be 'newtool' not coerced after separator"
             );
             // Coercion should NOT be applied when after a separator
@@ -552,11 +552,11 @@ let snake_case_var = oldtool_core; let camelVar = oldtoolService;
     // Every match should have the replacement in an appropriate style
     for m in &plan.matches {
         // The replacement should contain the new pattern in some form
-        let after_lower = m.after.to_lowercase();
+        let after_lower = m.replace.to_lowercase();
         assert!(
             after_lower.contains("newtool"),
             "Expected replacement to contain new pattern, got: {}",
-            m.after
+            m.replace
         );
     }
 }
@@ -632,10 +632,10 @@ oldtool = { path = "../oldtool" }
     // The "oldtool-core" name should become "newtool-core"
     let name_match = toml_matches
         .iter()
-        .find(|m| m.before.contains("oldtool-core"));
+        .find(|m| m.content.contains("oldtool-core"));
     if let Some(m) = name_match {
         assert!(
-            m.after.contains("newtool-core"),
+            m.replace.contains("newtool-core"),
             "Cargo.toml crate names should use hyphen style"
         );
     }

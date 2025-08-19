@@ -47,7 +47,7 @@ let simple = renamify;
     // Debug: Print all matches
     println!("\n=== All matches found ===");
     for m in &plan.matches {
-        println!("Line {}: '{}' -> '{}'", m.line, m.before, m.after);
+        println!("Line {}: '{}' -> '{}'", m.line, m.content, m.replace);
     }
 
     // Should find matches for all identifiers containing "renamify"
@@ -65,17 +65,17 @@ let simple = renamify;
 
     // Line 2: Should have compound match for renamify_someCAMEL-case
     assert_eq!(line2_matches.len(), 1);
-    assert_eq!(line2_matches[0].before, "renamify_someCAMEL-case");
+    assert_eq!(line2_matches[0].content, "renamify_someCAMEL-case");
     assert_eq!(
-        line2_matches[0].after,
+        line2_matches[0].replace,
         "renamed_renaming_tool_someCAMEL-case"
     );
 
     // Line 3: Should have compound match for renamify_someCAMEL-case
     assert_eq!(line3_matches.len(), 1);
-    assert_eq!(line3_matches[0].before, "renamify_someCAMEL-case");
+    assert_eq!(line3_matches[0].content, "renamify_someCAMEL-case");
     assert_eq!(
-        line3_matches[0].after,
+        line3_matches[0].replace,
         "renamed_renaming_tool_someCAMEL-case"
     );
 
@@ -84,20 +84,20 @@ let simple = renamify;
 
     let compound_match = line4_matches
         .iter()
-        .find(|h| h.before == "renamify-with_MIXED");
+        .find(|h| h.content == "renamify-with_MIXED");
     assert!(
         compound_match.is_some(),
         "Should find compound match for renamify-with_MIXED"
     );
     assert_eq!(
-        compound_match.unwrap().after,
+        compound_match.unwrap().replace,
         "renamed_renaming_tool-with_MIXED"
     );
 
     // Line 5: Should have exact match for renamify
     assert_eq!(line5_matches.len(), 1);
-    assert_eq!(line5_matches[0].before, "renamify");
-    assert_eq!(line5_matches[0].after, "renamed_renaming_tool");
+    assert_eq!(line5_matches[0].content, "renamify");
+    assert_eq!(line5_matches[0].replace, "renamed_renaming_tool");
 }
 
 #[test]
@@ -153,7 +153,7 @@ fn test_format_string_placeholders_are_replaced() {
     // The current implementation will find compound matches like "renamify_backup_"
     // but not invalid identifiers like "renamify_{}"
 
-    let found_compound = plan.matches.iter().any(|h| h.before == "renamify_backup_");
+    let found_compound = plan.matches.iter().any(|h| h.content == "renamify_backup_");
     assert!(
         found_compound,
         "Should find compound match for renamify_backup_"
@@ -216,11 +216,11 @@ In format string: renamify_{}.tmp
     let line3_matches: Vec<_> = plan.matches.iter().filter(|h| h.line == 3).collect();
 
     assert_eq!(line1_matches.len(), 1);
-    assert_eq!(line1_matches[0].before, "renamify");
+    assert_eq!(line1_matches[0].content, "renamify");
 
     assert_eq!(line2_matches.len(), 1);
-    assert_eq!(line2_matches[0].before, "renamify");
+    assert_eq!(line2_matches[0].content, "renamify");
 
     assert_eq!(line3_matches.len(), 1);
-    assert_eq!(line3_matches[0].before, "renamify_2024-version");
+    assert_eq!(line3_matches[0].content, "renamify_2024-version");
 }

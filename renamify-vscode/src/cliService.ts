@@ -228,9 +228,9 @@ export class RenamifyCliService {
 
         fileMap.get(file)?.push({
           line: match.line,
-          column: match.column,
-          text: match.text,
-          replacement: match.replacement,
+          column: match.col || match.column,
+          text: match.line_before || match.text,
+          replacement: match.line_after || match.replacement,
           context: match.context,
         });
       }

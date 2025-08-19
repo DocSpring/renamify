@@ -52,7 +52,10 @@ type FooBarOption = i32;",
 
     println!("\n=== Compound at Start Test ===");
     for hunk in &plan.matches {
-        println!("Line {}: '{}' -> '{}'", hunk.line, hunk.before, hunk.after);
+        println!(
+            "Line {}: '{}' -> '{}'",
+            hunk.line, hunk.content, hunk.replace
+        );
     }
 
     // Should replace:
@@ -82,7 +85,7 @@ type FooBarOption = i32;",
         let found = plan
             .matches
             .iter()
-            .any(|h| h.before == from && h.after == to);
+            .any(|h| h.content == from && h.replace == to);
         assert!(found, "Should replace {from} with {to}");
     }
 }
@@ -137,7 +140,10 @@ type GetFooBarOption = i32;",
 
     println!("\n=== Compound in Middle Test ===");
     for hunk in &plan.matches {
-        println!("Line {}: '{}' -> '{}'", hunk.line, hunk.before, hunk.after);
+        println!(
+            "Line {}: '{}' -> '{}'",
+            hunk.line, hunk.content, hunk.replace
+        );
     }
 
     // Should replace:
@@ -167,7 +173,7 @@ type GetFooBarOption = i32;",
         let found = plan
             .matches
             .iter()
-            .any(|h| h.before == from && h.after == to);
+            .any(|h| h.content == from && h.replace == to);
         assert!(found, "Should replace {from} with {to}");
     }
 }
@@ -222,7 +228,10 @@ type LoadFooBar = i32;",
 
     println!("\n=== Compound at End Test ===");
     for hunk in &plan.matches {
-        println!("Line {}: '{}' -> '{}'", hunk.line, hunk.before, hunk.after);
+        println!(
+            "Line {}: '{}' -> '{}'",
+            hunk.line, hunk.content, hunk.replace
+        );
     }
 
     // Should replace:
@@ -252,7 +261,7 @@ type LoadFooBar = i32;",
         let found = plan
             .matches
             .iter()
-            .any(|h| h.before == from && h.after == to);
+            .any(|h| h.content == from && h.replace == to);
         assert!(found, "Should replace {from} with {to}");
     }
 }
@@ -299,7 +308,10 @@ let fooBar = getFooBar();",
 
     println!("\n=== Exact Match Test ===");
     for hunk in &plan.matches {
-        println!("Line {}: '{}' -> '{}'", hunk.line, hunk.before, hunk.after);
+        println!(
+            "Line {}: '{}' -> '{}'",
+            hunk.line, hunk.content, hunk.replace
+        );
     }
 
     // Should find both exact matches AND compounds

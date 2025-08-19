@@ -656,12 +656,12 @@ pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
     if std::env::var("RENAMIFY_DEBUG_TRAIN_CASE").is_ok() {
         eprintln!("\n=== Plan matches for Train-Case patterns ===");
         for hunk in &plan.matches {
-            if hunk.before.contains('-')
-                && hunk.before.chars().next().is_some_and(char::is_uppercase)
+            if hunk.content.contains('-')
+                && hunk.content.chars().next().is_some_and(char::is_uppercase)
             {
                 eprintln!("  File: {}", hunk.file.display());
-                eprintln!("    Before: '{}'", hunk.before);
-                eprintln!("    After: '{}'", hunk.after);
+                eprintln!("    Before: '{}'", hunk.content);
+                eprintln!("    After: '{}'", hunk.replace);
                 eprintln!("    Position: [{}, {}]", hunk.start, hunk.end);
             }
         }
@@ -669,8 +669,8 @@ pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
 
     for hunk in &plan.matches {
         edits_by_file.entry(hunk.file.clone()).or_default().push((
-            hunk.before.clone(),
-            hunk.after.clone(),
+            hunk.content.clone(),
+            hunk.replace.clone(),
             hunk.start,
             hunk.end,
         ));
@@ -947,8 +947,8 @@ mod tests {
                 line: 1,
                 col: 3,
                 variant: "old_name".to_string(),
-                before: "old_name".to_string(),
-                after: "new_name".to_string(),
+                content: "old_name".to_string(),
+                replace: "new_name".to_string(),
                 start: 3,
                 end: 11,
                 line_before: Some("fn old_name() {}".to_string()),
@@ -1080,8 +1080,8 @@ mod tests {
                 line: 1,
                 col: 3,
                 variant: "old".to_string(),
-                before: "old".to_string(),
-                after: "new".to_string(),
+                content: "old".to_string(),
+                replace: "new".to_string(),
                 start: 3,
                 end: 6,
                 line_before: Some("fn old() {}".to_string()),
