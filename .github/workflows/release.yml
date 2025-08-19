@@ -35,6 +35,14 @@ jobs:
             name: renamify-linux-arm64
             use-cross: true
 
+          # Windows builds
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: renamify-windows-amd64
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            name: renamify-windows-arm64
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -73,11 +81,20 @@ jobs:
           fi
 
       - name: Create archive
+        shell: bash
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../${{ matrix.name }}.tar.gz renamify
-          cd ../../../
-          echo "ASSET_PATH=${{ matrix.name }}.tar.gz" >> $GITHUB_ENV
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            # Windows: create a zip file
+            7z a ../../../${{ matrix.name }}.zip renamify.exe
+            cd ../../../
+            echo "ASSET_PATH=${{ matrix.name }}.zip" >> $GITHUB_ENV
+          else
+            # Unix: create a tar.gz file
+            tar czf ../../../${{ matrix.name }}.tar.gz renamify
+            cd ../../../
+            echo "ASSET_PATH=${{ matrix.name }}.tar.gz" >> $GITHUB_ENV
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -154,6 +171,20 @@ jobs:
           echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-linux-arm64.tar.gz | tar xz" >> changelog.md
           echo "sudo mv renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
+          echo "" >> changelog.md
+          echo "### Windows (x86_64)" >> changelog.md
+          echo '```powershell' >> changelog.md
+          echo "Invoke-WebRequest -Uri https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-windows-amd64.zip -OutFile renamify.zip" >> changelog.md
+          echo "Expand-Archive -Path renamify.zip -DestinationPath ." >> changelog.md
+          echo "Move-Item -Path renamify.exe -Destination C:\\Windows\\System32\\" >> changelog.md
+          echo '```' >> changelog.md
+          echo "" >> changelog.md
+          echo "### Windows (ARM64)" >> changelog.md
+          echo '```powershell' >> changelog.md
+          echo "Invoke-WebRequest -Uri https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-windows-arm64.zip -OutFile renamify.zip" >> changelog.md
+          echo "Expand-Archive -Path renamify.zip -DestinationPath ." >> changelog.md
+          echo "Move-Item -Path renamify.exe -Destination C:\\Windows\\System32\\" >> changelog.md
+          echo '```' >> changelog.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -165,6 +196,7 @@ jobs:
           prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
           files: |
             artifacts/**/*.tar.gz
+            artifacts/**/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
