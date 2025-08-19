@@ -38,6 +38,20 @@ pre-commit:
       glob: "*.ts"
       run: tsc --noEmit
 
+    shellcheck:
+      glob: "*.sh"
+      run: shellcheck {staged_files}
+
+    shellcheck-scripts:
+      glob: "**/scripts/*"
+      exclude: "*.md|*.txt|*.rs|*.toml|*.yml|*.yaml|*.json"
+      run: |
+        for file in {staged_files}; do
+          if head -n 1 "$file" | grep -qE '^#!/(usr/)?bin/(ba)?sh' || [[ "$file" =~ \.sh$ ]]; then
+            shellcheck "$file"
+          fi
+        done
+
 # pre-push:
 #   commands:
 #     test-all:

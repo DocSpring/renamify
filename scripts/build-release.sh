@@ -5,7 +5,6 @@ set -e
 # Usage: ./scripts/build-release.sh [version]
 
 VERSION=${1:-$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")}
-VERSION_NO_V=${VERSION#v}
 
 echo "Building Renamify release $VERSION"
 
@@ -64,9 +63,9 @@ echo "Native build complete: $RELEASE_DIR/$NATIVE_TARGET.tar.gz"
 # Generate checksums
 cd "$RELEASE_DIR"
 if command -v sha256sum > /dev/null; then
-    sha256sum *.tar.gz > SHA256SUMS
+    sha256sum ./*.tar.gz > SHA256SUMS
 elif command -v shasum > /dev/null; then
-    shasum -a 256 *.tar.gz > SHA256SUMS
+    shasum -a 256 ./*.tar.gz > SHA256SUMS
 fi
 cd ../..
 

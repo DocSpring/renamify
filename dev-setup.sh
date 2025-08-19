@@ -20,6 +20,7 @@ need_rust() {
     # Official rustup installer (non-interactive)
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
     # shellcheck disable=SC1090
+    # shellcheck source=/dev/null
     source "$HOME/.cargo/env"
   fi
 }
@@ -89,4 +90,5 @@ for spec in $TOOL_LIST; do
 done
 
 log "Done. If ~/.cargo/bin is not on your PATH, add it now:"
+# shellcheck disable=SC2016
 echo '  export PATH="$HOME/.cargo/bin:$PATH"'

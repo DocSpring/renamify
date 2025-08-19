@@ -5,7 +5,6 @@ set -e
 # https://github.com/DocSpring/renamify
 
 REPO="DocSpring/renamify"
-BINARY_NAME="renamify"
 
 # Default to user-local installation
 DEFAULT_INSTALL_DIR="$HOME/.local/bin"
@@ -197,7 +196,7 @@ install_renamify() {
     
     # Create temp directory
     TEMP_DIR=$(mktemp -d)
-    trap "rm -rf $TEMP_DIR" EXIT
+    trap 'rm -rf "$TEMP_DIR"' EXIT
     
     # Download and extract
     if command -v curl &> /dev/null; then

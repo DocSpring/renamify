@@ -1,0 +1,42 @@
+name: ShellCheck
+
+on:
+  push:
+    paths:
+      - '**.sh'
+      - '**/scripts/**'
+      - '.github/workflows/shellcheck.yml'
+  pull_request:
+    paths:
+      - '**.sh'
+      - '**/scripts/**'
+      - '.github/workflows/shellcheck.yml'
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          # Check all shell scripts
+          scandir: '.'
+          # Ignore some directories
+          ignore_paths: >-
+            node_modules
+            target
+            .git
+            ripgrep-source
+          # Set severity level
+          severity: warning
+          # Check scripts without extension in scripts directories
+          check_together: yes
+          # Additional shellcheck arguments
+          additional_flags: '--external-sources'
+        env:
+          SHELLCHECK_OPTS: -e SC2086 # Optionally ignore specific warnings
