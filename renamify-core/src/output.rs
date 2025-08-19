@@ -100,6 +100,13 @@ pub struct RenameResult {
     pub plan: Option<crate::scanner::Plan>,
 }
 
+/// Result of a version command
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VersionResult {
+    pub name: String,
+    pub version: String,
+}
+
 /// Trait for formatting output in different formats
 pub trait OutputFormatter {
     fn format(&self, format: OutputFormat) -> String;
@@ -414,5 +421,22 @@ impl OutputFormatter for RenameResult {
         write!(output, "Undo with: renamify undo {}", self.plan_id).unwrap();
 
         output
+    }
+}
+
+impl OutputFormatter for VersionResult {
+    fn format(&self, format: OutputFormat) -> String {
+        match format {
+            OutputFormat::Json => self.format_json(),
+            OutputFormat::Summary => self.format_summary(),
+        }
+    }
+
+    fn format_json(&self) -> String {
+        serde_json::to_string(self).unwrap_or_default()
+    }
+
+    fn format_summary(&self) -> String {
+        format!("{} {}", self.name, self.version)
     }
 }

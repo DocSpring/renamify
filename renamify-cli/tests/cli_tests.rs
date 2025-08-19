@@ -35,6 +35,24 @@ fn test_version_command() {
 }
 
 #[test]
+fn test_version_subcommand() {
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.arg("version")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("renamify 0.1.0"));
+}
+
+#[test]
+fn test_version_subcommand_json() {
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.args(["version", "--output", "json"])
+        .assert()
+        .success()
+        .stdout(predicate::str::is_match(r#"\{"name":"renamify","version":"0\.1\.0"\}"#).unwrap());
+}
+
+#[test]
 fn test_plan_command_missing_args() {
     let mut cmd = Command::cargo_bin("renamify").unwrap();
     cmd.arg("plan")

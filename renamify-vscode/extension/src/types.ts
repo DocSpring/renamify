@@ -69,12 +69,22 @@ export type OpenPreviewMessage = {
   caseStyles?: string[];
 };
 
+export type OpenSettingsMessage = {
+  type: 'openSettings';
+};
+
+export type RefreshMessage = {
+  type: 'refresh';
+};
+
 export type WebviewMessage =
   | SearchMessage
   | PlanMessage
   | ApplyMessage
   | OpenFileMessage
-  | OpenPreviewMessage;
+  | OpenPreviewMessage
+  | OpenSettingsMessage
+  | RefreshMessage;
 
 // Response messages
 export type SearchResultsMessage = {

@@ -44,7 +44,7 @@ pub use operations::{
 };
 pub use output::{
     ApplyResult, HistoryItem, HistoryResult, OutputFormat, OutputFormatter, PendingPlan,
-    PlanResult, RedoResult, RenameResult, StatusResult, UndoResult,
+    PlanResult, RedoResult, RenameResult, StatusResult, UndoResult, VersionResult,
 };
 pub use pattern::{build_pattern, find_matches, is_boundary, Match, MatchPattern};
 pub use preview::{render_plan, write_preview, Preview};

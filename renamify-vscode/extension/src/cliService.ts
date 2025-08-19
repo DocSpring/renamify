@@ -7,12 +7,19 @@ import type { SearchOptions, SearchResult, Status } from './types';
 export type { SearchOptions, SearchResult } from './types';
 
 export class RenamifyCliService {
-  private readonly cliPath: string;
+  private readonly cliPath?: string;
   private readonly spawnFn: typeof spawn;
+  private readonly isAvailable: boolean;
 
   constructor(spawnFn?: typeof spawn) {
-    this.cliPath = this.findCliPath();
     this.spawnFn = spawnFn || spawn;
+    try {
+      this.cliPath = this.findCliPath();
+      this.isAvailable = true;
+    } catch {
+      this.cliPath = undefined;
+      this.isAvailable = false;
+    }
   }
 
   private findCliPath(): string {
@@ -213,8 +220,25 @@ export class RenamifyCliService {
     return this.runCli(args);
   }
 
+  public isBinaryAvailable(): boolean {
+    return this.isAvailable;
+  }
+
+  public getBinaryPath(): string | undefined {
+    return this.cliPath;
+  }
+
   private runCli(args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
+      if (!(this.isAvailable && this.cliPath)) {
+        reject(
+          new Error(
+            'Renamify CLI not found. Please install it or configure the path in settings.'
+          )
+        );
+        return;
+      }
+
       const workspaceRoot =
         vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
 

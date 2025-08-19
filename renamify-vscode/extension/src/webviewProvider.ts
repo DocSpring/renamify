@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { RenamifyCliService } from './cliService';
+import { RenamifyCliService } from './cliService';
 import type {
   ApplyMessage,
   ExtensionMessage,
@@ -14,11 +14,15 @@ import type {
 export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'renamify.searchView';
   private _view?: vscode.WebviewView;
+  // biome-ignore lint/style/useReadonlyClassProperties: _cliService is reassigned in refresh handler
+  private _cliService: RenamifyCliService;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
-    private readonly _cliService: RenamifyCliService
-  ) {}
+    cliService: RenamifyCliService
+  ) {
+    this._cliService = cliService;
+  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -35,6 +39,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
     webviewView.webview.onDidReceiveMessage(async (data: WebviewMessage) => {
+      console.log('Received message:', data);
       switch (data.type) {
         case 'search':
           await this.handleSearch(data);
@@ -55,6 +60,21 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           await this.openPreviewInEditor(previewData);
           break;
         }
+        case 'openSettings':
+          await vscode.commands.executeCommand(
+            'workbench.action.openSettings',
+            '@ext:DocSpring.renamify'
+          );
+          break;
+        case 'refresh':
+          // Recreate the CLI service and refresh the webview
+          this._cliService = new RenamifyCliService();
+          if (this._view) {
+            this._view.webview.html = this._getHtmlForWebview(
+              this._view.webview
+            );
+          }
+          break;
         default:
           console.warn(
             `Unknown message type: ${(data as { type: string }).type}`
@@ -297,6 +317,11 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
     const nonce = getNonce();
 
+    // Check if CLI is available
+    if (!this._cliService.isBinaryAvailable()) {
+      return this._getSplashScreenHtml(webview, styleUri, nonce);
+    }
+
     return `<!DOCTYPE html>
             <html lang="en">
             <head>
@@ -406,6 +431,143 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                     window.workspaceRoot = ${JSON.stringify(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '')};
                 </script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
+            </body>
+            </html>`;
+  }
+
+  private _getSplashScreenHtml(
+    webview: vscode.Webview,
+    styleUri: vscode.Uri,
+    nonce: string
+  ) {
+    return `<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="${styleUri}" rel="stylesheet">
+                <title>Renamify - CLI Not Found</title>
+                <style>
+                    .splash-container {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        padding: 20px;
+                        text-align: center;
+                        color: var(--vscode-foreground);
+                    }
+                    .splash-icon {
+                        font-size: 4rem;
+                        margin-bottom: 1rem;
+                        color: var(--vscode-textLink-foreground);
+                    }
+                    .splash-title {
+                        font-size: 1.5rem;
+                        font-weight: bold;
+                        margin-bottom: 1rem;
+                        color: var(--vscode-foreground);
+                    }
+                    .splash-message {
+                        font-size: 1rem;
+                        margin-bottom: 2rem;
+                        max-width: 400px;
+                        line-height: 1.5;
+                        color: var(--vscode-descriptionForeground);
+                    }
+                    .splash-buttons {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.5rem;
+                        width: 100%;
+                        max-width: 300px;
+                    }
+                    .splash-button {
+                        padding: 8px 16px;
+                        border: 1px solid var(--vscode-button-border);
+                        background: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        text-decoration: none;
+                        border-radius: 2px;
+                        cursor: pointer;
+                        font-size: 0.9rem;
+                        transition: background-color 0.2s;
+                    }
+                    .splash-button:hover {
+                        background: var(--vscode-button-hoverBackground);
+                        opacity: 0.8;
+                    }
+                    .splash-button.primary {
+                        background: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                    }
+                    .splash-button.secondary {
+                        background: var(--vscode-button-secondaryBackground);
+                        color: var(--vscode-button-secondaryForeground);
+                    }
+                    .config-note {
+                        margin-top: 1rem;
+                        font-size: 0.8rem;
+                        color: var(--vscode-descriptionForeground);
+                        opacity: 0.8;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="splash-container">
+                    <div class="splash-icon">⚙️</div>
+                    <h1 class="splash-title">Renamify CLI Not Found</h1>
+                    <p class="splash-message">
+                        The Renamify command-line tool is required to use this extension.
+                        Please install it or configure the path to your existing installation.
+                    </p>
+                    <div class="splash-buttons">
+                        <a href="https://docspring.github.io/renamify/installation/" class="splash-button primary" onclick="openExternal(this.href); return false;">
+                            📦 View Installation Guide
+                        </a>
+                        <button class="splash-button secondary" id="openSettingsBtn">
+                            ⚙️ Configure Binary Path
+                        </button>
+                        <button class="splash-button secondary" id="refreshBtn">
+                            🔄 Refresh Extension
+                        </button>
+                    </div>
+                    <p class="config-note">
+                        You can also set the <code>renamify.cliPath</code> setting to point to your binary.
+                    </p>
+                </div>
+
+                <script nonce="${nonce}">
+                    const vscode = acquireVsCodeApi();
+
+                    function openExternal(url) {
+                        // This will be handled by VS Code
+                        window.open(url, '_blank');
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        console.log('DOM loaded');
+
+                        const openSettingsBtn = document.getElementById('openSettingsBtn');
+                        const refreshBtn = document.getElementById('refreshBtn');
+
+                        if (openSettingsBtn) {
+                            openSettingsBtn.addEventListener('click', function() {
+                                console.log('Settings button clicked');
+                                vscode.postMessage({ type: 'openSettings' });
+                            });
+                        }
+
+                        if (refreshBtn) {
+                            refreshBtn.addEventListener('click', function() {
+                                console.log('Refresh button clicked');
+                                vscode.postMessage({ type: 'refresh' });
+                            });
+                        }
+                    });
+                </script>
             </body>
             </html>`;
   }

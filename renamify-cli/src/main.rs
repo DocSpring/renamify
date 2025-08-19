@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
-use renamify_core::{Config, Preview, Style};
+use renamify_core::{Config, OutputFormatter, Preview, Style, VersionResult};
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 use std::process;
@@ -431,6 +431,13 @@ enum Commands {
         /// Configure global excludes file if it doesn't exist
         #[arg(long, requires = "global")]
         configure_global: bool,
+    },
+
+    /// Show version information
+    Version {
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
     },
 
     /// Plan and apply a renaming in one step (with confirmation)
@@ -899,6 +906,8 @@ fn main() {
             configure_global,
         } => handle_init(local, global, check, configure_global),
 
+        Commands::Version { output } => handle_version(output),
+
         Commands::Rename {
             search,
             replace,
@@ -1337,5 +1346,20 @@ pub fn generate_completions<G: clap_complete::Generator>(
     fs::create_dir_all(out_dir)?;
     let path = generate_to(gen, cmd, name, out_dir)?;
     println!("Generated completion file: {}", path.display());
+    Ok(())
+}
+
+fn handle_version(output: OutputFormat) -> Result<()> {
+    let version_result = VersionResult {
+        name: "renamify".to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+    };
+
+    let formatted = match output {
+        OutputFormat::Json => version_result.format_json(),
+        OutputFormat::Summary => version_result.format_summary(),
+    };
+
+    println!("{}", formatted);
     Ok(())
 }
