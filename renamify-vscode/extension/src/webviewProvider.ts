@@ -326,7 +326,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; font-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource};">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${styleUri}" rel="stylesheet">
                 <title>Renamify Search & Replace</title>
@@ -444,11 +444,11 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; font-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource};">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${styleUri}" rel="stylesheet">
                 <title>Renamify - CLI Not Found</title>
-                <style>
+                <style nonce="${nonce}">
                     .splash-container {
                         display: flex;
                         flex-direction: column;
@@ -524,7 +524,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                         Please install it or configure the path to your existing installation.
                     </p>
                     <div class="splash-buttons">
-                        <a href="https://docspring.github.io/renamify/installation/" class="splash-button primary" onclick="openExternal(this.href); return false;">
+                        <a href="https://docspring.github.io/renamify/installation/" class="splash-button primary">
                             📦 View Installation Guide
                         </a>
                         <button class="splash-button secondary" id="openSettingsBtn">
@@ -541,11 +541,6 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
                 <script nonce="${nonce}">
                     const vscode = acquireVsCodeApi();
-
-                    function openExternal(url) {
-                        // This will be handled by VS Code
-                        window.open(url, '_blank');
-                    }
 
                     document.addEventListener('DOMContentLoaded', function() {
                         console.log('DOM loaded');
