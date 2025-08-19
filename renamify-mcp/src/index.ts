@@ -261,7 +261,10 @@ export function createServer(
 }
 
 export async function main() {
-  const server = createServer();
+  // Allow configuration via environment variable
+  const renamifyPath = process.env.RENAMIFY_PATH;
+  const service = renamifyPath ? new RenamifyService(renamifyPath) : undefined;
+  const server = createServer(service);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // Server started successfully - MCP servers communicate via stdio

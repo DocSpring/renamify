@@ -44,6 +44,24 @@ Add to your MCP client configuration (e.g., for Claude Desktop or Cursor):
 }
 ```
 
+### Custom Binary Path
+
+If `renamify` is not in your PATH or you want to use a specific binary, set the `RENAMIFY_PATH` environment variable:
+
+```json
+{
+  "mcpServers": {
+    "renamify": {
+      "command": "npx",
+      "args": ["-y", "@renamify/mcp-server"],
+      "env": {
+        "RENAMIFY_PATH": "/path/to/renamify"
+      }
+    }
+  }
+}
+```
+
 ### Supported AI Assistants
 
 - **Claude Desktop** - Anthropic's AI assistant

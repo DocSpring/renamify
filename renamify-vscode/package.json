@@ -102,7 +102,7 @@
   "scripts": {
     "check": "biome check",
     "compile:extension": "rm -rf dist && tsc -p extension",
-    "compile:webview": "rm media/*.js media/*.js.map && tsc -p webview && ./scripts/bundle-webview.sh",
+    "compile:webview": "rm -f media/*.js media/*.js.map && tsc -p webview && ./scripts/bundle-webview.sh",
     "compile": "pnpm compile:extension && pnpm compile:webview",
     "format": "biome format --write",
     "lint": "biome check --write",

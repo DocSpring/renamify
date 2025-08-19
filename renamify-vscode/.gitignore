@@ -4,3 +4,8 @@ node_modules
 *.vsix
 .DS_Store
 src/renamify-core-bindings
+
+# Generated files
+media/bundle.js
+media/webview.js
+media/webview.js.map

@@ -49,36 +49,49 @@ suite('CLI Service Test Suite', () => {
       caseStyles: ['camel', 'pascal'],
     });
 
-    // Simulate successful CLI response
+    // Simulate successful CLI response with wrapper object
     setTimeout(() => {
       mockProcess.stdout.emit(
         'data',
         JSON.stringify({
-          id: 'test-plan',
-          created_at: '2024-01-01T00:00:00Z',
+          success: true,
+          operation: 'search',
+          plan_id: 'test-plan',
           search: 'oldName',
-          replace: 'newName',
-          styles: [],
-          includes: [],
-          excludes: [],
-          matches: [
-            {
-              file: 'test.ts',
-              line: 10,
-              column: 5,
-              text: 'oldName',
-              replacement: 'newName',
-              context: 'const oldName = 123;',
-            },
-          ],
-          paths: [],
-          stats: {
-            files_scanned: 1,
-            total_matches: 1,
-            matches_by_variant: {},
+          replace: '',
+          dry_run: false,
+          summary: {
             files_with_matches: 1,
+            total_matches: 1,
+            renames: 0,
           },
-          version: '1.0.0',
+          plan: {
+            id: 'test-plan',
+            created_at: '2024-01-01T00:00:00Z',
+            search: 'oldName',
+            replace: 'newName',
+            styles: [],
+            includes: [],
+            excludes: [],
+            matches: [
+              {
+                file: 'test.ts',
+                line: 10,
+                column: 5,
+                text: 'oldName',
+                replacement: 'newName',
+                context: 'const oldName = 123;',
+              },
+            ],
+            paths: [],
+            stats: {
+              files_scanned: 1,
+              total_matches: 1,
+              matches_by_variant: {},
+              files_with_matches: 1,
+            },
+            version: '1.0.0',
+          },
         })
       );
       mockProcess.emit('close', 0);
@@ -119,8 +132,21 @@ suite('CLI Service Test Suite', () => {
       mockProcess.stdout.emit(
         'data',
         JSON.stringify({
-          id: 'plan-123',
-          stats: { total_matches: 5 },
+          success: true,
+          operation: 'plan',
+          plan_id: 'plan-123',
+          search: 'oldName',
+          replace: 'newName',
+          dry_run: false,
+          summary: {
+            files_with_matches: 1,
+            total_matches: 5,
+            renames: 0,
+          },
+          plan: {
+            id: 'plan-123',
+            stats: { total_matches: 5 },
+          },
         })
       );
       mockProcess.emit('close', 0);
