@@ -1,11 +1,12 @@
-# <picture><source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logo-white.svg"><source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logo.svg"><img alt="Renamify logo" src="docs/src/assets/logo-white.svg" width="32" height="32" align="center"></picture> Renamify
+# <picture><source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logo-white.svg"><source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logo.svg"><img alt="Renamify logo" src="docs/src/assets/logo-white.svg" width="32" height="32" align="center" style="margin-bottom: 6px; margin-right: 7px;"></picture> Renamify
 
 Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
 
 [![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)
-[![E2E Tests](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml)
-[![MCP Server](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml)
-[![Documentation](https://github.com/DocSpring/renamify/actions/workflows/docs.yml/badge.svg)](https://docspring.github.io/renamify/)
+[![E2E](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml)
+[![MCP](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml)
+[![VS Code](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml)
+[![Docs](https://github.com/DocSpring/renamify/actions/workflows/docs.yml/badge.svg)](https://docspring.github.io/renamify/)
 
 ## What's Available
 
