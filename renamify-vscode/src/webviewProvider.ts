@@ -4,6 +4,7 @@ import type {
   ApplyMessage,
   ExtensionMessage,
   OpenFileMessage,
+  OpenPreviewMessage,
   PlanMessage,
   SearchMessage,
   WebviewMessage,
@@ -48,6 +49,11 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           await this.openFile(openFileData.file, openFileData.line);
           break;
         }
+        case 'openPreview': {
+          const previewData = data as OpenPreviewMessage;
+          await this.openPreviewInEditor(previewData);
+          break;
+        }
         default:
           console.warn(
             `Unknown message type: ${(data as { type: string }).type}`
@@ -59,21 +65,29 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
   private async handleSearch(data: SearchMessage) {
     try {
-      const results = await this._cliService.search(data.search, data.replace, {
-        include: data.include,
-        exclude: data.exclude,
-        excludeMatchingLines: data.excludeMatchingLines,
-        caseStyles: data.caseStyles,
-      });
+      // If replace is provided, use plan with --dry-run, otherwise use search
+      const results = data.replace
+        ? await this._cliService.createPlan(data.search, data.replace, {
+            include: data.include,
+            exclude: data.exclude,
+            excludeMatchingLines: data.excludeMatchingLines,
+            caseStyles: data.caseStyles,
+            dryRun: true,
+          })
+        : await this._cliService.search(data.search, '', {
+            include: data.include,
+            exclude: data.exclude,
+            excludeMatchingLines: data.excludeMatchingLines,
+            caseStyles: data.caseStyles,
+          });
 
       this._view?.webview.postMessage({
         type: 'searchResults',
         results,
       });
     } catch (error) {
-      vscode.window.showErrorMessage(
-        `Search failed: ${error instanceof Error ? error.message : String(error)}`
-      );
+      // Don't show error messages for debounced searches
+      console.error('Search failed:', error);
     }
   }
 
@@ -106,9 +120,17 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   private async handleApply(data: ApplyMessage) {
     const config = vscode.workspace.getConfiguration('renamify');
 
+    // Get current search and replace from the message
+    if (!(data.search && data.replace)) {
+      vscode.window.showErrorMessage(
+        'Both search and replace terms are required to apply changes'
+      );
+      return;
+    }
+
     if (config.get('confirmBeforeApply')) {
       const answer = await vscode.window.showInformationMessage(
-        'Are you sure you want to apply these changes?',
+        `Apply rename: ${data.search} → ${data.replace}?`,
         'Yes',
         'No'
       );
@@ -123,9 +145,17 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
     }
 
     try {
-      await this._cliService.apply(data.planId);
+      // Create and apply the plan directly (without dry-run)
+      await this._cliService.rename(data.search, data.replace, {
+        include: data.include,
+        exclude: data.exclude,
+        excludeMatchingLines: data.excludeMatchingLines,
+        caseStyles: data.caseStyles,
+      });
+
       vscode.window.showInformationMessage('Changes applied successfully');
 
+      // Trigger a new search to refresh results
       this._view?.webview.postMessage({
         type: 'changesApplied',
       });
@@ -145,6 +175,63 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
       const position = new vscode.Position(line - 1, 0);
       editor.selection = new vscode.Selection(position, position);
       editor.revealRange(new vscode.Range(position, position));
+    }
+  }
+
+  private async openPreviewInEditor(data: OpenPreviewMessage) {
+    try {
+      // Build CLI args for preview
+      const args = ['plan', data.search];
+
+      // Use diff preview if replace is provided, otherwise use matches
+      const previewFormat = data.replace ? 'diff' : 'matches';
+      args.push(data.replace || '""'); // Empty string for search-only
+      args.push('--dry-run', '--preview', previewFormat);
+
+      if (data.include) {
+        args.push('--include', data.include);
+      }
+
+      if (data.exclude) {
+        args.push('--exclude', data.exclude);
+      }
+
+      if (data.excludeMatchingLines) {
+        args.push('--exclude-matching-lines', data.excludeMatchingLines);
+      }
+
+      if (data.caseStyles && data.caseStyles.length > 0) {
+        args.push('--only-styles', data.caseStyles.join(','));
+      }
+
+      const config = vscode.workspace.getConfiguration('renamify');
+      if (!config.get('respectGitignore')) {
+        args.push('-u');
+      }
+
+      // Run CLI to get preview output
+      const result = await this._cliService.runCliRaw(args);
+
+      // Create title for the document
+      const title = data.replace
+        ? `Renamify: ${data.search} → ${data.replace}`
+        : `Renamify: Search for "${data.search}"`;
+
+      // Create a new untitled document with the preview content
+      const doc = await vscode.workspace.openTextDocument({
+        content: `# ${title}\n\n${result}`,
+        language: 'diff', // Use diff language for syntax highlighting
+      });
+
+      // Show the document in the editor
+      await vscode.window.showTextDocument(doc, {
+        preview: false,
+        viewColumn: vscode.ViewColumn.Active,
+      });
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to open preview: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -200,8 +287,11 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                     </div>
 
                     <div class="input-group">
-                        <label for="caseStyles">Case styles</label>
-                        <div class="case-styles-container">
+                        <div class="case-styles-header" id="caseStylesHeader">
+                            <span class="expand-icon">▼</span>
+                            <label for="caseStyles">Case styles (<span id="checkedCount">8</span>)</label>
+                        </div>
+                        <div class="case-styles-container" id="caseStylesContainer">
                             <label class="checkbox-label">
                                 <input type="checkbox" value="original" checked> Original
                             </label>
@@ -236,24 +326,38 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                     </div>
 
                     <div class="button-group">
-                        <button id="searchBtn" class="primary">Search</button>
-                        <button id="planBtn">Create Plan</button>
-                        <button id="applyBtn">Apply</button>
-                        <button id="clearBtn">Clear</button>
+                        <button id="applyBtn" class="primary">Apply Rename</button>
                     </div>
                 </div>
 
                 <div class="results-container">
                     <div class="results-header">
                         <span id="resultsSummary"></span>
+                        <a href="#" id="openInEditor" class="open-in-editor">Open in editor</a>
                         <div class="results-actions">
-                            <button id="expandAll" title="Expand All">⊞</button>
-                            <button id="collapseAll" title="Collapse All">⊟</button>
+                            <button id="expandAll" title="Expand All">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);">
+                                    <line x1="15" x2="15" y1="12" y2="18"/>
+                                    <line x1="12" x2="18" y1="15" y2="15"/>
+                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                                </svg>
+                            </button>
+                            <button id="collapseAll" title="Collapse All">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);">
+                                    <line x1="12" x2="18" y1="15" y2="15"/>
+                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                     <div id="resultsTree" class="results-tree"></div>
                 </div>
 
+                <script nonce="${nonce}">
+                    window.workspaceRoot = ${JSON.stringify(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '')};
+                </script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>
             </html>`;

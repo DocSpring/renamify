@@ -19,6 +19,9 @@
         "noExplicitAny": "warn",
         "noConsole": "off",
         "noEmptyBlockStatements": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off"
       }
     }
   },

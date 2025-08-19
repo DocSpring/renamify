@@ -113,7 +113,7 @@ suite('Commands Test Suite', () => {
 
   test('undoLastOperation should undo the last operation', async () => {
     (cliService.history as sinon.SinonStub).resolves([
-      { id: 'op-1', old: 'oldName', new: 'newName' },
+      { id: 'op-1', search: 'oldName', replace: 'newName' },
     ]);
     (cliService.undo as sinon.SinonStub).resolves();
 

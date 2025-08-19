@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { RenamifyCliService } from './cliService';
+import type { Plan } from './types';
 import type { RenamifyViewProvider } from './webviewProvider';
 
 export class RenamifyCommands {
@@ -32,11 +33,9 @@ export class RenamifyCommands {
     }
 
     try {
-      const plan = await this.cliService.createPlan(
-        searchTerm,
-        replaceTerm,
-        {}
-      );
+      const plan = (await this.cliService.createPlan(searchTerm, replaceTerm, {
+        dryRun: false,
+      })) as Plan;
       vscode.window.showInformationMessage(
         `Plan created with ${plan.stats?.total_matches || 0} matches`
       );
@@ -103,7 +102,7 @@ export class RenamifyCommands {
       }
 
       const items = history.map((h) => ({
-        label: `${h.id}: ${h.old} → ${h.new}`,
+        label: `${h.id}: ${h.search} → ${h.replace}`,
         description: `${new Date(h.created_at).toLocaleString()} - ${h.stats?.total_matches || 0} matches`,
         id: h.id,
       }));

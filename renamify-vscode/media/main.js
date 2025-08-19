@@ -10,34 +10,76 @@
   const includeInput = document.getElementById('include');
   const excludeInput = document.getElementById('exclude');
   const excludeLinesInput = document.getElementById('excludeLines');
-  const searchBtn = document.getElementById('searchBtn');
-  const planBtn = document.getElementById('planBtn');
   const applyBtn = document.getElementById('applyBtn');
-  const clearBtn = document.getElementById('clearBtn');
   const expandAllBtn = document.getElementById('expandAll');
   const collapseAllBtn = document.getElementById('collapseAll');
   const resultsSummary = document.getElementById('resultsSummary');
   const resultsTree = document.getElementById('resultsTree');
+  const openInEditorLink = document.getElementById('openInEditor');
+  const caseStylesHeader = document.getElementById('caseStylesHeader');
+  const caseStylesContainer = document.getElementById('caseStylesContainer');
+  const checkedCount = document.getElementById('checkedCount');
+
+  // Debounce timer
+  let searchDebounceTimer = null;
 
   // Event listeners
-  searchBtn.addEventListener('click', performSearch);
-  planBtn.addEventListener('click', createPlan);
   applyBtn.addEventListener('click', applyChanges);
-  clearBtn.addEventListener('click', clearResults);
   expandAllBtn.addEventListener('click', expandAll);
   collapseAllBtn.addEventListener('click', collapseAll);
 
-  searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      performSearch();
+  openInEditorLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    openPreviewInEditor();
+  });
+
+  // Case styles collapsible section
+  caseStylesHeader.addEventListener('click', () => {
+    const isCollapsed = caseStylesContainer.classList.contains('collapsed');
+    const expandIcon = caseStylesHeader.querySelector('.expand-icon');
+
+    if (isCollapsed) {
+      caseStylesContainer.classList.remove('collapsed');
+      expandIcon.textContent = '▼';
+    } else {
+      caseStylesContainer.classList.add('collapsed');
+      expandIcon.textContent = '▶';
     }
   });
 
-  replaceInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+  // Debounced auto-search on input
+  function debouncedSearch() {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
       performSearch();
-    }
-  });
+    }, 300); // 300ms debounce
+  }
+
+  searchInput.addEventListener('input', debouncedSearch);
+  replaceInput.addEventListener('input', debouncedSearch);
+  includeInput.addEventListener('input', debouncedSearch);
+  excludeInput.addEventListener('input', debouncedSearch);
+  excludeLinesInput.addEventListener('input', debouncedSearch);
+
+  // Update checked count and trigger search when checkboxes change
+  function updateCheckedCount() {
+    const checked = document.querySelectorAll(
+      '.case-styles-container input[type="checkbox"]:checked'
+    ).length;
+    checkedCount.textContent = checked;
+  }
+
+  for (const checkbox of document.querySelectorAll(
+    '.case-styles-container input[type="checkbox"]'
+  )) {
+    checkbox.addEventListener('change', () => {
+      updateCheckedCount();
+      debouncedSearch();
+    });
+  }
+
+  // Initial count update
+  updateCheckedCount();
 
   function getSelectedCaseStyles() {
     const checkboxes = document.querySelectorAll(
@@ -47,15 +89,18 @@
   }
 
   function performSearch() {
-    const searchTerm = searchInput.value;
-    const replaceTerm = replaceInput.value;
+    const searchTerm = searchInput.value.trim();
+    const replaceTerm = replaceInput.value.trim();
 
+    // Clear results if search is empty
     if (!searchTerm) {
+      clearResults();
       return;
     }
 
     showLoading();
 
+    // Always use search mode (backend will decide to use plan with --dry-run if replace is provided)
     vscode.postMessage({
       type: 'search',
       search: searchTerm,
@@ -67,16 +112,17 @@
     });
   }
 
-  function createPlan() {
-    const searchTerm = searchInput.value;
-    const replaceTerm = replaceInput.value;
+  function applyChanges() {
+    const searchTerm = searchInput.value.trim();
+    const replaceTerm = replaceInput.value.trim();
 
-    if (!searchTerm) {
+    if (!(searchTerm && replaceTerm)) {
+      // Can't apply without both search and replace
       return;
     }
 
     vscode.postMessage({
-      type: 'plan',
+      type: 'apply',
       search: searchTerm,
       replace: replaceTerm,
       include: includeInput.value,
@@ -86,17 +132,31 @@
     });
   }
 
-  function applyChanges() {
-    vscode.postMessage({
-      type: 'apply',
-    });
-  }
-
   function clearResults() {
     currentResults = [];
     expandedFiles.clear();
     resultsTree.innerHTML = '';
     resultsSummary.textContent = '';
+    openInEditorLink.style.display = 'none';
+  }
+
+  function openPreviewInEditor() {
+    const searchTerm = searchInput.value.trim();
+    const replaceTerm = replaceInput.value.trim();
+
+    if (!searchTerm) {
+      return;
+    }
+
+    vscode.postMessage({
+      type: 'openPreview',
+      search: searchTerm,
+      replace: replaceTerm,
+      include: includeInput.value,
+      exclude: excludeInput.value,
+      excludeMatchingLines: excludeLinesInput.value,
+      caseStyles: getSelectedCaseStyles(),
+    });
   }
 
   function showLoading() {
@@ -110,6 +170,8 @@
     if (!results || results.length === 0) {
       resultsTree.innerHTML = '<div class="empty-state">No results found</div>';
       resultsSummary.textContent = '0 results in 0 files';
+      openInEditorLink.style.display = 'none';
+      updateExpandCollapseButtons();
       return;
     }
 
@@ -118,13 +180,22 @@
       0
     );
     resultsSummary.textContent = `${totalMatches} results in ${results.length} files`;
+    openInEditorLink.style.display = 'inline-block';
 
     resultsTree.innerHTML = '';
+
+    // Expand all files by default
+    expandedFiles.clear();
+    results.forEach((_, index) => {
+      expandedFiles.add(index);
+    });
 
     results.forEach((fileResult, index) => {
       const fileItem = createFileItem(fileResult, index);
       resultsTree.appendChild(fileItem);
     });
+
+    updateExpandCollapseButtons();
   }
 
   function createFileItem(fileResult, index) {
@@ -139,16 +210,57 @@
     expandIcon.className = 'expand-icon';
     expandIcon.textContent = expandedFiles.has(index) ? '▼' : '▶';
 
-    const fileName = document.createElement('span');
-    fileName.className = 'file-name';
-    fileName.textContent = fileResult.file;
+    // Split filename into basename and directory
+    let fullPath = fileResult.file;
+
+    // Normalize path separators to forward slashes
+    fullPath = fullPath.replace(/\\/g, '/');
+
+    // Strip workspace root if present
+    if (window.workspaceRoot) {
+      let workspaceRoot = window.workspaceRoot.replace(/\\/g, '/');
+      if (!workspaceRoot.endsWith('/')) {
+        workspaceRoot += '/';
+      }
+      if (fullPath.startsWith(workspaceRoot)) {
+        fullPath = fullPath.substring(workspaceRoot.length);
+      }
+    }
+
+    // Remove leading ./ if present
+    if (fullPath.startsWith('./')) {
+      fullPath = fullPath.substring(2);
+    }
+
+    // Split into basename and directory
+    const lastSlash = fullPath.lastIndexOf('/');
+    const basename =
+      lastSlash >= 0 ? fullPath.substring(lastSlash + 1) : fullPath;
+    const dirname = lastSlash >= 0 ? fullPath.substring(0, lastSlash) : '';
+
+    const fileNameContainer = document.createElement('span');
+    fileNameContainer.className = 'file-name-container';
+
+    const fileBasename = document.createElement('span');
+    fileBasename.className = 'file-basename';
+    fileBasename.textContent = basename;
+
+    if (dirname) {
+      const fileDirname = document.createElement('span');
+      fileDirname.className = 'file-dirname';
+      fileDirname.textContent = dirname;
+      fileNameContainer.appendChild(fileBasename);
+      fileNameContainer.appendChild(fileDirname);
+    } else {
+      fileNameContainer.appendChild(fileBasename);
+    }
 
     const matchCount = document.createElement('span');
     matchCount.className = 'match-count';
     matchCount.textContent = fileResult.matches.length;
 
     fileHeader.appendChild(expandIcon);
-    fileHeader.appendChild(fileName);
+    fileHeader.appendChild(fileNameContainer);
     fileHeader.appendChild(matchCount);
 
     fileHeader.addEventListener('click', () => toggleFile(index));
@@ -202,16 +314,21 @@
     const searchTerm = searchInput.value;
     const replaceTerm = replaceInput.value;
 
+    // Create a container div for horizontal scrolling
+    let formatted = '<div class="match-content">';
+
     // Escape HTML
-    let formatted = escapeHtml(context);
+    let escapedContext = escapeHtml(context);
 
     // Highlight search term with red background and strikethrough
     if (searchTerm) {
       const searchRegex = new RegExp(escapeRegExp(searchTerm), 'gi');
-      formatted = formatted.replace(searchRegex, (m) => {
+      escapedContext = escapedContext.replace(searchRegex, (m) => {
         return `<span class="search-match">${m}</span>`;
       });
     }
+
+    formatted += escapedContext;
 
     // Show replacement with green background
     if (replaceTerm && searchTerm) {
@@ -223,10 +340,13 @@
         for (const m of matches) {
           replaced = replaced.replace(m, replaceTerm);
         }
-        formatted += `<span class="replace-match">${escapeHtml(replaceTerm)}</span>`;
+        formatted += `<span class="replace-match">${escapeHtml(
+          replaceTerm
+        )}</span>`;
       }
     }
 
+    formatted += '</div>';
     return formatted;
   }
 
@@ -248,6 +368,22 @@
         renderMatches(matchesContainer, currentResults[index]);
       }
     }
+
+    updateExpandCollapseButtons();
+  }
+
+  function updateExpandCollapseButtons() {
+    const hasExpanded = expandedFiles.size > 0;
+
+    if (hasExpanded) {
+      // Show collapse all button
+      expandAllBtn.style.display = 'none';
+      collapseAllBtn.style.display = 'flex';
+    } else {
+      // Show expand all button
+      expandAllBtn.style.display = 'flex';
+      collapseAllBtn.style.display = 'none';
+    }
   }
 
   function expandAll() {
@@ -267,6 +403,7 @@
         }
       }
     });
+    updateExpandCollapseButtons();
   }
 
   function collapseAll() {
@@ -277,6 +414,7 @@
       expandIcon.textContent = '▶';
       matchesContainer.classList.remove('expanded');
     }
+    updateExpandCollapseButtons();
   }
 
   function escapeHtml(text) {
@@ -324,10 +462,13 @@
 
     if (state.results) {
       renderResults(state.results);
+    } else if (state.search) {
+      // Trigger initial search if we have a search term
+      performSearch();
     }
   }
 
-  // Save state on input changes
+  // Save state on input changes (but don't trigger search)
   function saveState() {
     vscode.setState({
       search: searchInput.value,
@@ -339,9 +480,28 @@
     });
   }
 
-  searchInput.addEventListener('input', saveState);
-  replaceInput.addEventListener('input', saveState);
+  // Update apply button state
+  function updateApplyButton() {
+    const hasReplace = replaceInput.value.trim() !== '';
+    const hasSearch = searchInput.value.trim() !== '';
+    applyBtn.disabled = !(hasSearch && hasReplace);
+    applyBtn.textContent = hasReplace
+      ? `Apply: ${searchInput.value.trim()} → ${replaceInput.value.trim()}`
+      : 'Apply Rename';
+  }
+
+  searchInput.addEventListener('input', () => {
+    saveState();
+    updateApplyButton();
+  });
+  replaceInput.addEventListener('input', () => {
+    saveState();
+    updateApplyButton();
+  });
   includeInput.addEventListener('input', saveState);
   excludeInput.addEventListener('input', saveState);
   excludeLinesInput.addEventListener('input', saveState);
+
+  // Initial button state
+  updateApplyButton();
 })();

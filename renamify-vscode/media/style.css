@@ -2,18 +2,26 @@
   box-sizing: border-box;
 }
 
+html,
 body {
-  padding: 0;
+  height: 100%;
   margin: 0;
+  padding: 0;
+}
+
+body {
   font-family: var(--vscode-font-family);
   font-size: var(--vscode-font-size);
   color: var(--vscode-foreground);
-  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .search-container {
-  padding: 10px 15px;
+  padding: 6px 15px 10px 15px;
   border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
 }
 
 .input-group {
@@ -40,11 +48,38 @@ body {
   outline: 1px solid var(--vscode-focusBorder);
 }
 
+.case-styles-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
+.expand-icon {
+  margin-right: 4px;
+  width: 16px;
+  text-align: center;
+  user-select: none;
+}
+
+.case-styles-header .expand-icon {
+  font-size: 12px;
+}
+
+.case-styles-header label {
+  cursor: pointer;
+  margin: 0;
+}
+
 .case-styles-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
   margin-top: 4px;
+}
+
+.case-styles-container.collapsed {
+  display: none;
 }
 
 .checkbox-label {
@@ -94,6 +129,7 @@ button:disabled {
 
 .results-container {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -104,29 +140,53 @@ button:disabled {
   background: var(--vscode-editor-background);
   border-bottom: 1px solid var(--vscode-panel-border);
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 #resultsSummary {
-  font-weight: 500;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+}
+
+.open-in-editor {
+  color: var(--vscode-textLink-foreground);
+  text-decoration: none;
+  cursor: pointer;
+  display: none;
+}
+
+.open-in-editor:hover {
+  text-decoration: underline;
 }
 
 .results-actions {
   display: flex;
   gap: 4px;
+  margin-left: auto;
 }
 
 .results-actions button {
   padding: 2px 6px;
   font-size: 16px;
   min-width: 24px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.results-actions button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
 }
 
 .results-tree {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 4px;
+  overflow-x: hidden;
+  padding: 0;
 }
 
 .file-item {
@@ -139,6 +199,10 @@ button:disabled {
   padding: 4px 8px;
   cursor: pointer;
   border-radius: 2px;
+  position: sticky;
+  top: 0;
+  background: var(--vscode-editor-background);
+  z-index: 10;
 }
 
 .file-header:hover {
@@ -150,18 +214,31 @@ button:disabled {
   color: var(--vscode-list-activeSelectionForeground);
 }
 
-.expand-icon {
-  margin-right: 4px;
-  width: 16px;
-  text-align: center;
-  user-select: none;
+.file-name-container {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  overflow: hidden;
 }
 
-.file-name {
-  flex: 1;
+.file-basename {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.file-dirname {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+  margin-left: 8px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.file-dirname:before {
+  content: "• ";
+  margin-right: 4px;
 }
 
 .match-count {
@@ -176,6 +253,9 @@ button:disabled {
 .file-matches {
   margin-left: 20px;
   display: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: calc(100vw - 40px);
 }
 
 .file-matches.expanded {
@@ -189,6 +269,9 @@ button:disabled {
   border-radius: 2px;
   font-family: var(--vscode-editor-font-family);
   font-size: var(--vscode-editor-font-size);
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .match-item:hover {
@@ -200,10 +283,12 @@ button:disabled {
   margin-right: 8px;
   min-width: 40px;
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .match-text {
-  white-space: pre;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .search-match {
@@ -217,6 +302,12 @@ button:disabled {
   background: rgba(0, 255, 0, 0.3);
   padding: 1px 2px;
   border-radius: 2px;
+}
+
+.match-content {
+  display: inline-block;
+  white-space: nowrap;
+  overflow-x: visible;
 }
 
 .empty-state {

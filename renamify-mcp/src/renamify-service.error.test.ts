@@ -27,9 +27,9 @@ describe('RenamifyService Error Handling', () => {
       error.stderr = 'Error: Invalid syntax';
       mockedExeca.mockRejectedValueOnce(error);
 
-      await expect(service.plan({ old: 'old', new: 'new' })).rejects.toThrow(
-        'Renamify plan failed: Error: Invalid syntax'
-      );
+      await expect(
+        service.plan({ search: 'old', replace: 'new' })
+      ).rejects.toThrow('Renamify plan failed: Error: Invalid syntax');
     });
 
     it('should handle errors with stderr but no content', async () => {
@@ -37,27 +37,27 @@ describe('RenamifyService Error Handling', () => {
       error.stderr = '';
       mockedExeca.mockRejectedValueOnce(error);
 
-      await expect(service.plan({ old: 'old', new: 'new' })).rejects.toThrow(
-        'Renamify plan failed: Some error'
-      );
+      await expect(
+        service.plan({ search: 'old', replace: 'new' })
+      ).rejects.toThrow('Renamify plan failed: Some error');
     });
 
     it('should throw errors without stderr as-is', async () => {
       const error = new Error('Some error');
       mockedExeca.mockRejectedValueOnce(error);
 
-      await expect(service.plan({ old: 'old', new: 'new' })).rejects.toThrow(
-        'Some error'
-      );
+      await expect(
+        service.plan({ search: 'old', replace: 'new' })
+      ).rejects.toThrow('Some error');
     });
 
     it('should throw unknown errors as-is', async () => {
       const error = 'Not an Error object';
       mockedExeca.mockRejectedValueOnce(error as any);
 
-      await expect(service.plan({ old: 'old', new: 'new' })).rejects.toBe(
-        error
-      );
+      await expect(
+        service.plan({ search: 'old', replace: 'new' })
+      ).rejects.toBe(error);
     });
   });
 

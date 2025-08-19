@@ -98,7 +98,9 @@ suite('CLI Service Test Suite', () => {
 
     mockSpawn.returns(mockProcess);
 
-    const planPromise = cliService.createPlan('oldName', 'newName', {});
+    const planPromise = cliService.createPlan('oldName', 'newName', {
+      dryRun: false,
+    });
 
     setTimeout(() => {
       mockProcess.stdout.emit(
@@ -111,7 +113,7 @@ suite('CLI Service Test Suite', () => {
       mockProcess.emit('close', 0);
     }, 10);
 
-    const plan = await planPromise;
+    const plan = (await planPromise) as any;
 
     const args = mockSpawn.firstCall.args[1];
     assert.ok(!args.includes('--dry-run'));

@@ -23,13 +23,13 @@ export type SearchResult = {
 export type Plan = {
   id: string;
   created_at: string;
-  old: string;
-  new: string;
+  search: string;
+  replace: string;
   styles: string[];
   includes: string[];
   excludes: string[];
   matches: PlanMatch[];
-  renames: Rename[];
+  paths: Rename[];
   stats: PlanStats;
   version: string;
 };
@@ -52,13 +52,13 @@ export type Rename = {
 export type PlanStats = {
   total_matches?: number;
   files_affected?: number;
-  renames?: number;
+  paths?: number;
 };
 
 export type HistoryEntry = {
   id: string;
-  old: string;
-  new: string;
+  search: string;
+  replace: string;
   created_at: string;
   stats?: PlanStats;
 };
@@ -91,6 +91,12 @@ export type PlanMessage = {
 
 export type ApplyMessage = {
   type: 'apply';
+  search?: string;
+  replace?: string;
+  include?: string;
+  exclude?: string;
+  excludeMatchingLines?: string;
+  caseStyles?: string[];
   planId?: string;
 };
 
@@ -100,11 +106,22 @@ export type OpenFileMessage = {
   line?: number;
 };
 
+export type OpenPreviewMessage = {
+  type: 'openPreview';
+  search: string;
+  replace?: string;
+  include?: string;
+  exclude?: string;
+  excludeMatchingLines?: string;
+  caseStyles?: string[];
+};
+
 export type WebviewMessage =
   | SearchMessage
   | PlanMessage
   | ApplyMessage
-  | OpenFileMessage;
+  | OpenFileMessage
+  | OpenPreviewMessage;
 
 // Response messages
 export type SearchResultsMessage = {

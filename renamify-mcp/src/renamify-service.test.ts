@@ -92,9 +92,9 @@ describe('RenamifyService', () => {
       error.stderr = errorMessage;
       mockedExeca.mockRejectedValueOnce(error);
 
-      await expect(service.plan({ old: 'foo', new: 'bar' })).rejects.toThrow(
-        `Renamify plan failed: ${errorMessage}`
-      );
+      await expect(
+        service.plan({ search: 'foo', replace: 'bar' })
+      ).rejects.toThrow(`Renamify plan failed: ${errorMessage}`);
     });
   });
 

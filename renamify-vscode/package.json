@@ -38,7 +38,7 @@
         {
           "type": "webview",
           "id": "renamify.searchView",
-          "name": "Search & Replace"
+          "name": "Renamify: Smart Search & Replace"
         }
       ]
     },

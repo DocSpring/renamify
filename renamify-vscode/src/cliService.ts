@@ -110,9 +110,13 @@ export class RenamifyCliService {
   async createPlan(
     searchTerm: string,
     replaceTerm: string,
-    options: SearchOptions
-  ): Promise<Plan> {
+    options: SearchOptions & { dryRun?: boolean }
+  ): Promise<Plan | SearchResult[]> {
     const args = ['plan', searchTerm, replaceTerm, '--preview', 'json'];
+
+    if (options.dryRun) {
+      args.push('--dry-run');
+    }
 
     if (options.include) {
       args.push('--include', options.include);
@@ -136,7 +140,42 @@ export class RenamifyCliService {
     }
 
     const result = await this.runCli(args);
+
+    if (options.dryRun) {
+      return this.parseSearchResults(result);
+    }
     return JSON.parse(result);
+  }
+
+  async rename(
+    searchTerm: string,
+    replaceTerm: string,
+    options: SearchOptions
+  ): Promise<void> {
+    const args = ['rename', searchTerm, replaceTerm, '--auto-approve'];
+
+    if (options.include) {
+      args.push('--include', options.include);
+    }
+
+    if (options.exclude) {
+      args.push('--exclude', options.exclude);
+    }
+
+    if (options.excludeMatchingLines) {
+      args.push('--exclude-matching-lines', options.excludeMatchingLines);
+    }
+
+    if (options.caseStyles && options.caseStyles.length > 0) {
+      args.push('--only-styles', options.caseStyles.join(','));
+    }
+
+    const config = vscode.workspace.getConfiguration('renamify');
+    if (!config.get('respectGitignore')) {
+      args.push('-u');
+    }
+
+    await this.runCli(args);
   }
 
   async apply(planId?: string): Promise<void> {
@@ -171,6 +210,10 @@ export class RenamifyCliService {
   async status(): Promise<Status> {
     const result = await this.runCli(['status']);
     return JSON.parse(result);
+  }
+
+  public runCliRaw(args: string[]): Promise<string> {
+    return this.runCli(args);
   }
 
   private runCli(args: string[]): Promise<string> {
