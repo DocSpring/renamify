@@ -13,6 +13,9 @@ export default defineConfig({
       title: "Renamify",
       description:
         "Smart search & replace for code and files with case-aware transformations",
+      logo: {
+        src: "./src/assets/logo.svg",
+      },
       editLink: {
         baseUrl: "https://github.com/DocSpring/renamify/edit/main/docs",
       },
