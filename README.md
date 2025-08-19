@@ -2,32 +2,80 @@
 
 Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
 
-- CLI tool
-- Extension for VS Code and Cursor _(coming soon)_
-- MCP server for AI integrations _(coming soon)_
+[![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)
+[![E2E Tests](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml)
+[![MCP Server](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml)
+[![Documentation](https://github.com/DocSpring/renamify/actions/workflows/docs.yml/badge.svg)](https://docspring.github.io/renamify/)
+
+## What's Available
+
+✅ **CLI tool** - Production ready with full Windows, macOS, and Linux support  
+✅ **MCP server** - AI integrations for Claude, Cursor, and other MCP-compatible tools  
+✅ **Documentation** - Comprehensive guides at [docspring.github.io/renamify](https://docspring.github.io/renamify/)  
+🚧 **VS Code extension** - Coming soon  
+
+## Installation
+
+### Quick Install (macOS/Linux)
+
+```bash
+curl -fsSL https://docspring.github.io/renamify/install.sh | sh
+```
+
+### From Source
+
+```bash
+# Using Cargo
+cargo install --git https://github.com/DocSpring/renamify
+
+# Or clone and build
+git clone https://github.com/DocSpring/renamify
+cd renamify
+cargo build --release
+# Binary will be at ./target/release/renamify
+```
+
+### MCP Server
+
+```bash
+npx @docspring/renamify-mcp
+```
+
+See [MCP Server documentation](https://docspring.github.io/renamify/mcp/overview/) for Claude and Cursor setup.
 
 ## Help Wanted
 
-- If you're a Windows user, we'd love your help to get everything working on Windows!
-- MCP Server and VS Code + Cursor extensions are on our roadmap.
-  - If you're interested in helping us build these, please open an issue and let us know! (So we don't duplicate the effort.)
-- Contribute tests to help us get to >= 95% test coverage
-- Contribute fixes or improvements to the documentation. We got AI to write a lot of it and AI really likes making stuff up.
-- Please try out Renamify and let us know if you have any feedback. Feel free to open issues:
-  - Found a bug?
-  - Not enough options?
-  - Too many options?
-  - Missing a feature?
+- **VS Code/Cursor Extension**: We're looking for TypeScript developers to help build the IDE extension
+- **Package Managers**: Help us get Renamify into Homebrew, AUR, Scoop, Chocolatey, etc.
+- **Language-Specific Features**: Contribute language-aware renaming (imports, modules, namespaces)
+- **Documentation**: Help improve our docs, add more examples, fix any inaccuracies
+- **Bug Reports**: Found an issue? Please [report it](https://github.com/DocSpring/renamify/issues)!
 
 ## Features
 
-- Case-aware transformations (snake_case, kebab-case, camelCase, PascalCase, UPPER_SNAKE_CASE)
-- File and directory renaming
-- Plan / apply workflow for safety during large renamings
-- Built-in undo/redo with history tracking (separate to git history)
-  - Perform a large rename safely without needing to commit anything first
-- Respects ignore files (`.gitignore`, `.ignore`, `.rgignore`, `.rnignore`)
-- Cross-platform support (Linux, macOS, Windows)
+- **Case-aware transformations**: Automatically handles snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Train-Case, and more
+- **Safe by default**: Plan → Review → Apply workflow prevents accidents
+- **Built-in undo/redo**: Full history tracking, separate from git
+- **File and directory renaming**: Rename everything in one atomic operation
+- **Respects ignore files**: Works with `.gitignore`, `.ignore`, `.rgignore`, `.rnignore`
+- **Cross-platform**: Full support for Linux, macOS, and Windows
+
+## Quick Examples
+
+```bash
+# Preview changes before applying
+renamify plan old_name new_name
+
+# Rename with automatic approval
+renamify rename old_name new_name --yes
+
+# Undo the last rename
+renamify undo
+
+# See what would change with different preview formats
+renamify plan myProject betterName --preview table
+renamify plan myProject betterName --preview diff
+```
 
 ## Demo
 
@@ -77,15 +125,22 @@ The `.rnignore` file is useful when you want to exclude files specifically from 
 
 ## Development
 
+### Quick Setup
+
+```bash
+# Install all development dependencies (Rust, tools, etc.)
+./scripts/dev-setup.sh
+```
+
 ### Prerequisites
 
-- Rust 1.80.1 or later
-- cargo
+- Rust 1.80.1 or later (installed by dev-setup.sh)
+- cargo (included with Rust)
 
 ### Building
 
 ```bash
-cargo build
+cargo build --release
 ```
 
 ### Running Tests
@@ -106,28 +161,41 @@ This is particularly useful when troubleshooting issues with case conversions or
 
 ### Code Coverage
 
-The `renamify-core` library maintains at least 85% code coverage:
+The `renamify-core` library maintains comprehensive test coverage:
 
 ```bash
-cargo install cargo-llvm-cov --version 0.6.15
-cargo llvm-cov --package renamify-core
+cargo install cargo-llvm-cov
+cargo llvm-cov --package renamify-core --html
+# Open target/llvm-cov/html/index.html to view the report
+```
+
+### Linting & Formatting
+
+We use automated checks to maintain code quality:
+
+```bash
+# Format code
+cargo fmt --all
+
+# Run clippy
+cargo clippy --all-targets --all-features
+
+# Check shell scripts
+./scripts/shellcheck.sh
+
+# Or let git hooks handle it automatically
+git commit  # lefthook will run checks pre-commit
 ```
 
 ### Contributing
 
 - Open an issue if you find a bug or have a feature request
-- If you open a PR, ensure your changes have solid test coverage
-- Run `cargo fmt` and `cargo clippy` to ensure your code is formatted correctly and passes linting
+- PRs welcome! All checks must pass (formatting, linting, tests)
+- We use [lefthook](https://github.com/evilmartians/lefthook) for git hooks
 
 ## License
 
 MIT License - Copyright (c) 2025 DocSpring
-
-## Build Status
-
-[![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)
-
-[![E2E Tests](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml)
 
 ---
 
