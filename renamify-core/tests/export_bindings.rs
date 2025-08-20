@@ -1,4 +1,5 @@
 #[test]
+#[cfg(not(target_os = "windows"))]
 fn export_bindings() {
     // This test exports TypeScript bindings when run
     // The bindings will be generated in the bindings/ directory

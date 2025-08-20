@@ -74,6 +74,23 @@ jobs:
       - name: Run tests with coverage
         run: cargo llvm-cov --workspace --lcov --output-path lcov-${{ matrix.os }}.info
 
+      - name: Verify TypeScript bindings were generated
+        if: runner.os == 'Linux'
+        run: |
+          if [ ! -d "renamify-core/bindings" ] || [ -z "$(ls -A renamify-core/bindings/*.d.ts 2>/dev/null)" ]; then
+            echo "Error: TypeScript bindings were not generated"
+            exit 1
+          fi
+          echo "TypeScript bindings found:"
+          ls -la renamify-core/bindings/*.d.ts
+
+      - name: Upload TypeScript bindings
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-bindings
+          path: renamify-core/bindings/
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

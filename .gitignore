@@ -45,5 +45,4 @@ lcov.info
 
 *snapshot.snap.new
 
-renamify-core/bindings/*.js
-renamify-core/bindings/*.js.map
+renamify-core/bindings/

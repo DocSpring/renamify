@@ -30,15 +30,11 @@ for (const file of files) {
   fs.unlinkSync(filePath);
 }
 
-// Format the bindings
-try {
-  execSync('pnpm run format-bindings', {
-    stdio: 'inherit',
-    cwd: __dirname
-  });
-} catch (error) {
-  console.error('Failed to format bindings/*.d.ts. Please run pnpm install in ./renamify-core');
-  process.exit(1);
-}
+console.log('Formatting bindings with biome...');
+// If we get here, biome is available, so format the files
+execSync('pnpm exec biome format --write bindings', {
+  stdio: 'inherit',
+  cwd: __dirname
+});
 
 console.log('Converted all TypeScript bindings to ambient .d.ts declarations');

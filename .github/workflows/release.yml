@@ -200,6 +200,69 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  release_publish_vscode:
+    name: Publish VS Code Extension
+    needs: release_create
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download TypeScript bindings from CI
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ci.yml
+          workflow_conclusion: success
+          name: typescript-bindings
+          path: ${{ github.workspace }}/renamify-core/bindings
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        working-directory: renamify-vscode
+        run: pnpm install
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update package version
+        working-directory: renamify-vscode
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${TAG#v}"  # Remove 'v' prefix
+          npm version $VERSION --no-git-tag-version
+
+      - name: Package extension
+        working-directory: renamify-vscode
+        run: pnpm run package
+
+      - name: Publish to VS Code Marketplace
+        working-directory: renamify-vscode
+        run: npx vsce publish -p ${{ secrets.VSCE_TOKEN }}
+
+      - name: Upload VSIX to release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          files: renamify-vscode/*.vsix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   release_publish_mcp:
     name: Publish MCP Server to npm
     needs: release_create

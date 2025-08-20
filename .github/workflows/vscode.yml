@@ -40,6 +40,15 @@ jobs:
             const script = require('./.github/wait-for-checks.js');
             await script({ github, context, core, checks: ["Test on", "Check MSRV"] });
 
+      - name: Download TypeScript bindings
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ci.yml
+          workflow_conclusion: success
+          name: typescript-bindings
+          path: ${{ github.workspace }}/renamify-core/bindings
+          search_artifacts: true
+
       - name: Download renamify binary (Linux)
         if: runner.os == 'Linux'
         uses: dawidd6/action-download-artifact@v2
