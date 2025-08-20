@@ -32,8 +32,8 @@ describe('RenamifyService Error Handling', () => {
         service.plan({ search: 'old', replace: 'new' })
       ).rejects.toThrow(
         'Renamify CLI not found. Please install it using:\n\n' +
-        'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
-        'For more installation options, visit: https://docspring.github.io/renamify/installation/'
+          'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
+          'For more installation options, visit: https://docspring.github.io/renamify/installation/'
       );
     });
 
@@ -96,8 +96,8 @@ describe('RenamifyService Error Handling', () => {
 
       await expect(service.preview({})).rejects.toThrow(
         'Renamify CLI not found. Please install it using:\n\n' +
-        'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
-        'For more installation options, visit: https://docspring.github.io/renamify/installation/'
+          'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
+          'For more installation options, visit: https://docspring.github.io/renamify/installation/'
       );
     });
 
