@@ -1,4 +1,3 @@
-use bstr::ByteSlice;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use ts_rs::TS;

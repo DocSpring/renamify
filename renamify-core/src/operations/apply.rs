@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 /// Apply operation - returns structured data
 pub fn apply_operation(
-    plan_path: Option<&Path>,
+    _plan_path: Option<&Path>,
     plan_id: Option<&str>,
     commit: bool,
     force: bool,

@@ -7,7 +7,6 @@ use std::fmt::Write as FmtWrite;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 
 /// Options for applying a renaming plan
 #[derive(Debug, Clone)]
@@ -42,27 +41,15 @@ impl Default for ApplyOptions {
     }
 }
 
-/// Represents a backup of a file
-#[derive(Debug, Clone)]
-struct FileBackup {
-    original_path: PathBuf,
-    backup_path: PathBuf,
-    checksum: String,
-    permissions: Option<fs::Permissions>,
-    modified_time: SystemTime,
-}
-
 /// Tracks the state of an apply operation
 pub struct ApplyState {
-    plan_id: String,
-    backups: Vec<FileBackup>,
     content_edits_applied: Vec<PathBuf>,
     renames_performed: Vec<(PathBuf, PathBuf)>,
     log_file: Option<File>,
 }
 
 impl ApplyState {
-    fn new(plan_id: String, log_file: Option<PathBuf>) -> Result<Self> {
+    fn new(log_file: Option<PathBuf>) -> Result<Self> {
         let log_file = if let Some(path) = log_file {
             // Create parent directory if it doesn't exist
             if let Some(parent) = path.parent() {
@@ -74,8 +61,6 @@ impl ApplyState {
         };
 
         Ok(Self {
-            plan_id,
-            backups: Vec::new(),
             content_edits_applied: Vec::new(),
             renames_performed: Vec::new(),
             log_file,
@@ -143,7 +128,7 @@ fn generate_reverse_patches(
         // Generate REVERSE diff (new -> old) for undo using diffy
         let reverse_patch =
             diffy::create_patch(current_content.as_str(), original_content.as_str());
-        let mut reverse_diff_str = reverse_patch.to_string();
+        let reverse_diff_str = reverse_patch.to_string();
 
         // On Windows, normalize the entire patch to use CRLF consistently
         // diffy generates patches with LF line endings, but Windows needs CRLF
@@ -385,41 +370,6 @@ fn replace_patch_headers(patch_str: &str, from_path: &Path, to_path: &Path) -> S
     result
 }
 
-/// Create a backup of a file or directory (for renames only)
-fn backup_file_metadata(path: &Path, backup_dir: &Path, plan_id: &str) -> Result<FileBackup> {
-    // Read file metadata
-    let metadata = fs::metadata(path)
-        .with_context(|| format!("Failed to read metadata for {}", path.display()))?;
-
-    // Skip if it's a symlink and we're configured to skip them
-    if metadata.is_symlink() {
-        return Err(anyhow!("Cannot backup symlink: {}", path.display()));
-    }
-
-    // Calculate checksum of the original file (skip for directories)
-    let checksum = if metadata.is_file() {
-        calculate_checksum(path)?
-    } else {
-        // For directories, use a placeholder checksum
-        "directory".to_string()
-    };
-
-    // Create backup directory structure
-    let backup_base = backup_dir.join(plan_id);
-    fs::create_dir_all(&backup_base)?;
-
-    // For diff-based backups, we don't copy the file, just track metadata
-    let backup_path = backup_base.join(path.file_name().unwrap_or(path.as_os_str()));
-
-    Ok(FileBackup {
-        original_path: path.to_path_buf(),
-        backup_path,
-        checksum,
-        permissions: Some(metadata.permissions()),
-        modified_time: metadata.modified()?,
-    })
-}
-
 /// Calculate SHA256 checksum of a file
 pub fn calculate_checksum(path: &Path) -> Result<String> {
     let mut file = File::open(path)?;
@@ -517,7 +467,7 @@ fn is_case_insensitive_fs(path: &Path) -> bool {
 }
 
 /// Perform a file or directory rename
-fn perform_rename(from: &Path, to: &Path, is_dir: bool, state: &mut ApplyState) -> Result<()> {
+fn perform_rename(from: &Path, to: &Path, _is_dir: bool, state: &mut ApplyState) -> Result<()> {
     state.log(&format!("Renaming {} -> {}", from.display(), to.display()))?;
 
     // Check if this is a case-only rename on a case-insensitive filesystem
@@ -597,41 +547,12 @@ fn rollback(state: &mut ApplyState) -> Result<()> {
 /// Apply a renaming plan
 #[allow(clippy::too_many_lines)]
 pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
-    let mut state = ApplyState::new(plan.id.clone(), options.log_file.clone())?;
+    let mut state = ApplyState::new(options.log_file.clone())?;
 
     state.log(&format!("Starting apply for plan {}", plan.id))?;
     state.log(&format!("Options: {:?}", options))?;
 
-    // Only backup files that will be renamed (content changes use diffs)
-    let mut files_to_backup = HashSet::new();
-
-    // Files and directories to be renamed
-    for rename in &plan.paths {
-        files_to_backup.insert(&rename.path);
-    }
-
-    // Create metadata backups for renames if requested
-    if options.create_backups && !files_to_backup.is_empty() {
-        state.log(&format!(
-            "Creating metadata backups for {} items being renamed",
-            files_to_backup.len()
-        ))?;
-
-        for path in files_to_backup {
-            match backup_file_metadata(path, &options.backup_dir, &plan.id) {
-                Ok(backup) => {
-                    state.log(&format!("Backed up metadata for {}", path.display()))?;
-                    state.backups.push(backup);
-                },
-                Err(e) => {
-                    state.log(&format!("Failed to backup {}: {}", path.display(), e))?;
-                    if !options.force {
-                        return Err(e);
-                    }
-                },
-            }
-        }
-    }
+    // Note: Backup system uses diffy patches, not file backups
 
     // STEP 1: Store original content BEFORE any changes for diff generation
     let mut original_contents: HashMap<PathBuf, String> = HashMap::new();
@@ -723,7 +644,7 @@ pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
         }
     });
 
-    for mut rename in renames {
+    for rename in renames {
         let is_dir = rename.kind == crate::scanner::RenameKind::Dir;
 
         // Check if this rename's source path has been affected by a previous directory rename
@@ -899,32 +820,10 @@ pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
 mod tests {
     #![allow(clippy::too_many_lines)]
     use super::*;
-    use crate::scanner::{MatchHunk, Rename, RenameKind, Stats};
+    use crate::scanner::{MatchHunk, Stats};
     use serial_test::serial;
     use std::collections::HashMap;
     use tempfile::TempDir;
-
-    fn create_test_plan() -> Plan {
-        Plan {
-            id: "test123".to_string(),
-            created_at: chrono::Local::now().to_rfc3339(),
-            search: "old_name".to_string(),
-            replace: "new_name".to_string(),
-            styles: vec![],
-            includes: vec![],
-            excludes: vec![],
-            matches: vec![],
-            paths: vec![],
-            stats: Stats {
-                files_scanned: 0,
-                total_matches: 0,
-                matches_by_variant: HashMap::new(),
-                files_with_matches: 0,
-            },
-            version: "1.0.0".to_string(),
-            created_directories: None,
-        }
-    }
 
     #[test]
     #[serial]
@@ -1028,13 +927,7 @@ mod tests {
         let test_file = temp_dir.path().join("test.rs");
         fs::write(&test_file, "fn old_name() {}").unwrap();
 
-        let mut state = ApplyState {
-            plan_id: "test".to_string(),
-            content_edits_applied: Vec::new(),
-            renames_performed: Vec::new(),
-            backups: Vec::new(),
-            log_file: None,
-        };
+        let mut state = ApplyState::new(None).unwrap();
 
         let replacements = vec![("old_name".to_string(), "new_name".to_string(), 3, 11)];
 

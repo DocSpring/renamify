@@ -1,4 +1,4 @@
-use crate::scanner::{Plan, Rename, RenameKind};
+use crate::scanner::{Plan, RenameKind};
 use comfy_table::{Cell, Color, ColumnConstraint, ContentArrangement, Table, Width};
 use std::collections::HashMap;
 use std::io::{self, IsTerminal};

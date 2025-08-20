@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use ts_rs::TS;
 
 /// Detected style of an identifier or path segment
@@ -354,7 +353,7 @@ pub fn apply_coercion(
     if is_partial_with_suffix {
         // For partial patterns with hyphen suffixes in mixed-style containers,
         // preserve the original style of the pattern part and keep the suffix as-is
-        let old_tokens = tokenize(old_pattern);
+        let _old_tokens = tokenize(old_pattern);
         let new_tokens = tokenize(new_pattern);
 
         // Find the style of just the pattern part in the container
@@ -387,7 +386,7 @@ pub fn apply_coercion(
     }
 
     // Tokenize the patterns
-    let old_tokens = tokenize(old_pattern);
+    let _old_tokens = tokenize(old_pattern);
     let new_tokens = tokenize(new_pattern);
 
     // Render the new pattern in the container style

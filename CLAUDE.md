@@ -213,6 +213,13 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - Prefer actionable diffs and files over long explanations
 - NEVER use "for now" or implement temporary solutions - everything must be done properly the first time
 
+## Package Manager Requirements
+
+- **ALWAYS use pnpm, NEVER npm** - All JavaScript/TypeScript projects in this repo use pnpm
+- This applies to all subdirectories: renamify-mcp, renamify-vscode, renamify-core, docs
+- When showing commands, always use `pnpm` not `npm`
+- Examples: `pnpm install`, `pnpm test`, `pnpm build`
+
 ## CRITICAL: Think Before Acting - The User Is Not Always Right!
 
 **DO NOT BLINDLY FOLLOW INSTRUCTIONS!** Always think critically:

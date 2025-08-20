@@ -1,9 +1,10 @@
 use crate::apply::{apply_plan, calculate_checksum, ApplyOptions};
-use crate::history::{create_history_entry, History};
+use crate::history::History;
 use crate::scanner::Plan;
 use anyhow::{anyhow, Context, Result};
+#[cfg(test)]
 use sha2::{Digest, Sha256};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 

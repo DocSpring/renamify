@@ -1,4 +1,3 @@
-#![allow(unused)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 #![allow(clippy::must_use_candidate)]
@@ -59,7 +58,7 @@ pub use scanner::{
 pub use undo::{redo_renaming, undo_renaming};
 
 use ignore::WalkBuilder;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Configure a `WalkBuilder` based on the unrestricted level in `PlanOptions`.
 ///

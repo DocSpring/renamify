@@ -1,11 +1,10 @@
-use crate::case_model::{generate_variant_map, Style};
-use crate::compound_matcher::{find_compound_variants, CompoundMatch};
-use crate::pattern::{build_pattern, is_boundary, is_compound_boundary, Match, MatchPattern};
+use crate::case_model::Style;
+use crate::compound_matcher::find_compound_variants;
+use crate::pattern::{build_pattern, is_boundary, Match};
 use crate::scanner::{CoercionMode, MatchHunk};
-use anyhow::Result;
 use bstr::ByteSlice;
 use regex::bytes::Regex;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 /// Normalize a path by removing Windows long path prefix if present
@@ -23,57 +22,6 @@ fn normalize_path(path: &Path) -> PathBuf {
     {
         path.to_path_buf()
     }
-}
-
-/// Check if a string has any recognizable case style
-fn has_recognizable_case_style(s: &str) -> bool {
-    if s.is_empty() {
-        return false;
-    }
-
-    // Check for camelCase/PascalCase
-    if is_camel_or_pascal_case(s) {
-        return true;
-    }
-
-    // Check for SCREAMING_SNAKE_CASE
-    if s.contains('_') && s.chars().all(|c| c.is_ascii_uppercase() || c == '_') {
-        return true;
-    }
-
-    // Check for snake_case
-    if s.contains('_')
-        && s.chars()
-            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
-    {
-        return true;
-    }
-
-    // Check for kebab-case
-    if s.contains('-')
-        && s.chars()
-            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
-    {
-        return true;
-    }
-
-    false
-}
-
-/// Check if a string looks like camelCase or `PascalCase`
-fn is_camel_or_pascal_case(s: &str) -> bool {
-    if s.is_empty() {
-        return false;
-    }
-
-    // Must have at least one lowercase and one uppercase letter
-    let has_lower = s.bytes().any(|b| b.is_ascii_lowercase());
-    let has_upper = s.bytes().any(|b| b.is_ascii_uppercase());
-
-    // Must not contain underscores, hyphens, or spaces (pure camel/pascal)
-    let is_pure = !s.contains(['_', '-', ' ']);
-
-    has_lower && has_upper && is_pure
 }
 
 /// Find all potential identifiers in the content using a broad regex pattern
@@ -350,12 +298,12 @@ pub fn find_enhanced_matches(
 pub fn enhanced_matches_to_hunks(
     matches: &[Match],
     content: &[u8],
-    search: &str,
-    replace: &str,
+    _search: &str,
+    _replace: &str,
     variant_map: &BTreeMap<String, String>,
     path: &Path,
-    styles: &[Style],
-    coerce_mode: CoercionMode,
+    _styles: &[Style],
+    _coerce_mode: CoercionMode,
 ) -> Vec<MatchHunk> {
     let lines: Vec<&[u8]> = content.lines_with_terminator().collect();
     let mut hunks = Vec::new();

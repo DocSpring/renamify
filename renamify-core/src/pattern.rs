@@ -1,5 +1,4 @@
 use aho_corasick::AhoCorasick;
-use bstr::ByteSlice;
 use regex::bytes::{Regex, RegexBuilder};
 use serde::{Deserialize, Serialize};
 

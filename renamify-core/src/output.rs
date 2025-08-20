@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::fmt;
 use std::fmt::Write;
 
 /// Output format for CLI commands

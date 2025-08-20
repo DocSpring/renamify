@@ -382,7 +382,7 @@ pub fn matches_subsequence(
 /// Extract trailing acronyms from a token sequence
 pub fn extract_trailing_acronyms(
     tokens: &[&str],
-    start_idx: usize,
+    _start_idx: usize,
     end_idx: usize,
     acronym_set: &AcronymSet,
 ) -> Vec<String> {

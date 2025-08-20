@@ -79,7 +79,7 @@ fn highlight_line_with_hunks(
 /// Render plan as unified diffs
 pub fn render_diff(plan: &Plan, use_color: bool) -> String {
     let mut output = String::new();
-    let is_search = plan.replace.is_empty();
+    let _is_search = plan.replace.is_empty();
 
     // Group hunks by file
     let mut file_hunks: HashMap<&Path, Vec<&MatchHunk>> = HashMap::new();

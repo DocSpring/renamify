@@ -37,7 +37,7 @@ cargo build --release
 ### MCP Server
 
 ```bash
-npx @docspring/renamify-mcp
+npx @renamify/mcp-server
 ```
 
 See [MCP Server documentation](https://docspring.github.io/renamify/mcp/overview/) for Claude and Cursor setup.

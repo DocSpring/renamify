@@ -1,0 +1,120 @@
+---
+title: search
+description: Search for identifiers across your codebase without creating a plan
+---
+
+The `search` command finds all occurrences of an identifier across your codebase without making any changes or creating a plan file. This is useful for exploring where a name is used before deciding to rename it.
+
+## Usage
+
+```bash
+renamify search <term> [paths...] [options]
+```
+
+## Arguments
+
+- `<term>` - The identifier to search for
+- `[paths...]` - Optional paths to search (files or directories). Defaults to current directory
+
+## Options
+
+### Include/Exclude Patterns
+
+- `--include <patterns>` - Include only files matching these glob patterns (comma-separated)
+- `--exclude <patterns>` - Exclude files matching these glob patterns (comma-separated)
+
+### Case Styles
+
+- `--exclude-styles <styles>` - Exclude specific case styles from search
+- `--include-styles <styles>` - Include additional case styles (title, dot)
+- `--only-styles <styles>` - Use only these case styles (overrides defaults)
+
+Available styles: `original`, `snake`, `kebab`, `camel`, `pascal`, `screaming-snake`, `train`, `screaming-train`, `title`, `dot`
+
+### Line Filtering
+
+- `--exclude-matching-lines <regex>` - Skip matches on lines matching this regex pattern
+
+### Output Control
+
+- `--preview <format>` - Preview format: `table`, `diff`, `matches`, `summary` (default: summary)
+- `--output <format>` - Output format: `summary` or `json` (default: summary)
+- `--quiet` - Suppress all output
+- `--fixed-table-width` - Use fixed column widths for table output
+
+### Acronym Handling
+
+- `--no-acronyms` - Disable acronym detection
+- `--include-acronyms <list>` - Additional acronyms to recognize (comma-separated)
+- `--exclude-acronyms <list>` - Default acronyms to exclude (comma-separated)
+- `--only-acronyms <list>` - Replace default acronym list (comma-separated)
+
+### Other Options
+
+- `-u`, `--unrestricted` - Reduce smart filtering (can be repeated up to 3 times)
+  - `-u`: Don't respect .gitignore files
+  - `-uu`: Don't respect any ignore files, include hidden files
+  - `-uuu`: Same as -uu, plus treat binary files as text
+- `-C <path>` - Run as if started in the specified directory
+- `--no-color` - Disable colored output
+
+## Examples
+
+### Basic Search
+
+Search for all occurrences of "getUserData":
+
+```bash
+renamify search getUserData
+```
+
+### Search in Specific Directory
+
+```bash
+renamify search oldFunction src/
+```
+
+### Search with Table Output
+
+```bash
+renamify search myVariable --preview table
+```
+
+### Exclude Test Files
+
+```bash
+renamify search productionCode --exclude "**/*.test.*,**/*.spec.*"
+```
+
+### Search Only Specific Case Styles
+
+```bash
+renamify search myIdentifier --only-styles snake,kebab
+```
+
+### Skip Comments
+
+```bash
+renamify search importantFunction --exclude-matching-lines "^\\s*//"
+```
+
+### JSON Output for Processing
+
+```bash
+renamify search userData --output json > search-results.json
+```
+
+## Comparison with Plan
+
+The `search` command is essentially the `plan` command without a replacement term. It shows you where changes would be made but doesn't create a plan file or prepare for any modifications.
+
+Use `search` when you want to:
+- Explore where an identifier is used
+- Check the scope of a potential rename
+- Verify that your patterns are matching correctly
+- Generate reports about identifier usage
+
+## See Also
+
+- [plan](./plan) - Create a renaming plan
+- [rename](./rename) - Search and replace in one step

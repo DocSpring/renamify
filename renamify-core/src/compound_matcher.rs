@@ -1,5 +1,4 @@
-use crate::acronym::{classify_hyphen_container, AcronymSet, HyphenContainerStyle};
-use crate::case_model::{detect_style, parse_to_tokens, to_style, Style, Token, TokenModel};
+use crate::case_model::{parse_to_tokens, to_style, Style, Token, TokenModel};
 use std::collections::BTreeMap;
 
 /// Represents a compound match where the pattern was found within a larger identifier
@@ -347,9 +346,9 @@ fn case_insensitive_replace(identifier: &str, old_pattern: &str, new_pattern: &s
 
 /// Generate all compound variants for a given pattern
 pub fn generate_compound_variants(
-    search: &str,
-    replace: &str,
-    styles: &[Style],
+    _search: &str,
+    _replace: &str,
+    _styles: &[Style],
 ) -> BTreeMap<String, String> {
     // For each style, generate compound examples
     // This is used during pattern building to create regex patterns

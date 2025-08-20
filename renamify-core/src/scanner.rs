@@ -1,12 +1,11 @@
 use crate::acronym::AcronymSet;
-use crate::case_model::{generate_variant_map, Style};
-use crate::pattern::{build_pattern, find_matches, Match};
+use crate::case_model::Style;
+use crate::pattern::{build_pattern, Match};
 use crate::rename::plan_renames;
 use anyhow::Result;
 use bstr::ByteSlice;
 use content_inspector::ContentType;
 use globset::{Glob, GlobSet, GlobSetBuilder};
-use ignore::WalkBuilder;
 use memmap2::Mmap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -223,7 +222,7 @@ pub fn scan_repository_multi(
         &acronym_set,
     );
     let variants: Vec<String> = variant_map.keys().cloned().collect();
-    let pattern = build_pattern(&variants)?;
+    let _pattern = build_pattern(&variants)?;
 
     let include_globs = build_globset(&options.includes)?;
     let exclude_globs = build_globset(&options.excludes)?;
@@ -566,34 +565,6 @@ fn extract_immediate_context(line: &str, match_start: usize, match_end: usize) -
     // Characters that are part of identifiers or compound names
     let is_identifier_char = |c: char| -> bool { c.is_alphanumeric() || c == '_' || c == '-' };
 
-    // Characters that act as separators - we should NOT extend past these
-    // This includes: /, \, :, @, ., [, ], (, ), {, }, =, quotes, spaces
-    let is_separator = |c: char| -> bool {
-        matches!(
-            c,
-            '/' | '\\'
-                | ':'
-                | '@'
-                | '.'
-                | '['
-                | ']'
-                | '('
-                | ')'
-                | '{'
-                | '}'
-                | '='
-                | '"'
-                | '\''
-                | '`'
-                | ' '
-                | '\t'
-                | '\n'
-                | '\r'
-                | ','
-                | ';'
-        )
-    };
-
     // Extend backwards to find the start of the immediate identifier
     // Stop at any separator character
     while context_start > 0 {
@@ -885,7 +856,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let opts = PlanOptions::default();
 
-        let mut plan = scan_repository(temp_dir.path(), "old", "new", &opts).unwrap();
+        let plan = scan_repository(temp_dir.path(), "old", "new", &opts).unwrap();
 
         assert_eq!(plan.search, "old");
         assert_eq!(plan.replace, "new");
@@ -1079,7 +1050,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
+        let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
         // We expect 2 matches: "old_name" and "oldName"
         assert_eq!(
@@ -1138,7 +1109,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let plan_path = temp_dir.path().join(".renamify/plan.json");
 
-        let mut plan = Plan {
+        let plan = Plan {
             id: "test123".to_string(),
             created_at: "123456789".to_string(),
             search: "old".to_string(),

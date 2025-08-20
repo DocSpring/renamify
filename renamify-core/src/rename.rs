@@ -85,6 +85,7 @@ pub fn is_windows_reserved(name: &str) -> bool {
 }
 
 /// Check if a filename is a Windows reserved name (only on Windows)
+#[cfg(test)]
 fn is_windows_reserved_on_windows(name: &str) -> bool {
     if !cfg!(windows) {
         return false;
@@ -338,12 +339,12 @@ mod tests {
     #[test]
     fn test_case_insensitive_fs_detection() {
         let temp_dir = TempDir::new().unwrap();
-        let is_case_insensitive = detect_case_insensitive_fs(temp_dir.path());
 
         // Result depends on the actual filesystem
         // On macOS default FS, this is typically true
         // On Linux, this is typically false
-        // We just verify it doesn't panic
+        // We just verify it doesn't panic and returns a boolean
+        detect_case_insensitive_fs(temp_dir.path());
     }
 
     #[test]
