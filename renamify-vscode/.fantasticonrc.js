@@ -1,6 +1,6 @@
 module.exports = {
   inputDir: "icons-src",
-  outputDir: "dist",
+  outputDir: "media",
   name: "renamify-glyphs",
   fontTypes: ["woff2"],
   assetTypes: [], // gets you a codepoint map

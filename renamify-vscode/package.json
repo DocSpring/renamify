@@ -28,7 +28,7 @@
       "renamify-renamify": {
         "description": "Renamify Activity Bar icon",
         "default": {
-          "fontPath": "dist/renamify-glyphs.woff2",
+          "fontPath": "media/renamify-glyphs.woff2",
           "fontCharacter": "\\f113"
         }
       }
@@ -111,7 +111,7 @@
   "scripts": {
     "build:icons": "fantasticon",
     "check": "biome check && prettier --check '**/*.hbs'",
-    "compile:extension": "rm -rf dist && tsc -p extension && pnpm build:icons",
+    "compile:extension": "rm -rf dist && tsc -p extension",
     "compile:webview": "rm -f media/*.js media/*.js.map && tsc -p webview && ./scripts/bundle-webview.sh",
     "compile": "pnpm compile:extension && pnpm compile:webview",
     "format": "biome format --write && pnpm format:hbs",
