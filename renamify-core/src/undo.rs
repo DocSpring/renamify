@@ -78,7 +78,7 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     #[cfg(windows)]
     let patch_content_for_diffy = patch_content.replace("\r\n", "\n");
     #[cfg(not(windows))]
-    let patch_content_for_diffy = patch_content;
+    let patch_content_for_diffy = patch_content.to_string();
 
     // On Windows, also normalize file content to LF for patch application
     // The patch and content must have matching line endings for diffy to work
@@ -88,7 +88,7 @@ fn apply_single_patch(file_path: &Path, patch_content: &str) -> Result<()> {
     let current_content_for_diffy = current_content;
 
     // Parse and apply the patch using diffy
-    let patch = diffy::Patch::from_str(patch_content_for_diffy)
+    let patch = diffy::Patch::from_str(&patch_content_for_diffy)
         .map_err(|e| anyhow!("Failed to parse patch: {}", e))?;
 
     let result = diffy::apply(&current_content_for_diffy, &patch)
