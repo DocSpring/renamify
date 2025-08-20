@@ -3,6 +3,7 @@
 Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
 
 [![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/DocSpring/renamify/graph/badge.svg)](https://codecov.io/gh/DocSpring/renamify)
 [![E2E](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml)
 [![MCP](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml)
 [![VS Code](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml)
