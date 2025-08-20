@@ -23,13 +23,27 @@
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
+  "files": [
+    "dist",
+    "media",
+    "resources"
+  ],
   "contributes": {
+    "icons": {
+      "renamify-renamify": {
+        "description": "Renamify Activity Bar icon",
+        "default": {
+          "fontPath": "dist/renamify-glyphs.woff2",
+          "fontCharacter": "\\f113"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
           "id": "renamify",
           "title": "Renamify",
-          "icon": "resources/renamify-icon.svg"
+          "icon": "$(renamify-renamify)"
         }
       ]
     },
@@ -100,8 +114,9 @@
     }
   },
   "scripts": {
+    "build:icons": "fantasticon",
     "check": "biome check",
-    "compile:extension": "rm -rf dist && tsc -p extension",
+    "compile:extension": "rm -rf dist && tsc -p extension && pnpm build:icons",
     "compile:webview": "rm -f media/*.js media/*.js.map && tsc -p webview && ./scripts/bundle-webview.sh",
     "compile": "pnpm compile:extension && pnpm compile:webview",
     "format": "biome format --write",
@@ -132,12 +147,14 @@
     "@vscode/vsce": "^3.6.0",
     "chokidar-cli": "^3.0.0",
     "concurrently": "^9.2.0",
+    "fantasticon": "^3.0.0",
     "glob": "^11.0.3",
     "jsdom": "^26.1.0",
     "mocha": "^11.7.1",
     "nodemon": "^3.1.10",
     "requirejs": "^2.3.7",
     "sinon": "^21.0.0",
+    "svgo": "^4.0.0",
     "typescript": "^5.9.2",
     "ultracite": "^5.2.4",
     "vitest": "^3.2.4"
