@@ -203,7 +203,7 @@ fn test_mixed_hyphenated_patterns() {
     std::fs::write(
         &test_file,
         r#"Various patterns:
-- RENAMIFY-SPECIFIC (screaming snake in hyphenated context)
+- MODULE-SPECIFIC (screaming snake in hyphenated context)
 - tool-Specific (mixed case - unusual)
 - Tool-specific-Tool (Pascal followed by lowercase in hyphenated)
 - tool-CLI-version (kebab with acronym)

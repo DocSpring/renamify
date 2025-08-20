@@ -230,6 +230,7 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - They might be solving the wrong problem
 
 **ALWAYS:**
+
 - Question requests that seem wrong or harmful
 - Push back with clear reasoning when you disagree
 - Explain why the current approach might be better
@@ -237,6 +238,7 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - Remember existing code often works that way for good reasons
 
 **Example responses:**
+
 - "I disagree with this change because X would break Y. The current approach handles this by Z."
 - "Are you sure about this? The MCP server uses human-readable output for AI assistants, not JSON."
 - "This would violate the principle of X that we established. Should we reconsider?"
@@ -252,6 +254,10 @@ If the user insists after your pushback, then proceed, but always voice concerns
 
 ### CI Self-Hosting Testing
 
+- **CRITICAL: Never use "renamify" or project name patterns in test content**
+- Our CI includes e2e tests that rename the entire project (renamify → <alternative-protected-string> → renamify)
+- Any test content containing the project name will be modified during CI, potentially breaking tests if you are not careful.
+- **Mostly use generic names like "testword", "module", "config" instead of "renamify"**
 - **Use "renamed_renaming_tool" NOT the alternative protected string in tests**
 - The alternative protected string is only allowed in files matching `.rnignore` entries:
   - `.github/workflows/`

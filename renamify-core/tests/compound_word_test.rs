@@ -459,14 +459,9 @@ fn test_compound_case_preservation_bug() {
 
 #[test]
 fn test_repeated_word_compound_bug() {
-    // This test reproduces the bug seen in the e2e test where:
-    // "renamify-renamify" becomes "renamify-awesome-file-renaming-toolfile-renaming-tool"
-    // instead of the expected "awesome-file-renaming-tool-awesome-file-renaming-tool"
-
     let temp_dir = TempDir::new().unwrap();
     let root = temp_dir.path().to_path_buf();
 
-    // Create test file with the exact pattern that's failing
     let test_file = root.join("package.json");
     std::fs::write(
         &test_file,
