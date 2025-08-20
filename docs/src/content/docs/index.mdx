@@ -6,27 +6,27 @@ description: Smart search & replace for code and files with case-aware transform
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <span style="font-size: 1.35rem;">
-Smart search & replace for code and files with <br/>**case-aware transformations**
+Smart search & replace for code and files with <br/>**case-aware replacements**
 and **built-in undo/redo**.
 </span>
 <span style="font-size: 1.35rem;">
-A **CLI tool**, **MCP Server**, and **VS Code / Cursor Extension**
+Released as a **CLI tool**, **MCP Server**, and **VS Code / Cursor Extension**
 </span>
 
 ## Features
 
 <CardGrid>
 	<Card title="Case-Aware" icon="approve-check">
-		Automatically converts between snake_case, camelCase, PascalCase, kebab-case, and more.
+		Replaces snake_case, camelCase, PascalCase, kebab-case, etc.
 	</Card>
-	<Card title="File Renaming" icon="document">
-		Renames files and directories that match your patterns, not just content.
+	<Card title="Content & Files" icon="document">
+		Renames both file contents and files/directories in a single operation.
 	</Card>
-	<Card title="Safety First" icon="seti:lock">
-		Plan/apply workflow with atomic operations, backups, and unlimited undo/redo.
+	<Card title="Safe & Atomic" icon="seti:lock">
+		Plan then apply atomically with full undo/redo. No partial states.
 	</Card>
-	<Card title="Cross-Platform" icon="laptop">
-		Works consistently on Linux, macOS, and Windows with platform-specific optimizations.
+	<Card title="Rust Performance" icon="rocket">
+		Fast, memory-safe, cross-platform with >90% test coverage.
 	</Card>
 </CardGrid>
 
@@ -34,7 +34,8 @@ A **CLI tool**, **MCP Server**, and **VS Code / Cursor Extension**
 
 ## What is Renamify?
 
-Renamify is a tool that understands different naming conventions and can rename both file contents and the files themselves in a single atomic operation. It's designed for developers (and AI agents) who need to refactor codebases safely and efficiently.
+Renamify is a tool that understands different naming conventions and can rename both file contents and the files themselves in a single atomic operation.
+It's designed for developers (and AI agents) who need to rename terms safely and efficiently.
 
 Traditional find-and-replace tools work at the text level, but don't understand code conventions. If you want to rename `getUserName` to `fetchUserProfile`, you need to handle:
 
@@ -52,14 +53,14 @@ Renamify handles all of these automatically in a single operation.
 <LinkCard
   title="Use Renamify with AI Assistants"
   href="/renamify/mcp/overview"
-  description="Connect Renamify to Claude, Cursor, and other AI tools via the Model Context Protocol (MCP) for intelligent, automated refactoring."
+  description="Connect Renamify to Claude, Cursor, and other AI tools via the Model Context Protocol (MCP) for intelligent, automated renaming."
 />
 
 The Renamify MCP Server enables AI agents to:
-- **Plan refactorings** with case-aware transformations
+- **Plan renames** with case-aware transformations
 - **Preview changes** in AI-friendly formats
 - **Apply changes atomically** with full undo/redo support
-- **Manage refactoring history** across your codebase
+- **Manage rename history** across your codebase
 
 ## Installation
 
@@ -107,7 +108,7 @@ _(The other kind of self-hosting.)_
 
 While IDEs have had context-aware search and replace capabilities for decades, the landscape has changed dramatically:
 
-1. **AI Development Era**: With AI assistants like Claude and Cursor, many developers now code outside traditional IDEs. These AI tools need programmatic access to refactoring capabilities.
+1. **AI Development Era**: With AI assistants like Claude and Cursor, many developers now code outside traditional IDEs. These AI tools need programmatic access to powerful search & replace features.
 
 2. **Cross-Platform Consistency**: IDE refactoring features vary between editors and may not handle all case styles or file renames consistently.
 

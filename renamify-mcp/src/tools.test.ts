@@ -164,7 +164,7 @@ describe('RenamifyTools', () => {
 
       const result = await tools.status({});
 
-      expect(result).toBe('No pending plans or active refactorings.');
+      expect(result).toBe('No pending plans or active renames.');
     });
   });
 

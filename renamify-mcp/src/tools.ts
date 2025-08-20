@@ -113,7 +113,7 @@ NEXT STEPS:
 - Review the changes
 - Run your tests to ensure everything works
 - Use 'renamify_undo' with the history ID if you need to revert
-- Use 'renamify_history' to see all applied refactorings`;
+- Use 'renamify_history' to see all applied renames`;
     } catch (error) {
       return `Error applying plan: ${error instanceof Error ? error.message : String(error)}
 
@@ -179,7 +179,7 @@ Use 'renamify_undo <id>' to revert any of these changes.`;
       const result = await this.renamifyService.status();
 
       if (!result || result.trim() === '') {
-        return 'No pending plans or active refactorings.';
+        return 'No pending plans or active renames.';
       }
 
       return `${result}

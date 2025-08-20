@@ -11,6 +11,7 @@ Smart search & replace for code and files with case-aware transformations and bu
 - **CLI tool** - Production ready with full Windows, macOS, and Linux support<br>
 - **MCP server** - AI integrations for Claude, Cursor, and other MCP-compatible tools<br>
 - **VS Code / Cursor extension** - Instant renaming without leaving your editor<br>
+- **Written in Rust** - High performance and memory safety with >90% code coverage<br>
 - **Documentation** - Comprehensive guides at [docspring.github.io/renamify](https://docspring.github.io/renamify/)
 
 ## Installation

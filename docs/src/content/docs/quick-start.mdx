@@ -17,7 +17,7 @@ This will:
 3. Apply changes atomically
 4. Create backups for undo
 
-## Your First Refactor
+## Your First Rename
 
 Let's say you want to rename `getUserName` to `fetchUserProfile`:
 
@@ -65,7 +65,7 @@ renamify undo abc123
 
 ## Plan and Apply Workflow
 
-For large refactors, use the plan/apply workflow for extra safety:
+For large renames, use the plan/apply workflow for extra safety:
 
 ```bash
 # Step 1: Create a plan
@@ -113,7 +113,7 @@ renamify rename old_name new_name --only-styles camel,snake
 ## Safe Practices
 
 1. **Preview is automatic** - Renamify shows a preview by default before applying
-2. **Commit before large refactors** - Makes git-based rollback possible
+2. **Commit before large renames** - Makes git-based rollback possible in addition to Renamify's built-in history
 3. **Start small** - Try on a subset with `--include` first
 4. **Use undo** - Renamify's undo is often faster than git reset
 

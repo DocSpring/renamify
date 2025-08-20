@@ -11,6 +11,7 @@ Renamify understands different naming conventions and can rename identifiers and
 ### Prerequisites
 
 1. **Renamify CLI** must be installed and available in your PATH:
+
    ```bash
    # Quick install (Linux/macOS)
    curl -fsSL https://docspring.github.io/renamify/install.sh | bash
@@ -79,9 +80,11 @@ If `renamify` is not in your PATH or you want to use a specific binary, set the 
 ## Available Tools
 
 ### `renamify_plan`
+
 Create a renaming plan to replace identifiers across a codebase with case-awareness.
 
 **Parameters:**
+
 - `old` (required): The old name/identifier to replace
 - `new` (required): The new name/identifier to replace with
 - `includes`: Array of glob patterns for files to include
@@ -93,6 +96,7 @@ Create a renaming plan to replace identifiers across a codebase with case-awaren
 - `renameDirs`: Whether to rename directories (default: true)
 
 **Example Usage (by AI agent):**
+
 ```
 Tool: renamify_plan
 Arguments: {
@@ -106,15 +110,18 @@ Arguments: {
 ```
 
 ### `renamify_apply`
+
 Apply a renaming plan to make the actual changes.
 
 **Parameters:**
+
 - `planId`: Plan ID to apply (uses latest if not specified)
 - `planPath`: Path to plan file
 - `atomic`: Apply changes atomically (default: true)
 - `commit`: Create a git commit after applying (default: false)
 
 **Example Usage (by AI agent):**
+
 ```
 Tool: renamify_apply
 Arguments: {
@@ -124,12 +131,15 @@ Arguments: {
 ```
 
 ### `renamify_undo`
+
 Undo a previously applied renaming.
 
 **Parameters:**
+
 - `id` (required): History ID to undo
 
 **Example Usage (by AI agent):**
+
 ```
 Tool: renamify_undo
 Arguments: {
@@ -138,24 +148,31 @@ Arguments: {
 ```
 
 ### `renamify_redo`
+
 Redo a previously undone renaming.
 
 **Parameters:**
+
 - `id` (required): History ID to redo
 
 ### `renamify_history`
+
 Show renaming history.
 
 **Parameters:**
+
 - `limit`: Number of history entries to show (default: 10)
 
 ### `renamify_status`
+
 Show current renamify status and pending plans.
 
 ### `renamify_preview`
+
 Preview a plan without applying it.
 
 **Parameters:**
+
 - `planId`: Plan ID to preview
 - `planPath`: Path to plan file to preview
 - `format`: Preview format - `table`, `diff`, `json`, or `summary`
@@ -171,6 +188,7 @@ For comprehensive documentation, visit: https://docspring.github.io/renamify/mcp
 ### Safe Renaming Workflow
 
 1. **Plan First, Apply Later**
+
    ```
    Always create a plan first to review changes:
    1. Use renamify_plan to see what will change
@@ -180,6 +198,7 @@ For comprehensive documentation, visit: https://docspring.github.io/renamify/mcp
    ```
 
 2. **Use Appropriate Preview Formats**
+
    - `summary`: Best for AI agents - simple, structured output
    - `diff`: See exact line-by-line changes
    - `table`: Human-readable tabular format
@@ -195,6 +214,7 @@ For comprehensive documentation, visit: https://docspring.github.io/renamify/mcp
 
 1. **Start with Dry Runs**
    Always test first by using the dry run option:
+
    ```
    Tool: renamify_plan
    Arguments: {
@@ -207,6 +227,7 @@ For comprehensive documentation, visit: https://docspring.github.io/renamify/mcp
 
 2. **Use Specific Includes**
    Target specific directories/files to avoid unintended changes:
+
    ```
    Tool: renamify_plan
    Arguments: {
@@ -219,11 +240,14 @@ For comprehensive documentation, visit: https://docspring.github.io/renamify/mcp
 
 3. **Check Status Before Applying**
    Always check what's pending before applying changes:
+
    ```
    Tool: renamify_status
    Arguments: {}
    ```
+
    Then if everything looks good:
+
    ```
    Tool: renamify_apply
    Arguments: {}
@@ -237,6 +261,7 @@ For comprehensive documentation, visit: https://docspring.github.io/renamify/mcp
 ### Common Scenarios
 
 #### Rename a React Component
+
 ```
 Tool: renamify_plan
 Arguments: {
@@ -249,6 +274,7 @@ Arguments: {
 ```
 
 #### Update Database Schema Names
+
 ```
 Tool: renamify_plan
 Arguments: {
@@ -261,7 +287,8 @@ Arguments: {
 Note: renameFiles is false to preserve migration file names
 ```
 
-#### Refactor API Endpoints
+#### Renaming API Endpoints
+
 ```
 Tool: renamify_plan
 Arguments: {
@@ -275,16 +302,19 @@ Arguments: {
 ## Development
 
 ### Building
+
 ```bash
 npm run build
 ```
 
 ### Testing
+
 ```bash
 npm test
 ```
 
 ### Running locally
+
 ```bash
 npm run dev
 ```
@@ -292,15 +322,18 @@ npm run dev
 ## Troubleshooting
 
 ### "Renamify CLI is not available"
+
 - Ensure `renamify` binary is in your PATH
 - Test with: `renamify --version`
 
 ### "No matches found"
+
 - Check your include/exclude patterns
 - Verify the case styles match your codebase
 - Try with fewer restrictions first
 
 ### "Conflicts detected"
+
 - Files may have changed since plan creation
 - Create a fresh plan with current file state
 - Consider using `atomic: false` to skip problematic files
