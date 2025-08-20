@@ -6,6 +6,7 @@
       "**",
       "!media/webview.js",
       "!media/bundle.js",
+      "!media/codicon.css",
       "!.fantasticonrc.js"
     ]
   },
