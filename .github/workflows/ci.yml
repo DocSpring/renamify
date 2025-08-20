@@ -95,7 +95,11 @@ jobs:
 
   ci_coverage:
     name: Code Coverage
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -131,14 +135,15 @@ jobs:
           cargo install cargo-llvm-cov --version 0.6.15
 
       - name: Generate code coverage
-        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+        run: cargo llvm-cov --workspace --lcov --output-path lcov-${{ matrix.os }}.info
 
-      - name: Check coverage threshold
+      - name: Check coverage threshold (Unix)
+        if: runner.os != 'Windows'
         run: |
           COVERAGE_THRESHOLD=90
 
           # Run coverage and capture output
-          COVERAGE_OUTPUT=$(cargo llvm-cov --workspace 2>&1)
+          COVERAGE_OUTPUT=$(cargo llvm-cov --workspace)
           echo "$COVERAGE_OUTPUT"
 
           # Extract coverage percentage from the TOTAL line
@@ -153,15 +158,47 @@ jobs:
 
           echo "Coverage meets ${COVERAGE_THRESHOLD}% threshold: ${COVERAGE}%"
 
+      - name: Check coverage threshold (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $COVERAGE_THRESHOLD = 90
+
+          # Run coverage and capture output
+          $COVERAGE_OUTPUT = cargo llvm-cov --workspace
+          Write-Output $COVERAGE_OUTPUT
+
+          # Extract coverage percentage from the TOTAL line
+          $COVERAGE_LINE = $COVERAGE_OUTPUT | Select-String "^TOTAL"
+          $COVERAGE = ($COVERAGE_LINE -split '\s+')[9] -replace '%', ''
+          Write-Output "Coverage: ${COVERAGE}%"
+
+          # Check if coverage meets the threshold
+          if ([double]$COVERAGE -lt $COVERAGE_THRESHOLD) {
+            Write-Output "Coverage is below ${COVERAGE_THRESHOLD}% threshold: ${COVERAGE}%"
+            exit 1
+          }
+
+          Write-Output "Coverage meets ${COVERAGE_THRESHOLD}% threshold: ${COVERAGE}%"
+
       - name: Generate HTML report
-        run: cargo llvm-cov --workspace --html
+        run: cargo llvm-cov --workspace --html --output-dir target/llvm-cov/html-${{ matrix.os }}
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
-          path: target/llvm-cov/html/
+          name: coverage-report-${{ matrix.os }}
+          path: target/llvm-cov/html-${{ matrix.os }}/
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./lcov-${{ matrix.os }}.info
+          flags: ${{ runner.os }}
+          name: codecov-${{ matrix.os }}
+          fail_ci_if_error: false
 
   ci_msrv:
     name: Check MSRV
