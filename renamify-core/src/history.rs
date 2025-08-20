@@ -423,4 +423,310 @@ mod tests {
         assert!(formatted.contains("Working tree is clean"));
         assert!(formatted.contains("Total history entries: 5"));
     }
+
+    #[test]
+    fn test_status_format_no_plan() {
+        let status = StatusInfo {
+            last_plan: None,
+            has_conflicts: false,
+            working_tree_clean: true,
+            total_entries: 0,
+        };
+
+        let formatted = status.format();
+        assert!(formatted.contains("No plans applied yet"));
+        assert!(formatted.contains("Working tree is clean"));
+        assert!(formatted.contains("Total history entries: 0"));
+    }
+
+    #[test]
+    fn test_status_format_with_conflicts() {
+        let status = StatusInfo {
+            last_plan: Some("abc123".to_string()),
+            has_conflicts: true,
+            working_tree_clean: false,
+            total_entries: 5,
+        };
+
+        let formatted = status.format();
+        assert!(formatted.contains("Pending conflicts detected"));
+        assert!(formatted.contains("Working tree has been modified"));
+    }
+
+    #[test]
+    fn test_load_from_invalid_json() {
+        let temp_dir = TempDir::new().unwrap();
+        let history_path = temp_dir.path().join("history.json");
+
+        // Write invalid JSON
+        std::fs::write(&history_path, "invalid json content").unwrap();
+
+        // Should create empty history and not fail
+        let history = History::load_from_path(&history_path).unwrap();
+        assert_eq!(history.entries.len(), 0);
+    }
+
+    #[test]
+    fn test_save_creates_parent_directory() {
+        let temp_dir = TempDir::new().unwrap();
+        let nested_path = temp_dir
+            .path()
+            .join("nested")
+            .join("dir")
+            .join("history.json");
+
+        let mut history = History::load_from_path(&nested_path).unwrap();
+        history.add_entry(create_test_entry("test1")).unwrap();
+
+        assert!(nested_path.exists());
+        assert!(nested_path.parent().unwrap().exists());
+    }
+
+    #[test]
+    fn test_last_entry() {
+        let temp_dir = TempDir::new().unwrap();
+        let history_path = temp_dir.path().join("history.json");
+
+        let mut history = History::load_from_path(&history_path).unwrap();
+        assert!(history.last_entry().is_none());
+
+        history.add_entry(create_test_entry("first")).unwrap();
+        history.add_entry(create_test_entry("second")).unwrap();
+
+        let last = history.last_entry().unwrap();
+        assert_eq!(last.id, "second");
+    }
+
+    #[test]
+    fn test_has_pending_conflicts() {
+        let temp_dir = TempDir::new().unwrap();
+        let history_path = temp_dir.path().join("history.json");
+        let conflicts_dir = temp_dir.path().join("conflicts");
+
+        let mut history = History::load_from_path(&history_path).unwrap();
+
+        // No conflicts when no entries
+        assert!(!history.has_pending_conflicts(&conflicts_dir));
+
+        // Add entry
+        history.add_entry(create_test_entry("test1")).unwrap();
+
+        // Still no conflicts when conflict file doesn't exist
+        assert!(!history.has_pending_conflicts(&conflicts_dir));
+
+        // Create conflicts directory and file
+        std::fs::create_dir_all(&conflicts_dir).unwrap();
+        std::fs::write(conflicts_dir.join("test1.json"), "{}").unwrap();
+
+        // Should detect conflict now
+        assert!(history.has_pending_conflicts(&conflicts_dir));
+    }
+
+    #[test]
+    fn test_verify_checksums() {
+        let temp_dir = TempDir::new().unwrap();
+
+        // Create test files with known content
+        let file1 = temp_dir.path().join("file1.txt");
+        let file2 = temp_dir.path().join("file2.txt");
+        std::fs::write(&file1, "content1").unwrap();
+        std::fs::write(&file2, "content2").unwrap();
+
+        // Calculate checksums
+        let checksum1 = crate::apply::calculate_checksum(&file1).unwrap();
+        let checksum2 = crate::apply::calculate_checksum(&file2).unwrap();
+
+        let mut affected_files = HashMap::new();
+        affected_files.insert(file1.clone(), checksum1);
+        affected_files.insert(file2, checksum2);
+
+        let entry = HistoryEntry {
+            id: "test".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files,
+            renames: vec![],
+            backups_path: PathBuf::from("/tmp"),
+            revert_of: None,
+            redo_of: None,
+        };
+
+        // Should have no mismatches initially
+        let mismatches = History::verify_checksums(&entry).unwrap();
+        assert_eq!(mismatches.len(), 0);
+
+        // Modify one file
+        std::fs::write(&file1, "modified content").unwrap();
+
+        // Should detect mismatch
+        let mismatches = History::verify_checksums(&entry).unwrap();
+        assert_eq!(mismatches.len(), 1);
+        assert_eq!(mismatches[0], file1);
+    }
+
+    #[test]
+    fn test_verify_checksums_missing_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let missing_file = temp_dir.path().join("missing.txt");
+
+        let mut affected_files = HashMap::new();
+        affected_files.insert(missing_file.clone(), "dummy_checksum".to_string());
+
+        let entry = HistoryEntry {
+            id: "test".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            affected_files,
+            renames: vec![],
+            backups_path: PathBuf::from("/tmp"),
+            revert_of: None,
+            redo_of: None,
+        };
+
+        // Should detect missing file as mismatch
+        let mismatches = History::verify_checksums(&entry).unwrap();
+        assert_eq!(mismatches.len(), 1);
+        assert_eq!(mismatches[0], missing_file);
+    }
+
+    #[test]
+    fn test_create_history_entry() {
+        use crate::case_model::Style;
+        use std::collections::HashMap;
+
+        let mut affected_files = HashMap::new();
+        affected_files.insert(PathBuf::from("file1.txt"), "checksum1".to_string());
+
+        let renames = vec![(PathBuf::from("old.txt"), PathBuf::from("new.txt"))];
+        let backups_path = PathBuf::from("/tmp/backups");
+
+        let plan = crate::scanner::Plan {
+            id: "plan123".to_string(),
+            created_at: chrono::Local::now().to_rfc3339(),
+            search: "oldname".to_string(),
+            replace: "newname".to_string(),
+            styles: vec![Style::Snake],
+            includes: vec!["*.rs".to_string()],
+            excludes: vec!["target/".to_string()],
+            matches: vec![],
+            paths: vec![],
+            stats: crate::scanner::Stats {
+                files_scanned: 0,
+                total_matches: 0,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 0,
+            },
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        };
+
+        let entry = create_history_entry(
+            &plan,
+            affected_files,
+            renames.clone(),
+            backups_path.clone(),
+            Some("revert123".to_string()),
+            None,
+        );
+
+        assert_eq!(entry.id, "plan123");
+        assert_eq!(entry.search, "oldname");
+        assert_eq!(entry.replace, "newname");
+        assert_eq!(entry.styles, vec!["Snake"]);
+        assert_eq!(entry.includes, vec!["*.rs"]);
+        assert_eq!(entry.excludes, vec!["target/"]);
+        assert_eq!(entry.affected_files.len(), 1);
+        assert_eq!(entry.renames, renames);
+        assert_eq!(entry.backups_path, backups_path);
+        assert_eq!(entry.revert_of, Some("revert123".to_string()));
+        assert_eq!(entry.redo_of, None);
+    }
+
+    #[test]
+    fn test_format_history_json() {
+        let entry = create_test_entry("test123");
+        let entries = vec![&entry];
+
+        let formatted = format_history(&entries, true).unwrap();
+        assert!(formatted.contains("test123"));
+        assert!(formatted.contains("old_name"));
+        assert!(formatted.contains("new_name"));
+    }
+
+    #[test]
+    fn test_format_history_table() {
+        let entry = create_test_entry("test123");
+        let entries = vec![&entry];
+
+        let formatted = format_history(&entries, false).unwrap();
+        assert!(formatted.contains("test123"));
+        assert!(formatted.contains("old_name → new_name"));
+        assert!(formatted.contains("apply"));
+    }
+
+    #[test]
+    fn test_format_history_entry_types() {
+        let mut revert_entry = create_test_entry("revert1");
+        revert_entry.revert_of = Some("original1".to_string());
+
+        let mut redo_entry = create_test_entry("redo1");
+        redo_entry.redo_of = Some("original2".to_string());
+
+        let entries = vec![&revert_entry, &redo_entry];
+        let formatted = format_history(&entries, false).unwrap();
+
+        assert!(formatted.contains("revert"));
+        assert!(formatted.contains("redo"));
+    }
+
+    #[test]
+    fn test_get_status() {
+        let temp_dir = TempDir::new().unwrap();
+        let renamify_dir = temp_dir.path().join(".renamify");
+        std::fs::create_dir_all(&renamify_dir).unwrap();
+
+        // Test empty status
+        let status = get_status(&renamify_dir).unwrap();
+        assert_eq!(status.last_plan, None);
+        assert!(!status.has_conflicts);
+        assert!(status.working_tree_clean);
+        assert_eq!(status.total_entries, 0);
+
+        // Add a history entry
+        let history_path = renamify_dir.join("history.json");
+        let mut history = History::load_from_path(&history_path).unwrap();
+        history.add_entry(create_test_entry("test123")).unwrap();
+
+        // Test with history
+        let status = get_status(&renamify_dir).unwrap();
+        assert_eq!(status.last_plan, Some("test123".to_string()));
+        assert!(!status.has_conflicts);
+        assert!(status.working_tree_clean); // No affected files to check
+        assert_eq!(status.total_entries, 1);
+    }
+
+    #[test]
+    fn test_prune_no_change() {
+        let temp_dir = TempDir::new().unwrap();
+        let history_path = temp_dir.path().join("history.json");
+
+        let mut history = History::load_from_path(&history_path).unwrap();
+        for i in 0..3 {
+            history
+                .add_entry(create_test_entry(&format!("test{}", i)))
+                .unwrap();
+        }
+
+        // Prune to 5 (no change needed)
+        history.prune(5).unwrap();
+        assert_eq!(history.entries.len(), 3);
+    }
 }

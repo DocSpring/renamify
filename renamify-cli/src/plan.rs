@@ -87,7 +87,7 @@ pub fn handle_plan(
         &only_styles,
         exclude_match,
         exclude_matching_lines,
-        Some(plan_out.clone()),
+        Some(plan_out),
         preview_format.as_ref(),
         dry_run,
         fixed_table_width,
