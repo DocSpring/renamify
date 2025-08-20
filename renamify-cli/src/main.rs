@@ -1,12 +1,13 @@
 use anyhow::{anyhow, Context, Result};
-use clap::{Parser, Subcommand, ValueEnum};
-use renamify_core::{Config, OutputFormatter, Preview, Style, VersionResult};
+use clap::Parser;
+use renamify_core::{Config, OutputFormatter, Preview, VersionResult};
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 use std::process;
 use std::str::FromStr;
 
 mod apply;
+mod cli;
 mod history;
 mod plan;
 mod redo;
@@ -14,637 +15,8 @@ mod rename;
 mod status;
 mod undo;
 
-/// Smart search & replace for code and files with case-aware transformations
-#[derive(Parser, Debug)]
-#[command(name = "renamify")]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-
-    /// Disable colored output
-    #[arg(long, global = true, env = "NO_COLOR")]
-    no_color: bool,
-
-    /// Reduce the level of "smart" filtering. Can be repeated up to 3 times.
-    /// -u: Don't respect .gitignore files
-    /// -uu: Don't respect any ignore files (.gitignore, .ignore, .rgignore, .rnignore), include hidden files
-    /// -uuu: Same as -uu, plus treat binary files as text
-    #[arg(short = 'u', long = "unrestricted", global = true, action = clap::ArgAction::Count, verbatim_doc_comment)]
-    unrestricted: u8,
-
-    /// Run as if started in <path> instead of the current working directory
-    #[arg(short = 'C', global = true, value_name = "PATH")]
-    directory: Option<PathBuf>,
-
-    /// Automatically initialize .renamify ignore (repo|local|global)
-    #[arg(long, global = true, value_name = "MODE")]
-    auto_init: Option<String>,
-
-    /// Disable automatic initialization prompt
-    #[arg(long, global = true, conflicts_with = "auto_init")]
-    no_auto_init: bool,
-
-    /// Assume yes for all prompts
-    #[arg(short = 'y', long = "yes", global = true, env = "RENAMIFY_YES")]
-    yes: bool,
-}
-
-#[derive(Subcommand, Debug)]
-enum Commands {
-    /// Generate a renaming plan
-    Plan {
-        /// Old identifier to replace
-        search: String,
-
-        /// New identifier to replace with
-        replace: String,
-
-        /// Paths to search (files or directories). Defaults to current directory
-        #[arg(help = "Search paths (files or directories)")]
-        paths: Vec<PathBuf>,
-
-        /// Include glob patterns
-        #[arg(long, value_delimiter = ',')]
-        include: Vec<String>,
-
-        /// Exclude glob patterns
-        #[arg(long, value_delimiter = ',')]
-        exclude: Vec<String>,
-
-        /// Respect ignore files (.gitignore, .ignore, .rgignore, .rnignore)
-        #[arg(long, default_value_t = true)]
-        respect_gitignore: bool,
-
-        /// Don't rename matching files
-        #[arg(long = "no-rename-files")]
-        no_rename_files: bool,
-
-        /// Don't rename matching directories
-        #[arg(long = "no-rename-dirs")]
-        no_rename_dirs: bool,
-
-        /// Case styles to exclude from the default set (original, snake, kebab, camel, pascal, screaming-snake, train, screaming-train)
-        #[arg(
-            long,
-            value_enum,
-            value_delimiter = ',',
-            conflicts_with = "only_styles"
-        )]
-        exclude_styles: Vec<StyleArg>,
-
-        /// Additional case styles to include (title, dot)
-        #[arg(
-            long,
-            value_enum,
-            value_delimiter = ',',
-            conflicts_with = "only_styles"
-        )]
-        include_styles: Vec<StyleArg>,
-
-        /// Use only these case styles (overrides defaults)
-        #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
-        only_styles: Vec<StyleArg>,
-
-        /// Specific matches to exclude (e.g., compound words to ignore)
-        #[arg(long, value_delimiter = ',')]
-        exclude_match: Vec<String>,
-
-        /// Exclude matches on lines matching this regex pattern
-        #[arg(long)]
-        exclude_matching_lines: Option<String>,
-
-        /// Preview output format (defaults from config if not specified)
-        #[arg(long, value_enum)]
-        preview: Option<PreviewArg>,
-
-        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
-        #[arg(long)]
-        fixed_table_width: bool,
-
-        /// Output path for the plan
-        #[arg(long, default_value = ".renamify/plan.json")]
-        plan_out: PathBuf,
-
-        /// Only show preview, don't write plan (dry-run)
-        #[arg(long)]
-        dry_run: bool,
-
-        /// Disable acronym detection (treat CLI, API, etc. as regular words)
-        #[arg(long)]
-        no_acronyms: bool,
-
-        /// Additional acronyms to recognize (comma-separated, e.g., "AWS,GCP,K8S")
-        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
-        include_acronyms: Vec<String>,
-
-        /// Default acronyms to exclude (comma-separated, e.g., "ID,UI")
-        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
-        exclude_acronyms: Vec<String>,
-
-        /// Use only these acronyms (replaces default list)
-        #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
-        only_acronyms: Vec<String>,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Search for identifiers without creating a plan
-    Search {
-        /// Identifier to search for
-        term: String,
-
-        /// Paths to search (files or directories). Defaults to current directory
-        #[arg(help = "Search paths (files or directories)")]
-        paths: Vec<PathBuf>,
-
-        /// Include glob patterns
-        #[arg(long, value_delimiter = ',')]
-        include: Vec<String>,
-
-        /// Exclude glob patterns
-        #[arg(long, value_delimiter = ',')]
-        exclude: Vec<String>,
-
-        /// Rename files and directories (default: true)
-        #[arg(long, default_value_t = true)]
-        rename_files: bool,
-
-        /// Rename directories (default: true)
-        #[arg(long, default_value_t = true)]
-        rename_dirs: bool,
-
-        /// Case styles to exclude from the search
-        #[arg(
-            long,
-            value_enum,
-            value_delimiter = ',',
-            conflicts_with = "only_styles"
-        )]
-        exclude_styles: Vec<StyleArg>,
-
-        /// Additional case styles to include
-        #[arg(
-            long,
-            value_enum,
-            value_delimiter = ',',
-            conflicts_with = "only_styles"
-        )]
-        include_styles: Vec<StyleArg>,
-
-        /// Use only these case styles (overrides defaults)
-        #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
-        only_styles: Vec<StyleArg>,
-
-        /// Exclude matches on lines matching this regex pattern
-        #[arg(long)]
-        exclude_matching_lines: Option<String>,
-
-        /// Preview output format (defaults from config if not specified)
-        #[arg(long, value_enum)]
-        preview: Option<SearchPreviewArg>,
-
-        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
-        #[arg(long)]
-        fixed_table_width: bool,
-
-        /// Disable acronym detection (treat CLI, API, etc. as regular words)
-        #[arg(long)]
-        no_acronyms: bool,
-
-        /// Additional acronyms to recognize (comma-separated, e.g., "AWS,GCP,K8S")
-        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
-        include_acronyms: Vec<String>,
-
-        /// Default acronyms to exclude (comma-separated, e.g., "ID,UI")
-        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
-        exclude_acronyms: Vec<String>,
-
-        /// Use only these acronyms (replaces default list)
-        #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
-        only_acronyms: Vec<String>,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Apply a renaming plan
-    Apply {
-        /// Plan ID or path to apply (optional - defaults to .renamify/plan.json)
-        id: Option<String>,
-
-        /// Apply changes atomically
-        #[arg(long, default_value_t = true)]
-        atomic: bool,
-
-        /// Commit changes to git
-        #[arg(long)]
-        commit: bool,
-
-        /// Force apply even with conflicts
-        #[arg(long)]
-        force_with_conflicts: bool,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Undo a previous renaming
-    Undo {
-        /// History ID to undo (use 'latest' for the most recent non-revert entry)
-        id: String,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Redo a previously undone renaming
-    Redo {
-        /// History ID to redo (use 'latest' for the most recent reverted entry)
-        id: String,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Show renaming status
-    Status {
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Show renaming history
-    History {
-        /// Limit number of entries
-        #[arg(long)]
-        limit: Option<usize>,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Dry-run mode (alias for plan --dry-run)
-    DryRun {
-        /// Old identifier to replace
-        search: String,
-
-        /// New identifier to replace with
-        replace: String,
-
-        /// Paths to search (files or directories). Defaults to current directory
-        #[arg(help = "Search paths (files or directories)")]
-        paths: Vec<PathBuf>,
-
-        /// Include glob patterns
-        #[arg(long, value_delimiter = ',')]
-        include: Vec<String>,
-
-        /// Exclude glob patterns
-        #[arg(long, value_delimiter = ',')]
-        exclude: Vec<String>,
-
-        /// Respect ignore files (.gitignore, .ignore, .rgignore, .rnignore)
-        #[arg(long, default_value_t = true)]
-        respect_gitignore: bool,
-
-        /// Don't rename matching files
-        #[arg(long = "no-rename-files")]
-        no_rename_files: bool,
-
-        /// Don't rename matching directories
-        #[arg(long = "no-rename-dirs")]
-        no_rename_dirs: bool,
-
-        /// Case styles to exclude from the default set (original, snake, kebab, camel, pascal, screaming-snake, train, screaming-train)
-        #[arg(
-            long,
-            value_enum,
-            value_delimiter = ',',
-            conflicts_with = "only_styles"
-        )]
-        exclude_styles: Vec<StyleArg>,
-
-        /// Additional case styles to include (title, dot)
-        #[arg(
-            long,
-            value_enum,
-            value_delimiter = ',',
-            conflicts_with = "only_styles"
-        )]
-        include_styles: Vec<StyleArg>,
-
-        /// Use only these case styles (overrides defaults)
-        #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
-        only_styles: Vec<StyleArg>,
-
-        /// Specific matches to exclude (e.g., compound words to ignore)
-        #[arg(long, value_delimiter = ',')]
-        exclude_match: Vec<String>,
-
-        /// Exclude matches on lines matching this regex pattern
-        #[arg(long)]
-        exclude_matching_lines: Option<String>,
-
-        /// Preview output format (defaults from config if not specified)
-        #[arg(long, value_enum)]
-        preview: Option<PreviewArg>,
-
-        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
-        #[arg(long)]
-        fixed_table_width: bool,
-
-        /// Disable acronym detection (treat CLI, API, etc. as regular words)
-        #[arg(long)]
-        no_acronyms: bool,
-
-        /// Additional acronyms to recognize (comma-separated, e.g., "AWS,GCP,K8S")
-        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
-        include_acronyms: Vec<String>,
-
-        /// Default acronyms to exclude (comma-separated, e.g., "ID,UI")
-        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
-        exclude_acronyms: Vec<String>,
-
-        /// Use only these acronyms (replaces default list)
-        #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
-        only_acronyms: Vec<String>,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Initialize renamify in the current repository
-    Init {
-        /// Add to .git/info/exclude instead of .gitignore
-        #[arg(long, conflicts_with = "global")]
-        local: bool,
-
-        /// Add to global git excludes file
-        #[arg(long, conflicts_with = "local")]
-        global: bool,
-
-        /// Check if .renamify is ignored (exit 0 if yes, 1 if no)
-        #[arg(long, conflicts_with_all = ["local", "global", "configure_global"])]
-        check: bool,
-
-        /// Configure global excludes file if it doesn't exist
-        #[arg(long, requires = "global")]
-        configure_global: bool,
-    },
-
-    /// Show version information
-    Version {
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-    },
-
-    /// Plan and apply a renaming in one step (with confirmation)
-    Rename {
-        /// Old identifier to replace
-        search: String,
-
-        /// New identifier to replace with
-        replace: String,
-
-        /// Paths to search (files or directories). Defaults to current directory
-        #[arg(help = "Search paths (files or directories)")]
-        paths: Vec<PathBuf>,
-
-        /// Include glob patterns
-        #[arg(long, value_delimiter = ',')]
-        include: Vec<String>,
-
-        /// Exclude glob patterns
-        #[arg(long, value_delimiter = ',')]
-        exclude: Vec<String>,
-
-        /// Don't rename matching files
-        #[arg(long = "no-rename-files")]
-        no_rename_files: bool,
-
-        /// Don't rename matching directories
-        #[arg(long = "no-rename-dirs")]
-        no_rename_dirs: bool,
-
-        /// Case styles to exclude from the default set (original, snake, kebab, camel, pascal, screaming-snake, train, screaming-train)
-        #[arg(
-            long,
-            value_enum,
-            value_delimiter = ',',
-            conflicts_with = "only_styles"
-        )]
-        exclude_styles: Vec<StyleArg>,
-
-        /// Additional case styles to include (title, dot)
-        #[arg(
-            long,
-            value_enum,
-            value_delimiter = ',',
-            conflicts_with = "only_styles"
-        )]
-        include_styles: Vec<StyleArg>,
-
-        /// Use only these case styles (overrides defaults)
-        #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
-        only_styles: Vec<StyleArg>,
-
-        /// Specific matches to exclude (e.g., compound words to ignore)
-        #[arg(long, value_delimiter = ',')]
-        exclude_match: Vec<String>,
-
-        /// Exclude matches on lines matching this regex pattern
-        #[arg(long)]
-        exclude_matching_lines: Option<String>,
-
-        /// Show preview before confirmation prompt
-        #[arg(long, value_enum)]
-        preview: Option<PreviewArg>,
-
-        /// Commit changes to git after applying
-        #[arg(long)]
-        commit: bool,
-
-        /// Acknowledge large changes (>500 files or >100 renames)
-        #[arg(long)]
-        large: bool,
-
-        /// Force apply even with conflicts
-        #[arg(long)]
-        force_with_conflicts: bool,
-
-        /// Confirm case-insensitive or collision renames
-        #[arg(long)]
-        confirm_collisions: bool,
-
-        /// Actually rename the root project directory (requires confirmation)
-        #[arg(long)]
-        rename_root: bool,
-
-        /// Never rename the root project directory
-        #[arg(long, conflicts_with = "rename_root")]
-        no_rename_root: bool,
-
-        /// Show preview only, don't apply changes
-        #[arg(long)]
-        dry_run: bool,
-
-        /// Disable acronym detection (treat CLI, API, etc. as regular words)
-        #[arg(long)]
-        no_acronyms: bool,
-
-        /// Additional acronyms to recognize (comma-separated, e.g., "AWS,GCP,K8S")
-        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
-        include_acronyms: Vec<String>,
-
-        /// Default acronyms to exclude (comma-separated, e.g., "ID,UI")
-        #[arg(long, value_delimiter = ',', conflicts_with = "only_acronyms")]
-        exclude_acronyms: Vec<String>,
-
-        /// Use only these acronyms (replaces default list)
-        #[arg(long, value_delimiter = ',', conflicts_with_all = ["include_acronyms", "exclude_acronyms"])]
-        only_acronyms: Vec<String>,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, ValueEnum)]
-enum StyleArg {
-    Snake,
-    Kebab,
-    Camel,
-    Pascal,
-    ScreamingSnake,
-    Title,
-    Train,
-    ScreamingTrain,
-    Dot,
-    Original,
-}
-
-impl From<StyleArg> for Style {
-    fn from(arg: StyleArg) -> Self {
-        match arg {
-            StyleArg::Snake => Self::Snake,
-            StyleArg::Kebab => Self::Kebab,
-            StyleArg::Camel => Self::Camel,
-            StyleArg::Pascal => Self::Pascal,
-            StyleArg::ScreamingSnake => Self::ScreamingSnake,
-            StyleArg::Title => Self::Title,
-            StyleArg::Train => Self::Train,
-            StyleArg::ScreamingTrain => Self::ScreamingTrain,
-            StyleArg::Dot => Self::Dot,
-            StyleArg::Original => Self::Original,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
-enum PreviewArg {
-    Table,
-    Diff,
-    Matches,
-    Summary,
-    None,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
-enum OutputFormat {
-    Summary,
-    Json,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
-enum SearchPreviewArg {
-    Table,
-    Matches,
-    Summary,
-    None,
-}
-
-impl PreviewArg {
-    fn from_str(s: &str) -> Option<Self> {
-        match s.to_lowercase().as_str() {
-            "table" => Some(Self::Table),
-            "diff" => Some(Self::Diff),
-            "matches" => Some(Self::Matches),
-            "summary" => Some(Self::Summary),
-            "none" => Some(Self::None),
-            _ => None,
-        }
-    }
-}
-
-impl From<PreviewArg> for Preview {
-    fn from(arg: PreviewArg) -> Self {
-        match arg {
-            PreviewArg::Table => Self::Table,
-            PreviewArg::Diff => Self::Diff,
-            PreviewArg::Matches => Self::Matches,
-            PreviewArg::Summary => Self::Summary,
-            PreviewArg::None => Self::Table, // Default to table if None is somehow converted
-        }
-    }
-}
-
-impl From<SearchPreviewArg> for Preview {
-    fn from(arg: SearchPreviewArg) -> Self {
-        match arg {
-            SearchPreviewArg::Table => Self::Table,
-            SearchPreviewArg::Matches => Self::Matches,
-            SearchPreviewArg::Summary => Self::Summary,
-            SearchPreviewArg::None => Self::Matches, // Default to matches for search
-        }
-    }
-}
+// Import from our new cli module
+use cli::{Cli, Commands, OutputFormat, PreviewArg};
 
 fn main() {
     // Set up signal handler for graceful shutdown
@@ -692,24 +64,16 @@ fn main() {
             search,
             replace,
             paths,
-            include,
-            exclude,
-            respect_gitignore,
-            no_rename_files,
-            no_rename_dirs,
-            exclude_styles,
-            include_styles,
-            only_styles,
+            filter,
+            rename_files,
+            styles,
             exclude_match,
             exclude_matching_lines,
             preview,
             fixed_table_width,
             plan_out,
             dry_run,
-            no_acronyms,
-            include_acronyms,
-            exclude_acronyms,
-            only_acronyms,
+            acronyms,
             output,
             quiet,
         } => {
@@ -726,15 +90,15 @@ fn main() {
                 &search,
                 &replace,
                 paths,
-                include,
-                exclude,
-                respect_gitignore,
+                filter.include,
+                filter.exclude,
+                filter.respect_gitignore,
                 cli.unrestricted,
-                !no_rename_files,
-                !no_rename_dirs,
-                exclude_styles,
-                include_styles,
-                only_styles,
+                !rename_files.no_rename_files,
+                !rename_files.no_rename_dirs,
+                styles.exclude_styles,
+                styles.include_styles,
+                styles.only_styles,
                 exclude_match,
                 exclude_matching_lines,
                 format,
@@ -742,10 +106,10 @@ fn main() {
                 plan_out,
                 dry_run,
                 use_color,
-                no_acronyms,
-                include_acronyms,
-                exclude_acronyms,
-                only_acronyms,
+                acronyms.no_acronyms,
+                acronyms.include_acronyms,
+                acronyms.exclude_acronyms,
+                acronyms.only_acronyms,
                 output,
                 quiet,
             )
@@ -755,22 +119,14 @@ fn main() {
             search,
             replace,
             paths,
-            include,
-            exclude,
-            respect_gitignore,
-            no_rename_files,
-            no_rename_dirs,
-            exclude_styles,
-            include_styles,
-            only_styles,
+            filter,
+            rename_files,
+            styles,
             exclude_match,
             exclude_matching_lines,
             preview,
             fixed_table_width,
-            no_acronyms,
-            include_acronyms,
-            exclude_acronyms,
-            only_acronyms,
+            acronyms,
             output,
             quiet,
         } => {
@@ -787,15 +143,15 @@ fn main() {
                 &search,
                 &replace,
                 paths,
-                include,
-                exclude,
-                respect_gitignore,
+                filter.include,
+                filter.exclude,
+                filter.respect_gitignore,
                 cli.unrestricted,
-                !no_rename_files,
-                !no_rename_dirs,
-                exclude_styles,
-                include_styles,
-                only_styles,
+                !rename_files.no_rename_files,
+                !rename_files.no_rename_dirs,
+                styles.exclude_styles,
+                styles.include_styles,
+                styles.only_styles,
                 exclude_match,
                 exclude_matching_lines,
                 format,
@@ -803,10 +159,10 @@ fn main() {
                 PathBuf::from(".renamify/plan.json"),
                 true, // Always dry-run
                 use_color,
-                no_acronyms,
-                include_acronyms,
-                exclude_acronyms,
-                only_acronyms,
+                acronyms.no_acronyms,
+                acronyms.include_acronyms,
+                acronyms.exclude_acronyms,
+                acronyms.only_acronyms,
                 output,
                 quiet,
             )
@@ -819,16 +175,11 @@ fn main() {
             exclude,
             rename_files,
             rename_dirs,
-            exclude_styles,
-            include_styles,
-            only_styles,
+            styles,
             exclude_matching_lines,
             preview,
             fixed_table_width,
-            no_acronyms,
-            include_acronyms,
-            exclude_acronyms,
-            only_acronyms,
+            acronyms,
             output,
             quiet,
         } => {
@@ -859,9 +210,9 @@ fn main() {
                 cli.unrestricted,
                 rename_files,
                 rename_dirs,
-                exclude_styles,
-                include_styles,
-                only_styles,
+                styles.exclude_styles,
+                styles.include_styles,
+                styles.only_styles,
                 vec![], // exclude_match not needed for search
                 exclude_matching_lines,
                 format,
@@ -869,10 +220,10 @@ fn main() {
                 PathBuf::from(".renamify/plan.json"),
                 true, // Always dry-run for search
                 use_color,
-                no_acronyms,
-                include_acronyms,
-                exclude_acronyms,
-                only_acronyms,
+                acronyms.no_acronyms,
+                acronyms.include_acronyms,
+                acronyms.exclude_acronyms,
+                acronyms.only_acronyms,
                 output,
                 quiet,
             )
@@ -912,13 +263,9 @@ fn main() {
             search,
             replace,
             paths,
-            include,
-            exclude,
-            no_rename_files,
-            no_rename_dirs,
-            exclude_styles,
-            include_styles,
-            only_styles,
+            filter,
+            rename_files,
+            styles,
             exclude_match,
             exclude_matching_lines,
             preview,
@@ -929,10 +276,7 @@ fn main() {
             rename_root,
             no_rename_root,
             dry_run,
-            no_acronyms,
-            include_acronyms,
-            exclude_acronyms,
-            only_acronyms,
+            acronyms,
             output,
             quiet,
         } => {
@@ -943,14 +287,14 @@ fn main() {
                 &search,
                 &replace,
                 paths,
-                include,
-                exclude,
+                filter.include,
+                filter.exclude,
                 cli.unrestricted,
-                !no_rename_files,
-                !no_rename_dirs,
-                exclude_styles,
-                include_styles,
-                only_styles,
+                !rename_files.no_rename_files,
+                !rename_files.no_rename_dirs,
+                styles.exclude_styles,
+                styles.include_styles,
+                styles.only_styles,
                 exclude_match,
                 exclude_matching_lines,
                 format,
@@ -961,10 +305,10 @@ fn main() {
                 rename_root,
                 no_rename_root,
                 dry_run,
-                no_acronyms,
-                include_acronyms,
-                exclude_acronyms,
-                only_acronyms,
+                acronyms.no_acronyms,
+                acronyms.include_acronyms,
+                acronyms.exclude_acronyms,
+                acronyms.only_acronyms,
                 cli.yes,
                 use_color,
                 output,

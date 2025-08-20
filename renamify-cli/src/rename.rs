@@ -2,7 +2,7 @@ use anyhow::Result;
 use renamify_core::{rename_operation, OutputFormatter, Style};
 use std::path::PathBuf;
 
-use crate::{OutputFormat, PreviewArg, StyleArg};
+use crate::cli::{types::StyleArg, OutputFormat, PreviewArg};
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_rename(

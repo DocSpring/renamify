@@ -2,7 +2,7 @@ use anyhow::Result;
 use renamify_core::{plan_operation, OutputFormatter, Style};
 use std::path::PathBuf;
 
-use crate::{OutputFormat, StyleArg};
+use crate::cli::{types::StyleArg, OutputFormat};
 use renamify_core::Preview;
 
 #[allow(clippy::too_many_arguments)]
