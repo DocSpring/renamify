@@ -23,11 +23,6 @@
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
-  "files": [
-    "dist",
-    "media",
-    "resources"
-  ],
   "contributes": {
     "icons": {
       "renamify-renamify": {
