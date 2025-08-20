@@ -68,7 +68,12 @@ type SearchResult = {
   });
 
   // Case styles collapsible section
-  caseStylesHeader.addEventListener('click', () => {
+  caseStylesHeader.addEventListener('click', (e) => {
+    // Don't toggle if clicking on a link
+    if ((e.target as HTMLElement).tagName === 'A') {
+      return;
+    }
+
     const isCollapsed = caseStylesContainer.classList.contains('collapsed');
     const expandIcon = caseStylesHeader.querySelector('.expand-icon');
 
@@ -83,6 +88,51 @@ type SearchResult = {
         expandIcon.className = 'expand-icon codicon codicon-chevron-right';
       }
     }
+  });
+
+  // Quick selection links
+  const selectOnlyOriginal = document.getElementById('selectOnlyOriginal') as HTMLAnchorElement;
+  const selectDefault = document.getElementById('selectDefault') as HTMLAnchorElement;
+  const selectAll = document.getElementById('selectAll') as HTMLAnchorElement;
+
+  selectOnlyOriginal?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const checkboxes = document.querySelectorAll(
+      '.case-styles-container input[type="checkbox"]'
+    ) as NodeListOf<HTMLInputElement>;
+
+    for (const checkbox of Array.from(checkboxes)) {
+      checkbox.checked = checkbox.value === 'original';
+    }
+    updateCheckedCount();
+    debouncedSearch();
+  });
+
+  selectDefault?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const defaultStyles = ['original', 'snake', 'kebab', 'camel', 'pascal', 'screaming-snake', 'train', 'screaming-train'];
+    const checkboxes = document.querySelectorAll(
+      '.case-styles-container input[type="checkbox"]'
+    ) as NodeListOf<HTMLInputElement>;
+
+    for (const checkbox of Array.from(checkboxes)) {
+      checkbox.checked = defaultStyles.includes(checkbox.value);
+    }
+    updateCheckedCount();
+    debouncedSearch();
+  });
+
+  selectAll?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const checkboxes = document.querySelectorAll(
+      '.case-styles-container input[type="checkbox"]'
+    ) as NodeListOf<HTMLInputElement>;
+
+    for (const checkbox of Array.from(checkboxes)) {
+      checkbox.checked = true;
+    }
+    updateCheckedCount();
+    debouncedSearch();
   });
 
   // Debounced auto-search on input
@@ -140,6 +190,14 @@ type SearchResult = {
       return;
     }
 
+    // Don't search if no case styles are selected
+    const selectedStyles = getSelectedCaseStyles();
+    if (selectedStyles.length === 0) {
+      clearResults();
+      resultsTree.innerHTML = '<div class="empty-state">Please select at least one case style</div>';
+      return;
+    }
+
     showLoading();
 
     // Always use search mode (backend will decide to use plan with --dry-run if replace is provided)
@@ -150,7 +208,7 @@ type SearchResult = {
       include: includeInput.value,
       exclude: excludeInput.value,
       excludeMatchingLines: excludeLinesInput.value,
-      caseStyles: getSelectedCaseStyles(),
+      caseStyles: selectedStyles,
     });
   }
 
@@ -163,6 +221,12 @@ type SearchResult = {
       return;
     }
 
+    // Don't apply if no case styles are selected
+    const selectedStyles = getSelectedCaseStyles();
+    if (selectedStyles.length === 0) {
+      return;
+    }
+
     vscode.postMessage({
       type: 'apply',
       search: searchTerm,
@@ -170,7 +234,7 @@ type SearchResult = {
       include: includeInput.value,
       exclude: excludeInput.value,
       excludeMatchingLines: excludeLinesInput.value,
-      caseStyles: getSelectedCaseStyles(),
+      caseStyles: selectedStyles,
     });
   }
 
@@ -216,6 +280,12 @@ type SearchResult = {
       return;
     }
 
+    // Don't open preview if no case styles are selected
+    const selectedStyles = getSelectedCaseStyles();
+    if (selectedStyles.length === 0) {
+      return;
+    }
+
     vscode.postMessage({
       type: 'openPreview',
       search: searchTerm,
@@ -223,7 +293,7 @@ type SearchResult = {
       include: includeInput.value,
       exclude: excludeInput.value,
       excludeMatchingLines: excludeLinesInput.value,
-      caseStyles: getSelectedCaseStyles(),
+      caseStyles: selectedStyles,
     });
   }
 

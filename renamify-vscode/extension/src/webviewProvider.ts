@@ -31,7 +31,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   }
 
   private _loadTemplates() {
-    const templatesPath = path.join(this._extensionUri.fsPath, 'templates');
+    const templatesPath = path.join(this._extensionUri.fsPath, 'extension', 'templates');
 
     // Load and compile webview template
     const webviewTemplatePath = path.join(templatesPath, 'webview.hbs');
@@ -365,143 +365,22 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
       return this._getSplashScreenHtml(webview, styleUri, nonce);
     }
 
-    // Use template if available
-    if (this._webviewTemplate) {
-      const workspaceRoot =
-        vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
-
-      return this._webviewTemplate({
-        cspSource: webview.cspSource,
-        nonce,
-        scriptUri: scriptUri.toString(),
-        styleUri: styleUri.toString(),
-        codiconsUri: codiconsUri.toString(),
-        workspaceRootJson: JSON.stringify(workspaceRoot),
-      });
+    // Template is required
+    if (!this._webviewTemplate) {
+      throw new Error('Webview template not loaded');
     }
 
-    return `<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${
-                  webview.cspSource
-                } https: data:; font-src ${
-                  webview.cspSource
-                } https: data:; style-src ${
-                  webview.cspSource
-                } 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src ${
-                  webview.cspSource
-                };">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link href="${codiconsUri}" rel="stylesheet">
-                <link href="${styleUri}" rel="stylesheet">
-                <title>Renamify Search & Replace</title>
-            </head>
-            <body>
-                <div class="search-container">
-                    <div class="input-group">
-                        <label for="search">Search</label>
-                        <input type="text" id="search" placeholder="Enter search term...">
-                    </div>
+    const workspaceRoot =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
 
-                    <div class="input-group">
-                        <label for="replace">Replace</label>
-                        <input type="text" id="replace" placeholder="Enter replacement...">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="include">Files to include</label>
-                        <input type="text" id="include" placeholder="e.g., **/*.ts, src/**/*">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="exclude">Files to exclude</label>
-                        <input type="text" id="exclude" placeholder="e.g., node_modules/**, *.min.js">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="excludeLines">Exclude matching lines (regex)</label>
-                        <input type="text" id="excludeLines" placeholder="e.g., ^\\s*//.*">
-                    </div>
-
-                    <div class="input-group">
-                        <div class="case-styles-header" id="caseStylesHeader">
-                            <span class="expand-icon codicon codicon-chevron-down"></span>
-                            <label for="]caseStyles">Case styles (<span id="checkedCount">8</span>)</label>
-                        </div>
-                        <div class="case-styles-container" id="caseStylesContainer">
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="original" checked> Original
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="snake" checked> snake_case
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="kebab" checked> kebab-case
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="camel" checked> camelCase
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="pascal" checked> PascalCase
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="screaming-snake" checked> SCREAMING_SNAKE_CASE
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="train" checked> Train-Case
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="screaming-train" checked> SCREAMING-TRAIN-CASE
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="title"> Title Case
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" value="dot"> dot.case
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="button-group">
-                        <button id="applyBtn" class="primary">Apply Rename</button>
-                    </div>
-                </div>
-
-                <div class="results-container">
-                    <div class="results-header">
-                        <span id="resultsSummary"></span>
-                        <a href="#" id="openInEditor" class="open-in-editor">Open in editor</a>
-                        <div class="results-actions">
-                            <button id="expandAll" title="Expand All">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);">
-                                    <line x1="15" x2="15" y1="12" y2="18"/>
-                                    <line x1="12" x2="18" y1="15" y2="15"/>
-                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-                                </svg>
-                            </button>
-                            <button id="collapseAll" title="Collapse All">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);">
-                                    <line x1="12" x2="18" y1="15" y2="15"/>
-                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="resultsTree" class="results-tree"></div>
-                </div>
-
-                <script nonce="${nonce}">
-                    window.workspaceRoot = ${JSON.stringify(
-                      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || ''
-                    )};
-                </script>
-                <script nonce="${nonce}" src="${scriptUri}"></script>
-            </body>
-            </html>`;
+    return this._webviewTemplate({
+      cspSource: webview.cspSource,
+      nonce,
+      scriptUri: scriptUri.toString(),
+      styleUri: styleUri.toString(),
+      codiconsUri: codiconsUri.toString(),
+      workspaceRootJson: JSON.stringify(workspaceRoot),
+    });
   }
 
   private _getSplashScreenHtml(
@@ -509,140 +388,16 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
     styleUri: vscode.Uri,
     nonce: string
   ) {
-    // Use template if available
-    if (this._splashTemplate) {
-      return this._splashTemplate({
-        cspSource: webview.cspSource,
-        nonce,
-        styleUri: styleUri.toString(),
-      });
+    // Template is required
+    if (!this._splashTemplate) {
+      throw new Error('Splash template not loaded');
     }
 
-    return `<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; font-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource};">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link href="${styleUri}" rel="stylesheet">
-                <title>Renamify - CLI Not Found</title>
-                <style nonce="${nonce}">
-                    .splash-container {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        height: 100vh;
-                        padding: 20px;
-                        text-align: center;
-                        color: var(--vscode-foreground);
-                    }
-                    .splash-icon {
-                        font-size: 4rem;
-                        margin-bottom: 1rem;
-                        color: var(--vscode-textLink-foreground);
-                    }
-                    .splash-title {
-                        font-size: 1.5rem;
-                        font-weight: bold;
-                        margin-bottom: 1rem;
-                        color: var(--vscode-foreground);
-                    }
-                    .splash-message {
-                        font-size: 1rem;
-                        margin-bottom: 2rem;
-                        max-width: 400px;
-                        line-height: 1.5;
-                        color: var(--vscode-descriptionForeground);
-                    }
-                    .splash-buttons {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 0.5rem;
-                        width: 100%;
-                        max-width: 300px;
-                    }
-                    .splash-button {
-                        padding: 8px 16px;
-                        border: 1px solid var(--vscode-button-border);
-                        background: var(--vscode-button-background);
-                        color: var(--vscode-button-foreground);
-                        text-decoration: none;
-                        border-radius: 2px;
-                        cursor: pointer;
-                        font-size: 0.9rem;
-                        transition: background-color 0.2s;
-                    }
-                    .splash-button:hover {
-                        background: var(--vscode-button-hoverBackground);
-                        opacity: 0.8;
-                    }
-                    .splash-button.primary {
-                        background: var(--vscode-button-background);
-                        color: var(--vscode-button-foreground);
-                    }
-                    .splash-button.secondary {
-                        background: var(--vscode-button-secondaryBackground);
-                        color: var(--vscode-button-secondaryForeground);
-                    }
-                    .config-note {
-                        margin-top: 1rem;
-                        font-size: 0.8rem;
-                        color: var(--vscode-descriptionForeground);
-                        opacity: 0.8;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="splash-container">
-                    <div class="splash-icon">⚙️</div>
-                    <h1 class="splash-title">Renamify CLI Not Found</h1>
-                    <p class="splash-message">
-                        The Renamify command-line tool is required to use this extension.
-                        Please install it or configure the path to your existing installation.
-                    </p>
-                    <div class="splash-buttons">
-                        <a href="https://docspring.github.io/renamify/installation/" class="splash-button primary">
-                            📦 View Installation Guide
-                        </a>
-                        <button class="splash-button secondary" id="openSettingsBtn">
-                            ⚙️ Configure Binary Path
-                        </button>
-                        <button class="splash-button secondary" id="refreshBtn">
-                            🔄 Refresh Extension
-                        </button>
-                    </div>
-                    <p class="config-note">
-                        You can also set the <code>renamify.cliPath</code> setting to point to your binary.
-                    </p>
-                </div>
-
-                <script nonce="${nonce}">
-                    const vscode = acquireVsCodeApi();
-
-                    document.addEventListener('DOMContentLoaded', function() {
-                        console.log('DOM loaded');
-
-                        const openSettingsBtn = document.getElementById('openSettingsBtn');
-                        const refreshBtn = document.getElementById('refreshBtn');
-
-                        if (openSettingsBtn) {
-                            openSettingsBtn.addEventListener('click', function() {
-                                console.log('Settings button clicked');
-                                vscode.postMessage({ type: 'openSettings' });
-                            });
-                        }
-
-                        if (refreshBtn) {
-                            refreshBtn.addEventListener('click', function() {
-                                console.log('Refresh button clicked');
-                                vscode.postMessage({ type: 'refresh' });
-                            });
-                        }
-                    });
-                </script>
-            </body>
-            </html>`;
+    return this._splashTemplate({
+      cspSource: webview.cspSource,
+      nonce,
+      styleUri: styleUri.toString(),
+    });
   }
 }
 

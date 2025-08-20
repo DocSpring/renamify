@@ -53,6 +53,31 @@ body {
   align-items: center;
   cursor: pointer;
   margin-bottom: 4px;
+  gap: 8px;
+}
+
+.case-styles-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 0.9em;
+}
+
+.case-styles-links a {
+  color: var(--vscode-descriptionForeground);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.case-styles-links a:hover {
+  color: var(--vscode-foreground);
+  text-decoration: underline;
+}
+
+.case-styles-links .separator {
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.5;
 }
 
 .expand-icon {

@@ -20,7 +20,7 @@
       "type": "shell",
       "label": "pnpm: watch",
       "command": "pnpm",
-      "args": ["run", "watch"],
+      "args": ["watch"],
       "isBackground": true,
       "group": {
         "kind": "build",
