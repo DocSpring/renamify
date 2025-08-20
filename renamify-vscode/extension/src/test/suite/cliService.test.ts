@@ -1,4 +1,5 @@
 import * as assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import * as path from 'node:path';
 import * as sinon from 'sinon';
@@ -127,6 +128,44 @@ suite('CLI Service Test Suite', () => {
     assert.strictEqual(results.matches.length, 1);
     assert.strictEqual(results.matches[0].file, 'test.ts');
     assert.strictEqual(results.id, 'test-plan');
+  });
+
+  test('CLI service performs a real search', async function () {
+    this.timeout(5000); // Increase timeout to 5 seconds
+
+    const service = new RenamifyCliService();
+
+    // Test basic search with default case styles
+    const results = await service.search('test', {
+      caseStyles: ['original'],
+    });
+
+    // Results should be a Plan object
+    assert.ok(results.id, 'Plan should have an ID');
+    assert.ok(Array.isArray(results.matches), 'Matches should be an array');
+  });
+
+  test('CLI service uses --only-styles argument correctly', async () => {
+    // Configure the mock to capture arguments
+    let capturedArgs: string[] = [];
+    mockSpawn.callsFake((command: string, args?: string[], _options?: any) => {
+      capturedArgs = args ?? [];
+      const proc = spawn(command, args, _options);
+      return proc;
+    });
+
+    try {
+      await cliService.search('test', {
+        caseStyles: ['snake', 'kebab'],
+      });
+    } catch {
+      // Error is expected if no matches found
+    }
+
+    // Verify that --only-styles was used, not --styles
+    assert.ok(capturedArgs.includes('--only-styles'));
+    assert.ok(!capturedArgs.includes('--styles'));
+    assert.ok(capturedArgs.includes('snake,kebab'));
   });
 
   test('Create plan should not use --dry-run flag', async () => {

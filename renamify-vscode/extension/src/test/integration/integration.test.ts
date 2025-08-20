@@ -70,6 +70,8 @@ suite('Integration Test Suite', () => {
 
   test('Should handle search message from webview', async () => {
     let messageHandler: any;
+    let postMessageCalled = false;
+    let searchSucceeded = false;
 
     const mockWebview = {
       options: {},
@@ -81,9 +83,17 @@ suite('Integration Test Suite', () => {
       asWebviewUri: (uri: vscode.Uri) => uri,
       cspSource: 'self',
       postMessage: (message: any) => {
+        postMessageCalled = true;
         // Verify the response message
-        assert.strictEqual(message.type, 'searchResults');
-        assert.ok(Array.isArray(message.results));
+        if (message.type === 'searchResults') {
+          searchSucceeded = true;
+          assert.ok(
+            Array.isArray(message.results),
+            'Results should be an array'
+          );
+        } else if (message.type === 'error') {
+          assert.fail(`Search failed with error: ${message.message}`);
+        }
         return Promise.resolve(true);
       },
     } as any;
@@ -139,18 +149,26 @@ suite('Integration Test Suite', () => {
         });
       };
 
-      await messageHandler({
-        type: 'search',
-        search: 'oldName',
-        replace: 'newName',
-        include: '**/*.ts',
-        exclude: 'node_modules/**',
-        excludeMatchingLines: '^\\s*//',
-        caseStyles: ['camel', 'pascal'],
-      });
+      try {
+        await messageHandler({
+          type: 'search',
+          search: 'oldName',
+          replace: 'newName',
+          include: '**/*.ts',
+          exclude: 'node_modules/**',
+          excludeMatchingLines: '^\\s*//',
+          caseStyles: ['camel', 'pascal'],
+        });
+      } finally {
+        // Restore original method
+        cliService.search = originalSearch;
+      }
 
-      // Restore original method
-      cliService.search = originalSearch;
+      // Assert that the search succeeded and postMessage was called
+      assert.ok(postMessageCalled, 'postMessage should have been called');
+      assert.ok(searchSucceeded, 'Search should have succeeded');
+    } else {
+      assert.fail('Message handler was not set up');
     }
   });
 
@@ -202,13 +220,14 @@ suite('Integration Test Suite', () => {
 
     // Simulate openFile message from webview
     if (messageHandler) {
+      const testFilePath = path.join(path.sep, 'test', 'file.ts');
       await messageHandler({
         type: 'openFile',
-        file: '/test/file.ts',
+        file: testFilePath,
         line: 42,
       });
 
-      assert.strictEqual(openedFile, '/test/file.ts');
+      assert.strictEqual(openedFile, testFilePath);
     }
 
     // Restore original methods
