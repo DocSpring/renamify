@@ -20,7 +20,7 @@ vi.mock('node:fs', async () => {
     ...actual,
     readFileSync: vi.fn((path: string) => {
       if (path.includes('package.json')) {
-        return JSON.stringify({ version: '0.1.1' });
+        return JSON.stringify({ version: '0.1.0' });
       }
       return '';
     }),

@@ -13,7 +13,7 @@ vi.mock('node:fs', async () => {
     ...actual,
     readFileSync: vi.fn((path: string) => {
       if (path.includes('package.json')) {
-        return JSON.stringify({ version: '0.1.1' });
+        return JSON.stringify({ version: '0.1.0' });
       }
       return '';
     }),
@@ -60,10 +60,10 @@ describe('RenamifyService', () => {
     });
 
     it('should pass when versions are compatible', async () => {
-      // MCP version is 0.1.1, CLI version is 0.1.1
+      // MCP version is 0.1.0, CLI version is 0.1.0
       mockedExeca
         .mockResolvedValueOnce({
-          stdout: '{"name":"renamify","version":"0.1.1"}',
+          stdout: '{"name":"renamify","version":"0.1.0"}',
         } as never) // version check
         .mockResolvedValueOnce({ stdout: 'Plan created' } as never); // actual command
 
@@ -76,7 +76,7 @@ describe('RenamifyService', () => {
     });
 
     it('should pass when CLI has higher minor version', async () => {
-      // MCP version is 0.1.1, CLI version is 0.2.0
+      // MCP version is 0.1.0, CLI version is 0.2.0
       mockedExeca
         .mockResolvedValueOnce({
           stdout: '{"name":"renamify","version":"0.2.0"}',
@@ -92,7 +92,7 @@ describe('RenamifyService', () => {
     });
 
     it('should fail when major versions differ', async () => {
-      // MCP version is 0.1.1, CLI version is 1.0.0
+      // MCP version is 0.1.0, CLI version is 1.0.0
       mockedExeca.mockResolvedValueOnce({
         stdout: '{"name":"renamify","version":"1.0.0"}',
       } as never);
@@ -100,12 +100,12 @@ describe('RenamifyService', () => {
       await expect(
         service.plan({ search: 'foo', replace: 'bar' })
       ).rejects.toThrow(
-        'Version mismatch: MCP server v0.1.1 is not compatible with CLI v1.0.0'
+        'Version mismatch: MCP server v0.1.0 is not compatible with CLI v1.0.0'
       );
     });
 
     it('should fail when MCP minor version is higher than CLI', async () => {
-      // MCP version is 0.1.1, CLI version is 0.0.5
+      // MCP version is 0.1.0, CLI version is 0.0.5
       mockedExeca.mockResolvedValueOnce({
         stdout: '{"name":"renamify","version":"0.0.5"}',
       } as never);
@@ -113,7 +113,7 @@ describe('RenamifyService', () => {
       await expect(
         service.plan({ search: 'foo', replace: 'bar' })
       ).rejects.toThrow(
-        'Version mismatch: MCP server v0.1.1 requires CLI v0.1.x or later'
+        'Version mismatch: MCP server v0.1.0 requires CLI v0.1.x or later'
       );
     });
 
