@@ -142,6 +142,7 @@
     "@types/requirejs": "^2.1.37",
     "@types/sinon": "^17.0.2",
     "@types/vscode": "^1.85.0",
+    "@vscode/codicons": "^0.0.39",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.3.8",
     "@vscode/vsce": "^3.6.0",

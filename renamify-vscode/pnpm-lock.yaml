@@ -32,6 +32,9 @@ importers:
       '@types/vscode':
         specifier: ^1.85.0
         version: 1.85.0
+      '@vscode/codicons':
+        specifier: ^0.0.39
+        version: 0.0.39
       '@vscode/test-cli':
         specifier: ^0.0.11
         version: 0.0.11
@@ -712,6 +715,9 @@ packages:
 
   '@vitest/utils@3.2.4':
     resolution: {integrity: sha512-fB2V0JFrQSMsCo9HiSq3Ezpdv4iYaXRG1Sx8edX3MwxfyNn83mKiGzOcH+Fkxt4MHxr3y42fQi1oeAInqgX2QA==}
+
+  '@vscode/codicons@0.0.39':
+    resolution: {integrity: sha512-gO09UZrOBONyzI8LWPRsCahnmUR16hkRQCJOSJzX8L4dC5aa6YGP4nS+gh5oSekMlM8LFJXMAgqBMGGiktdRJw==}
 
   '@vscode/test-cli@0.0.11':
     resolution: {integrity: sha512-qO332yvzFqGhBMJrp6TdwbIydiHgCtxXc2Nl6M58mbH/Z+0CyLR76Jzv4YWPEthhrARprzCRJUqzFvTHFhTj7Q==}
@@ -3548,6 +3554,8 @@ snapshots:
       '@vitest/pretty-format': 3.2.4
       loupe: 3.2.0
       tinyrainbow: 2.0.0
+
+  '@vscode/codicons@0.0.39': {}
 
   '@vscode/test-cli@0.0.11':
     dependencies:

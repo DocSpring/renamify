@@ -75,14 +75,12 @@ type SearchResult = {
     if (isCollapsed) {
       caseStylesContainer.classList.remove('collapsed');
       if (expandIcon) {
-        expandIcon.innerHTML =
-          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
+        expandIcon.className = 'expand-icon codicon codicon-chevron-down';
       }
     } else {
       caseStylesContainer.classList.add('collapsed');
       if (expandIcon) {
-        expandIcon.innerHTML =
-          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg);"><path d="m18 15-6-6-6 6"/></svg>';
+        expandIcon.className = 'expand-icon codicon codicon-chevron-right';
       }
     }
   });
@@ -352,6 +350,19 @@ type SearchResult = {
 
       pathItem.appendChild(icon);
       pathItem.appendChild(pathInfo);
+
+      // Add click handler to open file (only for files, not directories)
+      if (pathRename.kind === 'file') {
+        pathItem.style.cursor = 'pointer';
+        pathItem.addEventListener('click', () => {
+          vscode.postMessage({
+            type: 'openFile',
+            file: pathRename.path,
+            line: 1,
+          });
+        });
+      }
+
       pathsList.appendChild(pathItem);
     }
 
@@ -371,10 +382,11 @@ type SearchResult = {
     fileHeader.className = 'file-header';
 
     const expandIcon = document.createElement('span');
-    expandIcon.className = 'expand-icon';
-    expandIcon.innerHTML = expandedFiles.has(index)
-      ? getChevronDown()
-      : getChevronRight();
+    expandIcon.className =
+      'expand-icon codicon ' +
+      (expandedFiles.has(index)
+        ? 'codicon-chevron-down'
+        : 'codicon-chevron-right');
 
     // Split filename into basename and directory
     const fullPath = normalizePathForDisplay(fileResult.file);
@@ -484,11 +496,11 @@ type SearchResult = {
 
     if (expandedFiles.has(index)) {
       expandedFiles.delete(index);
-      expandIcon.innerHTML = getChevronRight();
+      expandIcon.className = 'expand-icon codicon codicon-chevron-right';
       matchesContainer.classList.remove('expanded');
     } else {
       expandedFiles.add(index);
-      expandIcon.innerHTML = getChevronDown();
+      expandIcon.className = 'expand-icon codicon codicon-chevron-down';
       matchesContainer.classList.add('expanded');
 
       if (matchesContainer.children.length === 0) {
@@ -527,7 +539,7 @@ type SearchResult = {
           const matchesContainer = fileItem.querySelector(
             '.file-matches'
           ) as HTMLDivElement;
-          expandIcon.innerHTML = getChevronDown();
+          expandIcon.className = 'expand-icon codicon codicon-chevron-down';
           matchesContainer.classList.add('expanded');
 
           if (matchesContainer.children.length === 0) {
@@ -551,18 +563,10 @@ type SearchResult = {
       const matchesContainer = fileItem.querySelector(
         '.file-matches'
       ) as HTMLDivElement;
-      expandIcon.innerHTML = getChevronRight();
+      expandIcon.className = 'expand-icon codicon codicon-chevron-right';
       matchesContainer.classList.remove('expanded');
     }
     updateExpandCollapseButtons();
-  }
-
-  function getChevronDown(): string {
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-180deg);"><path d="m18 15-6-6-6 6"/></svg>';
-  }
-
-  function getChevronRight(): string {
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-270deg);"><path d="m18 15-6-6-6 6"/></svg>';
   }
 
   // Handle messages from extension

@@ -315,6 +315,10 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
       vscode.Uri.joinPath(this._extensionUri, 'media', 'style.css')
     );
 
+    const codiconsUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'codicon.css')
+    );
+
     const nonce = getNonce();
 
     // Check if CLI is available
@@ -328,6 +332,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                 <meta charset="UTF-8">
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; font-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource};">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="${codiconsUri}" rel="stylesheet">
                 <link href="${styleUri}" rel="stylesheet">
                 <title>Renamify Search & Replace</title>
             </head>
@@ -360,7 +365,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
                     <div class="input-group">
                         <div class="case-styles-header" id="caseStylesHeader">
-                            <span class="expand-icon">▼</span>
+                            <span class="expand-icon codicon codicon-chevron-down"></span>
                             <label for="caseStyles">Case styles (<span id="checkedCount">8</span>)</label>
                         </div>
                         <div class="case-styles-container" id="caseStylesContainer">

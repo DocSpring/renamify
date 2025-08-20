@@ -58,12 +58,16 @@ body {
 .expand-icon {
   margin-right: 4px;
   width: 16px;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   user-select: none;
 }
 
-.case-styles-header .expand-icon {
-  font-size: 12px;
+.expand-icon.codicon {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--vscode-icon-foreground, var(--vscode-foreground));
 }
 
 .case-styles-header label {
