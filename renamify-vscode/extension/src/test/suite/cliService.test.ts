@@ -1,6 +1,8 @@
 import * as assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
@@ -133,16 +135,34 @@ suite('CLI Service Test Suite', () => {
   test('CLI service performs a real search', async function () {
     this.timeout(5000); // Increase timeout to 5 seconds
 
-    const service = new RenamifyCliService();
+    // Create a temporary test directory with a small file to search
+    const testDir = path.join(os.tmpdir(), `renamify-test-${Date.now()}`);
+    fs.mkdirSync(testDir, { recursive: true });
 
-    // Test basic search with default case styles
-    const results = await service.search('test', {
-      caseStyles: ['original'],
-    });
+    // Create a test file with searchable content
+    const testFile = path.join(testDir, 'test.txt');
+    fs.writeFileSync(testFile, 'This is a test file with test content');
 
-    // Results should be a Plan object
-    assert.ok(results.id, 'Plan should have an ID');
-    assert.ok(Array.isArray(results.matches), 'Matches should be an array');
+    // Change to test directory to limit search scope
+    const originalCwd = process.cwd();
+    process.chdir(testDir);
+
+    try {
+      const service = new RenamifyCliService();
+
+      // Test basic search with default case styles
+      const results = await service.search('test', {
+        caseStyles: ['original'],
+      });
+
+      // Results should be a Plan object
+      assert.ok(results.id, 'Plan should have an ID');
+      assert.ok(Array.isArray(results.matches), 'Matches should be an array');
+    } finally {
+      // Restore original directory and clean up
+      process.chdir(originalCwd);
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
   });
 
   test('CLI service uses --only-styles argument correctly', async () => {
