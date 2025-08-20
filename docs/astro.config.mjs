@@ -77,6 +77,7 @@ export default defineConfig({
           label: "Commands",
           items: [
             { label: "init", slug: "commands/init" },
+            { label: "search", slug: "commands/search" },
             { label: "rename", slug: "commands/rename" },
             { label: "plan", slug: "commands/plan" },
             { label: "apply", slug: "commands/apply" },
