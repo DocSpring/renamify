@@ -112,7 +112,7 @@
     "build:icons": "fantasticon",
     "check": "biome check && prettier --check '**/*.hbs'",
     "compile:extension": "rm -rf dist && tsc -p extension",
-    "compile:webview": "rm -f media/*.js media/*.js.map && tsc -p webview && ./scripts/bundle-webview.sh",
+    "compile:webview": "rm -f media/*.js media/*.js.map && tsc -p webview && node scripts/bundle-webview.js",
     "compile": "pnpm compile:extension && pnpm compile:webview",
     "format": "biome format --write && pnpm format:hbs",
     "format:hbs": "prettier --write '**/*.hbs'",
@@ -126,7 +126,7 @@
     "vscode:prepublish": "pnpm compile",
     "watch:extension": "tsc -watch -p extension",
     "watch:webview": "concurrently \"tsc -watch -p webview\" \"pnpm watch:webview:bundle\"",
-    "watch:webview:bundle": "nodemon --watch media/webview.js --exec ./scripts/bundle-webview.sh",
+    "watch:webview:bundle": "nodemon --watch media/webview.js --exec node scripts/bundle-webview.js",
     "watch": "concurrently \"pnpm watch:extension\" \"pnpm watch:webview\""
   },
   "devDependencies": {
