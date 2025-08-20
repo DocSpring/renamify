@@ -471,11 +471,35 @@ type SearchResult = {
       matchItem.appendChild(lineNumber);
       matchItem.appendChild(matchText);
 
-      matchItem.addEventListener('click', () => {
+      matchItem.addEventListener('click', (event) => {
+        // Find which match was clicked based on click position
+        let targetColumn = matches[0].col; // Default to first match
+
+        // Check if we clicked on a specific highlight
+        const target = event.target as HTMLElement;
+        if (target.classList.contains('search-highlight')) {
+          // Clicked on a search highlight in the removed line
+          // Find which search highlight was clicked
+          const searchHighlights = matchText.querySelectorAll('.search-highlight');
+          const clickedIndex = Array.from(searchHighlights).indexOf(target);
+          if (clickedIndex >= 0 && clickedIndex < matches.length) {
+            targetColumn = matches[clickedIndex].col;
+          }
+        } else if (target.classList.contains('replace-highlight')) {
+          // Clicked on a replace highlight in the added line
+          // Find which replace highlight was clicked
+          const replaceHighlights = matchText.querySelectorAll('.replace-highlight');
+          const clickedIndex = Array.from(replaceHighlights).indexOf(target);
+          if (clickedIndex >= 0 && clickedIndex < matches.length) {
+            targetColumn = matches[clickedIndex].col;
+          }
+        }
+
         vscode.postMessage({
           type: 'openFile',
           file: fileResult.file,
           line: lineNum,
+          column: targetColumn,
         });
       });
 

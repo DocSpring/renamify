@@ -57,6 +57,7 @@ export type OpenFileMessage = {
   type: 'openFile';
   file: string;
   line?: number;
+  column?: number;
 };
 
 export type OpenPreviewMessage = {

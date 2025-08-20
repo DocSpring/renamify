@@ -52,7 +52,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           break;
         case 'openFile': {
           const openFileData = data as OpenFileMessage;
-          await this.openFile(openFileData.file, openFileData.line);
+          await this.openFile(openFileData.file, openFileData.line, openFileData.column);
           break;
         }
         case 'openPreview': {
@@ -233,13 +233,14 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private async openFile(filePath: string, line?: number) {
+  private async openFile(filePath: string, line?: number, column?: number) {
     const uri = vscode.Uri.file(filePath);
     const document = await vscode.workspace.openTextDocument(uri);
     const editor = await vscode.window.showTextDocument(document);
 
     if (line !== undefined) {
-      const position = new vscode.Position(line - 1, 0);
+      const col = column !== undefined ? column : 0; // Column is already 1-based from Rust
+      const position = new vscode.Position(line - 1, col);
       editor.selection = new vscode.Selection(position, position);
       editor.revealRange(new vscode.Range(position, position));
     }
