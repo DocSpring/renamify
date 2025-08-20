@@ -340,7 +340,10 @@ impl OutputFormatter for HistoryResult {
     }
 
     fn format_json(&self) -> String {
-        serde_json::to_string(&self.entries).unwrap_or_default()
+        serde_json::to_string(&json!({
+            "entries": self.entries
+        }))
+        .unwrap_or_default()
     }
 
     fn format_summary(&self) -> String {
@@ -437,5 +440,414 @@ impl OutputFormatter for VersionResult {
 
     fn format_summary(&self) -> String {
         format!("{} {}", self.name, self.version)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_plan_result_json_format() {
+        let result = PlanResult {
+            plan_id: "test123".to_string(),
+            search: "old_name".to_string(),
+            replace: "new_name".to_string(),
+            files_with_matches: 5,
+            total_matches: 15,
+            renames: 3,
+            dry_run: false,
+            plan: None,
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"operation\":\"plan\""));
+        assert!(json.contains("\"plan_id\":\"test123\""));
+        assert!(json.contains("\"search\":\"old_name\""));
+        assert!(json.contains("\"replace\":\"new_name\""));
+        assert!(json.contains("\"files_with_matches\":5"));
+        assert!(json.contains("\"total_matches\":15"));
+        assert!(json.contains("\"renames\":3"));
+        assert!(json.contains("\"dry_run\":false"));
+    }
+
+    #[test]
+    fn test_plan_result_json_search_mode() {
+        let result = PlanResult {
+            plan_id: "search123".to_string(),
+            search: "find_this".to_string(),
+            replace: String::new(), // Empty replace = search mode
+            files_with_matches: 2,
+            total_matches: 8,
+            renames: 0,
+            dry_run: true,
+            plan: None,
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"operation\":\"search\""));
+        assert!(json.contains("\"dry_run\":true"));
+    }
+
+    #[test]
+    fn test_plan_result_summary_format() {
+        let result = PlanResult {
+            plan_id: "test123".to_string(),
+            search: "old_name".to_string(),
+            replace: "new_name".to_string(),
+            files_with_matches: 5,
+            total_matches: 15,
+            renames: 3,
+            dry_run: false,
+            plan: None,
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("old_name"));
+        assert!(summary.contains("new_name"));
+        assert!(summary.contains('5'));
+        assert!(summary.contains("15"));
+        assert!(summary.contains('3'));
+    }
+
+    #[test]
+    fn test_plan_result_summary_search_mode() {
+        let result = PlanResult {
+            plan_id: "search123".to_string(),
+            search: "find_this".to_string(),
+            replace: String::new(),
+            files_with_matches: 2,
+            total_matches: 8,
+            renames: 0,
+            dry_run: true,
+            plan: None,
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("Search results for 'find_this'"));
+        assert!(summary.contains('2'));
+        assert!(summary.contains('8'));
+    }
+
+    #[test]
+    fn test_apply_result_json_format() {
+        let result = ApplyResult {
+            plan_id: "apply123".to_string(),
+            files_changed: 10,
+            replacements: 25,
+            renames: 5,
+            committed: true,
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"plan_id\":\"apply123\""));
+        assert!(json.contains("\"files_changed\":10"));
+        assert!(json.contains("\"replacements\":25"));
+        assert!(json.contains("\"renames\":5"));
+        assert!(json.contains("\"committed\":true"));
+    }
+
+    #[test]
+    fn test_apply_result_summary_format() {
+        let result = ApplyResult {
+            plan_id: "apply123".to_string(),
+            files_changed: 10,
+            replacements: 25,
+            renames: 5,
+            committed: false,
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("Applied"));
+        assert!(summary.contains("10"));
+        assert!(summary.contains("25"));
+        assert!(summary.contains('5'));
+        assert!(!summary.contains("committed")); // Should not mention git commit when false
+    }
+
+    #[test]
+    fn test_apply_result_summary_with_commit() {
+        let result = ApplyResult {
+            plan_id: "apply123".to_string(),
+            files_changed: 10,
+            replacements: 25,
+            renames: 5,
+            committed: true,
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("committed") || summary.contains("git"));
+    }
+
+    #[test]
+    fn test_undo_result_json_format() {
+        let result = UndoResult {
+            history_id: "undo456".to_string(),
+            files_restored: 8,
+            renames_reverted: 3,
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"history_id\":\"undo456\""));
+        assert!(json.contains("\"files_restored\":8"));
+        assert!(json.contains("\"renames_reverted\":3"));
+    }
+
+    #[test]
+    fn test_undo_result_summary_format() {
+        let result = UndoResult {
+            history_id: "undo456".to_string(),
+            files_restored: 8,
+            renames_reverted: 3,
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("Reverted"));
+        assert!(summary.contains('8'));
+        assert!(summary.contains('3'));
+    }
+
+    #[test]
+    fn test_redo_result_json_format() {
+        let result = RedoResult {
+            history_id: "redo789".to_string(),
+            files_changed: 12,
+            replacements: 30,
+            renames: 4,
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"history_id\":\"redo789\""));
+        assert!(json.contains("\"files_changed\":12"));
+        assert!(json.contains("\"replacements\":30"));
+        assert!(json.contains("\"renames\":4"));
+    }
+
+    #[test]
+    fn test_redo_result_summary_format() {
+        let result = RedoResult {
+            history_id: "redo789".to_string(),
+            files_changed: 12,
+            replacements: 30,
+            renames: 4,
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("Successfully redid"));
+        assert!(summary.contains("12"));
+        assert!(summary.contains("30"));
+        assert!(summary.contains('4'));
+    }
+
+    #[test]
+    fn test_status_result_json_format() {
+        let pending = Some(PendingPlan {
+            id: "pending123".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+        });
+
+        let result = StatusResult {
+            pending_plan: pending,
+            history_count: 5,
+            last_operation: Some("apply".to_string()),
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"pending_plan\""));
+        assert!(json.contains("\"id\":\"pending123\""));
+        assert!(json.contains("\"history_count\":5"));
+        assert!(json.contains("\"last_operation\":\"apply\""));
+    }
+
+    #[test]
+    fn test_status_result_json_no_pending() {
+        let result = StatusResult {
+            pending_plan: None,
+            history_count: 0,
+            last_operation: None,
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"pending_plan\":null"));
+        assert!(json.contains("\"history_count\":0"));
+        assert!(json.contains("\"last_operation\":null"));
+    }
+
+    #[test]
+    fn test_status_result_summary_with_pending() {
+        let pending = Some(PendingPlan {
+            id: "pending123".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+        });
+
+        let result = StatusResult {
+            pending_plan: pending,
+            history_count: 5,
+            last_operation: Some("apply".to_string()),
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("pending"));
+        assert!(summary.contains("old"));
+        assert!(summary.contains("new"));
+        assert!(summary.contains('5'));
+    }
+
+    #[test]
+    fn test_status_result_summary_no_pending() {
+        let result = StatusResult {
+            pending_plan: None,
+            history_count: 3,
+            last_operation: Some("undo".to_string()),
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("No pending"));
+        assert!(summary.contains('3'));
+    }
+
+    #[test]
+    fn test_history_result_json_format() {
+        let items = vec![
+            HistoryItem {
+                id: "hist1".to_string(),
+                operation: "apply".to_string(),
+                timestamp: "2024-01-01T00:00:00Z".to_string(),
+                search: "old".to_string(),
+                replace: "new".to_string(),
+                files_changed: 5,
+                replacements: 10,
+                renames: 2,
+                reverted: false,
+            },
+            HistoryItem {
+                id: "hist2".to_string(),
+                operation: "undo".to_string(),
+                timestamp: "2024-01-01T01:00:00Z".to_string(),
+                search: "old".to_string(),
+                replace: "new".to_string(),
+                files_changed: 5,
+                replacements: 10,
+                renames: 2,
+                reverted: true,
+            },
+        ];
+
+        let result = HistoryResult { entries: items };
+        let json = result.format_json();
+        assert!(json.contains("\"entries\""));
+        assert!(json.contains("\"id\":\"hist1\""));
+        assert!(json.contains("\"operation\":\"apply\""));
+        assert!(json.contains("\"reverted\":false"));
+        assert!(json.contains("\"reverted\":true"));
+    }
+
+    #[test]
+    fn test_history_result_summary_format() {
+        let items = vec![HistoryItem {
+            id: "hist1".to_string(),
+            operation: "apply".to_string(),
+            timestamp: "2024-01-01T00:00:00Z".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            files_changed: 5,
+            replacements: 10,
+            renames: 2,
+            reverted: false,
+        }];
+
+        let result = HistoryResult { entries: items };
+        let summary = result.format_summary();
+        assert!(summary.contains("hist1"));
+        assert!(summary.contains("apply"));
+        assert!(summary.contains("old"));
+        assert!(summary.contains("new"));
+    }
+
+    #[test]
+    fn test_history_result_summary_empty() {
+        let result = HistoryResult { entries: vec![] };
+        let summary = result.format_summary();
+        assert!(summary.contains("No history") || summary.contains("empty"));
+    }
+
+    #[test]
+    fn test_rename_result_json_format() {
+        let result = RenameResult {
+            plan_id: "rename123".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            files_changed: 7,
+            replacements: 14,
+            renames: 3,
+            committed: true,
+            plan: None,
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"operation\":\"rename\""));
+        assert!(json.contains("\"plan_id\":\"rename123\""));
+        assert!(json.contains("\"files_changed\":7"));
+        assert!(json.contains("\"committed\":true"));
+    }
+
+    #[test]
+    fn test_rename_result_summary_format() {
+        let result = RenameResult {
+            plan_id: "rename123".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            files_changed: 7,
+            replacements: 14,
+            renames: 3,
+            committed: false,
+            plan: None,
+        };
+
+        let summary = result.format_summary();
+        assert!(summary.contains("14"));
+        assert!(summary.contains('7'));
+        assert!(summary.contains('3'));
+    }
+
+    #[test]
+    fn test_version_result_json_format() {
+        let result = VersionResult {
+            name: "renamify".to_string(),
+            version: "1.0.0".to_string(),
+        };
+
+        let json = result.format_json();
+        assert!(json.contains("\"name\":\"renamify\""));
+        assert!(json.contains("\"version\":\"1.0.0\""));
+    }
+
+    #[test]
+    fn test_version_result_summary_format() {
+        let result = VersionResult {
+            name: "renamify".to_string(),
+            version: "1.0.0".to_string(),
+        };
+
+        let summary = result.format_summary();
+        assert_eq!(summary, "renamify 1.0.0");
+    }
+
+    #[test]
+    fn test_output_format_trait() {
+        let result = VersionResult {
+            name: "test".to_string(),
+            version: "0.1.0".to_string(),
+        };
+
+        // Test that format() calls the right method
+        assert_eq!(result.format(OutputFormat::Summary), "test 0.1.0");
+        assert!(result
+            .format(OutputFormat::Json)
+            .contains("\"name\":\"test\""));
     }
 }

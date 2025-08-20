@@ -279,3 +279,326 @@ pub fn render_matches(plan: &Plan, use_color: bool) -> String {
 
     output
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scanner::{MatchHunk, Rename, Stats};
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    fn create_test_plan() -> Plan {
+        let mut stats = Stats {
+            files_scanned: 5,
+            total_matches: 3,
+            matches_by_variant: HashMap::new(),
+            files_with_matches: 2,
+        };
+        stats.matches_by_variant.insert("old_name".to_string(), 2);
+        stats.matches_by_variant.insert("OldName".to_string(), 1);
+
+        Plan {
+            id: "test123".to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+            search: "old_name".to_string(),
+            replace: "new_name".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![
+                MatchHunk {
+                    file: PathBuf::from("/project/src/lib.rs"),
+                    line: 10,
+                    col: 5,
+                    variant: "old_name".to_string(),
+                    content: "old_name".to_string(),
+                    replace: "new_name".to_string(),
+                    start: 0,
+                    end: 8,
+                    line_before: Some("    let old_name = 42;".to_string()),
+                    line_after: Some("    let new_name = 42;".to_string()),
+                    coercion_applied: None,
+                    original_file: None,
+                    renamed_file: None,
+                    patch_hash: None,
+                },
+                MatchHunk {
+                    file: PathBuf::from("/project/src/main.rs"),
+                    line: 25,
+                    col: 12,
+                    variant: "OldName".to_string(),
+                    content: "OldName".to_string(),
+                    replace: "NewName".to_string(),
+                    start: 0,
+                    end: 7,
+                    line_before: Some("    struct OldName {".to_string()),
+                    line_after: Some("    struct NewName {".to_string()),
+                    coercion_applied: None,
+                    original_file: None,
+                    renamed_file: None,
+                    patch_hash: None,
+                },
+                // A match without line context
+                MatchHunk {
+                    file: PathBuf::from("/project/src/utils.rs"),
+                    line: 1,
+                    col: 0,
+                    variant: "old_name".to_string(),
+                    content: "old_name".to_string(),
+                    replace: "new_name".to_string(),
+                    start: 0,
+                    end: 8,
+                    line_before: None,
+                    line_after: None,
+                    coercion_applied: None,
+                    original_file: None,
+                    renamed_file: None,
+                    patch_hash: None,
+                },
+            ],
+            paths: vec![
+                Rename {
+                    path: PathBuf::from("/project/old_name.txt"),
+                    new_path: PathBuf::from("/project/new_name.txt"),
+                    kind: RenameKind::File,
+                    coercion_applied: None,
+                },
+                Rename {
+                    path: PathBuf::from("/project/old_name_dir"),
+                    new_path: PathBuf::from("/project/new_name_dir"),
+                    kind: RenameKind::Dir,
+                    coercion_applied: None,
+                },
+            ],
+            stats,
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        }
+    }
+
+    #[test]
+    fn test_render_matches_with_color() {
+        let plan = create_test_plan();
+        let output = render_matches(&plan, true);
+
+        // Should contain header
+        assert!(output.contains("Search Results for \"old_name\""));
+
+        // Should contain content matches section
+        assert!(output.contains("Content Matches:"));
+
+        // Should contain path matches section
+        assert!(output.contains("Path Matches:"));
+
+        // Should contain directories and files sections
+        assert!(output.contains("Directories:"));
+        assert!(output.contains("Files:"));
+
+        // Should contain summary
+        assert!(output.contains("Found 3 matches in 2 files, 2 paths to rename"));
+
+        // Should contain variants
+        assert!(output.contains("Variants:"));
+        // With color codes, the variant names have ANSI escape sequences
+        assert!(output.contains("old_name") && output.contains("(2)"));
+        assert!(output.contains("OldName") && output.contains("(1)"));
+
+        // Should contain color codes (ANSI escape sequences)
+        assert!(output.contains("\u{1b}["));
+    }
+
+    #[test]
+    fn test_render_matches_without_color() {
+        let plan = create_test_plan();
+        let output = render_matches(&plan, false);
+
+        // Should contain all the same content sections
+        assert!(output.contains("Search Results for \"old_name\""));
+        assert!(output.contains("Content Matches:"));
+        assert!(output.contains("Path Matches:"));
+        assert!(output.contains("Directories:"));
+        assert!(output.contains("Files:"));
+        assert!(output.contains("Found 3 matches in 2 files, 2 paths to rename"));
+        assert!(output.contains("Variants:"));
+
+        // Should NOT contain color codes
+        assert!(!output.contains("\u{1b}["));
+    }
+
+    #[test]
+    fn test_render_matches_empty_plan() {
+        let plan = Plan {
+            id: "empty".to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+            search: "nothing".to_string(),
+            replace: "something".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![],
+            paths: vec![],
+            stats: Stats {
+                files_scanned: 0,
+                total_matches: 0,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 0,
+            },
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        };
+
+        let output = render_matches(&plan, false);
+
+        // Should still have header and summary
+        assert!(output.contains("Search Results for \"nothing\""));
+        assert!(output.contains("Found 0 matches in 0 files, 0 paths to rename"));
+
+        // Should not have content or path sections
+        assert!(!output.contains("Content Matches:"));
+        assert!(!output.contains("Path Matches:"));
+        assert!(!output.contains("Variants:"));
+    }
+
+    #[test]
+    fn test_render_matches_many_matches_truncation() {
+        let mut plan = create_test_plan();
+
+        // Add more matches to the same file to test truncation
+        let extra_matches: Vec<MatchHunk> = (0..10)
+            .map(|i| MatchHunk {
+                file: PathBuf::from("/project/src/lib.rs"),
+                line: 50 + i,
+                col: 5,
+                variant: "old_name".to_string(),
+                content: "old_name".to_string(),
+                replace: "new_name".to_string(),
+                start: 0,
+                end: 8,
+                line_before: Some(format!("    let old_name_{} = {};", i, i)),
+                line_after: Some(format!("    let new_name_{} = {};", i, i)),
+                coercion_applied: None,
+                original_file: None,
+                renamed_file: None,
+                patch_hash: None,
+            })
+            .collect();
+
+        plan.matches.extend(extra_matches);
+
+        let output = render_matches(&plan, false);
+
+        // Should show truncation message
+        assert!(output.contains("... and"));
+        assert!(output.contains("more matches"));
+    }
+
+    #[test]
+    fn test_render_matches_line_highlighting_edge_cases() {
+        let mut plan = create_test_plan();
+
+        // Test match at end of line
+        plan.matches.push(MatchHunk {
+            file: PathBuf::from("/project/edge.rs"),
+            line: 1,
+            col: 15,
+            variant: "old_name".to_string(),
+            content: "old_name".to_string(),
+            replace: "new_name".to_string(),
+            start: 0,
+            end: 8,
+            line_before: Some("    let x = old_name".to_string()),
+            line_after: Some("    let x = new_name".to_string()),
+            coercion_applied: None,
+            original_file: None,
+            renamed_file: None,
+            patch_hash: None,
+        });
+
+        // Test match at beginning of line
+        plan.matches.push(MatchHunk {
+            file: PathBuf::from("/project/edge.rs"),
+            line: 2,
+            col: 0,
+            variant: "old_name".to_string(),
+            content: "old_name".to_string(),
+            replace: "new_name".to_string(),
+            start: 0,
+            end: 8,
+            line_before: Some("old_name = 42".to_string()),
+            line_after: Some("new_name = 42".to_string()),
+            coercion_applied: None,
+            original_file: None,
+            renamed_file: None,
+            patch_hash: None,
+        });
+
+        let output = render_matches(&plan, true);
+        assert!(output.contains("/project/edge.rs"));
+    }
+
+    #[test]
+    fn test_render_matches_only_files() {
+        let plan = Plan {
+            id: "files_only".to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![],
+            paths: vec![Rename {
+                path: PathBuf::from("/project/old.txt"),
+                new_path: PathBuf::from("/project/new.txt"),
+                kind: RenameKind::File,
+                coercion_applied: None,
+            }],
+            stats: Stats {
+                files_scanned: 1,
+                total_matches: 0,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 0,
+            },
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        };
+
+        let output = render_matches(&plan, false);
+        assert!(output.contains("Files:"));
+        assert!(!output.contains("Directories:"));
+        assert!(!output.contains("Content Matches:"));
+    }
+
+    #[test]
+    fn test_render_matches_only_directories() {
+        let plan = Plan {
+            id: "dirs_only".to_string(),
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+            search: "old".to_string(),
+            replace: "new".to_string(),
+            styles: vec![],
+            includes: vec![],
+            excludes: vec![],
+            matches: vec![],
+            paths: vec![Rename {
+                path: PathBuf::from("/project/old_dir"),
+                new_path: PathBuf::from("/project/new_dir"),
+                kind: RenameKind::Dir,
+                coercion_applied: None,
+            }],
+            stats: Stats {
+                files_scanned: 1,
+                total_matches: 0,
+                matches_by_variant: HashMap::new(),
+                files_with_matches: 0,
+            },
+            version: "1.0.0".to_string(),
+            created_directories: None,
+        };
+
+        let output = render_matches(&plan, false);
+        assert!(output.contains("Directories:"));
+        assert!(!output.contains("Files:"));
+        assert!(!output.contains("Content Matches:"));
+    }
+}

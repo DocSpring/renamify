@@ -145,8 +145,10 @@ fn test_history_output_json() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     let json: Value = serde_json::from_str(&stdout).expect("Output should be valid JSON");
 
-    // Should be an array (even if empty)
-    assert!(json.is_array(), "History output should be an array");
+    // Should be an object with entries array
+    assert!(json.is_object(), "History output should be an object");
+    let entries = json.get("entries").expect("Should have entries field");
+    assert!(entries.is_array(), "Entries should be an array");
 }
 
 #[test]
