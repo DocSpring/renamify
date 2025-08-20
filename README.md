@@ -44,13 +44,6 @@ npx @renamify/mcp-server
 
 See [MCP Server documentation](https://docspring.github.io/renamify/mcp/overview/) for Claude and Cursor setup.
 
-## Help Wanted
-
-- **Package Managers**: Help us get Renamify into Homebrew, AUR, Scoop, Chocolatey, etc.
-- **Language-Specific Features**: Contribute language-aware renaming (imports, modules, namespaces)
-- **Documentation**: Help improve our docs, add more examples, fix any inaccuracies
-- **Bug Reports**: Found an issue? Please [report it](https://github.com/DocSpring/renamify/issues)!
-
 ## Features
 
 - **Smart Case Conversion**: Automatically detects and converts between different case styles (snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Train-Case, Title Case, dot.case)
@@ -191,6 +184,13 @@ cargo clippy --all-targets --all-features
 # Or let git hooks handle it automatically
 git commit  # lefthook will run checks pre-commit
 ```
+
+## Help Wanted
+
+- **Package Managers**: Help us get Renamify into Homebrew, AUR, Scoop, Chocolatey, etc.
+- **Language-Specific Features**: Contribute language-aware renaming (imports, modules, namespaces)
+- **Documentation**: Help improve our docs, add more examples, fix any inaccuracies
+- **Bug Reports**: Found an issue? Please [report it](https://github.com/DocSpring/renamify/issues)!
 
 ### Contributing
 
