@@ -239,12 +239,22 @@ fn test_mixed_hyphenated_patterns() {
         println!("'{}' -> '{}'", m.content, m.replace);
     }
 
-    // Verify various patterns are handled appropriately
-    assert!(
-        plan.matches.len() >= 5,
-        "Should find at least 5 matches in mixed patterns, found {}",
+    // Before deduplication changes, this test expected individual "Tool" matches
+    // within compound identifiers. Now we prioritize longer matches.
+    // The test should verify that the compound matches are correctly found.
+    assert_eq!(
+        plan.matches.len(),
+        4,
+        "Should find exactly 4 matches in mixed patterns, found {}",
         plan.matches.len()
     );
+
+    // Verify that the key compound matches are present
+    let contents: Vec<&str> = plan.matches.iter().map(|m| m.content.as_str()).collect();
+    assert!(contents.contains(&"tool-Specific"));
+    assert!(contents.contains(&"Tool-specific-Tool"));
+    assert!(contents.contains(&"tool-CLI-version"));
+    assert!(contents.contains(&"The-Tool-Tool"));
 }
 
 #[test]

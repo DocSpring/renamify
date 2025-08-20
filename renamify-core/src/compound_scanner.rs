@@ -258,37 +258,44 @@ pub fn find_enhanced_matches(
     all_matches.sort_by_key(|m| (m.line, m.column));
 
     // Remove overlapping matches, prioritizing longer matches
+    // Use a proper deduplication approach that checks against all previously selected matches
     let mut final_matches = Vec::new();
-    let mut i = 0;
-    while i < all_matches.len() {
-        let current = &all_matches[i];
-        let mut best_match = current;
-        let mut j = i + 1;
 
-        // Find all matches that overlap with current
-        while j < all_matches.len() {
-            let candidate = &all_matches[j];
+    for candidate in all_matches {
+        // Check if this candidate overlaps with any already selected match
+        let overlaps_with_selected = final_matches.iter().any(|selected: &Match| {
+            candidate.start < selected.end && candidate.end > selected.start
+        });
 
-            // Check if they overlap
-            let overlaps = current.start < candidate.end && current.end > candidate.start;
+        if overlaps_with_selected {
+            // Find the overlapping match and see if we should replace it
+            let mut should_replace = false;
+            let mut replace_idx = None;
 
-            if !overlaps {
-                break; // Since sorted by position, no more overlaps
+            for (idx, selected) in final_matches.iter().enumerate() {
+                if candidate.start < selected.end && candidate.end > selected.start {
+                    // They overlap - choose the longer one
+                    let candidate_len = candidate.end - candidate.start;
+                    let selected_len = selected.end - selected.start;
+
+                    if candidate_len > selected_len {
+                        should_replace = true;
+                        replace_idx = Some(idx);
+                        break;
+                    }
+                }
             }
 
-            // If they overlap, choose the longer match
-            let current_len = best_match.end - best_match.start;
-            let candidate_len = candidate.end - candidate.start;
-
-            if candidate_len > current_len {
-                best_match = candidate;
+            if should_replace {
+                // Replace the shorter match with this longer one
+                final_matches[replace_idx.unwrap()] = candidate;
+            } else {
+                // Skip this candidate (it's shorter than the overlapping match)
             }
-
-            j += 1;
+        } else {
+            // No overlap, add it
+            final_matches.push(candidate);
         }
-
-        final_matches.push(best_match.clone());
-        i = j; // Skip all overlapping matches
     }
 
     final_matches
@@ -308,7 +315,43 @@ pub fn enhanced_matches_to_hunks(
     let lines: Vec<&[u8]> = content.lines_with_terminator().collect();
     let mut hunks = Vec::new();
 
-    for m in matches {
+    // Sort matches by position and deduplicate overlapping ones
+    let mut sorted_matches = matches.to_vec();
+    sorted_matches.sort_by_key(|m| (m.start, m.end));
+
+    // Remove overlapping matches, keeping the longest/most specific match
+    let mut deduplicated_matches = Vec::new();
+    for m in sorted_matches {
+        // Check if this match overlaps with any existing match
+        let overlaps = deduplicated_matches.iter().any(|existing: &Match| {
+            // Two matches overlap if one starts before the other ends
+            m.start < existing.end && m.end > existing.start
+        });
+
+        if overlaps {
+            // Find the overlapping match
+            if let Some(existing_idx) = deduplicated_matches
+                .iter()
+                .position(|existing| m.start < existing.end && m.end > existing.start)
+            {
+                let existing = &deduplicated_matches[existing_idx];
+
+                // Keep the longer match (more specific)
+                let m_length = m.end - m.start;
+                let existing_length = existing.end - existing.start;
+
+                if m_length > existing_length {
+                    // Replace existing with the longer match
+                    deduplicated_matches[existing_idx] = m;
+                }
+                // If existing is longer or same length, keep existing (do nothing)
+            }
+        } else {
+            deduplicated_matches.push(m);
+        }
+    }
+
+    for m in deduplicated_matches {
         let line_idx = m.line.saturating_sub(1);
         if line_idx >= lines.len() {
             continue;
