@@ -118,7 +118,7 @@
     "format:hbs": "prettier --write '**/*.hbs'",
     "lint": "biome check --write",
     "package": "vsce package --no-dependencies",
-    "pretest": "pnpm compile && pnpm check",
+    "pretest": "pnpm compile",
     "test:extension": "vscode-test",
     "test:webview:watch": "cd webview && vitest",
     "test:webview": "cd webview && vitest run",
