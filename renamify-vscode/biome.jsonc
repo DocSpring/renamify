@@ -41,6 +41,9 @@
         "rules": {
           "suspicious": {
             "noExplicitAny": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
           }
         }
       }

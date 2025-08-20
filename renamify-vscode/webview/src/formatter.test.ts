@@ -5,18 +5,284 @@ import {
   formatMergedMatchText,
   highlightReplaceTerm,
   highlightSearchTerm,
+  applyReplacements,
+  insertSearchPlaceholders,
+  calculateReplacementPositions,
+  insertReplacementPlaceholders,
+  placeholdersToHtml,
 } from './formatter';
 
 const ADDED_LINE_REGEX = /<div class="diff-line added">\+ (.*?)<\/div>/;
 
 describe('Formatter Test Suite', () => {
+  describe('applyReplacements', () => {
+    test('should apply single replacement', () => {
+      const matches: MatchHunk[] = [
+        {
+          file: 'test.ts',
+          line: 1,
+          col: 6, // 0-indexed
+          variant: 'oldName',
+          content: 'oldName',
+          replace: 'newName',
+          start: 6,
+          end: 13,
+          line_before: 'const oldName = 5;',
+        },
+      ];
+
+      const result = applyReplacements('const oldName = 5;', matches);
+      expect(result).toBe('const newName = 5;');
+    });
+
+    test('should apply multiple replacements', () => {
+      const matches: MatchHunk[] = [
+        {
+          file: 'test.ts',
+          line: 1,
+          col: 8, // 0-indexed
+          variant: 'caseStyles',
+          content: 'caseStyles',
+          replace: 'braceStyles',
+          start: 8,
+          end: 18,
+          line_before: '        caseStyles: data.caseStyles,',
+        },
+        {
+          file: 'test.ts',
+          line: 1,
+          col: 25, // 0-indexed
+          variant: 'caseStyles',
+          content: 'caseStyles',
+          replace: 'braceStyles',
+          start: 25,
+          end: 35,
+          line_before: '        caseStyles: data.caseStyles,',
+        },
+      ];
+
+      const result = applyReplacements('        caseStyles: data.caseStyles,', matches);
+      expect(result).toBe('        braceStyles: data.braceStyles,');
+    });
+  });
+
+  describe('insertSearchPlaceholders', () => {
+    test('should insert placeholders for single match', () => {
+      const matches: MatchHunk[] = [
+        {
+          file: 'test.ts',
+          line: 1,
+          col: 6, // 0-indexed
+          variant: 'oldName',
+          content: 'oldName',
+          replace: 'newName',
+          start: 6,
+          end: 13,
+          line_before: 'const oldName = 5;',
+        },
+      ];
+
+      const result = insertSearchPlaceholders('const oldName = 5;', matches);
+      expect(result).toBe('const \x00SEARCH_START\x00oldName\x00SEARCH_END\x00 = 5;');
+    });
+  });
+
+  describe('calculateReplacementPositions', () => {
+    test('should calculate positions for single replacement', () => {
+      const matches: MatchHunk[] = [
+        {
+          file: 'test.ts',
+          line: 1,
+          col: 6, // 0-indexed
+          variant: 'oldName',
+          content: 'oldName',
+          replace: 'newName',
+          start: 6,
+          end: 13,
+          line_before: 'const oldName = 5;',
+        },
+      ];
+
+      const positions = calculateReplacementPositions(matches);
+      expect(positions).toEqual([
+        { pos: 6, length: 7 } // newName is 7 chars
+      ]);
+    });
+
+    test('should calculate positions for multiple replacements with shifts', () => {
+      const matches: MatchHunk[] = [
+        {
+          file: 'test.ts',
+          line: 1,
+          col: 8, // 0-indexed
+          variant: 'caseStyles',
+          content: 'caseStyles', // 10 chars
+          replace: 'braceStyles', // 11 chars
+          start: 8,
+          end: 18,
+          line_before: '        caseStyles: data.caseStyles,',
+        },
+        {
+          file: 'test.ts',
+          line: 1,
+          col: 25, // 0-indexed
+          variant: 'caseStyles',
+          content: 'caseStyles', // 10 chars
+          replace: 'braceStyles', // 11 chars
+          start: 25,
+          end: 35,
+          line_before: '        caseStyles: data.caseStyles,',
+        },
+      ];
+
+      const positions = calculateReplacementPositions(matches);
+      expect(positions).toEqual([
+        { pos: 8, length: 11 },  // First replacement at original position
+        { pos: 26, length: 11 }  // Second replacement shifted by +1 (11-10)
+      ]);
+    });
+  });
+
+  describe('insertReplacementPlaceholders', () => {
+    test('should insert placeholders at correct positions', () => {
+      const text = '        braceStyles: data.braceStyles,';
+      const positions = [
+        { pos: 8, length: 11 },
+        { pos: 26, length: 11 }
+      ];
+
+      const result = insertReplacementPlaceholders(text, positions);
+      expect(result).toBe(
+        '        \x00REPLACE_START\x00braceStyles\x00REPLACE_END\x00: data.\x00REPLACE_START\x00braceStyles\x00REPLACE_END\x00,'
+      );
+    });
+  });
+
+  describe('placeholdersToHtml', () => {
+    test('should convert placeholders and escape HTML', () => {
+      const text = '<div>\x00SEARCH_START\x00test\x00SEARCH_END\x00</div>';
+      const result = placeholdersToHtml(text);
+      expect(result).toBe('&lt;div&gt;<span class="search-highlight">test</span>&lt;/div&gt;');
+    });
+  });
+  describe('formatMergedMatchText with HTML content', () => {
+    test('should highlight caseStyles in HTML label correctly', () => {
+      // When searching for 'case', renamify finds the full token 'caseStyles'
+      const matches: MatchHunk[] = [
+        {
+          file: 'test.html',
+          line: 1,
+          col: 12, // Position where "caseStyles" starts (0-indexed)
+          variant: 'camelCase',
+          content: 'caseStyles', // Full matched token
+          replace: 'braceStyles', // Full replacement token
+          start: 12,
+          end: 22,
+          line_before:
+            '<label for="caseStyles">Case styles (<span id="checkedCount">',
+        },
+      ];
+
+      const result = formatMergedMatchText(matches, 'case', 'brace');
+
+      // Test the EXACT full output
+      const expected =
+        '<div class="match-content">' +
+        '<div class="diff-line removed">- &lt;label for=&quot;<span class="search-highlight">caseStyles</span>&quot;&gt;Case styles (&lt;span id=&quot;checkedCount&quot;&gt;</div>' +
+        '<div class="diff-line added">+ &lt;label for=&quot;<span class="replace-highlight">braceStyles</span>&quot;&gt;Case styles (&lt;span id=&quot;checkedCount&quot;&gt;</div>' +
+        '</div>';
+
+      expect(result).toBe(expected);
+    });
+
+    test('should handle replacement that contains search term', () => {
+      // This is the exact problematic case from the VS Code inspector:
+      // Two occurrences of "caseStyles" on the same line
+      const matches: MatchHunk[] = [
+        {
+          file: 'test.ts',
+          line: 226,
+          col: 8, // First "caseStyles" (0-indexed)
+          variant: 'camelCase',
+          content: 'caseStyles',
+          replace: 'braceStyles',
+          start: 8,
+          end: 18,
+          line_before: '        caseStyles: data.caseStyles,',
+        },
+        {
+          file: 'test.ts',
+          line: 226,
+          col: 25, // Second "caseStyles" after "data." (0-indexed)
+          variant: 'camelCase',
+          content: 'caseStyles',
+          replace: 'braceStyles',
+          start: 25,
+          end: 35,
+          line_before: '        caseStyles: data.caseStyles,',
+        },
+      ];
+
+      const result = formatMergedMatchText(matches, 'case', 'brace');
+
+      // Test the EXACT full output - both replacements should be correct
+      const expected =
+        '<div class="match-content">' +
+        '<div class="diff-line removed">-         <span class="search-highlight">caseStyles</span>: data.<span class="search-highlight">caseStyles</span>,</div>' +
+        '<div class="diff-line added">+         <span class="replace-highlight">braceStyles</span>: data.<span class="replace-highlight">braceStyles</span>,</div>' +
+        '</div>';
+
+      expect(result).toBe(expected);
+    });
+
+    test('should handle multiple matches in HTML content', () => {
+      const matches: MatchHunk[] = [
+        {
+          file: 'test.html',
+          line: 1,
+          col: 12, // Position of first "caseStyles" in class attribute (0-indexed)
+          variant: 'camelCase',
+          content: 'caseStyles',
+          replace: 'braceStyles',
+          start: 13,
+          end: 23,
+          line_before: '<div class="caseStyles" id="caseStylesContainer">',
+        },
+        {
+          file: 'test.html',
+          line: 1,
+          col: 28, // Position of "caseStylesContainer" in id attribute (0-indexed)
+          variant: 'camelCase',
+          content: 'caseStylesContainer',
+          replace: 'braceStylesContainer',
+          start: 29,
+          end: 48,
+          line_before: '<div class="caseStyles" id="caseStylesContainer">',
+        },
+      ];
+
+      const result = formatMergedMatchText(matches, 'case', 'brace');
+
+      // Test the EXACT full output
+      const expected =
+        '<div class="match-content">' +
+        '<div class="diff-line removed">- &lt;div class=&quot;<span class="search-highlight">caseStyles</span>&quot; id=&quot;<span class="search-highlight">caseStylesContainer</span>&quot;&gt;</div>' +
+        '<div class="diff-line added">+ &lt;div class=&quot;<span class="replace-highlight">braceStyles</span>&quot; id=&quot;<span class="replace-highlight">braceStylesContainer</span>&quot;&gt;</div>' +
+        '</div>';
+
+      expect(result).toBe(expected);
+    });
+  });
+
   describe('escapeHtml', () => {
     test('should escape HTML special characters', () => {
       expect(escapeHtml('Hello <world>')).toBe('Hello &lt;world&gt;');
       expect(escapeHtml('foo & bar')).toBe('foo &amp; bar');
       expect(escapeHtml('<script>alert("xss")</script>')).toBe(
-        '&lt;script&gt;alert("xss")&lt;/script&gt;'
+        '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
       );
+      expect(escapeHtml('She said "hello"')).toBe('She said &quot;hello&quot;');
+      expect(escapeHtml("It's working")).toBe('It&#39;s working');
     });
 
     test('should handle empty strings', () => {
@@ -99,7 +365,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'oldName',
           content: 'oldName',
           replace: 'newName',
@@ -121,7 +387,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'foo',
           content: 'foo',
           replace: 'bar',
@@ -160,7 +426,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'foo',
           content: 'foo',
           replace: '',
@@ -184,7 +450,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'foo',
           content: 'foo',
           replace: 'bar',
@@ -241,7 +507,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'test',
           content: 'test',
           replace: 'testing',
@@ -253,7 +519,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'code',
           content: 'code',
           replace: 'testing',
@@ -276,7 +542,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'old',
           content: 'old',
           replace: '',
@@ -299,7 +565,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6,
+          col: 6, // 0-indexed position where "oldName" starts
           variant: 'oldName',
           content: 'oldName',
           replace: '',
@@ -309,9 +575,13 @@ describe('Formatter Test Suite', () => {
         },
       ];
       const result = formatMergedMatchText(matches, 'oldName', '');
-      expect(result.includes('search-line'));
-      expect(result.includes('<span class="search-highlight">oldName</span>'));
-      expect(!result.includes('diff-line'));
+
+      const expected =
+        '<div class="match-content">' +
+        '<div class="search-line">const <span class="search-highlight">oldName</span> = 5;</div>' +
+        '</div>';
+
+      expect(result).toBe(expected);
     });
 
     test('should format diff mode with replacements', () => {
@@ -319,7 +589,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6,
+          col: 6, // 0-indexed position where "oldName" starts
           variant: 'oldName',
           content: 'oldName',
           replace: 'newName',
@@ -330,10 +600,14 @@ describe('Formatter Test Suite', () => {
         },
       ];
       const result = formatMergedMatchText(matches, 'oldName', 'newName');
-      expect(result.includes('diff-line removed'));
-      expect(result.includes('diff-line added'));
-      expect(result.includes('<span class="search-highlight">oldName</span>'));
-      expect(result.includes('<span class="replace-highlight">newName</span>'));
+
+      const expected =
+        '<div class="match-content">' +
+        '<div class="diff-line removed">- const <span class="search-highlight">oldName</span> = 5;</div>' +
+        '<div class="diff-line added">+ const <span class="replace-highlight">newName</span> = 5;</div>' +
+        '</div>';
+
+      expect(result).toBe(expected);
     });
 
     test('should handle multiple replacements on same line', () => {
@@ -342,7 +616,7 @@ describe('Formatter Test Suite', () => {
         {
           file: '/Users/ndbroadbent/code/renamify/Cargo.toml',
           line: 2,
-          col: 12,
+          col: 12, // 0-indexed position where "renamify-core" starts
           variant: 'renamify-core',
           content: 'renamify-core',
           replace: 'rename-thingy-core',
@@ -354,7 +628,7 @@ describe('Formatter Test Suite', () => {
         {
           file: '/Users/ndbroadbent/code/renamify/Cargo.toml',
           line: 2,
-          col: 29,
+          col: 29, // 0-indexed position where "renamify-cli" starts
           variant: 'renamify-cli',
           content: 'renamify-cli',
           replace: 'rename-thingy-cli',
@@ -382,14 +656,14 @@ describe('Formatter Test Suite', () => {
 
       // Test both the plain text content AND the complete HTML with highlighting
       expect(addedLineContent).toBe(
-        'members = ["rename-thingy-core", "rename-thingy-cli"]'
+        'members = [&quot;rename-thingy-core&quot;, &quot;rename-thingy-cli&quot;]'
       );
 
       // Test the complete HTML structure with highlighting
       const expectedHtml =
         '<div class="match-content">' +
-        '<div class="diff-line removed">- members = ["<span class="search-highlight">renamify</span>-core", "<span class="search-highlight">renamify</span>-cli"]</div>' +
-        '<div class="diff-line added">+ members = ["<span class="replace-highlight">rename-thingy-core</span>", "<span class="replace-highlight">rename-thingy-cli</span>"]</div>' +
+        '<div class="diff-line removed">- members = [&quot;<span class="search-highlight">renamify-core</span>&quot;, &quot;<span class="search-highlight">renamify-cli</span>&quot;]</div>' +
+        '<div class="diff-line added">+ members = [&quot;<span class="replace-highlight">rename-thingy-core</span>&quot;, &quot;<span class="replace-highlight">rename-thingy-cli</span>&quot;]</div>' +
         '</div>';
 
       expect(result).toBe(expectedHtml);
@@ -400,7 +674,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6,
+          col: 7, // 1-indexed position where "<script>" starts
           variant: '<script>',
           content: '<script>',
           replace: '<div>',
@@ -413,6 +687,7 @@ describe('Formatter Test Suite', () => {
       const result = formatMergedMatchText(matches, '<script>', '<div>');
       expect(result.includes('&lt;script&gt;'));
       expect(result.includes('&lt;div&gt;'));
+      expect(result.includes('&quot;xss&quot;')); // Check quotes are escaped too
       expect(!result.includes('<script>'));
       expect(!result.includes('<div>'));
     });
@@ -422,7 +697,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'oldValue',
           content: 'oldValue',
           replace: 'newValue',
@@ -440,7 +715,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6,
+          col: 7, // 1-indexed position where "oldName" starts
           variant: 'oldName',
           content: 'oldName',
           replace: '',
@@ -460,7 +735,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 0,
+          col: 1, // 1-indexed
           variant: 'test',
           content: 'test',
           replace: '',

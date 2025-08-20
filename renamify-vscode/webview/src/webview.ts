@@ -480,7 +480,8 @@ type SearchResult = {
         if (target.classList.contains('search-highlight')) {
           // Clicked on a search highlight in the removed line
           // Find which search highlight was clicked
-          const searchHighlights = matchText.querySelectorAll('.search-highlight');
+          const searchHighlights =
+            matchText.querySelectorAll('.search-highlight');
           const clickedIndex = Array.from(searchHighlights).indexOf(target);
           if (clickedIndex >= 0 && clickedIndex < matches.length) {
             targetColumn = matches[clickedIndex].col;
@@ -488,7 +489,8 @@ type SearchResult = {
         } else if (target.classList.contains('replace-highlight')) {
           // Clicked on a replace highlight in the added line
           // Find which replace highlight was clicked
-          const replaceHighlights = matchText.querySelectorAll('.replace-highlight');
+          const replaceHighlights =
+            matchText.querySelectorAll('.replace-highlight');
           const clickedIndex = Array.from(replaceHighlights).indexOf(target);
           if (clickedIndex >= 0 && clickedIndex < matches.length) {
             targetColumn = matches[clickedIndex].col;

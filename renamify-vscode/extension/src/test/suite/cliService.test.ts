@@ -1,5 +1,6 @@
 import * as assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import * as path from 'node:path';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import { RenamifyCliService } from '../../cliService';
@@ -12,11 +13,22 @@ suite('CLI Service Test Suite', () => {
   setup(() => {
     sandbox = sinon.createSandbox();
 
-    // Mock vscode.workspace.getConfiguration
+    // Mock vscode.workspace.getConfiguration to use local dev build
     sandbox.stub(vscode.workspace, 'getConfiguration').returns({
       get: (key: string) => {
         if (key === 'cliPath') {
-          return '';
+          // Point to the local dev build using absolute path
+          return path.join(
+            __dirname,
+            '..',
+            '..',
+            '..',
+            '..',
+            '..',
+            'target',
+            'debug',
+            'renamify'
+          );
         }
         if (key === 'respectGitignore') {
           return true;

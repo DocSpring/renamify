@@ -39,7 +39,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
     webviewView.webview.onDidReceiveMessage(async (data: WebviewMessage) => {
-      console.log('Received message:', data);
+      // console.log('Received message:', data);
       switch (data.type) {
         case 'search':
           await this.handleSearch(data);
@@ -52,7 +52,11 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           break;
         case 'openFile': {
           const openFileData = data as OpenFileMessage;
-          await this.openFile(openFileData.file, openFileData.line, openFileData.column);
+          await this.openFile(
+            openFileData.file,
+            openFileData.line,
+            openFileData.column
+          );
           break;
         }
         case 'openPreview': {
@@ -179,7 +183,9 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
       vscode.window.showInformationMessage('Plan created successfully');
     } catch (error) {
       vscode.window.showErrorMessage(
-        `Plan creation failed: ${error instanceof Error ? error.message : String(error)}`
+        `Plan creation failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -228,7 +234,9 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
       });
     } catch (error) {
       vscode.window.showErrorMessage(
-        `Apply failed: ${error instanceof Error ? error.message : String(error)}`
+        `Apply failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -298,7 +306,9 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
       });
     } catch (error) {
       vscode.window.showErrorMessage(
-        `Failed to open preview: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to open preview: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -331,7 +341,15 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; font-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src ${webview.cspSource};">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${
+                  webview.cspSource
+                } https: data:; font-src ${
+                  webview.cspSource
+                } https: data:; style-src ${
+                  webview.cspSource
+                } 'nonce-${nonce}'; script-src 'nonce-${nonce}'; connect-src ${
+                  webview.cspSource
+                };">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="${codiconsUri}" rel="stylesheet">
                 <link href="${styleUri}" rel="stylesheet">
@@ -367,7 +385,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                     <div class="input-group">
                         <div class="case-styles-header" id="caseStylesHeader">
                             <span class="expand-icon codicon codicon-chevron-down"></span>
-                            <label for="caseStyles">Case styles (<span id="checkedCount">8</span>)</label>
+                            <label for="]caseStyles">Case styles (<span id="checkedCount">8</span>)</label>
                         </div>
                         <div class="case-styles-container" id="caseStylesContainer">
                             <label class="checkbox-label">
@@ -434,7 +452,9 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
                 </div>
 
                 <script nonce="${nonce}">
-                    window.workspaceRoot = ${JSON.stringify(vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '')};
+                    window.workspaceRoot = ${JSON.stringify(
+                      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || ''
+                    )};
                 </script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>

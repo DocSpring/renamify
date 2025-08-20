@@ -1,5 +1,7 @@
 # Project Context
 
+This is the VS Code extension for Renamify. We use pnpm as the package manager, not npm.
+
 Ultracite enforces strict type safety, accessibility standards, and consistent code quality for JavaScript/TypeScript projects using Biome's lightning-fast formatter and linter.
 
 ## Key Principles
@@ -338,3 +340,17 @@ try {
   console.log(e);
 }
 ```
+
+## Biome Suppression syntax
+
+Suppression comments have the following format:
+
+// biome-ignore lint: <explanation>
+// biome-ignore assist: <explanation>
+// biome-ignore syntax: <explanation>
+// biome-ignore lint/suspicious: <explanation>
+// biome-ignore lint/suspicious/noDebugger: <explanation>
+// biome-ignore lint/suspicious/noDebugger(foo): <explanation>
+// biome-ignore-all lint: <explanation>
+// biome-ignore-start lint: <explanation>
+// biome-ignore-end lint: <explanation>

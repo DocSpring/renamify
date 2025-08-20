@@ -9,3 +9,6 @@ src/renamify-core-bindings
 media/bundle.js
 media/webview.js
 media/webview.js.map
+
+# Renamify workspace
+.renamify/

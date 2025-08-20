@@ -1,3 +1,7 @@
+/* biome-ignore-all lint/suspicious/noControlCharactersInRegex: Using control chars as safe placeholders */
+/* biome-ignore-all lint/style/useTemplate: String concatenation is clearer for building HTML */
+/* biome-ignore-all lint/correctness/noUnusedFunctionParameters: Parameters kept for API consistency */
+
 export function escapeHtml(text: string): string {
   if (!text) {
     return '';
@@ -5,7 +9,9 @@ export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export function escapeRegExp(string: string): string {
@@ -53,6 +59,132 @@ export function highlightReplaceTerm(
   return highlightedText;
 }
 
+// Apply text replacements to create the final text
+export function applyReplacements(
+  originalText: string,
+  matches: MatchHunk[]
+): string {
+  let finalText = originalText;
+
+  // Sort matches by column position
+  const sortedMatches = [...matches].sort((a, b) => a.col - b.col);
+
+  // Apply replacements from right to left to avoid position shifts
+  for (let i = sortedMatches.length - 1; i >= 0; i--) {
+    const match = sortedMatches[i];
+    if (match.replace && match.content) {
+      // col is 0-indexed from Rust
+      const lineStart = match.col;
+      const lineEnd = lineStart + match.content.length;
+
+      const before = finalText.substring(0, lineStart);
+      const after = finalText.substring(lineEnd);
+      finalText = before + match.replace + after;
+    }
+  }
+
+  return finalText;
+}
+
+// Insert placeholders for search highlights
+export function insertSearchPlaceholders(
+  text: string,
+  matches: MatchHunk[]
+): string {
+  let result = text;
+
+  // Sort matches by position (right to left) to avoid position shifts when inserting
+  const sortedMatches = [...matches].sort((a, b) => b.col - a.col);
+
+  for (const match of sortedMatches) {
+    if (match.content) {
+      // col is 0-indexed from Rust
+      const lineStart = match.col;
+      const lineEnd = lineStart + match.content.length;
+
+      const before = result.substring(0, lineStart);
+      const matchContent = result.substring(lineStart, lineEnd);
+      const after = result.substring(lineEnd);
+
+      result =
+        before +
+        '\x00SEARCH_START\x00' +
+        matchContent +
+        '\x00SEARCH_END\x00' +
+        after;
+    }
+  }
+
+  return result;
+}
+
+// Calculate replacement positions in the final text
+export function calculateReplacementPositions(
+  matches: MatchHunk[]
+): Array<{pos: number, length: number}> {
+  const replacements: Array<{pos: number, length: number}> = [];
+
+  // Sort matches by column position
+  const sortedMatches = [...matches].sort((a, b) => a.col - b.col);
+
+  let cumulativeShift = 0;
+  for (const match of sortedMatches) {
+    if (match.replace && match.content) {
+      const originalPos = match.col; // col is 0-indexed
+      const finalPos = originalPos + cumulativeShift;
+
+      replacements.push({
+        pos: finalPos,
+        length: match.replace.length
+      });
+
+      // Update shift for next replacement
+      const lengthDiff = match.replace.length - match.content.length;
+      cumulativeShift += lengthDiff;
+    }
+  }
+
+  return replacements;
+}
+
+// Insert placeholders for replacement highlights
+export function insertReplacementPlaceholders(
+  text: string,
+  positions: Array<{pos: number, length: number}>
+): string {
+  let result = text;
+
+  // Insert from right to left to avoid position shifts
+  for (let i = positions.length - 1; i >= 0; i--) {
+    const repl = positions[i];
+    const before = result.substring(0, repl.pos);
+    const content = result.substring(repl.pos, repl.pos + repl.length);
+    const after = result.substring(repl.pos + repl.length);
+
+    result =
+      before +
+      '\x00REPLACE_START\x00' +
+      content +
+      '\x00REPLACE_END\x00' +
+      after;
+  }
+
+  return result;
+}
+
+// Convert placeholders to HTML spans
+export function placeholdersToHtml(text: string): string {
+  let result = escapeHtml(text);
+
+  result = result
+    .replace(/\x00SEARCH_START\x00/g, '<span class="search-highlight">')
+    .replace(/\x00SEARCH_END\x00/g, '</span>')
+    .replace(/\x00REPLACE_START\x00/g, '<span class="replace-highlight">')
+    .replace(/\x00REPLACE_END\x00/g, '</span>');
+
+  return result;
+}
+
 export function formatMergedMatchText(
   matches: MatchHunk[],
   searchTerm: string,
@@ -64,41 +196,28 @@ export function formatMergedMatchText(
   let formatted = '<div class="match-content">';
 
   if (replaceTerm && matches.some((m) => m.replace)) {
-    // Merge all replacements by applying them in order
-    let finalText = originalText;
+    // Diff mode
+    const finalText = applyReplacements(originalText, matches);
 
-    // Sort matches by column position to apply replacements in the correct order
-    const sortedMatches = [...matches].sort((a, b) => a.col - b.col);
+    // For the removed line: highlight the search terms
+    const originalWithPlaceholders = insertSearchPlaceholders(originalText, matches);
+    const highlightedOriginal = placeholdersToHtml(originalWithPlaceholders);
 
-    // Apply replacements from right to left to avoid position shifts
-    for (let i = sortedMatches.length - 1; i >= 0; i--) {
-      const match = sortedMatches[i];
-      if (match.replace && match.content) {
-        // Use line-relative positions from col field
-        const lineStart = match.col; // col is already 0-indexed for our purposes
-        const lineEnd = lineStart + match.content.length;
+    // For the added line: highlight the replacements
+    const replacementPositions = calculateReplacementPositions(matches);
+    const finalWithPlaceholders = insertReplacementPlaceholders(finalText, replacementPositions);
+    const highlightedFinal = placeholdersToHtml(finalWithPlaceholders);
 
-        const before = finalText.substring(0, lineStart);
-        const after = finalText.substring(lineEnd);
-        finalText = before + match.replace + after;
-      }
-    }
-
-    // Show diff format: - original, + final result
     formatted +=
-      '<div class="diff-line removed">- ' +
-      highlightSearchTerm(escapeHtml(originalText), searchTerm) +
-      '</div>';
+      '<div class="diff-line removed">- ' + highlightedOriginal + '</div>';
     formatted +=
-      '<div class="diff-line added">+ ' +
-      highlightReplaceTerm(escapeHtml(finalText), matches) +
-      '</div>';
+      '<div class="diff-line added">+ ' + highlightedFinal + '</div>';
   } else {
-    // Search only mode - just highlight all search terms
-    formatted +=
-      '<div class="search-line">' +
-      highlightSearchTerm(escapeHtml(originalText), searchTerm) +
-      '</div>';
+    // Search only mode
+    const textWithPlaceholders = insertSearchPlaceholders(originalText, matches);
+    const highlightedText = placeholdersToHtml(textWithPlaceholders);
+
+    formatted += '<div class="search-line">' + highlightedText + '</div>';
   }
 
   formatted += '</div>';

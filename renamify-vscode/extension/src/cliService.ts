@@ -13,12 +13,19 @@ export class RenamifyCliService {
 
   constructor(spawnFn?: typeof spawn) {
     this.spawnFn = spawnFn || spawn;
-    try {
-      this.cliPath = this.findCliPath();
+    // If we're using a mock spawn function, assume the CLI is available for testing
+    if (spawnFn) {
+      this.cliPath = 'mocked-cli-path';
       this.isAvailable = true;
-    } catch {
-      this.cliPath = undefined;
-      this.isAvailable = false;
+    } else {
+      // Only do real file system checks when not mocking
+      try {
+        this.cliPath = this.findCliPath();
+        this.isAvailable = true;
+      } catch {
+        this.cliPath = undefined;
+        this.isAvailable = false;
+      }
     }
   }
 
@@ -26,8 +33,18 @@ export class RenamifyCliService {
     const config = vscode.workspace.getConfiguration('renamify');
     const configuredPath = config.get<string>('cliPath');
 
-    if (configuredPath && fs.existsSync(configuredPath)) {
-      return configuredPath;
+    if (configuredPath) {
+      // If it's a relative path, resolve it relative to the workspace root
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      let resolvedPath = configuredPath;
+
+      if (!path.isAbsolute(configuredPath) && workspaceRoot) {
+        resolvedPath = path.resolve(workspaceRoot, configuredPath);
+      }
+
+      if (fs.existsSync(resolvedPath)) {
+        return resolvedPath;
+      }
     }
 
     // Try to find in PATH
@@ -45,7 +62,7 @@ export class RenamifyCliService {
       }
     }
 
-    // Try local development path
+    // Try local development path relative to workspace
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (workspaceRoot) {
       const devPath = path.join(workspaceRoot, 'target', 'debug', 'renamify');
@@ -61,6 +78,30 @@ export class RenamifyCliService {
       if (fs.existsSync(devPathExe)) {
         return devPathExe;
       }
+    }
+
+    // Try local development path relative to the extension directory (for tests)
+    const extensionDevPath = path.join(
+      __dirname,
+      '..',
+      '..',
+      'target',
+      'debug',
+      'renamify'
+    );
+    if (fs.existsSync(extensionDevPath)) {
+      return extensionDevPath;
+    }
+    const extensionDevPathExe = path.join(
+      __dirname,
+      '..',
+      '..',
+      'target',
+      'debug',
+      'renamify.exe'
+    );
+    if (fs.existsSync(extensionDevPathExe)) {
+      return extensionDevPathExe;
     }
 
     throw new Error(
