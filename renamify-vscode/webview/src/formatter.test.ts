@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'vitest';
 import {
+  applyReplacements,
+  calculateReplacementPositions,
   escapeHtml,
   escapeRegExp,
   formatMergedMatchText,
   highlightReplaceTerm,
   highlightSearchTerm,
-  applyReplacements,
-  insertSearchPlaceholders,
-  calculateReplacementPositions,
   insertReplacementPlaceholders,
+  insertSearchPlaceholders,
   placeholdersToHtml,
 } from './formatter';
 
@@ -61,7 +61,10 @@ describe('Formatter Test Suite', () => {
         },
       ];
 
-      const result = applyReplacements('        caseStyles: data.caseStyles,', matches);
+      const result = applyReplacements(
+        '        caseStyles: data.caseStyles,',
+        matches
+      );
       expect(result).toBe('        braceStyles: data.braceStyles,');
     });
   });
@@ -83,7 +86,9 @@ describe('Formatter Test Suite', () => {
       ];
 
       const result = insertSearchPlaceholders('const oldName = 5;', matches);
-      expect(result).toBe('const \x00SEARCH_START\x00oldName\x00SEARCH_END\x00 = 5;');
+      expect(result).toBe(
+        'const \x00SEARCH_START\x00oldName\x00SEARCH_END\x00 = 5;'
+      );
     });
   });
 
@@ -105,7 +110,7 @@ describe('Formatter Test Suite', () => {
 
       const positions = calculateReplacementPositions(matches);
       expect(positions).toEqual([
-        { pos: 6, length: 7 } // newName is 7 chars
+        { pos: 6, length: 7 }, // newName is 7 chars
       ]);
     });
 
@@ -137,8 +142,8 @@ describe('Formatter Test Suite', () => {
 
       const positions = calculateReplacementPositions(matches);
       expect(positions).toEqual([
-        { pos: 8, length: 11 },  // First replacement at original position
-        { pos: 26, length: 11 }  // Second replacement shifted by +1 (11-10)
+        { pos: 8, length: 11 }, // First replacement at original position
+        { pos: 26, length: 11 }, // Second replacement shifted by +1 (11-10)
       ]);
     });
   });
@@ -148,7 +153,7 @@ describe('Formatter Test Suite', () => {
       const text = '        braceStyles: data.braceStyles,';
       const positions = [
         { pos: 8, length: 11 },
-        { pos: 26, length: 11 }
+        { pos: 26, length: 11 },
       ];
 
       const result = insertReplacementPlaceholders(text, positions);
@@ -162,7 +167,9 @@ describe('Formatter Test Suite', () => {
     test('should convert placeholders and escape HTML', () => {
       const text = '<div>\x00SEARCH_START\x00test\x00SEARCH_END\x00</div>';
       const result = placeholdersToHtml(text);
-      expect(result).toBe('&lt;div&gt;<span class="search-highlight">test</span>&lt;/div&gt;');
+      expect(result).toBe(
+        '&lt;div&gt;<span class="search-highlight">test</span>&lt;/div&gt;'
+      );
     });
   });
   describe('formatMergedMatchText with HTML content', () => {

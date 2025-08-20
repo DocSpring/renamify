@@ -8,12 +8,12 @@
 .mcp.json
 
 # IDE/Editor directories
-.vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+tmp/
 
 # Runtime directory (created at runtime, not tracked in VCS)
 .renamify/

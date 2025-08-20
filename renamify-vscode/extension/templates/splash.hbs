@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src {{cspSource}} https: data:; font-src {{cspSource}} https: data:; style-src {{cspSource}} 'nonce-{{nonce}}'; script-src 'nonce-{{nonce}}'; connect-src {{cspSource}};"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="{{styleUri}}" rel="stylesheet" />
+    <title>Renamify - CLI Not Found</title>
+    <style nonce="{{nonce}}">
+      .splash-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        padding: 20px;
+        text-align: center;
+        color: var(--vscode-foreground);
+      }
+      .splash-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: var(--vscode-textLink-foreground);
+      }
+      .splash-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: var(--vscode-foreground);
+      }
+      .splash-message {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        max-width: 400px;
+        line-height: 1.5;
+        color: var(--vscode-descriptionForeground);
+      }
+      .splash-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+        max-width: 300px;
+      }
+      .splash-button {
+        padding: 8px 16px;
+        border: 1px solid var(--vscode-button-border);
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        text-decoration: none;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
+      }
+      .splash-button:hover {
+        background: var(--vscode-button-hoverBackground);
+        opacity: 0.8;
+      }
+      .splash-button.primary {
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+      .splash-button.secondary {
+        background: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+      .config-note {
+        margin-top: 1rem;
+        font-size: 0.8rem;
+        color: var(--vscode-descriptionForeground);
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="splash-container">
+      <div class="splash-icon">⚙️</div>
+      <h1 class="splash-title">Renamify CLI Not Found</h1>
+      <p class="splash-message">
+        The Renamify command-line tool is required to use this extension. Please install it or configure the path to
+        your existing installation.
+      </p>
+      <div class="splash-buttons">
+        <a href="https://docspring.github.io/renamify/installation/" class="splash-button primary">
+          📦 View Installation Guide
+        </a>
+        <button class="splash-button secondary" id="openSettingsBtn">⚙️ Configure Binary Path</button>
+        <button class="splash-button secondary" id="refreshBtn">🔄 Refresh Extension</button>
+      </div>
+      <p class="config-note">You can also set the <code>renamify.cliPath</code> setting to point to your binary.</p>
+    </div>
+
+    <script nonce="{{nonce}}">
+      const vscode = acquireVsCodeApi();
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM loaded");
+
+        const openSettingsBtn = document.getElementById("openSettingsBtn");
+        const refreshBtn = document.getElementById("refreshBtn");
+
+        if (openSettingsBtn) {
+          openSettingsBtn.addEventListener("click", function () {
+            console.log("Settings button clicked");
+            vscode.postMessage({ type: "openSettings" });
+          });
+        }
+
+        if (refreshBtn) {
+          refreshBtn.addEventListener("click", function () {
+            console.log("Refresh button clicked");
+            vscode.postMessage({ type: "refresh" });
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

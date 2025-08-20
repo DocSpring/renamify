@@ -1,0 +1,8 @@
+# Ignore specific directories
+node_modules/
+dist/
+out/
+media/*.js
+*.min.js
+
+# But format all .hbs files

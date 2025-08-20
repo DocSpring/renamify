@@ -1,3 +1,6 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as Handlebars from 'handlebars';
 import * as vscode from 'vscode';
 import { RenamifyCliService } from './cliService';
 import type {
@@ -16,12 +19,36 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   // biome-ignore lint/style/useReadonlyClassProperties: _cliService is reassigned in refresh handler
   private _cliService: RenamifyCliService;
+  private _webviewTemplate?: HandlebarsTemplateDelegate;
+  private _splashTemplate?: HandlebarsTemplateDelegate;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
     cliService: RenamifyCliService
   ) {
     this._cliService = cliService;
+    this._loadTemplates();
+  }
+
+  private _loadTemplates() {
+    const templatesPath = path.join(this._extensionUri.fsPath, 'templates');
+
+    // Load and compile webview template
+    const webviewTemplatePath = path.join(templatesPath, 'webview.hbs');
+    if (fs.existsSync(webviewTemplatePath)) {
+      const webviewTemplateSource = fs.readFileSync(
+        webviewTemplatePath,
+        'utf-8'
+      );
+      this._webviewTemplate = Handlebars.compile(webviewTemplateSource);
+    }
+
+    // Load and compile splash template
+    const splashTemplatePath = path.join(templatesPath, 'splash.hbs');
+    if (fs.existsSync(splashTemplatePath)) {
+      const splashTemplateSource = fs.readFileSync(splashTemplatePath, 'utf-8');
+      this._splashTemplate = Handlebars.compile(splashTemplateSource);
+    }
   }
 
   public resolveWebviewView(
@@ -73,6 +100,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         case 'refresh':
           // Recreate the CLI service and refresh the webview
           this._cliService = new RenamifyCliService();
+          this._loadTemplates(); // Reload templates
           if (this._view) {
             this._view.webview.html = this._getHtmlForWebview(
               this._view.webview
@@ -337,6 +365,21 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
       return this._getSplashScreenHtml(webview, styleUri, nonce);
     }
 
+    // Use template if available
+    if (this._webviewTemplate) {
+      const workspaceRoot =
+        vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+
+      return this._webviewTemplate({
+        cspSource: webview.cspSource,
+        nonce,
+        scriptUri: scriptUri.toString(),
+        styleUri: styleUri.toString(),
+        codiconsUri: codiconsUri.toString(),
+        workspaceRootJson: JSON.stringify(workspaceRoot),
+      });
+    }
+
     return `<!DOCTYPE html>
             <html lang="en">
             <head>
@@ -466,6 +509,15 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
     styleUri: vscode.Uri,
     nonce: string
   ) {
+    // Use template if available
+    if (this._splashTemplate) {
+      return this._splashTemplate({
+        cspSource: webview.cspSource,
+        nonce,
+        styleUri: styleUri.toString(),
+      });
+    }
+
     return `<!DOCTYPE html>
             <html lang="en">
             <head>

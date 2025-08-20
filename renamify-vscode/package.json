@@ -115,11 +115,12 @@
   },
   "scripts": {
     "build:icons": "fantasticon",
-    "check": "biome check",
+    "check": "biome check && prettier --check '**/*.hbs'",
     "compile:extension": "rm -rf dist && tsc -p extension && pnpm build:icons",
     "compile:webview": "rm -f media/*.js media/*.js.map && tsc -p webview && ./scripts/bundle-webview.sh",
     "compile": "pnpm compile:extension && pnpm compile:webview",
-    "format": "biome format --write",
+    "format": "biome format --write && pnpm format:hbs",
+    "format:hbs": "prettier --write '**/*.hbs'",
     "lint": "biome check --write",
     "package": "vsce package --no-dependencies",
     "pretest": "pnpm compile && pnpm check",
@@ -153,11 +154,16 @@
     "jsdom": "^26.1.0",
     "mocha": "^11.7.1",
     "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
     "requirejs": "^2.3.7",
     "sinon": "^21.0.0",
     "svgo": "^4.0.0",
     "typescript": "^5.9.2",
     "ultracite": "^5.2.4",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@types/handlebars": "^4.1.0",
+    "handlebars": "^4.7.8"
   }
 }

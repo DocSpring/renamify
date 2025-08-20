@@ -121,8 +121,8 @@ export function insertSearchPlaceholders(
 // Calculate replacement positions in the final text
 export function calculateReplacementPositions(
   matches: MatchHunk[]
-): Array<{pos: number, length: number}> {
-  const replacements: Array<{pos: number, length: number}> = [];
+): Array<{ pos: number; length: number }> {
+  const replacements: Array<{ pos: number; length: number }> = [];
 
   // Sort matches by column position
   const sortedMatches = [...matches].sort((a, b) => a.col - b.col);
@@ -135,7 +135,7 @@ export function calculateReplacementPositions(
 
       replacements.push({
         pos: finalPos,
-        length: match.replace.length
+        length: match.replace.length,
       });
 
       // Update shift for next replacement
@@ -150,7 +150,7 @@ export function calculateReplacementPositions(
 // Insert placeholders for replacement highlights
 export function insertReplacementPlaceholders(
   text: string,
-  positions: Array<{pos: number, length: number}>
+  positions: Array<{ pos: number; length: number }>
 ): string {
   let result = text;
 
@@ -200,12 +200,18 @@ export function formatMergedMatchText(
     const finalText = applyReplacements(originalText, matches);
 
     // For the removed line: highlight the search terms
-    const originalWithPlaceholders = insertSearchPlaceholders(originalText, matches);
+    const originalWithPlaceholders = insertSearchPlaceholders(
+      originalText,
+      matches
+    );
     const highlightedOriginal = placeholdersToHtml(originalWithPlaceholders);
 
     // For the added line: highlight the replacements
     const replacementPositions = calculateReplacementPositions(matches);
-    const finalWithPlaceholders = insertReplacementPlaceholders(finalText, replacementPositions);
+    const finalWithPlaceholders = insertReplacementPlaceholders(
+      finalText,
+      replacementPositions
+    );
     const highlightedFinal = placeholdersToHtml(finalWithPlaceholders);
 
     formatted +=
@@ -214,7 +220,10 @@ export function formatMergedMatchText(
       '<div class="diff-line added">+ ' + highlightedFinal + '</div>';
   } else {
     // Search only mode
-    const textWithPlaceholders = insertSearchPlaceholders(originalText, matches);
+    const textWithPlaceholders = insertSearchPlaceholders(
+      originalText,
+      matches
+    );
     const highlightedText = placeholdersToHtml(textWithPlaceholders);
 
     formatted += '<div class="search-line">' + highlightedText + '</div>';
