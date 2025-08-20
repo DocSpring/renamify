@@ -6,13 +6,25 @@ import type { SearchOptions, SearchResult, Status } from './types';
 
 export type { SearchOptions, SearchResult } from './types';
 
+type VersionInfo = {
+  name: string;
+  version: string;
+};
+
 export class RenamifyCliService {
   private readonly cliPath?: string;
   private readonly spawnFn: typeof spawn;
   private readonly isAvailable: boolean;
+  private readonly extensionVersion: string;
 
   constructor(spawnFn?: typeof spawn) {
     this.spawnFn = spawnFn || spawn;
+
+    // Read version from package.json
+    const packageJsonPath = path.join(__dirname, '..', 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    this.extensionVersion = packageJson.version;
+
     // If we're using a mock spawn function, assume the CLI is available for testing
     if (spawnFn) {
       this.cliPath = 'mocked-cli-path';
@@ -107,6 +119,40 @@ export class RenamifyCliService {
     throw new Error(
       'Renamify CLI not found. Please install it or configure the path in settings.'
     );
+  }
+
+  /**
+   * Get CLI version information
+   */
+  private async getCliVersion(): Promise<VersionInfo> {
+    const result = await this.runCliRaw(['version', '--output', 'json']);
+    return JSON.parse(result) as VersionInfo;
+  }
+
+  /**
+   * Check version compatibility between extension and CLI
+   */
+  private async checkVersionCompatibility(): Promise<void> {
+    const cliInfo = await this.getCliVersion();
+    const cliVersion = cliInfo.version;
+
+    // Parse versions
+    const [extMajor, extMinor] = this.extensionVersion.split('.').map(Number);
+    const [cliMajor, cliMinor] = cliVersion.split('.').map(Number);
+
+    // Check major version must match
+    if (extMajor !== cliMajor) {
+      const message = `Version mismatch: VS Code extension v${this.extensionVersion} is not compatible with CLI v${cliVersion}.\nMajor versions must match (Extension major: ${extMajor}, CLI major: ${cliMajor}).`;
+      vscode.window.showErrorMessage(message);
+      throw new Error(message);
+    }
+
+    // Check minor version: Extension minor must be <= CLI minor
+    if (extMinor > cliMinor) {
+      const message = `Version mismatch: VS Code extension v${this.extensionVersion} requires CLI v${extMajor}.${extMinor}.x or later.\nCurrent CLI version is v${cliVersion}.`;
+      vscode.window.showErrorMessage(message);
+      throw new Error(message);
+    }
   }
 
   async search(searchTerm: string, options: SearchOptions): Promise<Plan> {
@@ -269,21 +315,24 @@ export class RenamifyCliService {
     return this.cliPath;
   }
 
-  private runCli(args: string[]): Promise<string> {
-    return new Promise((resolve, reject) => {
-      if (!(this.isAvailable && this.cliPath)) {
-        reject(
-          new Error(
-            'Renamify CLI not found. Please install it or configure the path in settings.'
-          )
-        );
-        return;
-      }
+  private async runCli(args: string[]): Promise<string> {
+    if (!(this.isAvailable && this.cliPath)) {
+      throw new Error(
+        'Renamify CLI not found. Please install it or configure the path in settings.'
+      );
+    }
 
+    // Check version compatibility before every command (except for version command itself)
+    // Skip version check when using mock spawn (in tests)
+    if (!args.includes('version') && this.cliPath !== 'mocked-cli-path') {
+      await this.checkVersionCompatibility();
+    }
+
+    return new Promise((resolve, reject) => {
       const workspaceRoot =
         vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
 
-      const proc = this.spawnFn(this.cliPath, args, {
+      const proc = this.spawnFn(this.cliPath as string, args, {
         cwd: workspaceRoot,
         env: process.env,
       });
@@ -291,15 +340,15 @@ export class RenamifyCliService {
       let stdout = '';
       let stderr = '';
 
-      proc.stdout.on('data', (data) => {
+      proc.stdout.on('data', (data: Buffer) => {
         stdout += data.toString();
       });
 
-      proc.stderr.on('data', (data) => {
+      proc.stderr.on('data', (data: Buffer) => {
         stderr += data.toString();
       });
 
-      proc.on('close', (code) => {
+      proc.on('close', (code: number | null) => {
         if (code === 0) {
           resolve(stdout);
         } else {
@@ -308,7 +357,7 @@ export class RenamifyCliService {
         }
       });
 
-      proc.on('error', (err) => {
+      proc.on('error', (err: Error) => {
         reject(err);
       });
     });

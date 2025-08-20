@@ -1,6 +1,19 @@
+import { readFileSync } from 'node:fs';
 import { access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { type ExecaError, execa } from 'execa';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(
+  readFileSync(resolve(__dirname, '..', 'package.json'), 'utf-8')
+);
+
+type VersionInfo = {
+  name: string;
+  version: string;
+};
 
 export type SearchOptions = {
   search: string;
@@ -42,11 +55,13 @@ export type PreviewOptions = {
 
 export class RenamifyService {
   private readonly renamifyPath: string;
+  private readonly mcpVersion: string;
 
   constructor(renamifyPath?: string) {
     // Default to 'renamify' which should be in PATH
     // Users can override with full path if needed
     this.renamifyPath = renamifyPath || 'renamify';
+    this.mcpVersion = packageJson.version;
   }
 
   /**
@@ -58,6 +73,63 @@ export class RenamifyService {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Get CLI version information
+   */
+  private async getCliVersion(): Promise<VersionInfo> {
+    try {
+      const result = await execa(this.renamifyPath, [
+        'version',
+        '--output',
+        'json',
+      ]);
+      return JSON.parse(result.stdout) as VersionInfo;
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        error.code === 'ENOENT'
+      ) {
+        throw new Error(
+          'Renamify CLI not found. Please install it using:\n\n' +
+            'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
+            'For more installation options, visit: https://docspring.github.io/renamify/installation/'
+        );
+      }
+      throw new Error(`Failed to get CLI version: ${error}`);
+    }
+  }
+
+  /**
+   * Check version compatibility between MCP and CLI
+   */
+  private async checkVersionCompatibility(): Promise<void> {
+    const cliInfo = await this.getCliVersion();
+    const cliVersion = cliInfo.version;
+
+    // Parse versions
+    const [mcpMajor, mcpMinor] = this.mcpVersion.split('.').map(Number);
+    const [cliMajor, cliMinor] = cliVersion.split('.').map(Number);
+
+    // Check major version must match
+    if (mcpMajor !== cliMajor) {
+      throw new Error(
+        `Version mismatch: MCP server v${this.mcpVersion} is not compatible with CLI v${cliVersion}.\n` +
+          `Major versions must match (MCP major: ${mcpMajor}, CLI major: ${cliMajor}).\n` +
+          `Please update the ${mcpMajor < cliMajor ? 'MCP server' : 'CLI'} to a compatible version.`
+      );
+    }
+
+    // Check minor version: MCP minor must be <= CLI minor
+    if (mcpMinor > cliMinor) {
+      throw new Error(
+        `Version mismatch: MCP server v${this.mcpVersion} requires CLI v${mcpMajor}.${mcpMinor}.x or later.\n` +
+          `Current CLI version is v${cliVersion}.\n` +
+          'Please update the CLI to a compatible version.'
+      );
     }
   }
 
@@ -164,6 +236,12 @@ export class RenamifyService {
     args: string[],
     operation: string
   ): Promise<string> {
+    // Check version compatibility before every command
+    // Skip in test environment where execa is mocked
+    if (process.env.NODE_ENV !== 'test') {
+      await this.checkVersionCompatibility();
+    }
+
     try {
       const result = await execa(this.renamifyPath, args);
       return result.stdout;
@@ -277,6 +355,12 @@ export class RenamifyService {
     planPath: string,
     options: PreviewOptions
   ): Promise<string> {
+    // Check version compatibility before every command
+    // Skip in test environment where execa is mocked
+    if (process.env.NODE_ENV !== 'test') {
+      await this.checkVersionCompatibility();
+    }
+
     try {
       await access(planPath);
       const args = this.buildPreviewArgs(planPath, options);

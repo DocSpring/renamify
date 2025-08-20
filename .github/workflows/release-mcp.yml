@@ -1,0 +1,92 @@
+name: Release MCP Server
+
+on:
+  push:
+    tags:
+      - "mcp-v*"  # MCP-specific version tags
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 1.0.0)"
+        required: true
+        type: string
+
+jobs:
+  release_mcp:
+    name: Publish MCP Server to npm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        working-directory: renamify-mcp
+        run: pnpm install
+
+      - name: Build
+        working-directory: renamify-mcp
+        run: pnpm build
+
+      - name: Verify version
+        id: version
+        run: |
+          # Extract version from package.json
+          VERSION=$(node -p "require('./renamify-mcp/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Verify tag matches package.json version
+            TAG="${GITHUB_REF#refs/tags/}"
+            EXPECTED_TAG="mcp-v$VERSION"
+            if [ "$TAG" != "$EXPECTED_TAG" ]; then
+              echo "Error: Tag $TAG doesn't match expected $EXPECTED_TAG from package.json"
+              exit 1
+            fi
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          else
+            # Workflow dispatch - verify input matches package.json
+            if [ "${{ github.event.inputs.version }}" != "$VERSION" ]; then
+              echo "Error: Input version ${{ github.event.inputs.version }} doesn't match package.json version $VERSION"
+              exit 1
+            fi
+            echo "tag=mcp-v$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to NPM
+        working-directory: renamify-mcp
+        run: pnpm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: github.event_name == 'push'
+        with:
+          tag_name: mcp-v${{ steps.version.outputs.version }}
+          name: MCP Server v${{ steps.version.outputs.version }}
+          body: |
+            ## Renamify MCP Server v${{ steps.version.outputs.version }}
+
+            Install via npm:
+            ```bash
+            npm install -g renamify-mcp
+            ```
+
+            Or use with npx:
+            ```bash
+            npx renamify-mcp
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

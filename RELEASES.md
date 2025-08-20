@@ -88,6 +88,73 @@ Pre-release versions:
 - Beta: `v1.0.0-beta.1`
 - Release Candidate: `v1.0.0-rc.1`
 
+## Component Versioning Policy
+
+Renamify consists of three independently versioned components:
+
+### 1. CLI (renamify-cli)
+- The core component that provides all functionality
+- Version defined in `renamify-cli/Cargo.toml`
+- Released with tags: `cli-v1.0.0`
+
+### 2. MCP Server (renamify-mcp)
+- Node.js wrapper for AI integrations
+- Version defined in `renamify-mcp/package.json`
+- Released with tags: `mcp-v1.0.0`
+- **Must maintain compatibility with CLI version:**
+  - Major version must match CLI exactly
+  - Minor version must be ≤ CLI minor version
+  - Patch version is independent
+
+### 3. VS Code Extension (renamify-vscode)
+- IDE integration for VS Code and Cursor
+- Version defined in `renamify-vscode/package.json`
+- Released with tags: `vscode-v1.0.0`
+- **Must maintain compatibility with CLI version:**
+  - Major version must match CLI exactly
+  - Minor version must be ≤ CLI minor version
+  - Patch version is independent
+
+### Version Compatibility Examples
+
+| CLI Version | MCP/VS Code Version | Compatible? | Reason |
+|------------|---------------------|-------------|---------|
+| 2.3.1 | 2.0.5 | ✅ | Major matches, minor 0 ≤ 3 |
+| 2.3.1 | 2.3.9 | ✅ | Major matches, minor 3 ≤ 3 |
+| 2.3.1 | 2.4.0 | ❌ | Minor 4 > 3 (might use unavailable features) |
+| 2.3.1 | 3.0.0 | ❌ | Major version mismatch |
+| 1.0.0 | 1.0.0 | ✅ | Exact match |
+
+### Releasing Individual Components
+
+Each component has its own release workflow:
+
+```bash
+# Release CLI
+git tag cli-v1.0.0
+git push origin cli-v1.0.0
+
+# Release MCP Server
+git tag mcp-v1.0.0
+git push origin mcp-v1.0.0
+
+# Release VS Code Extension
+git tag vscode-v1.0.0
+git push origin vscode-v1.0.0
+```
+
+### Version Verification
+
+Both MCP and VS Code extensions verify CLI compatibility on startup:
+
+```bash
+# CLI provides version info
+renamify version --output json
+# {"name":"renamify","version":"1.0.0"}
+```
+
+If the CLI version doesn't meet requirements, the MCP server and VS Code extension will fail with a clear error message indicating the version mismatch.
+
 ## Platform Support
 
 The release workflow builds for:

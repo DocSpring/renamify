@@ -12,7 +12,7 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "test": "vitest run",
+    "test": "NODE_ENV=test vitest run",
     "test:watch": "vitest",
     "lint": "biome check --write",
     "format": "biome format --write",

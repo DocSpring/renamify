@@ -121,6 +121,38 @@ You can control how ignore files are handled using the `-u` flag:
 
 The `.rnignore` file is useful when you want to exclude files specifically from renamify operations without affecting Git or other tools.
 
+## Versioning Policy
+
+Renamify follows [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** version for incompatible API changes
+- **MINOR** version for backward-compatible functionality additions
+- **PATCH** version for backward-compatible bug fixes
+
+### Component Compatibility
+
+The MCP server and VS Code extension depend on the CLI and must maintain version compatibility:
+
+- **Major version**: Must match the CLI major version exactly
+- **Minor version**: Must be ≤ CLI minor version (can use older features, not newer ones)
+- **Patch version**: Independent, can be any value
+
+#### Examples
+- CLI `2.3.1` → MCP `2.0.5` ✅ (major matches, minor 0 ≤ 3)
+- CLI `2.3.1` → MCP `2.3.9` ✅ (major matches, minor 3 ≤ 3)
+- CLI `2.3.1` → MCP `2.4.0` ❌ (minor 4 > 3, might use unavailable features)
+- CLI `2.3.1` → MCP `3.0.0` ❌ (major version mismatch)
+
+### Version Check
+
+The CLI provides version information via:
+```bash
+renamify version --output json
+# {"name":"renamify","version":"0.1.0"}
+```
+
+Both the MCP server and VS Code extension verify CLI compatibility on startup and will fail gracefully if the CLI version doesn't meet requirements.
+
 ## Development
 
 ### Quick Setup

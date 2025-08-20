@@ -6,6 +6,20 @@ import { RenamifyService } from './renamify-service';
 vi.mock('execa');
 const mockedExeca = vi.mocked(execa);
 
+// Mock the package.json import
+vi.mock('node:fs', async () => {
+  const actual = await vi.importActual('node:fs');
+  return {
+    ...actual,
+    readFileSync: vi.fn((path: string) => {
+      if (path.includes('package.json')) {
+        return JSON.stringify({ version: '0.1.1' });
+      }
+      return '';
+    }),
+  };
+});
+
 describe('RenamifyService', () => {
   let service: RenamifyService;
 
@@ -26,6 +40,91 @@ describe('RenamifyService', () => {
       mockedExeca.mockRejectedValueOnce(new Error('Command not found'));
       const result = await service.checkAvailability();
       expect(result).toBe(false);
+    });
+  });
+
+  describe('version compatibility', () => {
+    // For version compatibility tests, we need to override NODE_ENV
+    // and manually test the version checking logic
+    const originalEnv = process.env.NODE_ENV;
+
+    beforeEach(() => {
+      // Temporarily disable test mode to test version checking
+      // biome-ignore lint/performance/noDelete: needed for test
+      delete process.env.NODE_ENV;
+    });
+
+    afterEach(() => {
+      // Restore original NODE_ENV
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should pass when versions are compatible', async () => {
+      // MCP version is 0.1.1, CLI version is 0.1.1
+      mockedExeca
+        .mockResolvedValueOnce({
+          stdout: '{"name":"renamify","version":"0.1.1"}',
+        } as never) // version check
+        .mockResolvedValueOnce({ stdout: 'Plan created' } as never); // actual command
+
+      const result = await service.plan({
+        search: 'oldName',
+        replace: 'newName',
+      });
+
+      expect(result).toBe('Plan created');
+    });
+
+    it('should pass when CLI has higher minor version', async () => {
+      // MCP version is 0.1.1, CLI version is 0.2.0
+      mockedExeca
+        .mockResolvedValueOnce({
+          stdout: '{"name":"renamify","version":"0.2.0"}',
+        } as never) // version check
+        .mockResolvedValueOnce({ stdout: 'Plan created' } as never); // actual command
+
+      const result = await service.plan({
+        search: 'oldName',
+        replace: 'newName',
+      });
+
+      expect(result).toBe('Plan created');
+    });
+
+    it('should fail when major versions differ', async () => {
+      // MCP version is 0.1.1, CLI version is 1.0.0
+      mockedExeca.mockResolvedValueOnce({
+        stdout: '{"name":"renamify","version":"1.0.0"}',
+      } as never);
+
+      await expect(
+        service.plan({ search: 'foo', replace: 'bar' })
+      ).rejects.toThrow(
+        'Version mismatch: MCP server v0.1.1 is not compatible with CLI v1.0.0'
+      );
+    });
+
+    it('should fail when MCP minor version is higher than CLI', async () => {
+      // MCP version is 0.1.1, CLI version is 0.0.5
+      mockedExeca.mockResolvedValueOnce({
+        stdout: '{"name":"renamify","version":"0.0.5"}',
+      } as never);
+
+      await expect(
+        service.plan({ search: 'foo', replace: 'bar' })
+      ).rejects.toThrow(
+        'Version mismatch: MCP server v0.1.1 requires CLI v0.1.x or later'
+      );
+    });
+
+    it('should handle CLI not found error', async () => {
+      const error = new Error('Command not found') as any;
+      error.code = 'ENOENT';
+      mockedExeca.mockRejectedValueOnce(error);
+
+      await expect(
+        service.plan({ search: 'foo', replace: 'bar' })
+      ).rejects.toThrow('Renamify CLI not found. Please install it using');
     });
   });
 

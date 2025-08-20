@@ -1,13 +1,13 @@
-name: Release
+name: Release CLI
 
 on:
   push:
     tags:
-      - "v*"
+      - "cli-v*"  # CLI version tags
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag to release (e.g., v1.0.0)"
+      version:
+        description: "Version to release (e.g., 1.0.0)"
         required: true
         type: string
 
@@ -118,19 +118,31 @@ jobs:
         with:
           path: artifacts
 
-      - name: Determine tag
-        id: tag
+      - name: Get version from Cargo.toml
+        id: version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          # Extract version from Cargo.toml
+          VERSION=$(grep '^version = ' renamify-cli/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Verify tag matches Cargo.toml version
+            TAG="${GITHUB_REF#refs/tags/}"
+            EXPECTED_TAG="cli-v$VERSION"
+            if [ "$TAG" != "$EXPECTED_TAG" ]; then
+              echo "Error: Tag $TAG doesn't match expected $EXPECTED_TAG from Cargo.toml"
+              exit 1
+            fi
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
           else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            # Workflow dispatch - create tag from version
+            echo "tag=cli-v$VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: Generate changelog
         id: changelog
         run: |
-          TAG="${{ steps.tag.outputs.tag }}"
+          TAG="${{ steps.version.outputs.tag }}"
           echo "## What's Changed" > changelog.md
           echo "" >> changelog.md
 
@@ -189,8 +201,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: Renamify ${{ steps.tag.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Renamify CLI v${{ steps.version.outputs.version }}
           body_path: changelog.md
           draft: false
           prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
@@ -199,116 +211,3 @@ jobs:
             artifacts/**/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release_publish_vscode:
-    name: Publish VS Code Extension
-    needs: release_create
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download TypeScript bindings from CI
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          workflow: ci.yml
-          workflow_conclusion: success
-          name: typescript-bindings
-          path: ${{ github.workspace }}/renamify-core/bindings
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
-        working-directory: renamify-vscode
-        run: pnpm install
-
-      - name: Determine tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Update package version
-        working-directory: renamify-vscode
-        run: |
-          TAG="${{ steps.tag.outputs.tag }}"
-          VERSION="${TAG#v}"  # Remove 'v' prefix
-          npm version $VERSION --no-git-tag-version
-
-      - name: Package extension
-        working-directory: renamify-vscode
-        run: pnpm run package
-
-      - name: Publish to VS Code Marketplace
-        working-directory: renamify-vscode
-        run: npx vsce publish -p ${{ secrets.VSCE_TOKEN }}
-
-      - name: Upload VSIX to release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          files: renamify-vscode/*.vsix
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release_publish_mcp:
-    name: Publish MCP Server to npm
-    needs: release_create
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Install dependencies
-        working-directory: renamify-mcp
-        run: pnpm install
-
-      - name: Build
-        working-directory: renamify-mcp
-        run: pnpm build
-
-      - name: Determine tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Update package version
-        working-directory: renamify-mcp
-        run: |
-          TAG="${{ steps.tag.outputs.tag }}"
-          VERSION="${TAG#v}"  # Remove 'v' prefix
-          pnpm version $VERSION --no-git-tag-version
-
-      - name: Publish to NPM
-        working-directory: renamify-mcp
-        run: pnpm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

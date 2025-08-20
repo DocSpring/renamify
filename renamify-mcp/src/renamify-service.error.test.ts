@@ -13,6 +13,20 @@ vi.mock('node:fs/promises', () => ({
 }));
 const mockedAccess = vi.mocked(access);
 
+// Mock the package.json import
+vi.mock('node:fs', async () => {
+  const actual = await vi.importActual('node:fs');
+  return {
+    ...actual,
+    readFileSync: vi.fn((path: string) => {
+      if (path.includes('package.json')) {
+        return JSON.stringify({ version: '0.1.1' });
+      }
+      return '';
+    }),
+  };
+});
+
 describe('RenamifyService Error Handling', () => {
   let service: RenamifyService;
 
