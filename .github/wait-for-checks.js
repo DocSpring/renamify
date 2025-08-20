@@ -9,8 +9,7 @@
  */
 
 const DEFAULT_REQUIRED_PREFIXES = [
-  "Test on", // from ci.yml - matrix job (ubuntu, macos, windows)
-  "Code Coverage", // from ci.yml - coverage job
+  "Test on", // from ci.yml - matrix job (ubuntu, macos, windows) - includes coverage
   "Check MSRV", // from ci.yml - minimum supported rust version
   "Self-Hosting Demo", // from e2e.yml - matrix job (ubuntu, macos, windows)
   "Test MCP Server", // from mcp.yml - matrix job (ubuntu, macos, windows)

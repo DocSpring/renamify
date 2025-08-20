@@ -38,7 +38,7 @@ jobs:
         with:
           script: |
             const script = require('./.github/wait-for-checks.js');
-            await script({ github, context, core, checks: ["Test on", "Code Coverage", "Check MSRV"] });
+            await script({ github, context, core, checks: ["Test on", "Check MSRV"] });
 
       - name: Download renamify binary (Linux)
         if: runner.os == 'Linux'
