@@ -22,6 +22,21 @@ describe('RenamifyService Error Handling', () => {
   });
 
   describe('executeCommand error handling', () => {
+    it('should handle missing binary with helpful error message', async () => {
+      const error: any = new Error('Command failed');
+      error.code = 'ENOENT';
+      error.command = 'renamify plan old new';
+      mockedExeca.mockRejectedValueOnce(error);
+
+      await expect(
+        service.plan({ search: 'old', replace: 'new' })
+      ).rejects.toThrow(
+        'Renamify CLI not found. Please install it using:\n\n' +
+        'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
+        'For more installation options, visit: https://docspring.github.io/renamify/installation/'
+      );
+    });
+
     it('should handle stderr errors', async () => {
       const error: any = new Error('Command failed');
       error.stderr = 'Error: Invalid syntax';
@@ -70,6 +85,20 @@ describe('RenamifyService Error Handling', () => {
       await expect(
         service.preview({ planPath: '/path/to/plan.json' })
       ).rejects.toThrow('Plan file not found: /path/to/plan.json');
+    });
+
+    it('should handle ENOENT error for missing binary in preview', async () => {
+      const error: any = new Error('Command failed');
+      error.code = 'ENOENT';
+      error.command = 'renamify plan --preview-only';
+      mockedAccess.mockResolvedValueOnce(undefined);
+      mockedExeca.mockRejectedValueOnce(error);
+
+      await expect(service.preview({})).rejects.toThrow(
+        'Renamify CLI not found. Please install it using:\n\n' +
+        'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
+        'For more installation options, visit: https://docspring.github.io/renamify/installation/'
+      );
     });
 
     it('should handle stderr errors in preview', async () => {

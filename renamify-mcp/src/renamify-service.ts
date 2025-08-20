@@ -168,6 +168,15 @@ export class RenamifyService {
       const result = await execa(this.renamifyPath, args);
       return result.stdout;
     } catch (error) {
+      // Check if the binary is missing (ENOENT error)
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        throw new Error(
+          'Renamify CLI not found. Please install it using:\n\n' +
+          'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
+          'For more installation options, visit: https://docspring.github.io/renamify/installation/'
+        );
+      }
+
       if (error instanceof Error && 'stderr' in error) {
         const execaError = error as ExecaError;
         throw new Error(
@@ -294,7 +303,18 @@ export class RenamifyService {
   private handlePreviewError(error: unknown, planPath: string): never {
     if (error instanceof Error) {
       if ('code' in error && error.code === 'ENOENT') {
-        throw new Error(`Plan file not found: ${planPath}`);
+        // Check if this is a file access error (accessing plan file) vs binary not found
+        if ('command' in error && typeof error.command === 'string') {
+          // This is an execa error - binary not found
+          throw new Error(
+            'Renamify CLI not found. Please install it using:\n\n' +
+            'curl -fsSL https://docspring.github.io/renamify/install.sh | bash\n\n' +
+            'For more installation options, visit: https://docspring.github.io/renamify/installation/'
+          );
+        } else {
+          // This is a file access error - plan file not found
+          throw new Error(`Plan file not found: ${planPath}`);
+        }
       }
       if ('stderr' in error) {
         const execaError = error as ExecaError;
