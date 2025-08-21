@@ -30,6 +30,7 @@ renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 - `--exclude <PATTERNS>` - Skip files matching these glob patterns
 - `--no-rename-files` - Don't rename matching files
 - `--no-rename-dirs` - Don't rename matching directories
+- `--no-rename-paths` - Don't rename files or directories (equivalent to --no-rename-files --no-rename-dirs)
 
 ### Root Directory
 - `--rename-root` - Allow renaming the root project directory (requires confirmation)
@@ -39,6 +40,7 @@ renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 - `--exclude-styles <STYLES>` - Exclude specific case styles from the default set
 - `--include-styles <STYLES>` - Add additional case styles to the active set
 - `--only-styles <STYLES>` - Use only these case styles, ignoring defaults
+- `--ignore-ambiguous` - Ignore mixed-case/ambiguous identifiers that don't match standard patterns
 
 ### Match Control
 - `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
@@ -116,6 +118,18 @@ renamify rename myproject awesome_project \
 # Skip compound words that contain your pattern
 renamify rename config settings \
   --exclude-match ConfigurationManager,ConfigService
+```
+
+### Content-Only Rename (No Path Changes)
+```bash
+# Only modify file contents, don't rename files or directories
+renamify rename old_api new_api --no-rename-paths
+```
+
+### Ignore Ambiguous Identifiers
+```bash
+# Skip mixed-case identifiers that don't match standard patterns
+renamify rename userName user_name --ignore-ambiguous
 ```
 
 ## Interactive Flow

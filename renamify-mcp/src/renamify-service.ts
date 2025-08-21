@@ -25,6 +25,7 @@ export type SearchOptions = {
   dryRun?: boolean;
   renameFiles?: boolean;
   renameDirs?: boolean;
+  ignoreAmbiguous?: boolean;
 };
 
 export type PlanOptions = {
@@ -38,6 +39,7 @@ export type PlanOptions = {
   dryRun?: boolean;
   renameFiles?: boolean;
   renameDirs?: boolean;
+  ignoreAmbiguous?: boolean;
 };
 
 export type ApplyOptions = {
@@ -163,6 +165,7 @@ export class RenamifyService {
     this.addPreviewArg(args, options.preview);
     this.addDryRunArg(args, options.dryRun);
     this.addRenameArgs(args, options.renameFiles, options.renameDirs);
+    this.addIgnoreAmbiguousArg(args, options.ignoreAmbiguous);
 
     return args;
   }
@@ -181,6 +184,7 @@ export class RenamifyService {
     this.addPreviewArg(args, options.preview);
     this.addDryRunArg(args, options.dryRun);
     this.addRenameArgs(args, options.renameFiles, options.renameDirs);
+    this.addIgnoreAmbiguousArg(args, options.ignoreAmbiguous);
 
     return args;
   }
@@ -229,6 +233,12 @@ export class RenamifyService {
     }
     if (renameDirs === false) {
       args.push('--no-rename-dirs');
+    }
+  }
+
+  private addIgnoreAmbiguousArg(args: string[], ignoreAmbiguous?: boolean): void {
+    if (ignoreAmbiguous) {
+      args.push('--ignore-ambiguous');
     }
   }
 

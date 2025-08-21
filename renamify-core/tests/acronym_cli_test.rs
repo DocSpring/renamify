@@ -24,6 +24,7 @@ fn test_no_acronyms_flag() {
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -79,6 +80,7 @@ fn test_include_acronyms_flag() {
         include_acronyms: vec!["K8S".to_string(), "GCP".to_string()], // Add custom acronyms
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -126,6 +128,7 @@ fn test_exclude_acronyms_flag() {
         include_acronyms: vec![],
         exclude_acronyms: vec!["ID".to_string()], // Exclude ID from acronyms
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -173,6 +176,7 @@ fn test_only_acronyms_flag() {
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec!["AWS".to_string()], // Only AWS is an acronym
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -227,6 +231,7 @@ fn test_acronym_case_insensitive() {
         include_acronyms: vec!["api".to_string()], // lowercase
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

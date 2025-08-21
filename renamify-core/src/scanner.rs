@@ -57,6 +57,7 @@ pub struct PlanOptions {
     pub include_acronyms: Vec<String>, // Additional acronyms to recognize
     pub exclude_acronyms: Vec<String>, // Default acronyms to exclude
     pub only_acronyms: Vec<String>, // Replace default list with these acronyms
+    pub ignore_ambiguous: bool,     // Ignore mixed-case/ambiguous identifiers
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -93,6 +94,7 @@ impl Default for PlanOptions {
             include_acronyms: vec![],
             exclude_acronyms: vec![],
             only_acronyms: vec![],
+            ignore_ambiguous: false, // Default: process ambiguous identifiers
         }
     }
 }
@@ -280,7 +282,6 @@ pub fn scan_repository_multi(
             // Only use compound scanner (which also finds exact matches)
             // Debug: Check what styles are being used
             let actual_styles = options.styles.as_deref().unwrap_or(&[
-                Style::Original, // Always include for exact string matching
                 Style::Snake,
                 Style::Kebab,
                 Style::Camel,
@@ -738,7 +739,6 @@ fn generate_variant_map_with_acronyms(
     let new_tokens = crate::case_model::parse_to_tokens_with_acronyms(replace, acronym_set);
 
     let default_styles = [
-        Style::Original, // Always include the exact original string
         Style::Snake,
         Style::Kebab,
         Style::Camel,
@@ -747,28 +747,271 @@ fn generate_variant_map_with_acronyms(
         Style::Train, // Include Train-Case for patterns like Renamify-Core-Engine
         Style::ScreamingTrain, // Include ScreamingTrain for patterns like RENAMIFY-DEBUG
     ];
+
+    // Track if we're using default styles
+    let using_defaults = styles.is_none();
     let styles = styles.unwrap_or(&default_styles);
 
     let mut map = std::collections::BTreeMap::new();
 
-    // Process styles in order to prioritize Original style
-    for style in styles {
-        if *style == Style::Original {
-            // Add the original pattern directly
-            map.insert(search.to_string(), replace.to_string());
-        } else {
-            let search_variant = crate::case_model::to_style(&old_tokens, *style);
-            let replace_variant = crate::case_model::to_style(&new_tokens, *style);
+    // Only include the exact input case when using default styles (styles was None)
+    // This ensures that exact matches work even when no styles match the input
+    // But when the user explicitly requests specific styles, we honor that
+    if using_defaults {
+        map.insert(search.to_string(), replace.to_string());
+    }
 
-            // Only add if not already in map (Original takes priority)
-            map.entry(search_variant).or_insert(replace_variant);
-        }
+    // Generate variants for each requested style
+    for style in styles {
+        let search_variant = crate::case_model::to_style(&old_tokens, *style);
+        let replace_variant = crate::case_model::to_style(&new_tokens, *style);
+
+        // Add the variant to the map (may overwrite the exact case if it matches a style)
+        map.insert(search_variant, replace_variant);
     }
 
     // Removed automatic case variants - they were causing incorrect matches
     // All variants should come from the explicit style system only
 
     map
+}
+
+/// Create a simple plan for regex or literal string replacement
+/// This bypasses case transformation and directly searches for the pattern
+pub fn create_simple_plan(
+    pattern: &str,
+    replacement: &str,
+    paths: Vec<PathBuf>,
+    options: &PlanOptions,
+    is_regex: bool,
+) -> Result<Plan> {
+    use crate::configure_walker;
+    use regex::Regex;
+
+    let root = paths.first().cloned().unwrap_or_else(|| PathBuf::from("."));
+    let paths = if paths.is_empty() {
+        vec![PathBuf::from(".")]
+    } else {
+        paths
+    };
+
+    // Build glob patterns for include/exclude
+    let include_globs = build_globset(&options.includes)?;
+    let exclude_globs = build_globset(&options.excludes)?;
+
+    // Build regex for line exclusion if provided
+    let exclude_lines_regex = options
+        .exclude_matching_lines
+        .as_ref()
+        .map(|pattern| Regex::new(pattern))
+        .transpose()?;
+
+    // Compile the search regex if in regex mode
+    let search_regex = if is_regex {
+        Some(Regex::new(pattern)?)
+    } else {
+        None
+    };
+
+    let mut all_matches = Vec::new();
+    let mut files_scanned = 0;
+    let mut files_with_matches = std::collections::HashSet::new();
+
+    // Walk the directory
+    let builder = configure_walker(&paths, options);
+
+    for entry in builder.build() {
+        let entry = entry?;
+        let path = entry.path();
+
+        // Skip if doesn't match includes or matches excludes
+        if let Some(ref globs) = include_globs {
+            if !globs.is_match(path) {
+                continue;
+            }
+        }
+        if let Some(ref globs) = exclude_globs {
+            if globs.is_match(path) {
+                continue;
+            }
+        }
+
+        // Only process files
+        if !path.is_file() {
+            continue;
+        }
+
+        files_scanned += 1;
+
+        // Read file content as bytes first to check if binary
+        let content_bytes = std::fs::read(path)?;
+
+        // Check if binary
+        if !options.binary_as_text() && is_binary(&content_bytes) {
+            continue;
+        }
+
+        // Convert to string
+        let content = String::from_utf8_lossy(&content_bytes);
+        let lines: Vec<&str> = content.lines().collect();
+
+        // Find matches
+        for (line_num, line) in lines.iter().enumerate() {
+            // Skip excluded lines
+            if let Some(ref regex) = exclude_lines_regex {
+                if regex.is_match(line) {
+                    continue;
+                }
+            }
+
+            // Find all matches in this line
+            let line_matches = if is_regex {
+                // Regex mode - find all regex matches
+                let regex = search_regex.as_ref().unwrap();
+                regex
+                    .find_iter(line)
+                    .map(|m| (m.start(), m.end(), m.as_str().to_string()))
+                    .collect::<Vec<_>>()
+            } else {
+                // Literal mode - find all occurrences
+                let mut matches = Vec::new();
+                let mut start = 0;
+                while let Some(pos) = line[start..].find(pattern) {
+                    let match_start = start + pos;
+                    let match_end = match_start + pattern.len();
+                    matches.push((match_start, match_end, pattern.to_string()));
+                    start = match_end;
+                }
+                matches
+            };
+
+            // Add each match
+            for (start, end, matched_text) in line_matches {
+                let replacement_text = if is_regex {
+                    // Apply capture group replacements
+                    let regex = search_regex.as_ref().unwrap();
+                    regex.replace(&matched_text, replacement).to_string()
+                } else {
+                    replacement.to_string()
+                };
+
+                let relative_path = path.strip_prefix(&root).unwrap_or(path);
+                files_with_matches.insert(relative_path.to_path_buf());
+
+                let line_after = format!("{}{}{}", &line[..start], &replacement_text, &line[end..]);
+
+                all_matches.push(MatchHunk {
+                    file: relative_path.to_path_buf(),
+                    line: (line_num + 1) as u64,
+                    #[allow(clippy::cast_possible_truncation)]
+                    col: (start + 1) as u32,
+                    variant: pattern.to_string(),
+                    content: matched_text.clone(),
+                    replace: replacement_text,
+                    start,
+                    end,
+                    line_before: Some((*line).to_string()),
+                    line_after: Some(line_after),
+                    coercion_applied: None,
+                    original_file: None,
+                    renamed_file: None,
+                    patch_hash: None,
+                });
+            }
+        }
+    }
+
+    // Handle file/directory renames if enabled
+    let mut renames = Vec::new();
+    if options.rename_files || options.rename_dirs {
+        // Walk again for renames
+        let builder = configure_walker(&paths, options);
+
+        for entry in builder.build() {
+            let entry = entry?;
+            let path = entry.path();
+            let relative_path = path.strip_prefix(&root).unwrap_or(path);
+
+            // Check if the filename contains the pattern
+            if let Some(file_name) = path.file_name() {
+                let file_name_str = file_name.to_string_lossy();
+
+                let new_name = if is_regex {
+                    let regex = search_regex.as_ref().unwrap();
+                    if regex.is_match(&file_name_str) {
+                        Some(regex.replace_all(&file_name_str, replacement).to_string())
+                    } else {
+                        None
+                    }
+                } else if file_name_str.contains(pattern) {
+                    Some(file_name_str.replace(pattern, replacement))
+                } else {
+                    None
+                };
+
+                if let Some(new_name) = new_name {
+                    if new_name != file_name_str {
+                        let new_path = path.with_file_name(new_name);
+                        let new_relative = new_path.strip_prefix(&root).unwrap_or(&new_path);
+
+                        let kind = if path.is_dir() {
+                            if !options.rename_dirs {
+                                continue;
+                            }
+                            RenameKind::Dir
+                        } else {
+                            if !options.rename_files {
+                                continue;
+                            }
+                            RenameKind::File
+                        };
+
+                        renames.push(Rename {
+                            path: relative_path.to_path_buf(),
+                            new_path: new_relative.to_path_buf(),
+                            kind,
+                            coercion_applied: None,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Sort renames by depth for proper ordering
+    renames.sort_by_key(|r| std::cmp::Reverse(r.path.components().count()));
+
+    // Create stats
+    let mut matches_by_variant = HashMap::new();
+    matches_by_variant.insert(pattern.to_string(), all_matches.len());
+
+    let stats = Stats {
+        files_scanned,
+        total_matches: all_matches.len(),
+        matches_by_variant,
+        files_with_matches: files_with_matches.len(),
+    };
+
+    // Generate plan
+    let plan = Plan {
+        id: generate_plan_id(pattern, replacement, options),
+        created_at: SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)?
+            .as_secs()
+            .to_string(),
+        search: pattern.to_string(),
+        replace: replacement.to_string(),
+        styles: vec![], // No styles for simple replacement
+        includes: options.includes.clone(),
+        excludes: options.excludes.clone(),
+        matches: all_matches,
+        paths: renames,
+        stats,
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        created_directories: None,
+    };
+
+    Ok(plan)
 }
 
 #[cfg(test)]

@@ -25,6 +25,7 @@ fn test_diff_merging_same_line() {
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

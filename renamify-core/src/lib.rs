@@ -10,6 +10,7 @@
 #![allow(clippy::missing_panics_doc)]
 
 pub mod acronym;
+pub mod ambiguity;
 pub mod apply;
 pub mod case_model;
 pub mod coercion;
@@ -52,8 +53,8 @@ pub use rename::{
     RenamePlan,
 };
 pub use scanner::{
-    scan_repository, scan_repository_multi, write_plan, MatchHunk, Plan, PlanOptions, Rename,
-    RenameKind, Stats,
+    create_simple_plan, scan_repository, scan_repository_multi, write_plan, MatchHunk, Plan,
+    PlanOptions, Rename, RenameKind, Stats,
 };
 pub use undo::{redo_renaming, undo_renaming};
 

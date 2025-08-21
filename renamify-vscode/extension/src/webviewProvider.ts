@@ -138,6 +138,8 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
             exclude: data.exclude,
             excludeMatchingLines: data.excludeMatchingLines,
             caseStyles: data.caseStyles,
+            renamePaths: data.renamePaths,
+            ignoreAmbiguous: data.ignoreAmbiguous,
             dryRun: true,
           }
         );
@@ -167,6 +169,8 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           exclude: data.exclude,
           excludeMatchingLines: data.excludeMatchingLines,
           caseStyles: data.caseStyles,
+          renamePaths: data.renamePaths,
+          ignoreAmbiguous: data.ignoreAmbiguous,
         });
 
         // Convert plan matches to SearchResult format
@@ -278,6 +282,8 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         exclude: data.exclude,
         excludeMatchingLines: data.excludeMatchingLines,
         caseStyles: data.caseStyles,
+        renamePaths: data.renamePaths,
+        ignoreAmbiguous: data.ignoreAmbiguous,
       });
 
       vscode.window.showInformationMessage('Changes applied successfully');

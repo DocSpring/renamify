@@ -34,6 +34,7 @@ fn test_train_case_patterns_are_replaced_in_apply() {
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

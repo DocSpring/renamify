@@ -5,6 +5,8 @@ export type SearchOptions = {
   exclude?: string;
   excludeMatchingLines?: string;
   caseStyles?: string[];
+  renamePaths?: boolean;
+  ignoreAmbiguous?: boolean;
 };
 
 // Match type is now imported from Rust bindings above
@@ -30,6 +32,9 @@ export type SearchMessage = {
   exclude?: string;
   excludeMatchingLines?: string;
   caseStyles?: string[];
+  renamePaths?: boolean;
+  ignoreAmbiguous?: boolean;
+  searchId?: number;
 };
 
 export type PlanMessage = {
@@ -40,6 +45,8 @@ export type PlanMessage = {
   exclude?: string;
   excludeMatchingLines?: string;
   caseStyles?: string[];
+  renamePaths?: boolean;
+  ignoreAmbiguous?: boolean;
 };
 
 export type ApplyMessage = {
@@ -50,6 +57,8 @@ export type ApplyMessage = {
   exclude?: string;
   excludeMatchingLines?: string;
   caseStyles?: string[];
+  renamePaths?: boolean;
+  ignoreAmbiguous?: boolean;
   planId?: string;
 };
 

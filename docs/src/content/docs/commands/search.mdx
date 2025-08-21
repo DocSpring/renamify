@@ -29,11 +29,21 @@ renamify search <term> [paths...] [options]
 - `--include-styles <styles>` - Include additional case styles (title, dot)
 - `--only-styles <styles>` - Use only these case styles (overrides defaults)
 
-Available styles: `original`, `snake`, `kebab`, `camel`, `pascal`, `screaming-snake`, `train`, `screaming-train`, `title`, `dot`
+Available styles: `snake`, `kebab`, `camel`, `pascal`, `screaming-snake`, `train`, `screaming-train`, `title`, `dot`, `lower`, `upper`
 
 ### Line Filtering
 
 - `--exclude-matching-lines <regex>` - Skip matches on lines matching this regex pattern
+
+### File and Directory Renaming
+
+- `--no-rename-files` - Don't include file renames in search results
+- `--no-rename-dirs` - Don't include directory renames in search results
+- `--no-rename-paths` - Don't include any file or directory renames (equivalent to --no-rename-files --no-rename-dirs)
+
+### Case Detection
+
+- `--ignore-ambiguous` - Ignore mixed-case/ambiguous identifiers that don't match standard patterns
 
 ### Output Control
 
@@ -96,6 +106,18 @@ renamify search myIdentifier --only-styles snake,kebab
 
 ```bash
 renamify search importantFunction --exclude-matching-lines "^\\s*//"
+```
+
+### Search Without File Renames
+
+```bash
+renamify search myFunction --no-rename-paths
+```
+
+### Ignore Ambiguous Identifiers
+
+```bash
+renamify search cleanName --ignore-ambiguous
 ```
 
 ### JSON Output for Processing

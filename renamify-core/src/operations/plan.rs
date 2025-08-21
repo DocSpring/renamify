@@ -76,6 +76,7 @@ pub fn plan_operation(
         include_acronyms,
         exclude_acronyms,
         only_acronyms,
+        ignore_ambiguous: false, // TODO: Get from args
     };
 
     // Resolve all search paths to absolute paths and canonicalize them

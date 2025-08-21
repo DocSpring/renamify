@@ -1,0 +1,367 @@
+use super::{
+    cross_file_context::CrossFileContextAnalyzer, file_context::FileContextAnalyzer,
+    get_possible_styles, is_ambiguous, language_heuristics::LanguageHeuristics,
+};
+use crate::case_model::{detect_style, parse_to_tokens, to_style, Style};
+
+/// Context for resolving ambiguity
+#[derive(Debug, Clone, Default)]
+pub struct AmbiguityContext {
+    pub file_path: Option<std::path::PathBuf>,
+    pub file_content: Option<String>,
+    pub line_content: Option<String>,
+    pub match_position: Option<usize>,
+    pub project_root: Option<std::path::PathBuf>,
+}
+
+/// Result of ambiguity resolution
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolvedStyle {
+    pub style: Style,
+    pub confidence: ResolutionConfidence,
+    pub method: ResolutionMethod,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ResolutionConfidence {
+    High,
+    Medium,
+    Low,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ResolutionMethod {
+    NotAmbiguous,
+    LanguageHeuristic,
+    FileContext,
+    CrossFileContext,
+    ReplacementStringPreference,
+    DefaultFallback,
+}
+
+/// Main ambiguity resolver that orchestrates all resolution strategies
+pub struct AmbiguityResolver {
+    file_analyzer: FileContextAnalyzer,
+    cross_file_analyzer: CrossFileContextAnalyzer,
+}
+
+impl Default for AmbiguityResolver {
+    fn default() -> Self {
+        Self {
+            file_analyzer: FileContextAnalyzer::new(),
+            cross_file_analyzer: CrossFileContextAnalyzer::new(),
+        }
+    }
+}
+
+impl AmbiguityResolver {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Resolve ambiguity for a matched text
+    pub fn resolve(
+        &self,
+        matched_text: &str,
+        replacement_text: &str,
+        context: &AmbiguityContext,
+    ) -> ResolvedStyle {
+        // First check if it's even ambiguous
+        if !is_ambiguous(matched_text) {
+            if let Some(style) = detect_style(matched_text) {
+                return ResolvedStyle {
+                    style,
+                    confidence: ResolutionConfidence::High,
+                    method: ResolutionMethod::NotAmbiguous,
+                };
+            }
+        }
+
+        // Get possible styles for the matched text
+        let possible_styles = get_possible_styles(matched_text);
+        if possible_styles.is_empty() {
+            // Shouldn't happen, but handle gracefully
+            return Self::default_fallback(&possible_styles, replacement_text);
+        }
+
+        // Level 1: Language-specific heuristics
+        if let Some(resolved) =
+            Self::try_language_heuristics(matched_text, context, &possible_styles)
+        {
+            return resolved;
+        }
+
+        // Level 2: File context analysis
+        if let Some(resolved) = self.try_file_context(matched_text, context, &possible_styles) {
+            return resolved;
+        }
+
+        // Level 3: Cross-file context analysis
+        if let Some(resolved) =
+            self.try_cross_file_context(matched_text, context, &possible_styles)
+        {
+            return resolved;
+        }
+
+        // Level 4: Replacement string preference (ultimate fallback)
+        Self::try_replacement_preference(&possible_styles, replacement_text)
+    }
+
+    /// Try language-specific heuristics
+    fn try_language_heuristics(
+        _matched_text: &str,
+        context: &AmbiguityContext,
+        possible_styles: &[Style],
+    ) -> Option<ResolvedStyle> {
+        let file_path = context.file_path.as_ref()?;
+        let line = context.line_content.as_ref()?;
+        let match_pos = context.match_position?;
+
+        // Extract preceding context
+        let preceding = if match_pos > 0 {
+            &line[..match_pos]
+        } else {
+            ""
+        };
+
+        if let Some(style) =
+            LanguageHeuristics::suggest_style(file_path, preceding, possible_styles)
+        {
+            return Some(ResolvedStyle {
+                style,
+                confidence: ResolutionConfidence::High,
+                method: ResolutionMethod::LanguageHeuristic,
+            });
+        }
+
+        None
+    }
+
+    /// Try file context analysis
+    fn try_file_context(
+        &self,
+        _matched_text: &str,
+        context: &AmbiguityContext,
+        possible_styles: &[Style],
+    ) -> Option<ResolvedStyle> {
+        let file_content = context.file_content.as_ref()?;
+
+        if let Some(style) = self
+            .file_analyzer
+            .suggest_style(file_content, possible_styles)
+        {
+            // Get confidence from file analysis
+            let stats = self.file_analyzer.analyze(file_content);
+            let confidence = match stats.confidence {
+                super::file_context::ConfidenceLevel::High => ResolutionConfidence::High,
+                super::file_context::ConfidenceLevel::Medium => ResolutionConfidence::Medium,
+                _ => ResolutionConfidence::Low,
+            };
+
+            return Some(ResolvedStyle {
+                style,
+                confidence,
+                method: ResolutionMethod::FileContext,
+            });
+        }
+
+        None
+    }
+
+    /// Try cross-file context analysis
+    fn try_cross_file_context(
+        &self,
+        _matched_text: &str,
+        context: &AmbiguityContext,
+        possible_styles: &[Style],
+    ) -> Option<ResolvedStyle> {
+        let project_root = context.project_root.as_ref()?;
+        let file_path = context.file_path.as_ref()?;
+        let line = context.line_content.as_ref()?;
+        let match_pos = context.match_position?;
+
+        let extension = file_path.extension()?.to_str()?;
+
+        // Extract preceding word
+        let preceding = if match_pos > 0 {
+            &line[..match_pos]
+        } else {
+            ""
+        };
+
+        // Find the last word before the match
+        let preceding_word = preceding.split_whitespace().last().unwrap_or("");
+
+        if !preceding_word.is_empty() {
+            if let Some(style) = self.cross_file_analyzer.suggest_style(
+                project_root,
+                false,
+                extension,
+                preceding_word,
+                possible_styles,
+            ) {
+                return Some(ResolvedStyle {
+                    style,
+                    confidence: ResolutionConfidence::Medium,
+                    method: ResolutionMethod::CrossFileContext,
+                });
+            }
+        }
+
+        None
+    }
+
+    /// Try replacement string preference
+    fn try_replacement_preference(
+        possible_styles: &[Style],
+        replacement_text: &str,
+    ) -> ResolvedStyle {
+        // Determine the style of the replacement string
+        if let Some(replacement_style) = detect_style(replacement_text) {
+            // If the replacement style is one of the possible styles, use it
+            if possible_styles.contains(&replacement_style) {
+                return ResolvedStyle {
+                    style: replacement_style,
+                    confidence: ResolutionConfidence::Medium,
+                    method: ResolutionMethod::ReplacementStringPreference,
+                };
+            }
+        }
+
+        // Otherwise use default fallback
+        Self::default_fallback(possible_styles, replacement_text)
+    }
+
+    /// Default fallback when all else fails
+    fn default_fallback(
+        possible_styles: &[Style],
+        _replacement_text: &str,
+    ) -> ResolvedStyle {
+        // Default precedence order
+        const DEFAULT_PRECEDENCE: &[Style] = &[
+            Style::Snake,
+            Style::Camel,
+            Style::Pascal,
+            Style::Kebab,
+            Style::ScreamingSnake,
+            Style::Train,
+            Style::ScreamingTrain,
+            Style::Title,
+            Style::Dot,
+            Style::Lower,
+            Style::Upper,
+        ];
+
+        // Find the first style in our precedence order that's possible
+        for &style in DEFAULT_PRECEDENCE {
+            if possible_styles.contains(&style) {
+                return ResolvedStyle {
+                    style,
+                    confidence: ResolutionConfidence::Low,
+                    method: ResolutionMethod::DefaultFallback,
+                };
+            }
+        }
+
+        // Last resort: just use the first possible style
+        if let Some(&style) = possible_styles.first() {
+            return ResolvedStyle {
+                style,
+                confidence: ResolutionConfidence::Low,
+                method: ResolutionMethod::DefaultFallback,
+            };
+        }
+
+        // Ultra last resort (shouldn't happen)
+        ResolvedStyle {
+            style: Style::Lower,
+            confidence: ResolutionConfidence::Low,
+            method: ResolutionMethod::DefaultFallback,
+        }
+    }
+
+    /// Convert ambiguous text to resolved style
+    pub fn apply_resolution(
+        _matched_text: &str,
+        replacement_text: &str,
+        resolved_style: &ResolvedStyle,
+    ) -> String {
+        // Parse the replacement into tokens
+        let tokens = parse_to_tokens(replacement_text);
+
+        // Apply the resolved style
+        to_style(&tokens, resolved_style.style)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_not_ambiguous() {
+        let resolver = AmbiguityResolver::new();
+        let context = AmbiguityContext::default();
+
+        let result = resolver.resolve("user_id", "account_id", &context);
+        assert_eq!(result.method, ResolutionMethod::NotAmbiguous);
+        assert_eq!(result.style, Style::Snake);
+    }
+
+    #[test]
+    fn test_replacement_preference() {
+        let resolver = AmbiguityResolver::new();
+        let context = AmbiguityContext::default();
+
+        // "api" is ambiguous (could be snake, camel, kebab, or lower)
+        // Replacement is snake_case
+        let result = resolver.resolve("api", "application_interface", &context);
+        assert_eq!(result.style, Style::Snake);
+        assert_eq!(result.method, ResolutionMethod::ReplacementStringPreference);
+    }
+
+    #[test]
+    fn test_language_heuristic_ruby() {
+        let resolver = AmbiguityResolver::new();
+        let mut context = AmbiguityContext::default();
+        context.file_path = Some(PathBuf::from("test.rb"));
+        context.line_content = Some("class API".to_string());
+        context.match_position = Some(6); // Position after "class "
+
+        // "API" could be Pascal or SCREAMING_SNAKE
+        let result = resolver.resolve("API", "Interface", &context);
+        assert_eq!(result.style, Style::Pascal);
+        assert_eq!(result.method, ResolutionMethod::LanguageHeuristic);
+    }
+
+    #[test]
+    fn test_apply_resolution() {
+        let _resolver = AmbiguityResolver::new();
+
+        let resolved = ResolvedStyle {
+            style: Style::Camel,
+            confidence: ResolutionConfidence::High,
+            method: ResolutionMethod::ReplacementStringPreference,
+        };
+
+        let result =
+            AmbiguityResolver::apply_resolution("api", "application_programming_interface", &resolved);
+
+        assert_eq!(result, "applicationProgrammingInterface");
+    }
+
+    #[test]
+    fn test_impossible_replacement_style() {
+        let resolver = AmbiguityResolver::new();
+        let context = AmbiguityContext::default();
+
+        // "api" starts with lowercase, can't be PascalCase
+        // But replacement is PascalCase
+        let result = resolver.resolve("api", "ApplicationInterface", &context);
+
+        // Should fall back to a possible style
+        assert!(matches!(result.method, ResolutionMethod::DefaultFallback));
+        assert!(result.style != Style::Pascal); // Can't be Pascal since "api" starts lowercase
+    }
+}

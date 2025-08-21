@@ -32,6 +32,7 @@ pub fn handle_plan(
     only_acronyms: Vec<String>,
     output: OutputFormat,
     quiet: bool,
+    _regex: bool, // TODO: Implement regex mode
 ) -> Result<()> {
     // Error if both preview and JSON output are specified
     if preview.is_some() && preview != Some(Preview::None) && output == OutputFormat::Json {

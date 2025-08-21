@@ -152,7 +152,7 @@ suite('CLI Service Test Suite', () => {
 
       // Test basic search with default case styles
       const results = await service.search('test', {
-        caseStyles: ['original'],
+        caseStyles: ['snake'],
       });
 
       // Results should be a Plan object
@@ -254,18 +254,56 @@ suite('CLI Service Test Suite', () => {
   });
 
   test('Should handle CLI errors correctly', async () => {
-    const mockProcess = new EventEmitter() as any;
-    mockProcess.stdout = new EventEmitter();
-    mockProcess.stderr = new EventEmitter();
+    // Temporarily restore the original stub to modify it
+    sandbox.restore();
+    
+    // Re-create the stub with mocked-cli-path to skip version check
+    sandbox.stub(vscode.workspace, 'getConfiguration').returns({
+      get: (key: string) => {
+        if (key === 'cliPath') {
+          return 'mocked-cli-path';  // Use special value to skip version check
+        }
+        if (key === 'respectGitignore') {
+          return true;
+        }
+        return;
+      },
+    } as any);
 
-    mockSpawn.returns(mockProcess);
+    // Re-create the mock spawn
+    mockSpawn = sandbox.stub();
+    
+    // Create a new CLI service with the updated configuration
+    const testCliService = new RenamifyCliService(mockSpawn as any);
 
-    const searchPromise = cliService.search('oldName', {});
+    // Create two mock processes - one for each attempt (initial + retry)
+    const mockProcess1 = new EventEmitter() as any;
+    mockProcess1.stdout = new EventEmitter();
+    mockProcess1.stderr = new EventEmitter();
+    mockProcess1.kill = sandbox.stub();
 
+    const mockProcess2 = new EventEmitter() as any;
+    mockProcess2.stdout = new EventEmitter();
+    mockProcess2.stderr = new EventEmitter();
+    mockProcess2.kill = sandbox.stub();
+
+    // Return first process on first call, second process on retry
+    mockSpawn.onFirstCall().returns(mockProcess1);
+    mockSpawn.onSecondCall().returns(mockProcess2);
+
+    const searchPromise = testCliService.search('oldName', {});
+
+    // First attempt fails
     setTimeout(() => {
-      mockProcess.stderr.emit('data', 'Error: Something went wrong');
-      mockProcess.emit('close', 1);
+      mockProcess1.stderr.emit('data', 'Error: First attempt failed');
+      mockProcess1.emit('close', 1);
     }, 10);
+
+    // Second attempt (retry) also fails
+    setTimeout(() => {
+      mockProcess2.stderr.emit('data', 'Error: Something went wrong');
+      mockProcess2.emit('close', 1);
+    }, 120); // After 100ms retry delay
 
     try {
       await searchPromise;

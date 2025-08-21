@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::hash::Hash;
 use ts_rs::TS;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub enum Style {
     Snake,
@@ -14,14 +15,14 @@ pub enum Style {
     Train,
     ScreamingTrain, // ALL-CAPS-WITH-HYPHENS
     Dot,
-    Original, // Matches the exact original string regardless of case style
+    Lower, // all lowercase
+    Upper, // ALL UPPERCASE
 }
 
 impl Style {
     /// Returns the default styles used by renamify
     pub fn default_styles() -> Vec<Self> {
         vec![
-            Self::Original,
             Self::Snake,
             Self::Kebab,
             Self::Camel,
@@ -421,11 +422,17 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
             .collect::<Vec<_>>()
             .join("."),
 
-        Style::Original => {
-            // Original style should be handled separately in generate_variant_map
-            // This case should never be reached
-            panic!("Original style should not be processed through to_style function")
-        },
+        Style::Lower => model
+            .tokens
+            .iter()
+            .map(|t| t.text.to_lowercase())
+            .collect::<String>(),
+
+        Style::Upper => model
+            .tokens
+            .iter()
+            .map(|t| t.text.to_uppercase())
+            .collect::<String>(),
     }
 }
 
@@ -451,7 +458,6 @@ pub fn generate_variant_map(
     styles: Option<&[Style]>,
 ) -> BTreeMap<String, String> {
     let default_styles = [
-        Style::Original, // Always include the exact original string
         Style::Snake,
         Style::Kebab,
         Style::Camel,
@@ -467,18 +473,13 @@ pub fn generate_variant_map(
 
     let mut map = BTreeMap::new();
 
-    // Process styles in order to prioritize Original style
+    // Generate variants for each requested style
     for style in styles {
-        if *style == Style::Original {
-            // Add the original pattern directly
-            map.insert(search.to_string(), replace.to_string());
-        } else {
-            let search_variant = to_style(&search_tokens, *style);
-            let replace_variant = to_style(&replace_tokens, *style);
+        let search_variant = to_style(&search_tokens, *style);
+        let replace_variant = to_style(&replace_tokens, *style);
 
-            // Only add if not already in map (Original takes priority)
-            map.entry(search_variant).or_insert(replace_variant);
-        }
+        // Add the variant to the map
+        map.insert(search_variant, replace_variant);
     }
 
     // Removed automatic case variants - they were causing incorrect matches
@@ -739,8 +740,11 @@ mod tests {
         assert_eq!(map.get("OldName"), Some(&"NewName".to_string()));
         assert_eq!(map.get("old-name"), Some(&"new-name".to_string()));
 
-        // Case variants should still be there if different
-        assert_eq!(map.get("OLD_NAME"), Some(&"NEW_NAME".to_string()));
+        // ScreamingSnake is not in the list, so OLD_NAME should not be in the map
+        assert!(
+            !map.contains_key("OLD_NAME"),
+            "Map should not contain 'OLD_NAME' when ScreamingSnake is excluded"
+        );
     }
 
     #[test]

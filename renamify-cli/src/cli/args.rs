@@ -42,7 +42,7 @@ pub struct Cli {
 /// Common style arguments shared across multiple commands
 #[derive(Args, Debug, Clone)]
 pub struct StyleArgs {
-    /// Case styles to exclude from the default set (original, snake, kebab, camel, pascal, screaming-snake, train, screaming-train)
+    /// Case styles to exclude from the default set (snake, kebab, camel, pascal, screaming-snake, train, screaming-train)
     #[arg(
         long,
         value_enum,
@@ -51,7 +51,7 @@ pub struct StyleArgs {
     )]
     pub exclude_styles: Vec<StyleArg>,
 
-    /// Additional case styles to include (title, dot)
+    /// Additional case styles to include (title, dot, lower, upper)
     #[arg(
         long,
         value_enum,
@@ -63,6 +63,10 @@ pub struct StyleArgs {
     /// Use only these case styles (overrides defaults)
     #[arg(long, value_enum, value_delimiter = ',', conflicts_with_all = ["exclude_styles", "include_styles"])]
     pub only_styles: Vec<StyleArg>,
+
+    /// Ignore mixed-case/ambiguous identifiers that don't match standard patterns
+    #[arg(long)]
+    pub ignore_ambiguous: bool,
 }
 
 /// Common path filtering arguments
@@ -91,6 +95,10 @@ pub struct RenameFileArgs {
     /// Don't rename matching directories
     #[arg(long = "no-rename-dirs")]
     pub no_rename_dirs: bool,
+
+    /// Don't rename files or directories (equivalent to --no-rename-files --no-rename-dirs)
+    #[arg(long = "no-rename-paths")]
+    pub no_rename_paths: bool,
 }
 
 /// Common acronym arguments shared across commands
@@ -442,6 +450,65 @@ pub enum Commands {
 
         #[command(flatten)]
         acronyms: AcronymArgs,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
+    },
+
+    /// Simple regex or literal string replacement
+    Replace {
+        /// Search pattern (regex by default, literal with --no-regex)
+        pattern: String,
+
+        /// Replacement string (supports $1, $2 capture groups in regex mode)
+        replacement: String,
+
+        /// Paths to search (files or directories). Defaults to current directory
+        #[arg(help = "Search paths (files or directories)")]
+        paths: Vec<PathBuf>,
+
+        /// Treat pattern as literal string instead of regex
+        #[arg(long = "no-regex")]
+        no_regex: bool,
+
+        #[command(flatten)]
+        filter: FilterArgs,
+
+        #[command(flatten)]
+        rename_files: RenameFileArgs,
+
+        /// Exclude matches on lines matching this regex pattern
+        #[arg(long)]
+        exclude_matching_lines: Option<String>,
+
+        /// Show preview before confirmation prompt
+        #[arg(long, value_enum)]
+        preview: Option<PreviewArg>,
+
+        /// Commit changes to git after applying
+        #[arg(long)]
+        commit: bool,
+
+        /// Acknowledge large changes (>500 files or >100 renames)
+        #[arg(long)]
+        large: bool,
+
+        /// Force apply even with conflicts
+        #[arg(long)]
+        force_with_conflicts: bool,
+
+        /// Show preview only, don't apply changes
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Skip confirmation prompt and apply immediately
+        #[arg(short = 'y', long = "yes")]
+        yes: bool,
 
         /// Output format for machine consumption
         #[arg(long, value_enum, default_value = "summary")]

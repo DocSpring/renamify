@@ -200,6 +200,14 @@ export class RenamifyCliService {
       args.push('--only-styles', options.caseStyles.join(','));
     }
 
+    if (options.ignoreAmbiguous) {
+      args.push('--ignore-ambiguous');
+    }
+
+    if (options.renamePaths === false) {
+      args.push('--no-rename-paths');
+    }
+
     const config = vscode.workspace.getConfiguration('renamify');
     if (!config.get('respectGitignore')) {
       args.push('-u');
@@ -241,6 +249,14 @@ export class RenamifyCliService {
       args.push('--only-styles', options.caseStyles.join(','));
     }
 
+    if (options.ignoreAmbiguous) {
+      args.push('--ignore-ambiguous');
+    }
+
+    if (options.renamePaths === false) {
+      args.push('--no-rename-paths');
+    }
+
     const config = vscode.workspace.getConfiguration('renamify');
     if (!config.get('respectGitignore')) {
       args.push('-u');
@@ -276,6 +292,14 @@ export class RenamifyCliService {
 
     if (options.caseStyles && options.caseStyles.length > 0) {
       args.push('--only-styles', options.caseStyles.join(','));
+    }
+
+    if (options.ignoreAmbiguous) {
+      args.push('--ignore-ambiguous');
+    }
+
+    if (options.renamePaths === false) {
+      args.push('--no-rename-paths');
     }
 
     const config = vscode.workspace.getConfiguration('renamify');

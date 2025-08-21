@@ -56,7 +56,7 @@ fn find_all_identifiers(content: &[u8], styles: &[Style]) -> Vec<(usize, usize, 
         // Only split on dots if dot style is NOT in the selected styles
         // When dot style is selected, keep dot-separated identifiers intact
         let should_split_on_dots = !styles.contains(&Style::Dot);
-        
+
         if identifier.contains('.') && should_split_on_dots {
             // Split on dots for things like obj.method or this.property
             // But NOT when we're specifically looking for dot.case style
@@ -99,195 +99,98 @@ pub fn find_enhanced_matches(
     // First, find exact matches using the existing pattern approach
     // Skip this for Original-only mode, as it will be handled in the second pass with strict boundaries
     // Also skip for single-style mode with single-word search (we want compound matches only in that case)
-    let is_single_word_search = !search.contains('_') 
-        && !search.contains('-') 
-        && !search.contains('.') 
+    let is_single_word_search = !search.contains('_')
+        && !search.contains('-')
+        && !search.contains('.')
         && !search.contains(' ');
-    let is_single_style_search = styles.len() == 1 && styles[0] != Style::Original;
+    let is_single_style_search = styles.len() == 1;
     let skip_exact_match = is_single_word_search && is_single_style_search;
-    
-    if !(styles.len() == 1 && styles[0] == Style::Original) && !skip_exact_match {
+
+    if !skip_exact_match {
         let variants: Vec<String> = variant_map.keys().cloned().collect();
         if let Ok(pattern) = build_pattern(&variants) {
-        for m in pattern.regex.find_iter(content) {
-            if !is_boundary(content, m.start(), m.end()) {
-                continue;
-            }
-
-            let match_text = m.as_bytes();
-            let variant = pattern
-                .identify_variant(match_text)
-                .unwrap_or_default()
-                .to_string();
-
-            #[allow(clippy::naive_bytecount)]
-            let line_number = content[..m.start()].iter().filter(|&&b| b == b'\n').count() + 1;
-
-            let line_start = content[..m.start()]
-                .iter()
-                .rposition(|&b| b == b'\n')
-                .map_or(0, |p| p + 1);
-
-            let column = m.start() - line_start;
-
-            // Mark this range as processed
-            processed_ranges.push((m.start(), m.end()));
-
-            all_matches.push(Match {
-                file: file.to_string(),
-                line: line_number,
-                column,
-                start: m.start(),
-                end: m.end(),
-                variant: variant.clone(),
-                text: String::from_utf8_lossy(match_text).to_string(),
-            });
-        }
-        }
-    }
-
-    // Second, if Original style is enabled, do simple string replacement for remaining instances
-    // Note: Original style does NOT use boundary checking - it matches exact strings anywhere
-    if styles.contains(&Style::Original) {
-        // Find the original exact mapping in the variant map
-        if let Some(replacement) = variant_map.get(search) {
-            let search_pattern = search;
-            let replace_pattern = replacement;
-            let pattern_bytes = search_pattern.as_bytes();
-            let mut search_start = 0;
-
-            while let Some(pos) = content[search_start..]
-                .windows(pattern_bytes.len())
-                .position(|window| window == pattern_bytes)
-            {
-                let actual_pos = search_start + pos;
-                let end_pos = actual_pos + pattern_bytes.len();
-
-                // Skip if this position was already processed
-                let already_processed = processed_ranges.iter().any(|(proc_start, proc_end)| {
-                    // Check for overlap
-                    actual_pos < *proc_end && end_pos > *proc_start
-                });
-
-                // For Original style when it's the ONLY style, require very strict boundaries
-                let passes_boundary = if styles.len() == 1 && styles[0] == Style::Original {
-                    // Very strict boundaries for Original-only: must be truly standalone
-                    // Not preceded by alphanumeric, underscore, hyphen, or dot
-                    let before_ok = actual_pos == 0 || {
-                        let prev = content[actual_pos - 1];
-                        !prev.is_ascii_alphanumeric() && prev != b'_' && prev != b'-' && prev != b'.'
-                    };
-                    // Not followed by alphanumeric, underscore, hyphen, or dot
-                    let after_ok = end_pos >= content.len() || {
-                        let next = content[end_pos];
-                        !next.is_ascii_alphanumeric() && next != b'_' && next != b'-' && next != b'.'
-                    };
-                    before_ok && after_ok
-                } else {
-                    // More permissive boundary check when Original is mixed with other styles
-                    if actual_pos > 0 && content[actual_pos - 1].is_ascii_alphanumeric() {
-                        // If preceded by alphanumeric, skip this match (it's in the middle of a word)
-                        false
-                    } else if end_pos < content.len() {
-                        let next_char = content[end_pos];
-                        // Allow if followed by:
-                        // - Non-alphanumeric and not underscore (normal boundary)
-                        // - Underscore followed by non-alphanumeric (like _{, _[, etc.)
-                        if !next_char.is_ascii_alphanumeric() && next_char != b'_' {
-                            true // Normal word boundary
-                        } else if next_char == b'_' && end_pos + 1 < content.len() {
-                            // Check what comes after the underscore
-                            let after_underscore = content[end_pos + 1];
-                            // Allow if underscore is followed by non-identifier characters
-                            !after_underscore.is_ascii_alphanumeric() && after_underscore != b'_'
-                        } else {
-                            false
-                        }
-                    } else {
-                        true // At end of content
-                    }
-                };
-
-                if !already_processed && passes_boundary {
-                    #[allow(clippy::naive_bytecount)]
-                    let line_number = content[..actual_pos]
-                        .iter()
-                        .filter(|&&b| b == b'\n')
-                        .count()
-                        + 1;
-
-                    let line_start = content[..actual_pos]
-                        .iter()
-                        .rposition(|&b| b == b'\n')
-                        .map_or(0, |p| p + 1);
-
-                    let column = actual_pos - line_start;
-
-                    // Mark this range as processed
-                    processed_ranges.push((actual_pos, end_pos));
-
-                    all_matches.push(Match {
-                        file: file.to_string(),
-                        line: line_number,
-                        column,
-                        start: actual_pos,
-                        end: end_pos,
-                        variant: search_pattern.to_string(),
-                        text: replace_pattern.clone(),
-                    });
+            for m in pattern.regex.find_iter(content) {
+                if !is_boundary(content, m.start(), m.end()) {
+                    continue;
                 }
 
-                search_start = actual_pos + 1; // Move past this match
+                let match_text = m.as_bytes();
+                let variant = pattern
+                    .identify_variant(match_text)
+                    .unwrap_or_default()
+                    .to_string();
+
+                #[allow(clippy::naive_bytecount)]
+                let line_number = content[..m.start()].iter().filter(|&&b| b == b'\n').count() + 1;
+
+                let line_start = content[..m.start()]
+                    .iter()
+                    .rposition(|&b| b == b'\n')
+                    .map_or(0, |p| p + 1);
+
+                let column = m.start() - line_start;
+
+                // Mark this range as processed
+                processed_ranges.push((m.start(), m.end()));
+
+                all_matches.push(Match {
+                    file: file.to_string(),
+                    line: line_number,
+                    column,
+                    start: m.start(),
+                    end: m.end(),
+                    variant: variant.clone(),
+                    text: String::from_utf8_lossy(match_text).to_string(),
+                });
             }
         }
     }
 
     // Third, find all identifiers and check for compound matches
-    // Skip compound matching entirely if only using Original style
-    if !(styles.len() == 1 && styles[0] == Style::Original) {
+    {
         let identifiers = find_all_identifiers(content, styles);
 
         for (start, end, identifier) in identifiers {
-        // Skip if this identifier was already matched exactly or if it's completely contained within a processed range
-        let should_skip = processed_ranges.iter().any(|(proc_start, proc_end)| {
-            // Skip if exact match (same start and end)
-            (*proc_start == start && *proc_end == end) ||
+            // Skip if this identifier was already matched exactly or if it's completely contained within a processed range
+            let should_skip = processed_ranges.iter().any(|(proc_start, proc_end)| {
+                // Skip if exact match (same start and end)
+                (*proc_start == start && *proc_end == end) ||
                 // Skip if identifier is completely contained within processed range
                 (*proc_start <= start && *proc_end >= end)
-        });
-
-        if should_skip {
-            continue;
-        }
-
-        // Check if this identifier contains our pattern as a compound
-        let compound_matches = find_compound_variants(&identifier, search, replace, styles);
-
-        if !compound_matches.is_empty() {
-            // We found a compound match!
-            let compound = &compound_matches[0]; // Take the first match
-
-            #[allow(clippy::naive_bytecount)]
-            let line_number = content[..start].iter().filter(|&&b| b == b'\n').count() + 1;
-
-            let line_start = content[..start]
-                .iter()
-                .rposition(|&b| b == b'\n')
-                .map_or(0, |p| p + 1);
-
-            let column = start - line_start;
-
-            // Add the compound match
-            all_matches.push(Match {
-                file: file.to_string(),
-                line: line_number,
-                column,
-                start,
-                end,
-                variant: compound.full_identifier.clone(),
-                text: compound.replacement.clone(),
             });
-        }
+
+            if should_skip {
+                continue;
+            }
+
+            // Check if this identifier contains our pattern as a compound
+            let compound_matches = find_compound_variants(&identifier, search, replace, styles);
+
+            if !compound_matches.is_empty() {
+                // We found a compound match!
+                let compound = &compound_matches[0]; // Take the first match
+
+                #[allow(clippy::naive_bytecount)]
+                let line_number = content[..start].iter().filter(|&&b| b == b'\n').count() + 1;
+
+                let line_start = content[..start]
+                    .iter()
+                    .rposition(|&b| b == b'\n')
+                    .map_or(0, |p| p + 1);
+
+                let column = start - line_start;
+
+                // Add the compound match
+                all_matches.push(Match {
+                    file: file.to_string(),
+                    line: line_number,
+                    column,
+                    start,
+                    end,
+                    variant: compound.full_identifier.clone(),
+                    text: compound.replacement.clone(),
+                });
+            }
         }
     }
 
@@ -460,7 +363,7 @@ mod tests {
     #[test]
     fn test_find_all_identifiers_dot_style() {
         let content = b"test.case use.case brief.case obj.method";
-        
+
         // When looking for dot style only, keep dot-separated identifiers intact
         let dot_styles = vec![Style::Dot];
         let identifiers = find_all_identifiers(content, &dot_styles);
@@ -469,7 +372,7 @@ mod tests {
         assert!(names.contains(&"use.case".to_string()));
         assert!(names.contains(&"brief.case".to_string()));
         assert!(names.contains(&"obj.method".to_string()));
-        
+
         // When using other styles, split on dots
         let other_styles = vec![Style::Snake, Style::Camel];
         let identifiers = find_all_identifiers(content, &other_styles);

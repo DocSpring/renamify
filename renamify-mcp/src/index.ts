@@ -68,6 +68,11 @@ export function createServer(
           .optional()
           .default(true)
           .describe('Whether to rename directories'),
+        ignoreAmbiguous: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Ignore mixed-case/ambiguous identifiers that don\'t match standard patterns'),
       },
     },
     async (params) => {
@@ -124,6 +129,11 @@ export function createServer(
           .optional()
           .default(true)
           .describe('Whether to include directory renames in search'),
+        ignoreAmbiguous: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Ignore mixed-case/ambiguous identifiers that don\'t match standard patterns'),
       },
     },
     async (params) => {

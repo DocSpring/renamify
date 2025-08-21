@@ -1,0 +1,215 @@
+---
+title: renamify replace
+description: Simple regex or literal string replacement across your codebase
+---
+
+The `replace` command performs straightforward search-and-replace operations using regular expressions or literal strings. Unlike the `rename` command which handles case transformations, `replace` is for mechanical replacements where you control the exact pattern and replacement.
+
+## Usage
+
+```bash
+renamify replace <PATTERN> <REPLACEMENT> [PATHS]... [OPTIONS]
+```
+
+## Arguments
+
+- `<PATTERN>` - Search pattern (regex by default, literal with --no-regex)
+- `<REPLACEMENT>` - Replacement string (supports $1, $2 capture groups in regex mode)
+- `[PATHS]...` - Search paths (files or directories)
+
+## Options
+
+### Pattern Mode
+- `--no-regex` - Treat pattern as literal string instead of regex
+
+### Preview and Confirmation
+- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json, none) [default: table]
+- `--dry-run` - Show preview only, don't apply changes
+- `--yes` / `-y` - Skip confirmation prompt and apply immediately
+- `--large` - Acknowledge large changes (>500 files or >100 renames)
+
+### File Processing
+- `--include <PATTERNS>` - Only process files matching these glob patterns
+- `--exclude <PATTERNS>` - Skip files matching these glob patterns
+- `--no-rename-files` - Don't rename matching files
+- `--no-rename-dirs` - Don't rename matching directories
+- `--no-rename-paths` - Don't rename files or directories
+
+### Line Filtering
+- `--exclude-matching-lines <REGEX>` - Skip matches on lines matching this regex pattern
+
+### Safety and Git
+- `--commit` - Create a git commit after applying changes
+- `--force-with-conflicts` - Force apply even with conflicts
+
+### Unrestricted Mode
+- `-u` - Disable .gitignore files
+- `-uu` - Disable all ignore files, include hidden files
+- `-uuu` - Disable all ignore files, include hidden files, process binary files
+
+## Examples
+
+### Basic Regex Replacement
+
+```bash
+# Update version numbers with regex
+renamify replace 'version: "(\d+)\.(\d+)\.(\d+)"' 'version: "$1.$2.4"'
+
+# Update import paths with capture groups
+renamify replace 'from "\./(.*)"' 'from "@local/$1"'
+
+# Fix method names
+renamify replace 'get([A-Z]\w+)ById' 'find$1ById'
+```
+
+### Literal String Mode
+
+```bash
+# Fix a typo without escaping special characters
+renamify replace --no-regex 'array[index]' 'array.at(index)'
+
+# Update exact strings
+renamify replace --no-regex 'Copyright (c) 2024' 'Copyright (c) 2025'
+
+# Replace configuration values
+renamify replace --no-regex 'localhost:3000' 'api.example.com'
+```
+
+### File Type Specific
+
+```bash
+# Only in JavaScript files
+renamify replace 'console\.log' 'logger.debug' --include "**/*.js"
+
+# Exclude test files
+renamify replace 'OLD_API' 'NEW_API' --exclude "**/*.test.*"
+```
+
+### With Line Filtering
+
+```bash
+# Skip commented lines
+renamify replace 'TODO' 'DONE' --exclude-matching-lines '^\s*//'
+
+# Only in import statements
+renamify replace '"lodash"' '"lodash-es"' --include "**/*.ts" \
+  --exclude-matching-lines '^(?!import)'
+```
+
+### Large Codebase
+
+```bash
+# Acknowledge large changes
+renamify replace 'OldComponent' 'NewComponent' --large
+
+# Dry run first to see scope
+renamify replace 'deprecated' 'legacy' --dry-run
+```
+
+## Regex Features
+
+The replace command uses Rust's regex crate, which supports:
+
+### Capture Groups
+
+```bash
+# Swap parameters
+renamify replace 'fn\((\w+), (\w+)\)' 'fn($2, $1)'
+
+# Extract and reformat
+renamify replace 'user_(\d+)_profile' 'profile/user/$1'
+```
+
+### Character Classes
+
+```bash
+# Match any whitespace
+renamify replace '\s+' ' '
+
+# Match word boundaries
+renamify replace '\btest\b' 'spec'
+```
+
+### Quantifiers
+
+```bash
+# Optional trailing comma
+renamify replace ',?\s*\]' ']'
+
+# One or more digits
+renamify replace 'id:\d+' 'id:REDACTED'
+```
+
+### Lookarounds
+
+```bash
+# Positive lookahead
+renamify replace '(\w+)(?=\()' 'async $1'
+
+# Negative lookbehind
+renamify replace '(?<!\\)n' '\\n'
+```
+
+## Important Notes
+
+### No Case Transformation
+
+Unlike `rename`, the `replace` command does NOT:
+- Transform between case styles (snake_case, camelCase, etc.)
+- Respect token boundaries
+- Handle acronyms specially
+- Generate style variants
+
+If you need these features, use the `rename` command instead.
+
+### File Renaming
+
+When pattern matches in filenames:
+- Files are renamed after content changes
+- Directories are renamed depth-first
+- Collisions are detected and reported
+
+### Escaping in Regex Mode
+
+Common patterns that need escaping:
+- Dots: `\.` for literal dot
+- Parentheses: `\(` and `\)` for literal
+- Square brackets: `\[` and `\]`
+- Special chars: `\$`, `\^`, `\*`, `\+`, `\?`
+
+Use `--no-regex` to avoid escaping entirely.
+
+## Comparison with rename
+
+| Task | Use `rename` | Use `replace` |
+|------|--------------|---------------|
+| Rename a variable across case styles | ✅ | ❌ |
+| Update version numbers | ❌ | ✅ |
+| Fix typos | ❌ | ✅ |
+| Refactor class names | ✅ | ❌ |
+| Update config values | ❌ | ✅ |
+| Change import paths | ❌ | ✅ |
+| Rename functions preserving style | ✅ | ❌ |
+
+## Interactive Flow
+
+Similar to `rename`, the replace command follows this flow:
+
+1. **Scanning**: Searches for pattern matches
+2. **Preview**: Shows planned changes in chosen format
+3. **Confirmation**: Prompts "Apply these changes? [y/N]:"
+4. **Apply**: Makes changes atomically
+5. **Results**: Shows operation ID for undo
+
+## Exit Codes
+
+- `0` - Success
+- `1` - Conflicts detected (use `--force-with-conflicts` to override)
+- `2` - Invalid input or arguments
+- `3` - Internal error or system issue
+
+## See Also
+
+- [rename](./rename) - Case-aware identifier renaming
+- [plan](./plan) - Create a replacement plan without applying
+- [undo](./undo) - Revert the last operation

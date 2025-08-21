@@ -1,0 +1,155 @@
+---
+title: Resolving Case Ambiguity
+description: How Renamify intelligently resolves ambiguous case styles
+---
+
+When renaming identifiers, Renamify sometimes encounters ambiguous cases where the same text could belong to multiple case styles. This guide explains how Renamify intelligently resolves these ambiguities.
+
+## What is Case Ambiguity?
+
+An identifier is ambiguous when it could validly belong to multiple case styles. For example:
+
+- `api` - all lowercase, could be part of snake_case, camelCase, kebab-case, or just lowercase
+- `ID` - all uppercase, could be PascalCase with an acronym, uppercase, or SCREAMING_SNAKE_CASE
+- `.config` - the word "config" after a dot could be various styles
+
+## How Renamify Resolves Ambiguity
+
+Renamify uses a sophisticated multi-level approach to resolve ambiguities, trying each strategy in order until a clear answer is found:
+
+### 1. Language-Specific Conventions
+
+For known programming languages, Renamify applies language-specific heuristics based on syntactic context.
+
+**Ruby Example:**
+```ruby
+# "User" after "class" -> PascalCase expected
+class User
+end
+
+# "API" after "module" -> PascalCase expected
+# (using Active Support Inflections for acronyms)
+module API
+end
+```
+
+**Python Example:**
+```python
+def get_user():  # snake_case expected after "def"
+    pass
+
+class UserModel:  # PascalCase expected after "class"
+    pass
+```
+
+:::note
+These conventions only apply when there's actual ambiguity.
+If an identifier already has a clear case style then it's always preserved.
+:::
+
+### 2. File Context Analysis
+
+First, Renamify analyzes the predominant case style in your file.
+If a file uses mostly camelCase and the match starts with a lowercase letter,
+ambiguous identifiers will be resolved as camelCase.
+
+**Example:**
+```javascript
+// File with predominantly camelCase
+function getUserName() { ... }
+function setUserEmail() { ... }
+const userId = 123;
+
+// If we are replacing "api" here, it's likely camelCase
+const api = new API();
+```
+
+### 3. Context from Other Related Files
+
+If file-wide analysis isn't conclusive, Renamify looks at the preceding word
+(e.g. `const`, `function`, `class`, etc.) and searches for other examples in the codebase
+that have the same file extension. (This operation is performed only when needed and cached.)
+
+### 4. Replacement String Preference
+
+When no methods can provide a clear answer, Renamify defaults to the case style
+of your replacement string.
+
+**Example:**
+```bash
+# Replacing "config" with "settings_data" (snake_case)
+# Found: .config (ambiguous)
+# Result: .settings_data (uses snake_case from replacement)
+
+# Replacing "config" with "settingsData" (camelCase)
+# Found: .config (ambiguous)
+# Result: .settingsData (uses camelCase from replacement)
+```
+
+## Important Constraints
+
+Renamify **never** changes the fundamental character properties of a match:
+
+- If a match starts with lowercase (like `api`), it can only be resolved to styles that also start with lowercase (snake_case, camelCase, kebab-case, lower)
+- If a match starts with uppercase (like `API`), it can only be resolved to styles that also start with uppercase (PascalCase, Train-Case, SCREAMING_SNAKE_CASE)
+
+## Examples
+
+### Example 1: Small Config File
+
+```json
+{
+  "name": "myapp",
+  "version": "1.0.0"
+}
+```
+
+With few identifiers to analyze, Renamify falls back to the replacement string's style:
+- Replacing `myapp` with `new_name` → uses snake_case
+- Replacing `myapp` with `newName` → uses camelCase
+
+### Example 2: Large TypeScript File
+
+```typescript
+class UserController {
+  private userId: string;
+  getUserData() { ... }
+  updateUserProfile() { ... }
+}
+```
+
+The file predominantly uses camelCase, so:
+- `.config` would become `.configData` (camelCase) even if the replacement is `config_data`
+
+### Example 3: Mixed Styles
+
+When a file has no dominant style, Renamify defaults to the replacement string's style for maximum predictability.
+
+## Overriding Ambiguity Resolution
+
+You can always be explicit about the case style you want:
+
+```bash
+# Force specific styles only
+renamify plan "api" "application" --only-styles snake,kebab
+
+# Ignore ambiguous matches entirely
+renamify plan "api" "application" --ignore-ambiguous
+```
+
+## Best Practices
+
+1. **Be consistent** - Files with consistent case styles get better ambiguity resolution
+2. **Use explicit styles** - When in doubt, use `--only-styles` to be explicit
+3. **Preview first** - Always preview changes before applying them
+4. **Test incrementally** - Apply changes to a subset of files first
+
+## Technical Details
+
+The ambiguity resolution system:
+- Only activates for truly ambiguous cases
+- Respects character constraints (uppercase/lowercase)
+- Caches file analysis for performance
+- Can be disabled with `--ignore-ambiguous`
+
+This intelligent system ensures that Renamify makes sensible decisions about 95% of the time, while still giving you full control when needed.

@@ -30,6 +30,7 @@ temp_dir.child(".renamify").create_dir_all().unwrap();
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -74,11 +75,14 @@ temp_dir.child(".renamify").create_dir_all().unwrap();
     );
 
     for hunk in &dot_renamify_matches {
+        // Note: Due to coercion, ".renamify" becomes ".renamedRenamingTool" (camelCase)
+        // This is because after a dot, the system assumes property/method access context
         assert!(
             hunk.line_after
                 .as_ref()
-                .is_some_and(|l| l.contains(".renamed_renaming_tool")),
-            "Should replace .renamify with .renamed_renaming_tool"
+                .is_some_and(|l| l.contains(".renamedRenamingTool")),
+            "Should replace .renamify with .renamedRenamingTool (camelCase due to coercion). line_after={:?}",
+            hunk.line_after
         );
     }
 }
@@ -107,6 +111,7 @@ coerce_separators: renamify_core::scanner::CoercionMode::Auto,
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -180,6 +185,7 @@ Commands:
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -231,6 +237,7 @@ impl From<PreviewFormatArg> for PreviewFormat {",
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

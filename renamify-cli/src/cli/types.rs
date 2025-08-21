@@ -12,7 +12,8 @@ pub enum StyleArg {
     Train,
     ScreamingTrain,
     Dot,
-    Original,
+    Lower,
+    Upper,
 }
 
 impl From<StyleArg> for Style {
@@ -27,7 +28,8 @@ impl From<StyleArg> for Style {
             StyleArg::Train => Self::Train,
             StyleArg::ScreamingTrain => Self::ScreamingTrain,
             StyleArg::Dot => Self::Dot,
-            StyleArg::Original => Self::Original,
+            StyleArg::Lower => Self::Lower,
+            StyleArg::Upper => Self::Upper,
         }
     }
 }

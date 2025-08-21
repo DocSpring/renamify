@@ -12,6 +12,7 @@ mod history;
 mod plan;
 mod redo;
 mod rename;
+mod replace;
 mod status;
 mod undo;
 
@@ -46,6 +47,7 @@ fn main() {
             | Commands::Apply { .. }
             | Commands::DryRun { .. }
             | Commands::Rename { .. }
+            | Commands::Replace { .. }
             | Commands::Search { .. }
     );
 
@@ -94,8 +96,8 @@ fn main() {
                 filter.exclude,
                 filter.respect_gitignore,
                 cli.unrestricted,
-                !rename_files.no_rename_files,
-                !rename_files.no_rename_dirs,
+                !rename_files.no_rename_files && !rename_files.no_rename_paths,
+                !rename_files.no_rename_dirs && !rename_files.no_rename_paths,
                 styles.exclude_styles,
                 styles.include_styles,
                 styles.only_styles,
@@ -112,6 +114,7 @@ fn main() {
                 acronyms.only_acronyms,
                 output,
                 quiet,
+                false, // regex flag - not used in Plan command
             )
         },
 
@@ -147,8 +150,8 @@ fn main() {
                 filter.exclude,
                 filter.respect_gitignore,
                 cli.unrestricted,
-                !rename_files.no_rename_files,
-                !rename_files.no_rename_dirs,
+                !rename_files.no_rename_files && !rename_files.no_rename_paths,
+                !rename_files.no_rename_dirs && !rename_files.no_rename_paths,
                 styles.exclude_styles,
                 styles.include_styles,
                 styles.only_styles,
@@ -165,6 +168,7 @@ fn main() {
                 acronyms.only_acronyms,
                 output,
                 quiet,
+                false, // regex flag - not used in DryRun command
             )
         },
 
@@ -226,6 +230,7 @@ fn main() {
                 acronyms.only_acronyms,
                 output,
                 quiet,
+                false, // regex flag - not used in Search command
             )
         },
 
@@ -290,8 +295,8 @@ fn main() {
                 filter.include,
                 filter.exclude,
                 cli.unrestricted,
-                !rename_files.no_rename_files,
-                !rename_files.no_rename_dirs,
+                !rename_files.no_rename_files && !rename_files.no_rename_paths,
+                !rename_files.no_rename_dirs && !rename_files.no_rename_paths,
                 styles.exclude_styles,
                 styles.include_styles,
                 styles.only_styles,
@@ -310,6 +315,49 @@ fn main() {
                 acronyms.exclude_acronyms,
                 acronyms.only_acronyms,
                 cli.yes,
+                use_color,
+                output,
+                quiet,
+            )
+        },
+
+        Commands::Replace {
+            pattern,
+            replacement,
+            paths,
+            no_regex,
+            filter,
+            rename_files,
+            exclude_matching_lines,
+            preview,
+            commit,
+            large,
+            force_with_conflicts,
+            dry_run,
+            yes,
+            output,
+            quiet,
+        } => {
+            // Use preview format from CLI arg or config default
+            let format = preview.or_else(|| PreviewArg::from_str(&config.defaults.preview_format));
+
+            replace::handle_replace(
+                &pattern,
+                &replacement,
+                paths,
+                no_regex,
+                filter.include,
+                filter.exclude,
+                cli.unrestricted,
+                !rename_files.no_rename_files && !rename_files.no_rename_paths,
+                !rename_files.no_rename_dirs && !rename_files.no_rename_paths,
+                exclude_matching_lines,
+                format,
+                commit,
+                large,
+                force_with_conflicts,
+                dry_run,
+                yes || cli.yes,
                 use_color,
                 output,
                 quiet,

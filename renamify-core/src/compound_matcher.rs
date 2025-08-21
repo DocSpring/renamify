@@ -49,10 +49,13 @@ pub fn find_compound_variants(
     let identifier_tokens = parse_to_tokens(identifier);
     let old_tokens = parse_to_tokens(old_pattern);
     let new_tokens = parse_to_tokens(new_pattern);
-    
+
     // Debug: Print token info
     if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-        println!("identifier_tokens for '{}': {:?}", identifier, identifier_tokens);
+        println!(
+            "identifier_tokens for '{}': {:?}",
+            identifier, identifier_tokens
+        );
         println!("old_tokens for '{}': {:?}", old_pattern, old_tokens);
         println!("new_tokens for '{}': {:?}", new_pattern, new_tokens);
     }
@@ -80,41 +83,29 @@ pub fn find_compound_variants(
     // Guard against empty pattern_len or empty replacement_tokens
     if pattern_len == 0 || replacement_tokens.is_empty() {
         if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-            println!("Returning early: pattern_len={}, replacement_tokens.len()={}", 
-                     pattern_len, replacement_tokens.len());
+            println!(
+                "Returning early: pattern_len={}, replacement_tokens.len()={}",
+                pattern_len,
+                replacement_tokens.len()
+            );
         }
         return matches;
     }
-    
+
     // When searching (replacement is empty), only do compound matching for mixed-case identifiers
     if new_tokens.tokens.is_empty() {
         // Check if this is a single-word search (no separators)
-        let is_single_word = !old_pattern.contains('_') 
-            && !old_pattern.contains('-') 
-            && !old_pattern.contains('.') 
+        let is_single_word = !old_pattern.contains('_')
+            && !old_pattern.contains('-')
+            && !old_pattern.contains('.')
             && !old_pattern.contains(' ');
-            
-        if is_single_word && styles.contains(&Style::Original) {
-            // Only do compound matching for identifiers that have no clear style (mixed-case)
-            if let Some(detected_style) = crate::case_model::detect_style(identifier) {
-                // If the identifier has a clear style that's NOT in the selected styles,
-                // then we should NOT match it (unless it's Original)
-                if detected_style != Style::Original && !styles.contains(&detected_style) {
-                    return matches; // Don't match this identifier
-                }
-            }
-            
-            // For mixed-case or undetectable styles, do the original fallback matching
-            // This preserves the behavior for cases like foo.case-mixedWord
-            if identifier.contains(&old_pattern) {
-                matches.push(CompoundMatch {
-                    full_identifier: identifier.to_string(),
-                    replacement: identifier.to_string(),
-                    style: Style::Original,
-                    pattern_start: 0,
-                    pattern_end: 0,
-                });
-            }
+
+        // For single word searches, skip compound matching
+        // (This used to handle Original style fallback for mixed-case identifiers)
+        if is_single_word {
+            // TODO: Handle ignore_ambiguous flag here
+            // For now, skip compound matching for single word searches
+            return matches;
         }
         return matches;
     }
@@ -210,196 +201,30 @@ pub fn find_compound_variants(
                     pattern_start: 0, // Not meaningful when we have multiple replacements
                     pattern_end: 0,   // Not meaningful when we have multiple replacements
                 });
-            } else if styles.contains(&Style::Original) {
-                // Debug: style not in target styles but Original is enabled
-                if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-                    println!("  Style {:?} not in target styles for '{}', but Original style is enabled - using simple replacement", style, identifier);
-                }
-
-                // Style detected but not in target styles - however, Original style is enabled
-                // so we do a simple string replacement
-                let replacement = identifier.replace(old_pattern, new_pattern);
-
-                matches.push(CompoundMatch {
-                    full_identifier: identifier.to_string(),
-                    replacement,
-                    style: Style::Original,
-                    pattern_start: 0,
-                    pattern_end: 0,
-                });
             } else {
-                // Debug: style not in target styles and Original not enabled
+                // Debug: style not in target styles
                 if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-                    println!("  Style {:?} not in target styles and Original not enabled for '{}', skipping", style, identifier);
+                    println!(
+                        "  Style {:?} not in target styles for '{}', skipping",
+                        style, identifier
+                    );
                 }
 
-                // Style detected but not in target styles and Original style not enabled - skip this match
+                // Style detected but not in target styles - skip this match
                 // This ensures that compound matching respects the target styles
             }
-        } else if styles.contains(&Style::Original) {
-            // Debug: no style detected but Original is enabled
-            if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-                println!("  No style detected for '{}', but Original style is enabled - using simple replacement", identifier);
-            }
-
-            // No style detected (mixed or unknown style), but Original style is enabled
-            // For hyphenated identifiers where we've already replaced tokens, rebuild with original separators
-            let replacement = if identifier.contains('-') {
-                // Rebuild the identifier from the replacement tokens, preserving hyphen positions
-                let original_parts: Vec<&str> = identifier.split('-').collect();
-                let original_first_part = original_parts[0];
-
-                // Check if the first part (before hyphen) was what we replaced
-                let first_part_tokens = parse_to_tokens(original_first_part);
-                if first_part_tokens.tokens.len() == old_tokens.tokens.len()
-                    && tokens_match(&first_part_tokens.tokens, &old_tokens.tokens)
-                {
-                    // The first part matches our pattern, rebuild it from replacement tokens
-                    let mut result_parts = Vec::new();
-
-                    // Rebuild the first part in its original style
-                    #[allow(clippy::branches_sharing_code)]
-                    if let Some(style) = crate::case_model::detect_style(original_first_part) {
-                        let replacement_model =
-                            TokenModel::new(replacement_tokens[..new_tokens.tokens.len()].to_vec());
-                        result_parts.push(to_style(&replacement_model, style));
-                    } else {
-                        // If no style detected, check the case of the original
-                        #[allow(clippy::branches_sharing_code)]
-                        let replacement_model =
-                            TokenModel::new(replacement_tokens[..new_tokens.tokens.len()].to_vec());
-                        let style = if original_first_part
-                            .chars()
-                            .next()
-                            .is_some_and(char::is_uppercase)
-                        {
-                            Style::Pascal
-                        } else {
-                            Style::Snake // Default to snake_case for all-lowercase
-                        };
-                        result_parts.push(to_style(&replacement_model, style));
-                    }
-
-                    // Add the remaining parts unchanged
-                    for part in &original_parts[1..] {
-                        result_parts.push((*part).to_string());
-                    }
-
-                    result_parts.join("-")
-                } else {
-                    // Fallback to the old hyphenated replacement logic
-                    replace_in_hyphenated(identifier, old_pattern, new_pattern)
-                }
-            } else {
-                // Simple case-insensitive replacement for other patterns
-                case_insensitive_replace(identifier, old_pattern, new_pattern)
-            };
-
-            matches.push(CompoundMatch {
-                full_identifier: identifier.to_string(),
-                replacement,
-                style: Style::Original,
-                pattern_start: 0,
-                pattern_end: 0,
-            });
         } else {
-            // Debug: no style detected and Original not enabled
+            // Debug: no style detected
             if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-                println!(
-                    "  No style detected and Original not enabled for '{}', skipping",
-                    identifier
-                );
+                println!("  No style detected for '{}', skipping", identifier);
             }
 
-            // No style detected and Original style not enabled - skip this match
+            // No style detected - skip this match
+            // TODO: Handle ignore_ambiguous flag here
         }
     }
 
     matches
-}
-
-/// Replace pattern in a hyphenated identifier, handling each part independently
-fn replace_in_hyphenated(identifier: &str, old_pattern: &str, new_pattern: &str) -> String {
-    let parts: Vec<&str> = identifier.split('-').collect();
-    let mut replaced_parts = Vec::new();
-
-    for part in parts {
-        // Check if this part matches the pattern exactly (case-insensitive)
-        if part.to_lowercase() == old_pattern.to_lowercase() {
-            // Exact match - detect the style of this part and apply appropriate replacement
-            if part.chars().all(|c| c.is_ascii_uppercase()) {
-                // All caps part - use SCREAMING_SNAKE style regardless of separators
-                let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
-                let replacement = crate::case_model::to_style(
-                    &new_tokens,
-                    crate::case_model::Style::ScreamingSnake,
-                );
-                replaced_parts.push(replacement);
-            } else if let Some(style) = crate::case_model::detect_style(part) {
-                // Convert new pattern to match the style of this part
-                let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
-                let replacement = crate::case_model::to_style(&new_tokens, style);
-                replaced_parts.push(replacement);
-            } else if part.chars().next().is_some_and(char::is_uppercase) {
-                // Part starts with uppercase, likely Pascal case
-                // Convert new pattern to Pascal case
-                let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
-                let replacement = crate::case_model::to_style(&new_tokens, Style::Pascal);
-                replaced_parts.push(replacement);
-            } else {
-                // Default: keep the same case style as the original
-                replaced_parts.push(new_pattern.to_string());
-            }
-        } else if part.to_lowercase().contains(&old_pattern.to_lowercase()) {
-            // Part contains the pattern but not an exact match
-            // Do a case-preserving replacement within this part
-            replaced_parts.push(case_insensitive_replace(part, old_pattern, new_pattern));
-        } else {
-            // Part doesn't contain the pattern at all, keep it as-is
-            replaced_parts.push(part.to_string());
-        }
-    }
-
-    replaced_parts.join("-")
-}
-
-/// Case-insensitive replacement for non-hyphenated patterns
-fn case_insensitive_replace(identifier: &str, old_pattern: &str, new_pattern: &str) -> String {
-    // Try to detect if the identifier contains the pattern with different casing
-    let lower_id = identifier.to_lowercase();
-    let lower_pattern = old_pattern.to_lowercase();
-
-    if let Some(pos) = lower_id.find(&lower_pattern) {
-        // Found the pattern, extract the actual cased version
-        let actual_pattern = &identifier[pos..pos + old_pattern.len()];
-
-        // Detect the style of the actual pattern and apply to new pattern
-        if let Some(style) = crate::case_model::detect_style(actual_pattern) {
-            let new_tokens = crate::case_model::parse_to_tokens(new_pattern);
-            let replacement = crate::case_model::to_style(&new_tokens, style);
-            identifier.replace(actual_pattern, &replacement)
-        } else {
-            // No clear style, just do a simple replacement preserving the case of the first letter
-            let replacement = if actual_pattern
-                .chars()
-                .next()
-                .is_some_and(char::is_uppercase)
-            {
-                // Capitalize the new pattern
-                let mut chars = new_pattern.chars();
-                match chars.next() {
-                    None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
-            } else {
-                new_pattern.to_string()
-            };
-            identifier.replace(actual_pattern, &replacement)
-        }
-    } else {
-        // Pattern not found, return as-is
-        identifier.to_string()
-    }
 }
 
 /// Generate all compound variants for a given pattern

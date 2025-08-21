@@ -46,7 +46,7 @@ See [MCP Server documentation](https://docspring.github.io/renamify/mcp/overview
 
 ## Features
 
-- **Smart Case Conversion**: Automatically detects and converts between different case styles (snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Train-Case, Title Case, dot.case)
+- **Smart Case Conversion**: Automatically detects and converts between different case styles (snake_case, kebab-case, camelCase, PascalCase, SCREAMING_SNAKE_CASE, Train-Case, Title Case, dot.case, lowercase, UPPERCASE)
 - **Safe by default**: Plan → Review → Apply workflow prevents accidents
 - **Built-in undo/redo**: Full history tracking separate from git. No need to git stash or commit with `--no-verify` before renaming.
 - **File and directory renaming**: Rename everything in one atomic operation
@@ -73,6 +73,12 @@ renamify plan myProject betterName --preview diff
 # Exclude matches in comments and TODO lines
 renamify plan old_name new_name --exclude-matching-lines '^//'
 renamify plan old_name new_name --exclude-matching-lines '(TODO|FIXME)'
+
+# Skip renaming files and directories
+renamify plan old_name new_name --no-rename-paths
+
+# Ignore ambiguous/mixed-case identifiers
+renamify plan old_name new_name --ignore-ambiguous
 ```
 
 ## Demo
@@ -138,6 +144,7 @@ The MCP server and VS Code extension depend on the CLI and must maintain version
 - **Patch version**: Independent, can be any value
 
 #### Examples
+
 - CLI `2.3.1` → MCP `2.0.5` ✅ (major matches, minor 0 ≤ 3)
 - CLI `2.3.1` → MCP `2.3.9` ✅ (major matches, minor 3 ≤ 3)
 - CLI `2.3.1` → MCP `2.4.0` ❌ (minor 4 > 3, might use unavailable features)
@@ -146,6 +153,7 @@ The MCP server and VS Code extension depend on the CLI and must maintain version
 ### Version Check
 
 The CLI provides version information via:
+
 ```bash
 renamify version --output json
 # {"name":"renamify","version":"0.1.0"}
@@ -217,16 +225,10 @@ cargo clippy --all-targets --all-features
 git commit  # lefthook will run checks pre-commit
 ```
 
-## Help Wanted
-
-- **Package Managers**: Help us get Renamify into Homebrew, AUR, Scoop, Chocolatey, etc.
-- **Language-Specific Features**: Contribute language-aware renaming (imports, modules, namespaces)
-- **Documentation**: Help improve our docs, add more examples, fix any inaccuracies
-- **Bug Reports**: Found an issue? Please [report it](https://github.com/DocSpring/renamify/issues)!
-
 ### Contributing
 
-- Open an issue if you find a bug or have a feature request
+- **Documentation**: Help improve our docs, add more examples, fix any inaccuracies
+- **Bug Reports**: Found an issue? Please [report it](https://github.com/DocSpring/renamify/issues)!
 - PRs welcome! All checks must pass (formatting, linting, tests)
 - We use [lefthook](https://github.com/evilmartians/lefthook) for git hooks
 

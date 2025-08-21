@@ -47,17 +47,14 @@
       <div class="input-group">
         <div class="case-styles-header" id="caseStylesHeader">
           <span class="expand-icon codicon codicon-chevron-down"></span>
-          <label for="caseStyles">Case styles (<span id="checkedCount">8</span>)</label>
+          <label for="caseStyles">Case styles (<span id="checkedCount">7</span>)</label>
           <div class="case-styles-links">
-            <a href="#" id="selectOnlyOriginal">Only Original</a>
-            <span class="separator">|</span>
             <a href="#" id="selectDefault">Default</a>
             <span class="separator">|</span>
             <a href="#" id="selectAll">All</a>
           </div>
         </div>
         <div class="case-styles-container" id="caseStylesContainer">
-          <label class="checkbox-label"> <input type="checkbox" value="original" checked /> Original </label>
           <label class="checkbox-label"> <input type="checkbox" value="snake" checked /> snake_case </label>
           <label class="checkbox-label"> <input type="checkbox" value="kebab" checked /> kebab-case </label>
           <label class="checkbox-label"> <input type="checkbox" value="camel" checked /> camelCase </label>
@@ -73,7 +70,20 @@
           </label>
           <label class="checkbox-label"> <input type="checkbox" value="title" /> Title Case </label>
           <label class="checkbox-label"> <input type="checkbox" value="dot" /> dot.case </label>
+          <label class="checkbox-label"> <input type="checkbox" value="lower" /> lowercase </label>
+          <label class="checkbox-label"> <input type="checkbox" value="upper" /> UPPERCASE </label>
         </div>
+      </div>
+
+      <div class="input-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="renamePathsCheckbox" checked />
+          Rename files and directories
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="ignoreAmbiguousCheckbox" />
+          Ignore ambiguous identifiers
+        </label>
       </div>
 
       <div class="button-group">

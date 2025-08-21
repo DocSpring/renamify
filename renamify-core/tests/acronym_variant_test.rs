@@ -29,6 +29,7 @@ fn test_acronym_affects_case_variants() {
         include_acronyms: vec!["B2B".to_string()], // Add B2B as acronym
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -65,6 +66,7 @@ fn test_acronym_affects_case_variants() {
         include_acronyms: vec![], // Don't add B2B
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -124,6 +126,7 @@ fn test_custom_acronym_generation() {
         include_acronyms: vec!["K8S".to_string()], // Add K8S as acronym
         exclude_acronyms: vec![],
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -188,6 +191,7 @@ fn test_excluded_acronym_variants() {
         include_acronyms: vec![],
         exclude_acronyms: vec!["ID".to_string()], // Exclude ID
         only_acronyms: vec![],
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -243,6 +247,7 @@ fn test_only_acronyms_list() {
         include_acronyms: vec![],
         exclude_acronyms: vec![],
         only_acronyms: vec!["XML".to_string()], // Only XML
+        ignore_ambiguous: false,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

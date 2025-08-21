@@ -41,8 +41,8 @@ export default defineConfig({
             { label: "Self-Hosting Demo", slug: "self-hosting-demo" },
             { label: "Quick Start", slug: "quick-start" },
             {
-              label: "Why Not Search and Replace?",
-              slug: "why-not-search-and-replace",
+              label: "Rename vs. Replace",
+              slug: "rename-vs-replace",
             },
             { label: "FAQ", link: "/#frequently-asked-questions" },
           ],
@@ -71,6 +71,7 @@ export default defineConfig({
             },
             { label: "Safety Features", slug: "features/safety" },
             { label: "Filtering and Ignore Rules", slug: "features/filtering" },
+            { label: "Resolving Case Ambiguity", slug: "features/ambiguity-resolution" },
           ],
         },
         {
@@ -79,6 +80,7 @@ export default defineConfig({
             { label: "init", slug: "commands/init" },
             { label: "search", slug: "commands/search" },
             { label: "rename", slug: "commands/rename" },
+            { label: "replace", slug: "commands/replace" },
             { label: "plan", slug: "commands/plan" },
             { label: "apply", slug: "commands/apply" },
             { label: "dry-run", slug: "commands/dry-run" },
