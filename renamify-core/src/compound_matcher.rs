@@ -49,6 +49,13 @@ pub fn find_compound_variants(
     let identifier_tokens = parse_to_tokens(identifier);
     let old_tokens = parse_to_tokens(old_pattern);
     let new_tokens = parse_to_tokens(new_pattern);
+    
+    // Debug: Print token info
+    if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
+        println!("identifier_tokens for '{}': {:?}", identifier, identifier_tokens);
+        println!("old_tokens for '{}': {:?}", old_pattern, old_tokens);
+        println!("new_tokens for '{}': {:?}", new_pattern, new_tokens);
+    }
 
     // If the identifier IS the pattern (exact match), skip compound logic
     if identifier_tokens.tokens.len() == old_tokens.tokens.len()
@@ -70,7 +77,58 @@ pub fn find_compound_variants(
     let mut replacements_made = 0;
     let mut pos = 0;
 
+    // Guard against empty pattern_len or empty replacement_tokens
+    if pattern_len == 0 || replacement_tokens.is_empty() {
+        if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
+            println!("Returning early: pattern_len={}, replacement_tokens.len()={}", 
+                     pattern_len, replacement_tokens.len());
+        }
+        return matches;
+    }
+    
+    // When searching (replacement is empty), only do compound matching for mixed-case identifiers
+    if new_tokens.tokens.is_empty() {
+        // Check if this is a single-word search (no separators)
+        let is_single_word = !old_pattern.contains('_') 
+            && !old_pattern.contains('-') 
+            && !old_pattern.contains('.') 
+            && !old_pattern.contains(' ');
+            
+        if is_single_word && styles.contains(&Style::Original) {
+            // Only do compound matching for identifiers that have no clear style (mixed-case)
+            if let Some(detected_style) = crate::case_model::detect_style(identifier) {
+                // If the identifier has a clear style that's NOT in the selected styles,
+                // then we should NOT match it (unless it's Original)
+                if detected_style != Style::Original && !styles.contains(&detected_style) {
+                    return matches; // Don't match this identifier
+                }
+            }
+            
+            // For mixed-case or undetectable styles, do the original fallback matching
+            // This preserves the behavior for cases like foo.case-mixedWord
+            if identifier.contains(&old_pattern) {
+                matches.push(CompoundMatch {
+                    full_identifier: identifier.to_string(),
+                    replacement: identifier.to_string(),
+                    style: Style::Original,
+                    pattern_start: 0,
+                    pattern_end: 0,
+                });
+            }
+        }
+        return matches;
+    }
+
+    // Additional safety check
+    if pattern_len > replacement_tokens.len() {
+        return matches;
+    }
+
     while pos <= replacement_tokens.len().saturating_sub(pattern_len) {
+        // Extra bounds check for safety
+        if pos + pattern_len > replacement_tokens.len() {
+            break;
+        }
         let window = &replacement_tokens[pos..pos + pattern_len];
 
         if tokens_match(window, &old_tokens.tokens) {

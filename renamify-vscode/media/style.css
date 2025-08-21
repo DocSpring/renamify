@@ -386,6 +386,22 @@ button:disabled {
   color: var(--vscode-descriptionForeground);
 }
 
+.error-state {
+  padding: 20px;
+  text-align: center;
+  color: var(--vscode-errorForeground);
+}
+
+.error-state .error-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.error-state .error-message {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .loading {
   padding: 20px;
   text-align: center;

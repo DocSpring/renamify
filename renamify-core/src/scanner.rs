@@ -294,14 +294,25 @@ pub fn scan_repository_multi(
                 eprintln!("SCANNER: options.styles = {:?}", options.styles);
             }
 
-            let mut file_matches = crate::compound_scanner::find_enhanced_matches(
-                &content,
-                path.to_str().unwrap_or(""),
-                search,
-                replace,
-                &variant_map,
-                actual_styles,
-            );
+            let mut file_matches = if replace.is_empty() {
+                // For search operations, use simple pattern matching without compound matches
+                let variants: Vec<String> = variant_map.keys().cloned().collect();
+                if let Ok(pattern) = build_pattern(&variants) {
+                    crate::pattern::find_matches(&pattern, &content, path.to_str().unwrap_or(""))
+                } else {
+                    Vec::new()
+                }
+            } else {
+                // For replace operations, use full compound matching
+                crate::compound_scanner::find_enhanced_matches(
+                    &content,
+                    path.to_str().unwrap_or(""),
+                    search,
+                    replace,
+                    &variant_map,
+                    actual_styles,
+                )
+            };
 
             if !file_matches.is_empty() {
                 // Sort by position to maintain order
@@ -754,17 +765,8 @@ fn generate_variant_map_with_acronyms(
         }
     }
 
-    // Add case variants (lowercase and uppercase) but only if not already in map
-    let lower_search = search.to_lowercase();
-    let upper_search = search.to_uppercase();
-
-    if lower_search != search && !map.contains_key(&lower_search) {
-        map.insert(lower_search, replace.to_lowercase());
-    }
-
-    if upper_search != search && !map.contains_key(&upper_search) {
-        map.insert(upper_search, replace.to_uppercase());
-    }
+    // Removed automatic case variants - they were causing incorrect matches
+    // All variants should come from the explicit style system only
 
     map
 }

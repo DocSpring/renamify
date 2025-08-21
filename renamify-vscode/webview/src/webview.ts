@@ -21,6 +21,10 @@ type SearchResult = {
 
   let currentResults: SearchResult[] = [];
   const expandedFiles = new Set<number>();
+  
+  // Search state tracking
+  let currentSearchId = 0;
+  let isSearching = false;
 
   // DOM elements
   const searchInput = document.getElementById('search') as HTMLInputElement;
@@ -91,8 +95,12 @@ type SearchResult = {
   });
 
   // Quick selection links
-  const selectOnlyOriginal = document.getElementById('selectOnlyOriginal') as HTMLAnchorElement;
-  const selectDefault = document.getElementById('selectDefault') as HTMLAnchorElement;
+  const selectOnlyOriginal = document.getElementById(
+    'selectOnlyOriginal'
+  ) as HTMLAnchorElement;
+  const selectDefault = document.getElementById(
+    'selectDefault'
+  ) as HTMLAnchorElement;
   const selectAll = document.getElementById('selectAll') as HTMLAnchorElement;
 
   selectOnlyOriginal?.addEventListener('click', (e) => {
@@ -110,7 +118,16 @@ type SearchResult = {
 
   selectDefault?.addEventListener('click', (e) => {
     e.preventDefault();
-    const defaultStyles = ['original', 'snake', 'kebab', 'camel', 'pascal', 'screaming-snake', 'train', 'screaming-train'];
+    const defaultStyles = [
+      'original',
+      'snake',
+      'kebab',
+      'camel',
+      'pascal',
+      'screaming-snake',
+      'train',
+      'screaming-train',
+    ];
     const checkboxes = document.querySelectorAll(
       '.case-styles-container input[type="checkbox"]'
     ) as NodeListOf<HTMLInputElement>;
@@ -187,6 +204,7 @@ type SearchResult = {
     // Clear results if search is empty
     if (!searchTerm) {
       clearResults();
+      isSearching = false;
       return;
     }
 
@@ -194,10 +212,18 @@ type SearchResult = {
     const selectedStyles = getSelectedCaseStyles();
     if (selectedStyles.length === 0) {
       clearResults();
-      resultsTree.innerHTML = '<div class="empty-state">Please select at least one case style</div>';
+      resultsTree.innerHTML =
+        '<div class="empty-state">Please select at least one case style</div>';
+      isSearching = false;
       return;
     }
 
+    // Increment search ID and track this search
+    const searchId = ++currentSearchId;
+    isSearching = true;
+
+    // Clear previous results and summary immediately when starting new search
+    clearResults();
     showLoading();
 
     // Always use search mode (backend will decide to use plan with --dry-run if replace is provided)
@@ -209,6 +235,7 @@ type SearchResult = {
       exclude: excludeInput.value,
       excludeMatchingLines: excludeLinesInput.value,
       caseStyles: selectedStyles,
+      searchId: searchId, // Include search ID to match responses
     });
   }
 
@@ -300,6 +327,29 @@ type SearchResult = {
   function showLoading() {
     resultsTree.innerHTML =
       '<div class="loading"><div class="spinner"></div><p>Searching...</p></div>';
+  }
+
+  function showError(errorMessage: string) {
+    currentResults = [];
+    expandedFiles.clear();
+    resultsSummary.textContent = '';
+    openInEditorLink.style.display = 'none';
+    
+    resultsTree.innerHTML = `<div class="error-state">
+      <div class="error-icon">⚠️</div>
+      <div class="error-message">
+        <strong>Search failed:</strong><br>
+        ${escapeHtml(errorMessage)}
+      </div>
+    </div>`;
+    
+    updateExpandCollapseButtons();
+  }
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   function renderResults(results: SearchResult[], paths: Rename[] = []) {
@@ -671,10 +721,20 @@ type SearchResult = {
 
     switch (message.type) {
       case 'searchResults':
-        renderResults(message.results, message.paths);
+        if (message.searchId === currentSearchId) {
+          renderResults(message.results, message.paths);
+          isSearching = false;
+        }
+        break;
+      case 'searchError':
+        if (message.searchId === currentSearchId) {
+          showError(message.error);
+          isSearching = false;
+        }
         break;
       case 'clearResults':
         clearResults();
+        isSearching = false;
         break;
       case 'planCreated':
         // Update UI to show plan was created
@@ -682,6 +742,7 @@ type SearchResult = {
       case 'changesApplied':
         // Clear results after successful apply
         clearResults();
+        isSearching = false;
         break;
       default:
         console.warn(`Unknown message type: ${message.type}`);

@@ -481,17 +481,8 @@ pub fn generate_variant_map(
         }
     }
 
-    // Add case variants (lowercase and uppercase) but only if not already in map
-    let lower_search = search.to_lowercase();
-    let upper_search = search.to_uppercase();
-
-    if lower_search != search && !map.contains_key(&lower_search) {
-        map.insert(lower_search, replace.to_lowercase());
-    }
-
-    if upper_search != search && !map.contains_key(&upper_search) {
-        map.insert(upper_search, replace.to_uppercase());
-    }
+    // Removed automatic case variants - they were causing incorrect matches
+    // All variants should come from the explicit style system only
 
     map
 }

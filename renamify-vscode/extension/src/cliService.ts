@@ -11,11 +11,37 @@ type VersionInfo = {
   version: string;
 };
 
+class CommandMutex {
+  private currentProcess: any = null;
+
+  async acquire(): Promise<void> {
+    // Kill any existing process immediately
+    this.killCurrentProcess();
+    // No waiting, no queuing - just proceed
+  }
+
+  release(): void {
+    this.currentProcess = null;
+  }
+
+  setCurrentProcess(process: any): void {
+    this.currentProcess = process;
+  }
+
+  killCurrentProcess(): void {
+    if (this.currentProcess) {
+      this.currentProcess.kill('SIGKILL');
+      this.currentProcess = null;
+    }
+  }
+}
+
 export class RenamifyCliService {
   private readonly cliPath?: string;
   private readonly spawnFn: typeof spawn;
   private readonly isAvailable: boolean;
   private readonly extensionVersion: string;
+  private readonly commandMutex = new CommandMutex();
 
   constructor(spawnFn?: typeof spawn) {
     this.spawnFn = spawnFn || spawn;
@@ -315,6 +341,10 @@ export class RenamifyCliService {
     return this.cliPath;
   }
 
+  public killCurrentCommand(): void {
+    this.commandMutex.killCurrentProcess();
+  }
+
   private async runCli(args: string[]): Promise<string> {
     if (!(this.isAvailable && this.cliPath)) {
       throw new Error(
@@ -322,20 +352,44 @@ export class RenamifyCliService {
       );
     }
 
-    // Check version compatibility before every command (except for version command itself)
-    // Skip version check when using mock spawn (in tests)
-    if (!args.includes('version') && this.cliPath !== 'mocked-cli-path') {
-      await this.checkVersionCompatibility();
-    }
+    // Acquire mutex to ensure only one command runs at a time
+    await this.commandMutex.acquire();
+    
+    try {
+      // Check version compatibility before every command (except for version command itself)
+      // Skip version check when using mock spawn (in tests)
+      if (!args.includes('version') && this.cliPath !== 'mocked-cli-path') {
+        await this.checkVersionCompatibility();
+      }
 
+      // Try the command, with one retry after 100ms if it fails
+      try {
+        return await this.executeCliCommand(args);
+      } catch (error) {
+        // Wait 100ms and retry once
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return await this.executeCliCommand(args);
+      }
+    } finally {
+      this.commandMutex.release();
+    }
+  }
+
+  private executeCliCommand(args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       const workspaceRoot =
         vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
+
+      // Log the full command for debugging
+      console.log(`[Renamify] Executing: ${this.cliPath} ${args.join(' ')}`);
 
       const proc = this.spawnFn(this.cliPath as string, args, {
         cwd: workspaceRoot,
         env: process.env,
       });
+
+      // Track this process so it can be killed if needed
+      this.commandMutex.setCurrentProcess(proc);
 
       let stdout = '';
       let stderr = '';
@@ -351,6 +405,9 @@ export class RenamifyCliService {
       proc.on('close', (code: number | null) => {
         if (code === 0) {
           resolve(stdout);
+        } else if (code === null) {
+          // Process was killed
+          reject(new Error('Command was cancelled'));
         } else {
           const errorMessage = stderr.trim() || `CLI exited with code ${code}`;
           reject(new Error(errorMessage));

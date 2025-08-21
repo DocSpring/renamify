@@ -31,7 +31,11 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   }
 
   private _loadTemplates() {
-    const templatesPath = path.join(this._extensionUri.fsPath, 'extension', 'templates');
+    const templatesPath = path.join(
+      this._extensionUri.fsPath,
+      'extension',
+      'templates'
+    );
 
     // Load and compile webview template
     const webviewTemplatePath = path.join(templatesPath, 'webview.hbs');
@@ -117,6 +121,9 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handleSearch(data: SearchMessage) {
+    // Kill any running command before starting a new search
+    this._cliService.killCurrentCommand();
+    
     try {
       let results: SearchResult[];
       let paths: Rename[] = [];
@@ -183,14 +190,30 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         type: 'searchResults',
         results,
         paths,
+        searchId: (data as any).searchId,
       });
     } catch (error) {
-      // Don't show error messages for debounced searches
-      console.error('Search failed:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Search failed:', errorMessage);
+      
+      // Send error to webview to display in results area
+      this._view?.webview.postMessage({
+        type: 'searchError',
+        error: errorMessage,
+        searchId: (data as any).searchId,
+      });
+      
+      // Show error notification for lock errors or other critical failures
+      if (errorMessage.includes('lock') || errorMessage.includes('Another renamify process')) {
+        vscode.window.showErrorMessage(`Search failed: ${errorMessage}`);
+      }
     }
   }
 
   private async handlePlan(data: PlanMessage) {
+    // Kill any running command before starting a new plan
+    this._cliService.killCurrentCommand();
+    
     try {
       const plan = await this._cliService.createPlan(
         data.search,
@@ -219,6 +242,9 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handleApply(data: ApplyMessage) {
+    // Kill any running command before starting apply
+    this._cliService.killCurrentCommand();
+    
     const config = vscode.workspace.getConfiguration('renamify');
 
     // Get current search and replace from the message

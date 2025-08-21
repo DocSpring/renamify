@@ -25,13 +25,19 @@ fn normalize_path(path: &Path) -> PathBuf {
 }
 
 /// Find all potential identifiers in the content using a broad regex pattern
-fn find_all_identifiers(content: &[u8]) -> Vec<(usize, usize, String)> {
+fn find_all_identifiers(content: &[u8], styles: &[Style]) -> Vec<(usize, usize, String)> {
     let mut identifiers = Vec::new();
 
     // Pattern to match identifier-like strings, including dots in some contexts
     // This is tricky: we want to split on dots for things like obj.prop but keep
     // dots for mixed-style identifiers like config.max_value
-    let pattern = r"\b[a-zA-Z_][a-zA-Z0-9_\-\.]*\b";
+    // For Title style, we need to include spaces to capture "Title Case" patterns
+    let pattern = if styles.len() == 1 && styles[0] == Style::Title {
+        // Special pattern for Title style that includes spaces
+        r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b"
+    } else {
+        r"\b[a-zA-Z_][a-zA-Z0-9_\-\.]*\b"
+    };
     let regex = Regex::new(pattern).unwrap();
 
     for m in regex.find_iter(content) {
@@ -47,10 +53,13 @@ fn find_all_identifiers(content: &[u8]) -> Vec<(usize, usize, String)> {
             );
         }
 
-        // Split on dots for expressions like obj.method, process.env.VARIABLE, etc.
-        // Always split on dots to check each part independently for compound matching
-        if identifier.contains('.') {
+        // Only split on dots if dot style is NOT in the selected styles
+        // When dot style is selected, keep dot-separated identifiers intact
+        let should_split_on_dots = !styles.contains(&Style::Dot);
+        
+        if identifier.contains('.') && should_split_on_dots {
             // Split on dots for things like obj.method or this.property
+            // But NOT when we're specifically looking for dot.case style
             let parts: Vec<&str> = identifier.split('.').collect();
             let mut current_pos = m.start();
 
@@ -67,7 +76,7 @@ fn find_all_identifiers(content: &[u8]) -> Vec<(usize, usize, String)> {
                 }
             }
         } else {
-            // Keep as single identifier (including dots for mixed-style names)
+            // Keep as single identifier (including dots)
             identifiers.push((m.start(), m.end(), identifier));
         }
     }
@@ -88,8 +97,18 @@ pub fn find_enhanced_matches(
     let mut processed_ranges = Vec::new(); // Track (start, end) ranges that were exactly matched
 
     // First, find exact matches using the existing pattern approach
-    let variants: Vec<String> = variant_map.keys().cloned().collect();
-    if let Ok(pattern) = build_pattern(&variants) {
+    // Skip this for Original-only mode, as it will be handled in the second pass with strict boundaries
+    // Also skip for single-style mode with single-word search (we want compound matches only in that case)
+    let is_single_word_search = !search.contains('_') 
+        && !search.contains('-') 
+        && !search.contains('.') 
+        && !search.contains(' ');
+    let is_single_style_search = styles.len() == 1 && styles[0] != Style::Original;
+    let skip_exact_match = is_single_word_search && is_single_style_search;
+    
+    if !(styles.len() == 1 && styles[0] == Style::Original) && !skip_exact_match {
+        let variants: Vec<String> = variant_map.keys().cloned().collect();
+        if let Ok(pattern) = build_pattern(&variants) {
         for m in pattern.regex.find_iter(content) {
             if !is_boundary(content, m.start(), m.end()) {
                 continue;
@@ -124,6 +143,7 @@ pub fn find_enhanced_matches(
                 text: String::from_utf8_lossy(match_text).to_string(),
             });
         }
+        }
     }
 
     // Second, if Original style is enabled, do simple string replacement for remaining instances
@@ -149,9 +169,22 @@ pub fn find_enhanced_matches(
                     actual_pos < *proc_end && end_pos > *proc_start
                 });
 
-                // For Original style, use a more permissive boundary check
-                // Allow matching when followed by underscore if it's not a simple identifier continuation
-                let passes_boundary =
+                // For Original style when it's the ONLY style, require very strict boundaries
+                let passes_boundary = if styles.len() == 1 && styles[0] == Style::Original {
+                    // Very strict boundaries for Original-only: must be truly standalone
+                    // Not preceded by alphanumeric, underscore, hyphen, or dot
+                    let before_ok = actual_pos == 0 || {
+                        let prev = content[actual_pos - 1];
+                        !prev.is_ascii_alphanumeric() && prev != b'_' && prev != b'-' && prev != b'.'
+                    };
+                    // Not followed by alphanumeric, underscore, hyphen, or dot
+                    let after_ok = end_pos >= content.len() || {
+                        let next = content[end_pos];
+                        !next.is_ascii_alphanumeric() && next != b'_' && next != b'-' && next != b'.'
+                    };
+                    before_ok && after_ok
+                } else {
+                    // More permissive boundary check when Original is mixed with other styles
                     if actual_pos > 0 && content[actual_pos - 1].is_ascii_alphanumeric() {
                         // If preceded by alphanumeric, skip this match (it's in the middle of a word)
                         false
@@ -172,7 +205,8 @@ pub fn find_enhanced_matches(
                         }
                     } else {
                         true // At end of content
-                    };
+                    }
+                };
 
                 if !already_processed && passes_boundary {
                     #[allow(clippy::naive_bytecount)]
@@ -209,9 +243,11 @@ pub fn find_enhanced_matches(
     }
 
     // Third, find all identifiers and check for compound matches
-    let identifiers = find_all_identifiers(content);
+    // Skip compound matching entirely if only using Original style
+    if !(styles.len() == 1 && styles[0] == Style::Original) {
+        let identifiers = find_all_identifiers(content, styles);
 
-    for (start, end, identifier) in identifiers {
+        for (start, end, identifier) in identifiers {
         // Skip if this identifier was already matched exactly or if it's completely contained within a processed range
         let should_skip = processed_ranges.iter().any(|(proc_start, proc_end)| {
             // Skip if exact match (same start and end)
@@ -251,6 +287,7 @@ pub fn find_enhanced_matches(
                 variant: compound.full_identifier.clone(),
                 text: compound.replacement.clone(),
             });
+        }
         }
     }
 
@@ -408,7 +445,9 @@ mod tests {
     #[test]
     fn test_find_all_identifiers() {
         let content = b"let preview_format_arg = PreviewFormatArg::new();";
-        let identifiers = find_all_identifiers(content);
+        // Use default styles for test
+        let styles = vec![Style::Snake, Style::Pascal];
+        let identifiers = find_all_identifiers(content, &styles);
 
         // Should find: let, preview_format_arg, PreviewFormatArg, new
         assert!(identifiers.len() >= 4);
@@ -416,6 +455,35 @@ mod tests {
         let names: Vec<String> = identifiers.iter().map(|(_, _, id)| id.clone()).collect();
         assert!(names.contains(&"preview_format_arg".to_string()));
         assert!(names.contains(&"PreviewFormatArg".to_string()));
+    }
+
+    #[test]
+    fn test_find_all_identifiers_dot_style() {
+        let content = b"test.case use.case brief.case obj.method";
+        
+        // When looking for dot style only, keep dot-separated identifiers intact
+        let dot_styles = vec![Style::Dot];
+        let identifiers = find_all_identifiers(content, &dot_styles);
+        let names: Vec<String> = identifiers.iter().map(|(_, _, id)| id.clone()).collect();
+        assert!(names.contains(&"test.case".to_string()));
+        assert!(names.contains(&"use.case".to_string()));
+        assert!(names.contains(&"brief.case".to_string()));
+        assert!(names.contains(&"obj.method".to_string()));
+        
+        // When using other styles, split on dots
+        let other_styles = vec![Style::Snake, Style::Camel];
+        let identifiers = find_all_identifiers(content, &other_styles);
+        let names: Vec<String> = identifiers.iter().map(|(_, _, id)| id.clone()).collect();
+        // Should split into individual parts
+        assert!(names.contains(&"test".to_string()));
+        assert!(names.contains(&"case".to_string()));
+        assert!(names.contains(&"use".to_string()));
+        assert!(names.contains(&"brief".to_string()));
+        assert!(names.contains(&"obj".to_string()));
+        assert!(names.contains(&"method".to_string()));
+        // Should NOT contain the full dot-separated identifiers
+        assert!(!names.contains(&"test.case".to_string()));
+        assert!(!names.contains(&"use.case".to_string()));
     }
 
     #[test]
