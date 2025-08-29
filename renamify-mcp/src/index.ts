@@ -72,7 +72,9 @@ export function createServer(
           .boolean()
           .optional()
           .default(false)
-          .describe('Ignore mixed-case/ambiguous identifiers that don\'t match standard patterns'),
+          .describe(
+            "Ignore mixed-case/ambiguous identifiers that don't match standard patterns"
+          ),
       },
     },
     async (params) => {
@@ -133,7 +135,9 @@ export function createServer(
           .boolean()
           .optional()
           .default(false)
-          .describe('Ignore mixed-case/ambiguous identifiers that don\'t match standard patterns'),
+          .describe(
+            "Ignore mixed-case/ambiguous identifiers that don't match standard patterns"
+          ),
       },
     },
     async (params) => {

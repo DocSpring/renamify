@@ -236,7 +236,10 @@ export class RenamifyService {
     }
   }
 
-  private addIgnoreAmbiguousArg(args: string[], ignoreAmbiguous?: boolean): void {
+  private addIgnoreAmbiguousArg(
+    args: string[],
+    ignoreAmbiguous?: boolean
+  ): void {
     if (ignoreAmbiguous) {
       args.push('--ignore-ambiguous');
     }
