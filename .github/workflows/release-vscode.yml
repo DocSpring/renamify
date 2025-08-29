@@ -5,11 +5,6 @@ on:
     tags:
       - "vscode-v*"  # VS Code extension-specific version tags
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g., 1.0.0)"
-        required: true
-        type: string
 
 jobs:
   release_vscode:
@@ -66,11 +61,7 @@ jobs:
             fi
             echo "tag=$TAG" >> $GITHUB_OUTPUT
           else
-            # Workflow dispatch - verify input matches package.json
-            if [ "${{ github.event.inputs.version }}" != "$VERSION" ]; then
-              echo "Error: Input version ${{ github.event.inputs.version }} doesn't match package.json version $VERSION"
-              exit 1
-            fi
+            # Workflow dispatch - create tag from package.json version
             echo "tag=vscode-v$VERSION" >> $GITHUB_OUTPUT
           fi
 

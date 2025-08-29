@@ -5,11 +5,6 @@ on:
     tags:
       - "cli-v*"  # CLI version tags
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g., 1.0.0)"
-        required: true
-        type: string
 
 jobs:
   release_build:
@@ -126,7 +121,7 @@ jobs:
             fi
             echo "tag=$TAG" >> $GITHUB_OUTPUT
           else
-            # Workflow dispatch - create tag from version
+            # Workflow dispatch - create tag from Cargo.toml version
             echo "tag=cli-v$VERSION" >> $GITHUB_OUTPUT
           fi
 
