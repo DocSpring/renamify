@@ -112,8 +112,8 @@ jobs:
       - name: Get version from Cargo.toml
         id: version
         run: |
-          # Extract version from Cargo.toml
-          VERSION=$(grep '^version = ' renamify-cli/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          # Extract version from workspace Cargo.toml (since renamify-cli uses workspace version)
+          VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
           if [ "${{ github.event_name }}" = "push" ]; then
