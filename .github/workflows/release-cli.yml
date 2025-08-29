@@ -17,7 +17,6 @@ jobs:
           - os: macos-latest
             target: x86_64-apple-darwin
             name: renamify-macos-amd64
-            use-cross: true
           - os: macos-latest
             target: aarch64-apple-darwin
             name: renamify-macos-arm64
@@ -55,6 +54,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+
+      - name: Add rust target
+        if: matrix.target == 'x86_64-apple-darwin' && matrix.os == 'macos-latest'
+        run: rustup target add ${{ matrix.target }}
 
       - name: Install cross (for cross-compilation)
         if: matrix.use-cross
