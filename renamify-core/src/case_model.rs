@@ -82,19 +82,10 @@ pub fn detect_style(s: &str) -> Option<Style> {
         // Mixed case with underscores - treat as screaming snake if it starts with
         // uppercase identifier followed by underscore
         (true, false, false, false, true, true) => {
-            // Check if this looks like PREFIX_identifier pattern
-            // e.g., PRODUCTION_old_name, DEBUG_old_name
-            if let Some(first_underscore_pos) = s.find('_') {
-                let prefix = &s[..first_underscore_pos];
-                // If the prefix is all uppercase, treat as screaming snake
-                if !prefix.is_empty() && prefix.bytes().all(|b| b.is_ascii_uppercase()) {
-                    Some(Style::ScreamingSnake)
-                } else {
-                    Some(Style::Snake)
-                }
-            } else {
-                Some(Style::Snake)
-            }
+            // Mixed case with underscores - this is NOT a standard style
+            // Examples: CARGO_BIN_EXE_foobar, DEBUG_mode, PREFIX_camelCase
+            // These should preserve the exact case of the matched portion
+            None
         },
         (false, true, false, false, false, true) => Some(Style::Kebab),
         (false, true, false, false, true, false) => Some(Style::ScreamingTrain), // ALL-CAPS-WITH-HYPHENS
