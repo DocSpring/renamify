@@ -153,40 +153,40 @@ jobs:
           echo "" >> changelog.md
           echo "### macOS (Intel)" >> changelog.md
           echo '```bash' >> changelog.md
-          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-macos-amd64.tar.gz | tar xz" >> changelog.md
-          echo "sudo mv renamify /usr/local/bin/" >> changelog.md
+          echo "curl -L https://github.com/${{ github.repository }}/releases/download/$TAG/renamify-macos-amd64.tar.gz | tar xz -C /tmp" >> changelog.md
+          echo "sudo mv /tmp/renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
           echo "" >> changelog.md
           echo "### macOS (Apple Silicon)" >> changelog.md
           echo '```bash' >> changelog.md
-          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-macos-arm64.tar.gz | tar xz" >> changelog.md
-          echo "sudo mv renamify /usr/local/bin/" >> changelog.md
+          echo "curl -L https://github.com/${{ github.repository }}/releases/download/$TAG/renamify-macos-arm64.tar.gz | tar xz -C /tmp" >> changelog.md
+          echo "sudo mv /tmp/renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
           echo "" >> changelog.md
           echo "### Linux (x86_64)" >> changelog.md
           echo '```bash' >> changelog.md
-          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-linux-amd64.tar.gz | tar xz" >> changelog.md
-          echo "sudo mv renamify /usr/local/bin/" >> changelog.md
+          echo "curl -L https://github.com/${{ github.repository }}/releases/download/$TAG/renamify-linux-amd64.tar.gz | tar xz -C /tmp" >> changelog.md
+          echo "sudo mv /tmp/renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
           echo "" >> changelog.md
           echo "### Linux (ARM64)" >> changelog.md
           echo '```bash' >> changelog.md
-          echo "curl -L https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-linux-arm64.tar.gz | tar xz" >> changelog.md
-          echo "sudo mv renamify /usr/local/bin/" >> changelog.md
+          echo "curl -L https://github.com/${{ github.repository }}/releases/download/$TAG/renamify-linux-arm64.tar.gz | tar xz -C /tmp" >> changelog.md
+          echo "sudo mv /tmp/renamify /usr/local/bin/" >> changelog.md
           echo '```' >> changelog.md
           echo "" >> changelog.md
           echo "### Windows (x86_64)" >> changelog.md
           echo '```powershell' >> changelog.md
-          echo "Invoke-WebRequest -Uri https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-windows-amd64.zip -OutFile renamify.zip" >> changelog.md
-          echo "Expand-Archive -Path renamify.zip -DestinationPath ." >> changelog.md
-          echo "Move-Item -Path renamify.exe -Destination C:\\Windows\\System32\\" >> changelog.md
+          echo "Invoke-WebRequest -Uri https://github.com/${{ github.repository }}/releases/download/$TAG/renamify-windows-amd64.zip -OutFile \$env:TEMP\\renamify.zip" >> changelog.md
+          echo "Expand-Archive -Path \$env:TEMP\\renamify.zip -DestinationPath \$env:TEMP" >> changelog.md
+          echo "Move-Item -Path \$env:TEMP\\renamify.exe -Destination C:\\Windows\\System32\\" >> changelog.md
           echo '```' >> changelog.md
           echo "" >> changelog.md
           echo "### Windows (ARM64)" >> changelog.md
           echo '```powershell' >> changelog.md
-          echo "Invoke-WebRequest -Uri https://github.com/\${{ github.repository }}/releases/download/$TAG/renamify-windows-arm64.zip -OutFile renamify.zip" >> changelog.md
-          echo "Expand-Archive -Path renamify.zip -DestinationPath ." >> changelog.md
-          echo "Move-Item -Path renamify.exe -Destination C:\\Windows\\System32\\" >> changelog.md
+          echo "Invoke-WebRequest -Uri https://github.com/${{ github.repository }}/releases/download/$TAG/renamify-windows-arm64.zip -OutFile \$env:TEMP\\renamify.zip" >> changelog.md
+          echo "Expand-Archive -Path \$env:TEMP\\renamify.zip -DestinationPath \$env:TEMP" >> changelog.md
+          echo "Move-Item -Path \$env:TEMP\\renamify.exe -Destination C:\\Windows\\System32\\" >> changelog.md
           echo '```' >> changelog.md
 
       - name: Create Release
