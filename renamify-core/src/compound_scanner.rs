@@ -1,10 +1,9 @@
 use crate::case_model::Style;
 use crate::compound_matcher::find_compound_variants;
 use crate::pattern::{build_pattern, is_boundary, Match};
-use crate::scanner::{CoercionMode, MatchHunk};
+use crate::scanner::{CoercionMode, MatchHunk, VariantMap};
 use bstr::ByteSlice;
 use regex::bytes::Regex;
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 /// Normalize a path by removing Windows long path prefix if present
@@ -90,7 +89,7 @@ pub fn find_enhanced_matches(
     file: &str,
     search: &str,
     replace: &str,
-    variant_map: &BTreeMap<String, String>,
+    variant_map: &VariantMap,
     styles: &[Style],
 ) -> Vec<Match> {
     let mut all_matches = Vec::new();
@@ -247,7 +246,7 @@ pub fn enhanced_matches_to_hunks(
     content: &[u8],
     _search: &str,
     _replace: &str,
-    variant_map: &BTreeMap<String, String>,
+    variant_map: &VariantMap,
     path: &Path,
     _styles: &[Style],
     _coerce_mode: CoercionMode,
@@ -304,6 +303,14 @@ pub fn enhanced_matches_to_hunks(
         let (content, replace) = if variant_map.contains_key(&m.variant) {
             // Exact match - use the variant map
             let new_variant = variant_map.get(&m.variant).unwrap_or(&m.variant);
+
+            if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
+                eprintln!(
+                    "DEBUG COMPOUND: Exact match '{}' -> '{}' (from variant map)",
+                    m.variant, new_variant
+                );
+            }
+
             (m.variant.clone(), new_variant.clone())
         } else {
             // Compound match - the text field contains the replacement
@@ -395,9 +402,17 @@ mod tests {
         let search = "preview_format";
         let replace = "preview";
 
-        let mut variant_map = BTreeMap::new();
-        variant_map.insert("preview_format".to_string(), "preview".to_string());
-        variant_map.insert("PreviewFormat".to_string(), "Preview".to_string());
+        let mut variant_map = VariantMap::new();
+        variant_map.insert(
+            "preview_format".to_string(),
+            Some(Style::Snake),
+            "preview".to_string(),
+        );
+        variant_map.insert(
+            "PreviewFormat".to_string(),
+            Some(Style::Pascal),
+            "Preview".to_string(),
+        );
 
         let styles = vec![Style::Snake, Style::Pascal];
 

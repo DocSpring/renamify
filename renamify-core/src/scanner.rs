@@ -10,7 +10,7 @@ use memmap2::Mmap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
@@ -338,8 +338,9 @@ pub fn scan_repository_multi(
 
     let paths = if options.rename_files || options.rename_dirs {
         let mut all_renames = Vec::new();
+        let btree_map = variant_map.to_btree_map();
         for root in roots {
-            let mut root_renames = plan_renames(root, &variant_map, options)?;
+            let mut root_renames = plan_renames(root, &btree_map, options)?;
             // For search mode (when new is empty), clear the new_path to empty PathBuf
             if replace.is_empty() {
                 for rename in &mut root_renames {
@@ -433,7 +434,7 @@ fn is_binary(content: &[u8]) -> bool {
 fn generate_hunks(
     matches: &[Match],
     content: &[u8],
-    variant_map: &BTreeMap<String, String>,
+    variant_map: &VariantMap,
     path: &Path,
     options: &PlanOptions,
 ) -> Vec<MatchHunk> {
@@ -727,16 +728,86 @@ fn build_acronym_set(options: &PlanOptions) -> AcronymSet {
     }
 }
 
+/// Variant map that can store multiple replacements for ambiguous search patterns
+pub struct VariantMap {
+    /// Maps search pattern to list of (style, replacement) pairs
+    map: std::collections::BTreeMap<String, Vec<(Option<Style>, String)>>,
+}
+
+impl VariantMap {
+    pub fn new() -> Self {
+        Self {
+            map: std::collections::BTreeMap::new(),
+        }
+    }
+
+    pub fn insert(&mut self, search: String, style: Option<Style>, replacement: String) {
+        self.map
+            .entry(search)
+            .or_insert_with(Vec::new)
+            .push((style, replacement));
+    }
+
+    pub fn contains_key(&self, key: &str) -> bool {
+        self.map.contains_key(key)
+    }
+
+    /// Get the best replacement for a search pattern
+    /// Prefers snake_case replacement when ambiguous (most common style)
+    pub fn get(&self, key: &str) -> Option<&String> {
+        self.map.get(key).and_then(|replacements| {
+            // If there's only one replacement, use it
+            if replacements.len() == 1 {
+                return Some(&replacements[0].1);
+            }
+
+            // Otherwise, prefer snake_case if available
+            for (style, replacement) in replacements {
+                if matches!(style, Some(Style::Snake)) {
+                    return Some(replacement);
+                }
+            }
+
+            // Fall back to the first one
+            replacements.first().map(|(_, r)| r)
+        })
+    }
+
+    /// Convert to a simple BTreeMap for rename operations
+    /// Uses the default get() logic to choose the best replacement for each key
+    fn to_btree_map(&self) -> std::collections::BTreeMap<String, String> {
+        let mut result = std::collections::BTreeMap::new();
+        for (key, _) in &self.map {
+            if let Some(replacement) = self.get(key) {
+                result.insert(key.clone(), replacement.clone());
+            }
+        }
+        result
+    }
+
+    /// Get all keys in the variant map
+    pub fn keys(&self) -> impl Iterator<Item = &String> {
+        self.map.keys()
+    }
+}
+
 /// Generate variant map with custom acronym configuration
 fn generate_variant_map_with_acronyms(
     search: &str,
     replace: &str,
     styles: Option<&[Style]>,
     acronym_set: &AcronymSet,
-) -> std::collections::BTreeMap<String, String> {
+) -> VariantMap {
     // Use the acronym-aware tokenization
     let old_tokens = crate::case_model::parse_to_tokens_with_acronyms(search, acronym_set);
     let new_tokens = crate::case_model::parse_to_tokens_with_acronyms(replace, acronym_set);
+
+    if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
+        eprintln!(
+            "DEBUG VARIANTS (with acronyms): Generating variants for '{}' -> '{}'",
+            search, replace
+        );
+    }
 
     let default_styles = [
         Style::Snake,
@@ -752,13 +823,13 @@ fn generate_variant_map_with_acronyms(
     let using_defaults = styles.is_none();
     let styles = styles.unwrap_or(&default_styles);
 
-    let mut map = std::collections::BTreeMap::new();
+    let mut map = VariantMap::new();
 
     // Only include the exact input case when using default styles (styles was None)
     // This ensures that exact matches work even when no styles match the input
     // But when the user explicitly requests specific styles, we honor that
     if using_defaults {
-        map.insert(search.to_string(), replace.to_string());
+        map.insert(search.to_string(), None, replace.to_string());
     }
 
     // Generate variants for each requested style
@@ -766,8 +837,15 @@ fn generate_variant_map_with_acronyms(
         let search_variant = crate::case_model::to_style(&old_tokens, *style);
         let replace_variant = crate::case_model::to_style(&new_tokens, *style);
 
-        // Add the variant to the map (may overwrite the exact case if it matches a style)
-        map.insert(search_variant, replace_variant);
+        if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
+            eprintln!(
+                "DEBUG VARIANTS (with acronyms): Style {:?} -> '{}' => '{}'",
+                style, search_variant, replace_variant
+            );
+        }
+
+        // Add the variant to the map (now preserves all variants)
+        map.insert(search_variant, Some(*style), replace_variant);
     }
 
     // Removed automatic case variants - they were causing incorrect matches
@@ -1115,9 +1193,17 @@ mod tests {
         use crate::pattern::Match;
 
         let content = b"old_name and oldName here";
-        let mut variant_map = BTreeMap::new();
-        variant_map.insert("old_name".to_string(), "new_name".to_string());
-        variant_map.insert("oldName".to_string(), "newName".to_string());
+        let mut variant_map = VariantMap::new();
+        variant_map.insert(
+            "old_name".to_string(),
+            Some(Style::Snake),
+            "new_name".to_string(),
+        );
+        variant_map.insert(
+            "oldName".to_string(),
+            Some(Style::Camel),
+            "newName".to_string(),
+        );
 
         let matches = vec![
             Match {
@@ -1182,9 +1268,17 @@ mod tests {
         use crate::pattern::Match;
 
         let content = b"fn old_name() {\n    println!(\"oldName\");\n    old_name();\n}\n";
-        let mut variant_map = BTreeMap::new();
-        variant_map.insert("old_name".to_string(), "new_name".to_string());
-        variant_map.insert("oldName".to_string(), "newName".to_string());
+        let mut variant_map = VariantMap::new();
+        variant_map.insert(
+            "old_name".to_string(),
+            Some(Style::Snake),
+            "new_name".to_string(),
+        );
+        variant_map.insert(
+            "oldName".to_string(),
+            Some(Style::Camel),
+            "newName".to_string(),
+        );
 
         let matches = vec![
             Match {

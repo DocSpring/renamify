@@ -49,7 +49,10 @@ impl CrossFileContextAnalyzer {
         if let Ok(cache) = CONTEXT_CACHE.lock() {
             if let Some(cached) = cache.get(&cache_key) {
                 if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
-                    eprintln!("DEBUG CrossFileContextAnalyzer: Cache hit for {}", cache_key);
+                    eprintln!(
+                        "DEBUG CrossFileContextAnalyzer: Cache hit for {}",
+                        cache_key
+                    );
                 }
 
                 return self.pick_best_style_from_patterns(
@@ -62,7 +65,11 @@ impl CrossFileContextAnalyzer {
 
         // Perform analysis
         let patterns = self.analyze_pattern_in_files(
-            project_root, include_hidden, file_extension, preceding_word);
+            project_root,
+            include_hidden,
+            file_extension,
+            preceding_word,
+        );
 
         // Cache the result
         if let Ok(mut cache) = CONTEXT_CACHE.lock() {
@@ -89,10 +96,15 @@ impl CrossFileContextAnalyzer {
         let mut files_scanned = 0;
 
         // Find files with the same extension
-        if let Ok(entries) = self.find_files_with_extension(project_root, include_hidden, file_extension) {
+        if let Ok(entries) =
+            self.find_files_with_extension(project_root, include_hidden, file_extension)
+        {
             for path in entries {
                 if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
-                    eprintln!("DEBUG CrossFileContextAnalyzer: Checking file: {}", path.display());
+                    eprintln!(
+                        "DEBUG CrossFileContextAnalyzer: Checking file: {}",
+                        path.display()
+                    );
                 }
 
                 if files_scanned >= self.max_files_to_scan {
@@ -119,7 +131,11 @@ impl CrossFileContextAnalyzer {
         let mut files = Vec::new();
         self.find_files_recursive(root, include_hidden, extension, &mut files, 0)?;
         if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
-            eprintln!("DEBUG CrossFileContextAnalyzer: Found {} files with extension {}", files.len(), extension);
+            eprintln!(
+                "DEBUG CrossFileContextAnalyzer: Found {} files with extension {}",
+                files.len(),
+                extension
+            );
         }
         Ok(files)
     }
@@ -154,10 +170,8 @@ impl CrossFileContextAnalyzer {
                 || dir_name == "dist"
                 || dir_name == "vendor"
             {
-
                 if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
-                    eprintln!(
-                        "DEBUG CrossFileContextAnalyzer: Skipping dir");
+                    eprintln!("DEBUG CrossFileContextAnalyzer: Skipping dir");
                 }
                 return Ok(());
             }
@@ -168,9 +182,7 @@ impl CrossFileContextAnalyzer {
             let path = entry.path();
 
             if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
-                eprintln!(
-                    "DEBUG CrossFileContextAnalyzer: entry: {}",
-                    path.display());
+                eprintln!("DEBUG CrossFileContextAnalyzer: entry: {}", path.display());
             }
 
             if path.is_dir() {
@@ -291,7 +303,9 @@ mod tests {
         if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
             eprintln!(
                 "DEBUG CrossFileContextAnalyzer: Created test files: {}, {}",
-                file1.display(), file1.display());
+                file1.display(),
+                file1.display()
+            );
         }
 
         let mut analyzer = CrossFileContextAnalyzer::new();
@@ -299,7 +313,8 @@ mod tests {
         CrossFileContextAnalyzer::clear_cache();
 
         // Test that it finds camelCase pattern after "const"
-        let result = analyzer.suggest_style(root, true, "js", "const", &[Style::Camel, Style::Snake]);
+        let result =
+            analyzer.suggest_style(root, true, "js", "const", &[Style::Camel, Style::Snake]);
 
         assert_eq!(result, Some(Style::Camel));
     }

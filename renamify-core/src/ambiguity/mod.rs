@@ -160,7 +160,7 @@ mod tests {
         assert!(is_ambiguous("API")); // Could be Pascal, SCREAMING_SNAKE, upper
         assert!(is_ambiguous("config")); // Could be multiple styles
         assert!(is_ambiguous("id")); // Could be multiple styles
-        // Note: user_id, userId, UserID would never reach ambiguity resolution
-        // as they have clear styles and would be handled by detect_style()
+                                     // Note: user_id, userId, UserID would never reach ambiguity resolution
+                                     // as they have clear styles and would be handled by detect_style()
     }
 }

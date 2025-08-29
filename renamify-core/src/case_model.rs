@@ -79,6 +79,23 @@ pub fn detect_style(s: &str) -> Option<Style> {
     ) {
         (true, false, false, false, false, true) => Some(Style::Snake),
         (true, false, false, false, true, false) => Some(Style::ScreamingSnake),
+        // Mixed case with underscores - treat as screaming snake if it starts with
+        // uppercase identifier followed by underscore
+        (true, false, false, false, true, true) => {
+            // Check if this looks like PREFIX_identifier pattern
+            // e.g., PRODUCTION_old_name, DEBUG_old_name
+            if let Some(first_underscore_pos) = s.find('_') {
+                let prefix = &s[..first_underscore_pos];
+                // If the prefix is all uppercase, treat as screaming snake
+                if !prefix.is_empty() && prefix.bytes().all(|b| b.is_ascii_uppercase()) {
+                    Some(Style::ScreamingSnake)
+                } else {
+                    Some(Style::Snake)
+                }
+            } else {
+                Some(Style::Snake)
+            }
+        },
         (false, true, false, false, false, true) => Some(Style::Kebab),
         (false, true, false, false, true, false) => Some(Style::ScreamingTrain), // ALL-CAPS-WITH-HYPHENS
         (false, true, false, false, true, true) => {
@@ -473,10 +490,25 @@ pub fn generate_variant_map(
 
     let mut map = BTreeMap::new();
 
+    if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
+        eprintln!(
+            "DEBUG VARIANTS: Generating variants for '{}' -> '{}'",
+            search, replace
+        );
+        eprintln!("DEBUG VARIANTS: Styles requested: {:?}", styles);
+    }
+
     // Generate variants for each requested style
     for style in styles {
         let search_variant = to_style(&search_tokens, *style);
         let replace_variant = to_style(&replace_tokens, *style);
+
+        if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
+            eprintln!(
+                "DEBUG VARIANTS: Style {:?} -> '{}' => '{}'",
+                style, search_variant, replace_variant
+            );
+        }
 
         // Add the variant to the map
         map.insert(search_variant, replace_variant);
@@ -484,6 +516,16 @@ pub fn generate_variant_map(
 
     // Removed automatic case variants - they were causing incorrect matches
     // All variants should come from the explicit style system only
+
+    if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
+        eprintln!(
+            "DEBUG VARIANTS: Final variant map has {} entries",
+            map.len()
+        );
+        for (k, v) in &map {
+            eprintln!("  '{}' -> '{}'", k, v);
+        }
+    }
 
     map
 }

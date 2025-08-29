@@ -11,6 +11,10 @@ impl LanguageHeuristics {
         preceding_context: &str,
         possible_styles: &[Style],
     ) -> Option<Style> {
+        if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
+            eprintln!("DEBUG LanguageHeuristics: called suggest_style");
+        }
+
         let extension = file_path.extension()?.to_str()?;
         let context = preceding_context.trim();
 
@@ -120,7 +124,11 @@ impl LanguageHeuristics {
     }
 
     fn rust_heuristics(context: &str, possible_styles: &[Style]) -> Option<Style> {
-        if context.ends_with("struct") || context.ends_with("enum") || context.ends_with("trait") || context.ends_with("impl") {
+        if context.ends_with("struct")
+            || context.ends_with("enum")
+            || context.ends_with("trait")
+            || context.ends_with("impl")
+        {
             // Types should be PascalCase
             if possible_styles.contains(&Style::Pascal) {
                 return Some(Style::Pascal);

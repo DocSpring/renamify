@@ -84,6 +84,10 @@ regular_old_name = "test"
     .unwrap();
 
     // Should find matches only on non-comment, non-DEBUG lines
+    eprintln!("Found {} matches:", plan.stats.total_matches);
+    for m in &plan.matches {
+        eprintln!("  - {} at line {}", m.content, m.line);
+    }
     assert_eq!(plan.stats.total_matches, 3); // old_name = "value", PRODUCTION_old_name, regular_old_name
 
     // Verify excluded patterns

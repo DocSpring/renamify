@@ -169,7 +169,16 @@ pub fn find_compound_variants(
         }
 
         // Detect the style of the original identifier
-        if let Some(style) = crate::case_model::detect_style(identifier) {
+        let detected_style = crate::case_model::detect_style(identifier);
+
+        if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
+            println!(
+                "  detect_style('{}') returned: {:?}",
+                identifier, detected_style
+            );
+        }
+
+        if let Some(style) = detected_style {
             // Debug: print style detection
             if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
                 println!("  Detected style: {:?} for '{}'", style, identifier);

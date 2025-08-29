@@ -97,8 +97,7 @@ impl AmbiguityResolver {
         }
 
         // Level 3: Cross-file context analysis
-        if let Some(resolved) =
-            self.try_cross_file_context(matched_text, context, &possible_styles)
+        if let Some(resolved) = self.try_cross_file_context(matched_text, context, &possible_styles)
         {
             return resolved;
         }
@@ -233,10 +232,7 @@ impl AmbiguityResolver {
     }
 
     /// Default fallback when all else fails
-    fn default_fallback(
-        possible_styles: &[Style],
-        _replacement_text: &str,
-    ) -> ResolvedStyle {
+    fn default_fallback(possible_styles: &[Style], _replacement_text: &str) -> ResolvedStyle {
         // Default precedence order
         const DEFAULT_PRECEDENCE: &[Style] = &[
             Style::Snake,
@@ -345,8 +341,11 @@ mod tests {
             method: ResolutionMethod::ReplacementStringPreference,
         };
 
-        let result =
-            AmbiguityResolver::apply_resolution("api", "application_programming_interface", &resolved);
+        let result = AmbiguityResolver::apply_resolution(
+            "api",
+            "application_programming_interface",
+            &resolved,
+        );
 
         assert_eq!(result, "applicationProgrammingInterface");
     }

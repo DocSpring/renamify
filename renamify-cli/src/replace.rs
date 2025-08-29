@@ -1,8 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use regex::Regex;
-use renamify_core::{
-    apply_plan, create_simple_plan, Plan, PlanOptions, Preview,
-};
+use renamify_core::{apply_plan, create_simple_plan, Plan, PlanOptions, Preview};
 use serde_json;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -58,16 +56,17 @@ pub fn handle_replace(
         create_simple_plan(pattern, replacement, paths, &options, false)?
     } else {
         // Regex replacement - validate the pattern first
-        Regex::new(pattern)
-            .with_context(|| format!("Invalid regex pattern: {}", pattern))?;
-        
+        Regex::new(pattern).with_context(|| format!("Invalid regex pattern: {}", pattern))?;
+
         // Create plan with regex replacement
         create_simple_plan(pattern, replacement, paths, &options, true)?
     };
 
     // Check for large changes
     if !large && !yes {
-        let total_files = plan.matches.iter()
+        let total_files = plan
+            .matches
+            .iter()
             .map(|m| &m.file)
             .collect::<std::collections::HashSet<_>>()
             .len();
@@ -101,9 +100,7 @@ pub fn handle_replace(
 
     // Show preview if not in quiet mode
     if !quiet && !dry_run {
-        let preview_format = preview
-            .map(|p| p.into())
-            .unwrap_or(Preview::Table);
+        let preview_format = preview.map(|p| p.into()).unwrap_or(Preview::Table);
 
         let output = renamify_core::render_plan(&plan, preview_format, Some(use_color));
         print!("{}", output);
@@ -170,7 +167,11 @@ fn commit_changes(plan: &Plan) -> Result<()> {
         .matches
         .iter()
         .map(|m| m.file.to_string_lossy().to_string())
-        .chain(plan.paths.iter().map(|r| r.new_path.to_string_lossy().to_string()))
+        .chain(
+            plan.paths
+                .iter()
+                .map(|r| r.new_path.to_string_lossy().to_string()),
+        )
         .collect::<std::collections::HashSet<_>>()
         .into_iter()
         .collect();
@@ -188,10 +189,7 @@ fn commit_changes(plan: &Plan) -> Result<()> {
     }
 
     // Create commit message
-    let message = format!(
-        "Replace '{}' with '{}'",
-        plan.search, plan.replace
-    );
+    let message = format!("Replace '{}' with '{}'", plan.search, plan.replace);
 
     let status = Command::new("git")
         .args(&["commit", "-m", &message])

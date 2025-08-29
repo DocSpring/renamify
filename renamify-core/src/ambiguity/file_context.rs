@@ -80,7 +80,7 @@ impl FileContextAnalyzer {
         let mut in_string = false;
         let mut in_comment = false;
         let mut string_delimiter = ' ';
-        
+
         let chars: Vec<char> = content.chars().collect();
         for (i, &ch) in chars.iter().enumerate() {
             // Handle strings

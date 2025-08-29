@@ -53,8 +53,9 @@ temp_dir.child(".renamify").create_dir_all().unwrap();
     // - is_renamify_ignored (function name)
     // - ".renamify" (in temp_dir.child)
     assert!(
-        plan.stats.total_matches >= 5,
-        "Should find all renamify occurrences including .renamify"
+        plan.stats.total_matches == 6,
+        "Should find 6 renamify occurrences (including .renamify). Found {}",
+        plan.stats.total_matches
     );
 
     // Verify that .renamify is being replaced (in string literals)
@@ -71,20 +72,34 @@ temp_dir.child(".renamify").create_dir_all().unwrap();
     assert_eq!(
         dot_renamify_matches.len(),
         3,
-        "Should find all .renamify string literals"
+        "Should find 3 .renamify string literals. Found {}",
+        dot_renamify_matches.len()
     );
 
-    for hunk in &dot_renamify_matches {
-        // Note: Due to coercion, ".renamify" becomes ".renamedRenamingTool" (camelCase)
-        // This is because after a dot, the system assumes property/method access context
-        assert!(
-            hunk.line_after
-                .as_ref()
-                .is_some_and(|l| l.contains(".renamedRenamingTool")),
-            "Should replace .renamify with .renamedRenamingTool (camelCase due to coercion). line_after={:?}",
-            hunk.line_after
-        );
-    }
+    let hunk1 = &dot_renamify_matches[0];
+    assert!(
+        hunk1.line_after
+            .as_ref()
+            .is_some_and(|l| l.contains(".renamed_renaming_tool")),
+        "Should replace PathBuf::from(\".renamify\") with PathBuf::from(\".renamed_renaming_tool\"). line_after={:?}",
+        hunk1.line_after
+    );
+    let hunk2 = &dot_renamify_matches[1];
+    assert!(
+        hunk2.line_after
+            .as_ref()
+            .is_some_and(|l| l.contains(".renamed_renaming_tool")),
+        "Should replace // Check if .renamify with // Check if .renamed_renaming_tool. line_after={:?}",
+        hunk2.line_after
+    );
+    let hunk3 = &dot_renamify_matches[2];
+    assert!(
+        hunk3.line_after
+            .as_ref()
+            .is_some_and(|l| l.contains(".renamed_renaming_tool")),
+        "Should replace child(\".renamify\") with child(\".renamed_renaming_tool\"). line_after={:?}",
+        hunk3.line_after
+    );
 }
 
 #[test]
