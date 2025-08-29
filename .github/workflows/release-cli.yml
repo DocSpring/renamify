@@ -38,6 +38,7 @@ jobs:
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             name: renamify-windows-arm64
+            use-cross: true
 
     steps:
       - name: Checkout repository
