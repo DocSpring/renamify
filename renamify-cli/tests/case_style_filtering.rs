@@ -33,7 +33,7 @@ CompoundTitle: Title Case Example
     fn run_search(dir: &Path, styles: &str) -> String {
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_renamify"))
             .current_dir(dir)
-            .args(&[
+            .args([
                 "search",
                 "test case", // Search for "test case" in various forms
                 "--only-styles",
@@ -178,7 +178,7 @@ mixed_caseCASE
     fn run_search(dir: &Path, styles: &str) -> String {
         let output = std::process::Command::new(env!("CARGO_BIN_EXE_renamify"))
             .current_dir(dir)
-            .args(&[
+            .args([
                 "search",
                 "case", // Search for single word "case"
                 "--only-styles",
@@ -287,7 +287,7 @@ TEST_CASE
     // Test with multiple styles selected
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_renamify"))
         .current_dir(temp_dir.path())
-        .args(&[
+        .args([
             "search",
             "test case",
             "--only-styles",
@@ -347,8 +347,8 @@ let another-var = 10;       // unrelated kebab
 
     // Test 1: Get results for lower style alone (replacing original)
     // For now, we'll use snake as the baseline test
-    let snake_baseline_output = std::process::Command::new(&get_cli_path())
-        .args(&[
+    let snake_baseline_output = std::process::Command::new(get_cli_path())
+        .args([
             "search",
             "case",
             "--only-styles",
@@ -364,8 +364,8 @@ let another-var = 10;       // unrelated kebab
         count_matches(&String::from_utf8(snake_baseline_output.stdout).unwrap());
 
     // Test 2: Get results for snake style alone
-    let snake_output = std::process::Command::new(&get_cli_path())
-        .args(&[
+    let snake_output = std::process::Command::new(get_cli_path())
+        .args([
             "search",
             "case",
             "--only-styles",
@@ -380,8 +380,8 @@ let another-var = 10;       // unrelated kebab
     let snake_matches = count_matches(&String::from_utf8(snake_output.stdout).unwrap());
 
     // Test 3: Get results for kebab style alone
-    let kebab_output = std::process::Command::new(&get_cli_path())
-        .args(&[
+    let kebab_output = std::process::Command::new(get_cli_path())
+        .args([
             "search",
             "case",
             "--only-styles",
@@ -396,8 +396,8 @@ let another-var = 10;       // unrelated kebab
     let kebab_matches = count_matches(&String::from_utf8(kebab_output.stdout).unwrap());
 
     // Test 4: Get results for combined styles
-    let combined_output = std::process::Command::new(&get_cli_path())
-        .args(&[
+    let combined_output = std::process::Command::new(get_cli_path())
+        .args([
             "search",
             "case",
             "--only-styles",
@@ -450,8 +450,8 @@ let unrelated_variable = 6; // should not match any "case" search
     }
 
     // Test that lower+snake doesn't find camel/pascal matches
-    let output = std::process::Command::new(&get_cli_path())
-        .args(&[
+    let output = std::process::Command::new(get_cli_path())
+        .args([
             "search",
             "case",
             "--only-styles",
@@ -471,7 +471,7 @@ let unrelated_variable = 6; // should not match any "case" search
     // When searching for single word "case" with lower+snake styles,
     // both styles generate "case" as the pattern, so it matches all instances of "case"
     // This includes "case" standalone and "case" within compound words
-    assert!(matches.len() > 0, "Should find matches for lower+snake");
+    assert!(!matches.is_empty(), "Should find matches for lower+snake");
 
     // Verify that all matches are for the "case" pattern
     let all_case_matches = matches
@@ -526,8 +526,8 @@ let Test Case = 8;      // title
 
     // Get individual results for each style
     for style in &all_styles {
-        let output = std::process::Command::new(&get_cli_path())
-            .args(&["search", "case", "--only-styles", style, "--output", "json"])
+        let output = std::process::Command::new(get_cli_path())
+            .args(["search", "case", "--only-styles", style, "--output", "json"])
             .current_dir(temp_dir.path())
             .output()
             .expect("Failed to execute command");
@@ -551,8 +551,8 @@ let Test Case = 8;      // title
     ];
 
     for (combo_str, combo_styles) in combinations {
-        let output = std::process::Command::new(&get_cli_path())
-            .args(&[
+        let output = std::process::Command::new(get_cli_path())
+            .args([
                 "search",
                 "case",
                 "--only-styles",

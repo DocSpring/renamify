@@ -320,10 +320,12 @@ mod tests {
     #[test]
     fn test_language_heuristic_ruby() {
         let resolver = AmbiguityResolver::new();
-        let mut context = AmbiguityContext::default();
-        context.file_path = Some(PathBuf::from("test.rb"));
-        context.line_content = Some("class API".to_string());
-        context.match_position = Some(6); // Position after "class "
+        let context = AmbiguityContext {
+            file_path: Some(PathBuf::from("test.rb")),
+            line_content: Some("class API".to_string()),
+            match_position: Some(6), // Position after "class "
+            ..Default::default()
+        };
 
         // "API" could be Pascal or SCREAMING_SNAKE
         let result = resolver.resolve("API", "Interface", &context);

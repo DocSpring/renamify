@@ -51,35 +51,15 @@ pub fn is_boundary(bytes: &[u8], start: usize, end: usize) -> bool {
     let left_boundary = if start == 0 {
         true
     } else {
-        !bytes[start - 1].is_ascii_alphanumeric() && bytes[start - 1] != b'_'
+        // Treat underscores as separators, not part of the identifier
+        !bytes[start - 1].is_ascii_alphanumeric()
     };
 
     let right_boundary = if end >= bytes.len() {
         true
     } else {
-        !bytes[end].is_ascii_alphanumeric() && bytes[end] != b'_'
-    };
-
-    left_boundary && right_boundary
-}
-
-/// More permissive boundary check specifically for format string patterns
-/// Only allows certain non-identifier characters like `{` as boundaries
-pub fn is_compound_boundary(bytes: &[u8], start: usize, end: usize) -> bool {
-    let left_boundary = if start == 0 {
-        true
-    } else {
-        let prev_char = bytes[start - 1];
-        // Standard word boundary
-        !prev_char.is_ascii_alphanumeric() && prev_char != b'_'
-    };
-
-    let right_boundary = if end >= bytes.len() {
-        true
-    } else {
-        let next_char = bytes[end];
-        // Allow standard boundaries plus specific format string characters
-        (!next_char.is_ascii_alphanumeric() && next_char != b'_') || next_char == b'{'
+        // Treat underscores as separators, not part of the identifier
+        !bytes[end].is_ascii_alphanumeric()
     };
 
     left_boundary && right_boundary
@@ -184,32 +164,42 @@ mod tests {
     fn test_is_boundary() {
         let text = b"hello_world test";
 
+        // Complete "hello_world" - both boundaries are valid
         assert!(is_boundary(text, 0, 11));
 
+        // Complete "test" - both boundaries are valid
         assert!(is_boundary(text, 12, 16));
 
+        // Partial "ello" inside "hello" - left boundary invalid (starts mid-word)
         assert!(!is_boundary(text, 1, 5));
 
-        assert!(!is_boundary(text, 6, 11));
+        // "world" after underscore - now valid since underscore is a separator
+        assert!(is_boundary(text, 6, 11));
     }
 
     #[test]
     fn test_is_boundary_underscore() {
         let text = b"hello_world_test";
 
+        // Complete "hello_world_test"
         assert!(is_boundary(text, 0, 16));
 
-        assert!(!is_boundary(text, 0, 5));
-        assert!(!is_boundary(text, 6, 11));
+        // "hello" before underscore - now valid since underscore is a separator
+        assert!(is_boundary(text, 0, 5));
+
+        // "world" between underscores - now valid since underscores are separators
+        assert!(is_boundary(text, 6, 11));
     }
 
     #[test]
     fn test_is_boundary_with_punctuation() {
         let text = b"call(hello_world);";
 
+        // Complete "hello_world" after '('
         assert!(is_boundary(text, 5, 16));
 
-        assert!(!is_boundary(text, 5, 10));
+        // "hello" before underscore - now valid since underscore is a separator
+        assert!(is_boundary(text, 5, 10));
     }
 
     #[test]

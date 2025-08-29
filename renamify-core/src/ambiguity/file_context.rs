@@ -230,6 +230,7 @@ mod tests {
     fn test_analyze_camel_case_file() {
         let mut analyzer = FileContextAnalyzer::new();
         analyzer.min_identifiers_threshold = 5; // Lower threshold for test
+        #[allow(clippy::needless_raw_string_hashes)]
         let content = r#"
             function getUserData() {
                 const userId = getUserId();
@@ -253,6 +254,7 @@ mod tests {
     fn test_analyze_snake_case_file() {
         let mut analyzer = FileContextAnalyzer::new();
         analyzer.min_identifiers_threshold = 5; // Lower threshold for test
+        #[allow(clippy::needless_raw_string_hashes)]
         let content = r#"
             def get_user_data():
                 user_id = get_user_id()
@@ -285,6 +287,7 @@ mod tests {
     #[test]
     fn test_mixed_styles() {
         let analyzer = FileContextAnalyzer::new();
+        #[allow(clippy::needless_raw_string_hashes)]
         let content = r#"
             const USER_CONSTANT = 100;
             function getUserName() { }

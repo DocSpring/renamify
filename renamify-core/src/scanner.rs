@@ -729,6 +729,7 @@ fn build_acronym_set(options: &PlanOptions) -> AcronymSet {
 }
 
 /// Variant map that can store multiple replacements for ambiguous search patterns
+#[derive(Default)]
 pub struct VariantMap {
     /// Maps search pattern to list of (style, replacement) pairs
     map: std::collections::BTreeMap<String, Vec<(Option<Style>, String)>>,
@@ -736,15 +737,13 @@ pub struct VariantMap {
 
 impl VariantMap {
     pub fn new() -> Self {
-        Self {
-            map: std::collections::BTreeMap::new(),
-        }
+        Self::default()
     }
 
     pub fn insert(&mut self, search: String, style: Option<Style>, replacement: String) {
         self.map
             .entry(search)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push((style, replacement));
     }
 
@@ -753,7 +752,7 @@ impl VariantMap {
     }
 
     /// Get the best replacement for a search pattern
-    /// Prefers snake_case replacement when ambiguous (most common style)
+    /// Prefers `snake_case` replacement when ambiguous (most common style)
     pub fn get(&self, key: &str) -> Option<&String> {
         self.map.get(key).and_then(|replacements| {
             // If there's only one replacement, use it
@@ -773,11 +772,11 @@ impl VariantMap {
         })
     }
 
-    /// Convert to a simple BTreeMap for rename operations
-    /// Uses the default get() logic to choose the best replacement for each key
+    /// Convert to a simple `BTreeMap` for rename operations
+    /// Uses the default `get()` logic to choose the best replacement for each key
     fn to_btree_map(&self) -> std::collections::BTreeMap<String, String> {
         let mut result = std::collections::BTreeMap::new();
-        for (key, _) in &self.map {
+        for key in self.map.keys() {
             if let Some(replacement) = self.get(key) {
                 result.insert(key.clone(), replacement.clone());
             }

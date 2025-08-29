@@ -102,7 +102,43 @@ pub fn detect_style(s: &str) -> Option<Style> {
             if is_train_case(s) {
                 Some(Style::Train)
             } else {
+                // Mixed case with hyphens but not Train case
+                // Return None for inconsistent patterns like "hello-World" or "tool-Specific"
+                // These don't follow any standard naming convention
                 None
+            }
+        },
+        // Mixed underscore and hyphen - detect based on dominant style
+        (true, true, false, false, _, _) => {
+            // For identifiers like "foo_bar_baz_qux-specific" or "Tool-specific-Tool"
+            // Determine the primary style based on what comes before the first separator change
+            if let Some(hyphen_pos) = s.find('-') {
+                if let Some(underscore_pos) = s.find('_') {
+                    // Whichever separator comes first determines the primary style
+                    if underscore_pos < hyphen_pos {
+                        // Starts with underscores, so primarily snake_case
+                        if has_upper && !has_lower {
+                            Some(Style::ScreamingSnake)
+                        } else {
+                            Some(Style::Snake)
+                        }
+                    } else {
+                        // Starts with hyphens, so primarily kebab-case
+                        if has_upper && !has_lower {
+                            Some(Style::ScreamingTrain)
+                        } else if is_train_case(&s[..=hyphen_pos]) {
+                            Some(Style::Train)
+                        } else {
+                            Some(Style::Kebab)
+                        }
+                    }
+                } else {
+                    // Should not happen since has_underscore is true
+                    Some(Style::Snake)
+                }
+            } else {
+                // Should not happen since has_hyphen is true
+                Some(Style::Snake)
             }
         },
         (false, false, true, false, _, true) => Some(Style::Dot),

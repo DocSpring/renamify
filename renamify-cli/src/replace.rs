@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use regex::Regex;
 use renamify_core::{apply_plan, create_simple_plan, Plan, PlanOptions, Preview};
-use serde_json;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
@@ -154,7 +153,7 @@ fn commit_changes(plan: &Plan) -> Result<()> {
 
     // Check if we're in a git repository
     let status = Command::new("git")
-        .args(&["status", "--porcelain"])
+        .args(["status", "--porcelain"])
         .output()
         .context("Failed to check git status")?;
 
@@ -192,7 +191,7 @@ fn commit_changes(plan: &Plan) -> Result<()> {
     let message = format!("Replace '{}' with '{}'", plan.search, plan.replace);
 
     let status = Command::new("git")
-        .args(&["commit", "-m", &message])
+        .args(["commit", "-m", &message])
         .status()
         .context("Failed to create git commit")?;
 
