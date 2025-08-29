@@ -1,6 +1,6 @@
 [default]
 # Extend the default identifier checker with these additional words
-extend-identifiers = { renamify = "renamify" }
+extend-identifiers = { renamify = "renamify", styl = "styl" }
 
 [files]
 extend-exclude = [

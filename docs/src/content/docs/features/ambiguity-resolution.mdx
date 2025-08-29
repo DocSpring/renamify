@@ -19,7 +19,18 @@ Renamify uses a sophisticated multi-level approach to resolve ambiguities, tryin
 
 ### 1. Language-Specific Conventions
 
-For known programming languages, Renamify applies language-specific heuristics based on syntactic context.
+For known programming languages, Renamify applies language-specific heuristics based on syntactic context. The system supports over 30 file extensions with intelligent context-aware suggestions.
+
+**Supported Languages:**
+- **Ruby** (.rb, .rake, .gemspec): Classes/modules → PascalCase, methods → snake_case, constants → SCREAMING_SNAKE
+- **Python** (.py, .pyw, .pyi): Classes → PascalCase, functions/decorators → snake_case, constants → SCREAMING_SNAKE
+- **JavaScript/TypeScript** (.js, .jsx, .ts, .tsx, .mjs, .cjs): Classes/interfaces → PascalCase, variables/functions → camelCase, constants → SCREAMING_SNAKE
+- **Go** (.go): Exported types/functions → PascalCase, unexported → camelCase, packages → lowercase
+- **Rust** (.rs): Types → PascalCase, functions/modules → snake_case, constants → SCREAMING_SNAKE, macros → snake_case
+- **Java/Kotlin** (.java, .kt, .kts): Classes → PascalCase, methods/fields → camelCase, constants → SCREAMING_SNAKE
+- **C/C++** (.c, .cpp, .cc, .h, .hpp): Classes/structs → PascalCase or snake_case, macros → SCREAMING_SNAKE
+- **Shell Scripts** (.sh, .bash, .zsh): Environment variables → SCREAMING_SNAKE, functions/locals → snake_case
+- **Web Technologies** (HTML, CSS, YAML, JSON): Attributes/classes → kebab-case, config keys → snake_case or camelCase
 
 **Ruby Example:**
 ```ruby
@@ -27,10 +38,12 @@ For known programming languages, Renamify applies language-specific heuristics b
 class User
 end
 
-# "API" after "module" -> PascalCase expected
-# (using Active Support Inflections for acronyms)
-module API
+# "process_data" after "def" -> snake_case expected
+def process_data
 end
+
+# "MAX_SIZE" in constant context -> SCREAMING_SNAKE expected
+MAX_SIZE = 100
 ```
 
 **Python Example:**
@@ -40,6 +53,18 @@ def get_user():  # snake_case expected after "def"
 
 class UserModel:  # PascalCase expected after "class"
     pass
+
+@decorator_name  # snake_case expected after "@"
+def method():
+    pass
+```
+
+**JavaScript Example:**
+```javascript
+class UserController { }  // PascalCase after "class"
+const userName = "";      // camelCase after "const"
+const MAX_RETRIES = 3;    // SCREAMING_SNAKE in all-caps context
+process.env.NODE_ENV      // SCREAMING_SNAKE for env vars
 ```
 
 :::note
