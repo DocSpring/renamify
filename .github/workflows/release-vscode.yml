@@ -71,7 +71,7 @@ jobs:
 
       - name: Publish to VS Code Marketplace
         working-directory: renamify-vscode
-        run: npx vsce publish -p ${{ secrets.VSCE_TOKEN }}
+        run: npx vsce publish --no-dependencies --packagePath *.vsix -p ${{ secrets.VSCE_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
