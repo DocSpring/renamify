@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
@@ -12,9 +12,9 @@ type VersionInfo = {
 };
 
 class CommandMutex {
-  private currentProcess: any = null;
+  private currentProcess: ChildProcess | null = null;
 
-  async acquire(): Promise<void> {
+  acquire(): void {
     // Kill any existing process immediately
     this.killCurrentProcess();
     // No waiting, no queuing - just proceed
@@ -24,7 +24,7 @@ class CommandMutex {
     this.currentProcess = null;
   }
 
-  setCurrentProcess(process: any): void {
+  setCurrentProcess(process: ChildProcess): void {
     this.currentProcess = process;
   }
 
@@ -377,8 +377,8 @@ export class RenamifyCliService {
     }
 
     // Acquire mutex to ensure only one command runs at a time
-    await this.commandMutex.acquire();
-    
+    this.commandMutex.acquire();
+
     try {
       // Check version compatibility before every command (except for version command itself)
       // Skip version check when using mock spawn (in tests)
@@ -389,9 +389,9 @@ export class RenamifyCliService {
       // Try the command, with one retry after 100ms if it fails
       try {
         return await this.executeCliCommand(args);
-      } catch (error) {
+      } catch (_error) {
         // Wait 100ms and retry once
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return await this.executeCliCommand(args);
       }
     } finally {

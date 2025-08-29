@@ -256,12 +256,12 @@ suite('CLI Service Test Suite', () => {
   test('Should handle CLI errors correctly', async () => {
     // Temporarily restore the original stub to modify it
     sandbox.restore();
-    
+
     // Re-create the stub with mocked-cli-path to skip version check
     sandbox.stub(vscode.workspace, 'getConfiguration').returns({
       get: (key: string) => {
         if (key === 'cliPath') {
-          return 'mocked-cli-path';  // Use special value to skip version check
+          return 'mocked-cli-path'; // Use special value to skip version check
         }
         if (key === 'respectGitignore') {
           return true;
@@ -272,7 +272,7 @@ suite('CLI Service Test Suite', () => {
 
     // Re-create the mock spawn
     mockSpawn = sandbox.stub();
-    
+
     // Create a new CLI service with the updated configuration
     const testCliService = new RenamifyCliService(mockSpawn as any);
 
