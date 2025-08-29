@@ -13,10 +13,10 @@ echo -e "${YELLOW}Running cargo tests...${NC}"
 cargo test
 
 echo -e "${YELLOW}Running renamify-mcp tests...${NC}"
-(cd renamify-mcp && pnpm test)
+(cd renamify-mcp && pnpm check && pnpm test)
 
 echo -e "${YELLOW}Running renamify-vscode tests...${NC}"
-(cd renamify-vscode && pnpm test)
+(cd renamify-vscode && pnpm check && pnpm test)
 
 echo -e "${YELLOW}Running e2e tests...${NC}"
 ./scripts/e2e-test.sh
