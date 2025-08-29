@@ -20,13 +20,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Wait for CI to complete
-        uses: lewagon/wait-on-check-action@v1.3.4
+      - name: Wait for required checks
+        uses: actions/github-script@v7
         with:
-          ref: ${{ github.sha }}
-          check-name: "Test on"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
+          script: |
+            const script = require('./.github/wait-for-checks.js');
+            await script({ github, context, core });
 
       - name: Download TypeScript bindings from CI
         uses: dawidd6/action-download-artifact@v2
