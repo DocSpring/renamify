@@ -111,4 +111,160 @@ mod tests {
         let result = suggest_style("macro_rules!", &possible_styles);
         assert_eq!(result, Some(Style::Snake));
     }
+
+    #[test]
+    fn test_rust_enum_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Snake];
+        let result = suggest_style("enum", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_rust_trait_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("trait", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        // Test with "trait " (with space)
+        let result = suggest_style("trait MyTrait", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_rust_impl_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Snake];
+        let result = suggest_style("impl", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        // Test with generic impl
+        let result = suggest_style("impl<T>", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_rust_type_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("type", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_rust_let_heuristic() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("let", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_mut_heuristic() {
+        let possible_styles = vec![Style::Snake, Style::Pascal];
+        let result = suggest_style("mut", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_use_heuristic() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("use", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_pub_fn_heuristic() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("pub fn", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_async_fn_heuristic() {
+        let possible_styles = vec![Style::Snake, Style::Pascal];
+        let result = suggest_style("async fn", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_unsafe_fn_heuristic() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("unsafe fn", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_static_heuristic() {
+        let possible_styles = vec![Style::ScreamingSnake, Style::Snake];
+        let result = suggest_style("static", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+    }
+
+    #[test]
+    fn test_rust_macro_rules_with_space() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("macro_rules! my_macro", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_module_paths() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("crate::", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("self::", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("super::", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_type_path() {
+        let possible_styles = vec![Style::Pascal, Style::Snake];
+        // After :: that's not a module path
+        let result = suggest_style("std::collections::", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_rust_lifetime() {
+        let possible_styles = vec![Style::Lower, Style::Camel];
+        let result = suggest_style("'", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+    }
+
+    #[test]
+    fn test_rust_attributes() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("#[", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("#![", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_cfg() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("cfg(", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_feature() {
+        let possible_styles = vec![Style::Snake, Style::Pascal];
+        let result = suggest_style("feature", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_rust_no_matching_fallback() {
+        // When preferred style not available
+        let possible_styles = vec![Style::Camel];
+        let result = suggest_style("struct", &possible_styles);
+        assert_eq!(result, None); // No Pascal available
+
+        let possible_styles = vec![Style::Pascal];
+        let result = suggest_style("fn", &possible_styles);
+        assert_eq!(result, None); // No Snake available
+    }
 }

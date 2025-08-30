@@ -102,4 +102,149 @@ mod tests {
         let result = suggest_style("package", &possible_styles);
         assert_eq!(result, Some(Style::Lower));
     }
+
+    #[test]
+    fn test_java_interface_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("interface", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_java_enum_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Snake];
+        let result = suggest_style("enum", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_java_record_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("record", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_java_annotation_interface() {
+        let possible_styles = vec![Style::Pascal, Style::Snake];
+        let result = suggest_style("@interface", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_java_extends_implements() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("extends", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        let result = suggest_style("implements", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_java_import_heuristic() {
+        let possible_styles = vec![Style::Lower, Style::Camel];
+        let result = suggest_style("import", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+    }
+
+    #[test]
+    fn test_java_modifiers() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("public", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("private", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("protected", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_java_static_final_reversed() {
+        let possible_styles = vec![Style::ScreamingSnake, Style::Pascal];
+        // "final static" doesn't contain "static final" so it won't match
+        let result = suggest_style("final static", &possible_styles);
+        assert_eq!(result, None); // Doesn't match the specific pattern
+
+        // But this should work
+        let result = suggest_style("static final", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+    }
+
+    #[test]
+    fn test_java_void_method() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("void", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_java_return_statement() {
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("return", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_java_new_keyword() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("new ArrayList", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_java_this_super() {
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("this.", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("super.", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_java_generic_types() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("<", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        let result = suggest_style("<T", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        let result = suggest_style("extends List", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_java_exception_types() {
+        let possible_styles = vec![Style::Pascal, Style::Snake];
+        let result = suggest_style("RuntimeException", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        let result = suggest_style("CustomError", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_java_dot_notation() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("obj.", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        // But not for this. or super.
+        let result = suggest_style("this.", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_java_no_matching_style() {
+        let possible_styles = vec![Style::Snake, Style::Kebab];
+        let result = suggest_style("class", &possible_styles);
+        assert_eq!(result, None);
+
+        let result = suggest_style("@", &possible_styles);
+        assert_eq!(result, None);
+    }
 }
