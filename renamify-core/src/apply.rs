@@ -417,11 +417,13 @@ fn apply_content_edits_with_content(
     let temp_path = path.with_extension(format!("{}.renamify.tmp", std::process::id()));
 
     // Get original file permissions before writing
-    let original_metadata = fs::metadata(path)?;
+    let original_metadata = fs::metadata(path)
+        .with_context(|| format!("Failed to get metadata for {}", path.display()))?;
     let original_permissions = original_metadata.permissions();
 
     {
-        let mut temp_file = File::create(&temp_path)?;
+        let mut temp_file = File::create(&temp_path)
+            .with_context(|| format!("Failed to create temp file {}", temp_path.display()))?;
         temp_file.write_all(modified.as_bytes())?;
         temp_file.sync_all()?; // fsync
     }
@@ -437,8 +439,14 @@ fn apply_content_edits_with_content(
     #[cfg(unix)]
     {
         if let Some(parent) = path.parent() {
-            let dir = File::open(parent)?;
-            dir.sync_all()?;
+            if parent.as_os_str().is_empty() {
+                // For files in the current directory, sync "."
+                let dir = File::open(".")?;
+                dir.sync_all()?;
+            } else {
+                let dir = File::open(parent)?;
+                dir.sync_all()?;
+            }
         }
     }
 

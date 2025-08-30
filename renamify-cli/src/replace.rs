@@ -98,8 +98,8 @@ pub fn handle_replace(
     }
 
     // Show preview if not in quiet mode
-    if !quiet && !dry_run {
-        let preview_format = preview.map(|p| p.into()).unwrap_or(Preview::Table);
+    if !quiet {
+        let preview_format = preview.map(|p| p.into()).unwrap_or(Preview::Summary);
 
         let output = renamify_core::render_plan(&plan, preview_format, Some(use_color));
         print!("{}", output);
@@ -122,6 +122,13 @@ pub fn handle_replace(
             println!("Operation cancelled.");
             return Ok(());
         }
+    }
+
+    // Ensure .renamify directory exists before applying
+    // (it may not exist in fresh repos even after auto-init adds it to .gitignore)
+    let renamify_dir = PathBuf::from(".renamify");
+    if !renamify_dir.exists() {
+        std::fs::create_dir_all(&renamify_dir).context("Failed to create .renamify directory")?;
     }
 
     // Apply the plan

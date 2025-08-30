@@ -941,59 +941,83 @@ pub fn create_simple_plan(
                 }
             }
 
-            // Find all matches in this line
-            let line_matches = if is_regex {
-                // Regex mode - find all regex matches
+            // Process matches based on mode
+            if is_regex {
+                // Regex mode - find all regex matches with captures
                 let regex = search_regex.as_ref().unwrap();
-                regex
-                    .find_iter(line)
-                    .map(|m| (m.start(), m.end(), m.as_str().to_string()))
-                    .collect::<Vec<_>>()
+                for captures in regex.captures_iter(line) {
+                    let full_match = captures.get(0).unwrap();
+                    let start = full_match.start();
+                    let end = full_match.end();
+                    let matched_text = full_match.as_str();
+
+                    // Apply the replacement using the captures
+                    let mut replacement_text = replacement.to_string();
+
+                    // Replace capture group references ($1, $2, etc.)
+                    for i in 1..captures.len() {
+                        if let Some(cap) = captures.get(i) {
+                            let placeholder = format!("${}", i);
+                            replacement_text = replacement_text.replace(&placeholder, cap.as_str());
+                        }
+                    }
+
+                    let relative_path = path.strip_prefix(&root).unwrap_or(path);
+                    files_with_matches.insert(relative_path.to_path_buf());
+
+                    let line_after =
+                        format!("{}{}{}", &line[..start], &replacement_text, &line[end..]);
+
+                    all_matches.push(MatchHunk {
+                        file: relative_path.to_path_buf(),
+                        line: (line_num + 1) as u64,
+                        #[allow(clippy::cast_possible_truncation)]
+                        col: (start + 1) as u32,
+                        variant: pattern.to_string(),
+                        content: matched_text.to_string(),
+                        replace: replacement_text,
+                        start,
+                        end,
+                        line_before: Some((*line).to_string()),
+                        line_after: Some(line_after),
+                        coercion_applied: None,
+                        original_file: None,
+                        renamed_file: None,
+                        patch_hash: None,
+                    });
+                }
             } else {
                 // Literal mode - find all occurrences
-                let mut matches = Vec::new();
-                let mut start = 0;
-                while let Some(pos) = line[start..].find(pattern) {
-                    let match_start = start + pos;
-                    let match_end = match_start + pattern.len();
-                    matches.push((match_start, match_end, pattern.to_string()));
-                    start = match_end;
+                let mut search_start = 0;
+                while let Some(pos) = line[search_start..].find(pattern) {
+                    let start = search_start + pos;
+                    let end = start + pattern.len();
+
+                    let relative_path = path.strip_prefix(&root).unwrap_or(path);
+                    files_with_matches.insert(relative_path.to_path_buf());
+
+                    let line_after = format!("{}{}{}", &line[..start], replacement, &line[end..]);
+
+                    all_matches.push(MatchHunk {
+                        file: relative_path.to_path_buf(),
+                        line: (line_num + 1) as u64,
+                        #[allow(clippy::cast_possible_truncation)]
+                        col: (start + 1) as u32,
+                        variant: pattern.to_string(),
+                        content: pattern.to_string(),
+                        replace: replacement.to_string(),
+                        start,
+                        end,
+                        line_before: Some((*line).to_string()),
+                        line_after: Some(line_after),
+                        coercion_applied: None,
+                        original_file: None,
+                        renamed_file: None,
+                        patch_hash: None,
+                    });
+
+                    search_start = end;
                 }
-                matches
-            };
-
-            // Add each match
-            for (start, end, matched_text) in line_matches {
-                let replacement_text = if is_regex {
-                    // Apply capture group replacements
-                    let regex = search_regex.as_ref().unwrap();
-                    regex.replace(&matched_text, replacement).to_string()
-                } else {
-                    replacement.to_string()
-                };
-
-                let relative_path = path.strip_prefix(&root).unwrap_or(path);
-                files_with_matches.insert(relative_path.to_path_buf());
-
-                let line_after = format!("{}{}{}", &line[..start], &replacement_text, &line[end..]);
-
-                all_matches.push(MatchHunk {
-                    file: relative_path.to_path_buf(),
-                    line: (line_num + 1) as u64,
-                    #[allow(clippy::cast_possible_truncation)]
-                    col: (start + 1) as u32,
-                    variant: pattern.to_string(),
-                    content: matched_text.clone(),
-                    replace: replacement_text,
-                    start,
-                    end,
-                    line_before: Some((*line).to_string()),
-                    line_after: Some(line_after),
-                    coercion_applied: None,
-                    original_file: None,
-                    renamed_file: None,
-                    patch_hash: None,
-                });
             }
         }
     }
