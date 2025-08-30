@@ -632,6 +632,49 @@ fn test_status_command() {
 }
 
 #[test]
+fn test_status_command_with_pending_plan() {
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create .renamify directory with a pending plan
+    temp_dir.child(".renamify").create_dir_all().unwrap();
+
+    // Create a test plan file
+    let plan_json = r#"{
+        "id": "test-plan-123",
+        "search": "oldname",
+        "replace": "newname",
+        "created_at": "2024-01-01T00:00:00Z",
+        "styles": ["Snake", "Camel"],
+        "includes": [],
+        "excludes": [],
+        "matches": [],
+        "paths": [],
+        "stats": {
+            "files_scanned": 10,
+            "total_matches": 5,
+            "matches_by_variant": {},
+            "files_with_matches": 3
+        },
+        "version": "0.1.0"
+    }"#;
+
+    temp_dir
+        .child(".renamify/plan.json")
+        .write_str(plan_json)
+        .unwrap();
+
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .arg("status")
+        .assert()
+        .success()
+        // Status shows pending plan details
+        .stdout(predicate::str::contains("Pending plan"))
+        .stdout(predicate::str::contains("oldname -> newname"))
+        .stdout(predicate::str::contains("test-plan-123"));
+}
+
+#[test]
 fn test_history_command_empty() {
     let temp_dir = TempDir::new().unwrap();
 
