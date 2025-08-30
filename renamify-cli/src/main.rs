@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use renamify_core::{Config, OutputFormatter, Preview, VersionResult};
-use std::io::{self, IsTerminal};
+use std::io::{self, BufRead, IsTerminal};
 use std::path::PathBuf;
 use std::process;
 use std::str::FromStr;
@@ -486,6 +486,10 @@ enum InitMode {
 }
 
 fn prompt_for_init() -> Result<InitMode> {
+    prompt_for_init_with_input(&mut io::stdin())
+}
+
+fn prompt_for_init_with_input<R: io::Read>(reader: &mut R) -> Result<InitMode> {
     use std::io::Write;
 
     eprintln!("\nRenamify uses .renamify/ for plans, backups, and history.");
@@ -497,7 +501,7 @@ fn prompt_for_init() -> Result<InitMode> {
     io::stdout().flush()?;
 
     let mut input = String::new();
-    io::stdin().read_line(&mut input)?;
+    io::BufReader::new(reader).read_line(&mut input)?;
     let choice = input.trim().to_lowercase();
 
     match choice.as_str() {
@@ -754,4 +758,145 @@ fn handle_version(output: OutputFormat) -> Result<()> {
 
     println!("{}", formatted);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap_complete::Shell;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_generate_completions_bash() {
+        use clap::CommandFactory;
+        let temp_dir = TempDir::new().unwrap();
+        let mut cmd = <Cli as CommandFactory>::command();
+
+        let result = generate_completions(Shell::Bash, &mut cmd, "renamify", temp_dir.path());
+
+        assert!(result.is_ok());
+
+        // Check that the completion file was created
+        let completion_file = temp_dir.path().join("renamify.bash");
+        assert!(completion_file.exists());
+
+        // Read and verify the content has bash completion markers
+        let content = std::fs::read_to_string(completion_file).unwrap();
+        assert!(content.contains("complete"));
+        assert!(content.contains("renamify"));
+    }
+
+    #[test]
+    fn test_generate_completions_zsh() {
+        use clap::CommandFactory;
+        let temp_dir = TempDir::new().unwrap();
+        let mut cmd = <Cli as CommandFactory>::command();
+
+        let result = generate_completions(Shell::Zsh, &mut cmd, "renamify", temp_dir.path());
+
+        assert!(result.is_ok());
+
+        // Check that the completion file was created
+        let completion_file = temp_dir.path().join("_renamify");
+        assert!(completion_file.exists());
+
+        // Read and verify the content has zsh completion markers
+        let content = std::fs::read_to_string(completion_file).unwrap();
+        assert!(content.contains("#compdef"));
+        assert!(content.contains("renamify"));
+    }
+
+    #[test]
+    fn test_generate_completions_fish() {
+        use clap::CommandFactory;
+        let temp_dir = TempDir::new().unwrap();
+        let mut cmd = <Cli as CommandFactory>::command();
+
+        let result = generate_completions(Shell::Fish, &mut cmd, "renamify", temp_dir.path());
+
+        assert!(result.is_ok());
+
+        // Check that the completion file was created
+        let completion_file = temp_dir.path().join("renamify.fish");
+        assert!(completion_file.exists());
+
+        // Read and verify the content has fish completion markers
+        let content = std::fs::read_to_string(completion_file).unwrap();
+        assert!(content.contains("complete"));
+        assert!(content.contains("-c renamify"));
+    }
+
+    #[test]
+    fn test_generate_completions_creates_directory() {
+        use clap::CommandFactory;
+        let temp_dir = TempDir::new().unwrap();
+        let nested_path = temp_dir.path().join("nested").join("dir");
+        let mut cmd = <Cli as CommandFactory>::command();
+
+        // Directory doesn't exist yet
+        assert!(!nested_path.exists());
+
+        let result = generate_completions(Shell::Bash, &mut cmd, "renamify", &nested_path);
+
+        assert!(result.is_ok());
+
+        // Directory was created
+        assert!(nested_path.exists());
+
+        // File was created in the directory
+        let completion_file = nested_path.join("renamify.bash");
+        assert!(completion_file.exists());
+    }
+
+    #[test]
+    fn test_prompt_for_init_repo() {
+        let input = b"y\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Repo));
+
+        let input = b"Y\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Repo));
+
+        let input = b"yes\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Repo));
+
+        let input = b"\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Repo));
+    }
+
+    #[test]
+    fn test_prompt_for_init_local() {
+        let input = b"l\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Local));
+
+        let input = b"local\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Local));
+    }
+
+    #[test]
+    fn test_prompt_for_init_global() {
+        let input = b"g\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Global));
+
+        let input = b"global\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Global));
+    }
+
+    #[test]
+    fn test_prompt_for_init_skip() {
+        let input = b"n\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Skip));
+
+        let input = b"no\n";
+        let result = prompt_for_init_with_input(&mut &input[..]).unwrap();
+        assert!(matches!(result, InitMode::Skip));
+    }
 }
