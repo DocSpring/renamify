@@ -48,17 +48,6 @@ export default defineConfig({
           ],
         },
         {
-          label: "MCP Server",
-          items: [
-            { label: "Overview", slug: "mcp/overview" },
-            { label: "Installation", slug: "mcp/installation" },
-            { label: "Configuration", slug: "mcp/configuration" },
-            { label: "Tools Reference", slug: "mcp/tools" },
-            { label: "Usage Examples", slug: "mcp/examples" },
-            { label: "AI Agent Guide", slug: "mcp/ai-guide" },
-          ],
-        },
-        {
           label: "Features",
           items: [
             {
@@ -73,6 +62,21 @@ export default defineConfig({
             { label: "Filtering and Ignore Rules", slug: "features/filtering" },
             { label: "Resolving Case Ambiguity", slug: "features/ambiguity-resolution" },
           ],
+        },
+        {
+          label: "MCP Server",
+          items: [
+            { label: "Overview", slug: "mcp/overview" },
+            { label: "Installation", slug: "mcp/installation" },
+            { label: "Configuration", slug: "mcp/configuration" },
+            { label: "Tools Reference", slug: "mcp/tools" },
+            { label: "Usage Examples", slug: "mcp/examples" },
+            { label: "AI Agent Guide", slug: "mcp/ai-guide" },
+          ],
+        },
+        {
+          label: "VS Code Extension",
+          items: [{ label: "Overview", slug: "vscode/overview" }],
         },
         {
           label: "Commands",
@@ -97,10 +101,6 @@ export default defineConfig({
         {
           label: "Case Studies",
           autogenerate: { directory: "case-studies" },
-        },
-        {
-          label: "VS Code Extension",
-          items: [{ label: "Overview", slug: "vscode/overview" }],
         },
         {
           label: "Reference",
