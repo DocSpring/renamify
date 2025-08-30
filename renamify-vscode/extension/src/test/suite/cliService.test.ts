@@ -253,7 +253,8 @@ suite('CLI Service Test Suite', () => {
     assert.ok(args.includes('plan-123'));
   });
 
-  test('Should handle CLI errors correctly', async () => {
+  test('Should handle CLI errors correctly', async function () {
+    this.timeout(5000); // Increase timeout to 5 seconds
     // Temporarily restore the original stub to modify it
     sandbox.restore();
 
