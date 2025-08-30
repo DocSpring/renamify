@@ -67,12 +67,24 @@ jobs:
         run: cargo clippy --all-targets --all-features
 
       - name: Install cargo-llvm-cov
-        run: |
-          # Install compatible version for Rust 1.80.1
-          cargo install cargo-llvm-cov --version 0.6.15
+        run: cargo install cargo-llvm-cov --version 0.6.15
 
-      - name: Run tests with coverage
-        run: cargo llvm-cov --workspace --lcov --output-path lcov-${{ matrix.os }}.info
+      - name: Run tests with coverage (summary)
+        run: cargo llvm-cov --workspace 2>&1 | tee coverage-output.txt
+
+      - name: Export LCOV
+        run: cargo llvm-cov report --lcov --output-path lcov-${{ matrix.os }}.info
+
+      - name: Check coverage meets minimum threshold
+        if: runner.os == 'Linux'
+        run: |
+          COVERAGE_THRESHOLD=90
+          if cargo llvm-cov report --fail-under-lines $COVERAGE_THRESHOLD; then
+            echo "✅ Code coverage meets the required threshold ($COVERAGE_THRESHOLD%)"
+          else
+            echo "❌ Code coverage is below the required threshold ($COVERAGE_THRESHOLD%)"
+            exit 1
+          fi
 
       - name: Verify TypeScript bindings were generated
         if: runner.os == 'Linux'
