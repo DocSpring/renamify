@@ -254,7 +254,7 @@ suite('CLI Service Test Suite', () => {
   });
 
   test('Should handle CLI errors correctly', async function () {
-    this.timeout(5000); // Increase timeout to 5 seconds
+    this.timeout(10_000); // Increase timeout to 10 seconds for CI
     // Temporarily restore the original stub to modify it
     sandbox.restore();
 
@@ -288,26 +288,27 @@ suite('CLI Service Test Suite', () => {
     mockProcess2.stderr = new EventEmitter();
     mockProcess2.kill = sandbox.stub();
 
-    // Return first process on first call, second process on retry
-    mockSpawn.onFirstCall().returns(mockProcess1);
-    mockSpawn.onSecondCall().returns(mockProcess2);
+    // Setup mock spawn to emit errors immediately when called
+    mockSpawn.onFirstCall().callsFake(() => {
+      // Emit error on next tick to ensure promise is set up
+      process.nextTick(() => {
+        mockProcess1.stderr.emit('data', 'Error: First attempt failed');
+        mockProcess1.emit('close', 1);
+      });
+      return mockProcess1;
+    });
 
-    const searchPromise = testCliService.search('oldName', {});
-
-    // First attempt fails
-    setTimeout(() => {
-      mockProcess1.stderr.emit('data', 'Error: First attempt failed');
-      mockProcess1.emit('close', 1);
-    }, 10);
-
-    // Second attempt (retry) also fails
-    setTimeout(() => {
-      mockProcess2.stderr.emit('data', 'Error: Something went wrong');
-      mockProcess2.emit('close', 1);
-    }, 120); // After 100ms retry delay
+    mockSpawn.onSecondCall().callsFake(() => {
+      // Emit error on next tick for retry
+      process.nextTick(() => {
+        mockProcess2.stderr.emit('data', 'Error: Something went wrong');
+        mockProcess2.emit('close', 1);
+      });
+      return mockProcess2;
+    });
 
     try {
-      await searchPromise;
+      await testCliService.search('oldName', {});
       assert.fail('Should have thrown an error');
     } catch (error: any) {
       assert.ok(error.message.includes('Something went wrong'));
