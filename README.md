@@ -3,11 +3,11 @@
 Smart search & replace for code and filenames with case-aware transformations and built-in undo/redo.
 
 [![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/DocSpring/renamify/graph/badge.svg)](https://codecov.io/gh/DocSpring/renamify)
 [![E2E](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/e2e.yml)
 [![MCP](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/mcp.yml)
 [![VS Code](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml)
 [![Docs](https://github.com/DocSpring/renamify/actions/workflows/docs.yml/badge.svg)](https://docspring.github.io/renamify/)
+[![codecov](https://codecov.io/gh/DocSpring/renamify/graph/badge.svg)](https://codecov.io/gh/DocSpring/renamify)
 
 - **CLI tool** - Cross-platform with full Windows, macOS, and Linux support<br>
 - **MCP server** - AI integrations for Claude, Cursor, and other MCP-compatible tools<br>
