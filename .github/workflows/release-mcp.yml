@@ -68,23 +68,28 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Generate changelog
+        id: changelog
+        run: |
+          ./scripts/generate-changelog.sh mcp "${{ steps.version.outputs.version }}" > changelog.md
+          echo "## Installation" >> changelog.md
+          echo "" >> changelog.md
+          echo "Install via npm:" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "npm install -g @renamify/mcp-server" >> changelog.md
+          echo '```' >> changelog.md
+          echo "" >> changelog.md
+          echo "Or use with npx:" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "npx @renamify/mcp-server" >> changelog.md
+          echo '```' >> changelog.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         if: github.event_name == 'push'
         with:
           tag_name: mcp-v${{ steps.version.outputs.version }}
           name: MCP Server v${{ steps.version.outputs.version }}
-          body: |
-            ## Renamify MCP Server v${{ steps.version.outputs.version }}
-
-            Install via npm:
-            ```bash
-            npm install -g renamify-mcp
-            ```
-
-            Or use with npx:
-            ```bash
-            npx renamify-mcp
-            ```
+          body_path: changelog.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

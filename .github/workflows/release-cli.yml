@@ -133,22 +133,7 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          echo "## What's Changed" > changelog.md
-          echo "" >> changelog.md
-
-          # Get the previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "")
-
-          if [ -n "$PREV_TAG" ]; then
-            echo "### Commits since $PREV_TAG" >> changelog.md
-            git log --pretty=format:"- %s (%h)" $PREV_TAG..$TAG >> changelog.md
-          else
-            echo "### Initial Release" >> changelog.md
-            echo "- First release of Renamify" >> changelog.md
-          fi
-
-          echo "" >> changelog.md
+          ./scripts/generate-changelog.sh cli "${{ steps.version.outputs.version }}" > changelog.md
           echo "## Installation" >> changelog.md
           echo "" >> changelog.md
           echo "### macOS (Intel)" >> changelog.md

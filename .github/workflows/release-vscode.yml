@@ -73,6 +73,25 @@ jobs:
         working-directory: renamify-vscode
         run: npx vsce publish --no-dependencies --packagePath *.vsix -p ${{ secrets.VSCE_TOKEN }}
 
+      - name: Generate changelog
+        id: changelog
+        run: |
+          ./scripts/generate-changelog.sh vscode "${{ steps.version.outputs.version }}" > changelog.md
+          echo "## Installation" >> changelog.md
+          echo "" >> changelog.md
+          echo "Install from VS Code Marketplace or download the VSIX file below." >> changelog.md
+          echo "" >> changelog.md
+          echo "### From VS Code" >> changelog.md
+          echo "- Open VS Code" >> changelog.md
+          echo "- Go to Extensions (Ctrl+Shift+X)" >> changelog.md
+          echo '- Search for "Renamify"' >> changelog.md
+          echo "- Click Install" >> changelog.md
+          echo "" >> changelog.md
+          echo "### Manual VSIX Installation" >> changelog.md
+          echo '```bash' >> changelog.md
+          echo "code --install-extension renamify-*.vsix" >> changelog.md
+          echo '```' >> changelog.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         if: github.event_name == 'push'
@@ -80,20 +99,6 @@ jobs:
           tag_name: vscode-v${{ steps.version.outputs.version }}
           name: VS Code Extension v${{ steps.version.outputs.version }}
           files: renamify-vscode/*.vsix
-          body: |
-            ## Renamify VS Code Extension v${{ steps.version.outputs.version }}
-
-            Install from VS Code Marketplace or download the VSIX file below.
-
-            ### Installation
-            - Open VS Code
-            - Go to Extensions (Ctrl+Shift+X)
-            - Search for "Renamify"
-            - Click Install
-
-            Or install the VSIX manually:
-            ```bash
-            code --install-extension renamify-*.vsix
-            ```
+          body_path: changelog.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
