@@ -57,4 +57,72 @@ mod tests {
         let result = suggest_style(".env", &possible_styles);
         assert_eq!(result, Some(Style::ScreamingSnake));
     }
+
+    #[test]
+    fn test_json_key_with_colon() {
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("\"myKey\":", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        // Test with ending quote and colon in context
+        let result = suggest_style("\"key\": value", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_json_key_snake_fallback() {
+        let possible_styles = vec![Style::Snake, Style::Kebab];
+        let result = suggest_style("\":", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_ini_section_header() {
+        let possible_styles = vec![Style::Kebab, Style::Camel];
+        let result = suggest_style("[my-section]", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_toml_key_value() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("my_key=", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        // Test kebab fallback
+        let possible_styles = vec![Style::Kebab, Style::Pascal];
+        let result = suggest_style("key=", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_env_dotenv_context() {
+        let possible_styles = vec![Style::ScreamingSnake, Style::Snake];
+        let result = suggest_style("dotenv", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+
+        let result = suggest_style("path/to/.env", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+    }
+
+    #[test]
+    fn test_config_no_matching_style() {
+        let possible_styles = vec![Style::Pascal, Style::Title];
+        let result = suggest_style("\":", &possible_styles);
+        assert_eq!(result, None);
+
+        let result = suggest_style("[section]", &possible_styles);
+        assert_eq!(result, None);
+
+        let result = suggest_style("key=", &possible_styles);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_quoted_equals_sign() {
+        // When quotes are present, it shouldn't match TOML/INI pattern
+        let possible_styles = vec![Style::Snake, Style::Kebab];
+        let result = suggest_style("\"key\"=", &possible_styles);
+        assert_eq!(result, None);
+    }
 }

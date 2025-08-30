@@ -106,4 +106,146 @@ mod tests {
         let result = suggest_style("process.env.", &possible_styles);
         assert_eq!(result, Some(Style::ScreamingSnake));
     }
+
+    #[test]
+    fn test_javascript_interface_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("interface", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_javascript_type_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Snake];
+        let result = suggest_style("type", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_javascript_enum_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("enum", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_javascript_namespace_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Snake];
+        let result = suggest_style("namespace", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_javascript_variables() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("let", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("var", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("const", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_javascript_async_await() {
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("async", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("await", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_javascript_arrow_function() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("=>", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_javascript_getters_setters() {
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("get", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("set", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_javascript_import_from() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("import", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("from", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        // Kebab fallback
+        let possible_styles = vec![Style::Kebab, Style::Pascal];
+        let result = suggest_style("import", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_javascript_require() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("require(", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("require('", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+
+        let result = suggest_style("require(\"", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_javascript_extends_implements() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("extends", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        let result = suggest_style("implements", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_javascript_private_field() {
+        let possible_styles = vec![Style::Camel, Style::Snake];
+        let result = suggest_style("#", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_javascript_jquery_observable() {
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("$", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_javascript_const_not_caps() {
+        let possible_styles = vec![Style::ScreamingSnake, Style::Camel];
+        // "const myVar" has lowercase letters so won't match the SCREAMING_SNAKE check
+        let result = suggest_style("const myVar", &possible_styles);
+        assert_eq!(result, None); // Doesn't match any specific pattern
+
+        // But plain "const" matches camelCase
+        let result = suggest_style("const", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_javascript_no_matching_style() {
+        let possible_styles = vec![Style::Snake, Style::Kebab];
+        let result = suggest_style("class", &possible_styles);
+        assert_eq!(result, None);
+
+        let result = suggest_style("function", &possible_styles);
+        assert_eq!(result, None);
+    }
 }

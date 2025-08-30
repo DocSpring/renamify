@@ -88,4 +88,95 @@ mod tests {
         let result = suggest_style(":", &possible_styles);
         assert_eq!(result, Some(Style::Snake));
     }
+
+    #[test]
+    fn test_ruby_module_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("module", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_ruby_attr_methods() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("attr_reader", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("attr_writer", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("attr_accessor", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_ruby_alias_methods() {
+        let possible_styles = vec![Style::Snake, Style::Pascal];
+        let result = suggest_style("alias", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("alias_method", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_ruby_constant_with_version() {
+        let possible_styles = vec![Style::ScreamingSnake, Style::Snake];
+        let result = suggest_style("VERSION", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+
+        let result = suggest_style("CONSTANT", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+    }
+
+    #[test]
+    fn test_ruby_require_statements() {
+        let possible_styles = vec![Style::Snake, Style::Kebab];
+        let result = suggest_style("require", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("require_relative", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("load", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("autoload", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_ruby_namespace_separator() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("::", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_ruby_instance_variables() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("@", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        let result = suggest_style("@@", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_ruby_equals_with_uppercase() {
+        let possible_styles = vec![Style::ScreamingSnake, Style::Pascal];
+        // All uppercase with equals sign
+        let result = suggest_style("CONST =", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+    }
+
+    #[test]
+    fn test_ruby_no_matching_style() {
+        let possible_styles = vec![Style::Kebab, Style::Title];
+        let result = suggest_style("class", &possible_styles);
+        assert_eq!(result, None);
+
+        let result = suggest_style("def", &possible_styles);
+        assert_eq!(result, None);
+    }
 }
