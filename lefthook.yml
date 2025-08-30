@@ -37,6 +37,17 @@ pre-commit:
             run: taplo format {staged_files}
             stage_fixed: true
 
+          - name: docs-prettier
+            root: docs/
+            glob: "*.{md,mdx,astro}"
+            run: pnpm format
+            stage_fixed: true
+
+          - name: docs-check
+            root: docs/
+            glob: "*.{md,mdx,astro,ts,js,json}"
+            run: pnpm check
+
     # Checks group - runs in parallel
     - group:
         parallel: true
