@@ -8,11 +8,11 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "lint": "biome check . && prettier --check '**/*.{md,mdx}'",
-    "lint:fix": "biome check --write . && prettier --write '**/*.{md,mdx}'",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "format": "biome format --write . && prettier --write '**/*.{md,mdx}'",
     "format:check": "biome format . && prettier --check '**/*.{md,mdx}'",
-    "check": "biome check . && prettier --check '**/*.{md,mdx}'"
+    "check": "pnpm lint && pnpm format:check"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.35.2",

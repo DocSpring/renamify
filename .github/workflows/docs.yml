@@ -36,11 +36,8 @@ jobs:
       - name: Install dependencies
         run: cd docs && pnpm install
 
-      - name: Check formatting
-        run: cd docs && pnpm format:check
-
-      - name: Lint code
-        run: cd docs && pnpm lint
+      - name: Lint and format check
+        run: cd docs && pnpm check
 
       - name: Wait for required checks
         uses: actions/github-script@v7
