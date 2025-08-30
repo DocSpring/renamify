@@ -203,4 +203,62 @@ This is a preview only. Use 'renamify_apply' to make these changes.`;
       return `Error previewing plan: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
+
+  /**
+   * Rename with case-aware transformations (plan + apply in one step)
+   */
+  async rename(params: {
+    old: string;
+    new: string;
+    paths?: string[];
+    dryRun?: boolean;
+    preview?: 'table' | 'diff' | 'summary' | 'json';
+    excludeStyles?: string[];
+    includeStyles?: string[];
+    onlyStyles?: string[];
+  }): Promise<string> {
+    try {
+      const result = await this.renamifyService.rename(params);
+
+      if (params.dryRun) {
+        return `${result}
+
+This was a dry run. Use without --dry-run to apply these changes.`;
+      }
+
+      return `${result}
+
+Renaming completed successfully. Use 'renamify_undo' if you need to revert.`;
+    } catch (error) {
+      return `Error during rename: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  /**
+   * Simple regex or literal replacement without case transformations
+   */
+  async replace(params: {
+    pattern: string;
+    replacement: string;
+    paths?: string[];
+    noRegex?: boolean;
+    preview?: 'table' | 'diff' | 'summary' | 'json';
+    dryRun?: boolean;
+  }): Promise<string> {
+    try {
+      const result = await this.renamifyService.replace(params);
+
+      if (params.dryRun) {
+        return `${result}
+
+This was a dry run. Use without --dry-run to apply these changes.`;
+      }
+
+      return `${result}
+
+Replacement completed successfully. Use 'renamify_undo' if you need to revert.`;
+    } catch (error) {
+      return `Error during replace: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
 }

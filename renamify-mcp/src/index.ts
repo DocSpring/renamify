@@ -271,6 +271,93 @@ export function createServer(
     }
   );
 
+  server.registerTool(
+    'renamify_rename',
+    {
+      title: 'Rename (Plan + Apply)',
+      description:
+        'Create and immediately apply a renaming plan (combines plan + apply)',
+      inputSchema: {
+        old: z.string().describe('The identifier to search for and replace'),
+        new: z.string().describe('The replacement identifier'),
+        paths: z
+          .array(z.string())
+          .optional()
+          .describe('Paths to search (defaults to current directory)'),
+        dryRun: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Preview changes without applying them'),
+        preview: z
+          .enum(['table', 'diff', 'summary', 'json'])
+          .optional()
+          .default('summary')
+          .describe('Preview format for the results'),
+        excludeStyles: z
+          .array(z.string())
+          .optional()
+          .describe('Case styles to exclude from transformations'),
+        includeStyles: z
+          .array(z.string())
+          .optional()
+          .describe('Additional case styles to include'),
+        onlyStyles: z
+          .array(z.string())
+          .optional()
+          .describe('Only use these specific case styles'),
+      },
+    },
+    async (params) => {
+      const result = await toolsInstance.rename(params);
+      return { content: [{ type: 'text', text: result }] };
+    }
+  );
+
+  server.registerTool(
+    'renamify_replace',
+    {
+      title: 'Replace (Regex/Literal)',
+      description:
+        'Simple regex or literal string replacement without case transformations',
+      inputSchema: {
+        pattern: z
+          .string()
+          .describe(
+            'Search pattern (regex by default, literal with noRegex=true)'
+          ),
+        replacement: z
+          .string()
+          .describe(
+            'Replacement string (supports $1, $2 capture groups in regex mode)'
+          ),
+        paths: z
+          .array(z.string())
+          .optional()
+          .describe('Paths to search (defaults to current directory)'),
+        noRegex: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Treat pattern as literal string instead of regex'),
+        preview: z
+          .enum(['table', 'diff', 'summary', 'json'])
+          .optional()
+          .default('summary')
+          .describe('Preview format for the results'),
+        dryRun: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Preview changes without applying them'),
+      },
+    },
+    async (params) => {
+      const result = await toolsInstance.replace(params);
+      return { content: [{ type: 'text', text: result }] };
+    }
+  );
+
   return server;
 }
 

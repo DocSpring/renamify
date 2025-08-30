@@ -5,7 +5,7 @@ description: Complete reference for all Renamify MCP Server tools
 
 import { Card, CardGrid, Code } from '@astrojs/starlight/components';
 
-The Renamify MCP Server provides 7 specialized tools for AI agents to perform intelligent renaming operations.
+The Renamify MCP Server provides 10 specialized tools for AI agents to perform intelligent renaming operations.
 
 ## renamify_plan
 
@@ -311,6 +311,85 @@ Arguments: {
 -export function UserAccountComponent({ account }: UserAccountProps) {
 +export function CustomerAccountComponent({ account }: CustomerAccountProps) {
 ```
+
+## renamify_rename
+
+Perform case-aware renaming in a single step (combines plan + apply).
+
+### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `old` | string | ✅ Yes | - | The identifier to replace |
+| `new` | string | ✅ Yes | - | The new identifier |
+| `paths` | string[] | No | Current dir | Paths to search |
+| `dryRun` | boolean | No | `false` | Preview without applying |
+| `preview` | string | No | `summary` | Preview format |
+| `excludeStyles` | string[] | No | None | Case styles to exclude |
+| `includeStyles` | string[] | No | None | Additional case styles |
+| `onlyStyles` | string[] | No | None | Use only these styles |
+
+### Example Usage
+
+```
+Tool: renamify_rename
+Arguments: {
+  "old": "getUserInfo",
+  "new": "fetchUserProfile",
+  "paths": ["src"],
+  "dryRun": true
+}
+```
+
+### When to Use
+
+- Quick renames without saving a plan
+- Simple refactorings with immediate apply
+- When you don't need to review changes beforehand
+
+## renamify_replace
+
+Perform simple regex or literal string replacement without case transformations.
+
+### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `pattern` | string | ✅ Yes | - | Search pattern (regex or literal) |
+| `replacement` | string | ✅ Yes | - | Replacement string |
+| `paths` | string[] | No | Current dir | Paths to search |
+| `noRegex` | boolean | No | `false` | Treat pattern as literal |
+| `preview` | string | No | `summary` | Preview format |
+| `dryRun` | boolean | No | `false` | Preview without applying |
+
+### Example Usage
+
+**Regex replacement:**
+```
+Tool: renamify_replace
+Arguments: {
+  "pattern": "console\\.log\\((.*?)\\)",
+  "replacement": "logger.debug($1)",
+  "paths": ["src"]
+}
+```
+
+**Literal replacement:**
+```
+Tool: renamify_replace
+Arguments: {
+  "pattern": "http://localhost:3000",
+  "replacement": "https://api.example.com",
+  "noRegex": true
+}
+```
+
+### When to Use
+
+- URL or endpoint replacements
+- Regex-based transformations
+- Literal string replacements without case variations
+- When you explicitly DON'T want case transformations
 
 ## Tool Interaction Patterns
 

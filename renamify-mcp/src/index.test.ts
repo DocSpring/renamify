@@ -186,7 +186,7 @@ describe('MCP Server', () => {
 
     const tools = responseObj.result.tools;
     expect(tools).toBeInstanceOf(Array);
-    expect(tools.length).toBe(8);
+    expect(tools.length).toBe(10);
 
     const toolNames = tools.map((t: { name: string }) => t.name);
     expect(toolNames).toContain('renamify_search');
@@ -197,5 +197,7 @@ describe('MCP Server', () => {
     expect(toolNames).toContain('renamify_history');
     expect(toolNames).toContain('renamify_status');
     expect(toolNames).toContain('renamify_preview');
+    expect(toolNames).toContain('renamify_rename');
+    expect(toolNames).toContain('renamify_replace');
   });
 });

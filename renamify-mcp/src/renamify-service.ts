@@ -425,4 +425,90 @@ export class RenamifyService {
     }
     throw error;
   }
+
+  /**
+   * Rename with case-aware transformations (plan + apply in one step)
+   */
+  async rename(options: {
+    old: string;
+    new: string;
+    paths?: string[];
+    dryRun?: boolean;
+    preview?: 'table' | 'diff' | 'summary' | 'json';
+    excludeStyles?: string[];
+    includeStyles?: string[];
+    onlyStyles?: string[];
+  }): Promise<string> {
+    const args = ['rename', options.old, options.new];
+
+    // Add paths after old and new
+    if (options.paths?.length) {
+      args.push(...options.paths);
+    }
+
+    // Add preview format
+    if (options.preview) {
+      args.push('--preview', options.preview);
+    }
+
+    // Add style options
+    if (options.excludeStyles?.length) {
+      args.push('--exclude-styles', options.excludeStyles.join(','));
+    }
+    if (options.includeStyles?.length) {
+      args.push('--include-styles', options.includeStyles.join(','));
+    }
+    if (options.onlyStyles?.length) {
+      args.push('--only-styles', options.onlyStyles.join(','));
+    }
+
+    // Add dry-run flag
+    if (options.dryRun) {
+      args.push('--dry-run');
+    }
+
+    // Always skip confirmation for MCP usage
+    args.push('--yes');
+
+    return await this.executeCommand(args, 'rename');
+  }
+
+  /**
+   * Simple regex or literal replacement without case transformations
+   */
+  async replace(options: {
+    pattern: string;
+    replacement: string;
+    paths?: string[];
+    noRegex?: boolean;
+    preview?: 'table' | 'diff' | 'summary' | 'json';
+    dryRun?: boolean;
+  }): Promise<string> {
+    const args = ['replace', options.pattern, options.replacement];
+
+    // Add paths after pattern and replacement
+    if (options.paths?.length) {
+      args.push(...options.paths);
+    }
+
+    // Add no-regex flag
+    if (options.noRegex) {
+      args.push('--no-regex');
+    }
+
+    // Add preview format
+    if (options.preview) {
+      args.push('--preview', options.preview);
+    }
+
+    // Add dry-run flag
+    if (options.dryRun) {
+      args.push('--dry-run');
+    }
+
+    // Always skip confirmation for MCP usage
+    args.push('--yes');
+
+    return await this.executeCommand(args, 'replace');
+  }
 }
