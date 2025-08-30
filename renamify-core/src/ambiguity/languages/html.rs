@@ -81,4 +81,97 @@ mod tests {
         let result = suggest_style("v-", &possible_styles);
         assert_eq!(result, Some(Style::Kebab));
     }
+
+    #[test]
+    fn test_html_aria_attribute() {
+        let possible_styles = vec![Style::Kebab, Style::Snake];
+        let result = suggest_style("aria-", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+
+        // No kebab available
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("aria-", &possible_styles);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_html_closing_tag() {
+        let possible_styles = vec![Style::Lower, Style::Kebab];
+        let result = suggest_style("</", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+
+        // Kebab fallback for custom elements
+        let possible_styles = vec![Style::Kebab, Style::Camel];
+        let result = suggest_style("<", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_xml_namespace() {
+        let possible_styles = vec![Style::Lower, Style::Camel];
+        let result = suggest_style("xmlns:", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+
+        let result = suggest_style("xml:", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+
+        // Camel fallback
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("xmlns:", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_alpine_directive() {
+        let possible_styles = vec![Style::Kebab, Style::Snake];
+        let result = suggest_style("x-", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_angular_directive() {
+        let possible_styles = vec![Style::Kebab, Style::Camel];
+        let result = suggest_style("ng-", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+
+        let result = suggest_style("*ng", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+
+        // Camel fallback
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("ng-", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_html_id_attribute() {
+        let possible_styles = vec![Style::Kebab, Style::Snake];
+        let result = suggest_style("id=", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_html_class_single_quote() {
+        let possible_styles = vec![Style::Kebab, Style::Camel];
+        let result = suggest_style("class='", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_html_generic_attribute() {
+        let possible_styles = vec![Style::Kebab, Style::Snake];
+        // Generic attribute value
+        let result = suggest_style("=\"", &possible_styles);
+        assert_eq!(result, None); // No specific style for generic attributes
+
+        let result = suggest_style("='", &possible_styles);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_html_no_matching_style() {
+        let possible_styles = vec![Style::Pascal, Style::ScreamingSnake];
+        let result = suggest_style("data-", &possible_styles);
+        assert_eq!(result, None);
+    }
 }

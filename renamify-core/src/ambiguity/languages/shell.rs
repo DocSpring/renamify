@@ -73,4 +73,83 @@ mod tests {
         let result = suggest_style("local_var=", &possible_styles);
         assert_eq!(result, Some(Style::Snake));
     }
+
+    #[test]
+    fn test_shell_var_reference() {
+        let possible_styles = vec![Style::ScreamingSnake, Style::Snake];
+        // Dollar sign alone - chars check will find no alphabetic chars, so screaming snake wins
+        let result = suggest_style("$", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake)); // All alphabetic chars (none) are uppercase
+
+        // Brace syntax - also no alphabetic chars
+        let result = suggest_style("${", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+
+        // With lowercase context - but "$home" doesn't match any pattern, returns None
+        let possible_styles = vec![Style::Snake];
+        let result = suggest_style("$", &possible_styles);
+        assert_eq!(result, Some(Style::Snake)); // Snake is the only option
+    }
+
+    #[test]
+    fn test_shell_function_with_parens() {
+        let possible_styles = vec![Style::Snake, Style::Kebab];
+        let result = suggest_style("() {", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        // Test kebab fallback
+        let possible_styles = vec![Style::Kebab, Style::Camel];
+        let result = suggest_style("function", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_shell_alias() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("alias", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        // Test kebab fallback
+        let possible_styles = vec![Style::Kebab, Style::Pascal];
+        let result = suggest_style("alias", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_shell_source() {
+        let possible_styles = vec![Style::Snake, Style::Pascal];
+        let result = suggest_style("source", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        // Test dot sourcing
+        let result = suggest_style(".", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+
+        // Test kebab fallback
+        let possible_styles = vec![Style::Kebab, Style::Camel];
+        let result = suggest_style("source", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_shell_export_with_space() {
+        let possible_styles = vec![Style::ScreamingSnake, Style::Snake];
+        let result = suggest_style("export ", &possible_styles);
+        assert_eq!(result, Some(Style::ScreamingSnake));
+    }
+
+    #[test]
+    fn test_shell_no_matching_style() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("export", &possible_styles);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_shell_var_ref_no_screaming() {
+        // When ScreamingSnake not available, fall back to snake
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("$", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
 }

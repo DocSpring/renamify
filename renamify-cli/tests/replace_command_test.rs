@@ -338,3 +338,260 @@ fn test_replace_command_diff_preview() {
         .stdout(predicates::str::contains("-hello world"))
         .stdout(predicates::str::contains("+hi world"));
 }
+
+#[test]
+fn test_replace_command_with_commit() {
+    let temp = TempDir::new().unwrap();
+
+    // Initialize git repo
+    std::process::Command::new("git")
+        .current_dir(temp.path())
+        .args(["init"])
+        .output()
+        .unwrap();
+
+    std::process::Command::new("git")
+        .current_dir(temp.path())
+        .args(["config", "user.email", "test@example.com"])
+        .output()
+        .unwrap();
+
+    std::process::Command::new("git")
+        .current_dir(temp.path())
+        .args(["config", "user.name", "Test User"])
+        .output()
+        .unwrap();
+
+    // Create and commit initial file
+    temp.child("test.txt").write_str("hello world").unwrap();
+
+    std::process::Command::new("git")
+        .current_dir(temp.path())
+        .args(["add", "."])
+        .output()
+        .unwrap();
+
+    std::process::Command::new("git")
+        .current_dir(temp.path())
+        .args(["commit", "-m", "initial"])
+        .output()
+        .unwrap();
+
+    // Run replace with commit flag
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args(["replace", "--no-regex", "hello", "hi", "--yes", "--commit"])
+        .assert()
+        .success();
+
+    // Check that a commit was created
+    let log_output = std::process::Command::new("git")
+        .current_dir(temp.path())
+        .args(["log", "--oneline"])
+        .output()
+        .unwrap();
+
+    let log = String::from_utf8_lossy(&log_output.stdout);
+    assert!(log.contains("Replace 'hello' with 'hi'"));
+}
+
+#[test]
+fn test_replace_command_large_warning() {
+    let temp = TempDir::new().unwrap();
+
+    // Create many files to trigger large warning
+    for i in 0..501 {
+        temp.child(format!("file{}.txt", i))
+            .write_str("hello world")
+            .unwrap();
+    }
+
+    // Run replace without --large flag
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args(["replace", "--no-regex", "hello", "hi", "--dry-run"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("--large"));
+}
+
+#[test]
+fn test_replace_command_large_flag() {
+    let temp = TempDir::new().unwrap();
+
+    // Create many files
+    for i in 0..501 {
+        temp.child(format!("file{}.txt", i))
+            .write_str("hello world")
+            .unwrap();
+    }
+
+    // Run replace with --large flag
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args([
+            "replace",
+            "--no-regex",
+            "hello",
+            "hi",
+            "--large",
+            "--dry-run",
+        ])
+        .assert()
+        .success();
+}
+
+#[test]
+fn test_replace_command_no_matches() {
+    let temp = TempDir::new().unwrap();
+
+    temp.child("test.txt").write_str("foo bar").unwrap();
+
+    // Run replace with pattern that doesn't match - should output nothing
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args([
+            "replace",
+            "--no-regex",
+            "nomatch",
+            "replacement",
+            "--dry-run",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::is_empty());
+}
+
+#[test]
+fn test_replace_command_unrestricted() {
+    let temp = TempDir::new().unwrap();
+
+    // Create .gitignore and a file that would be ignored
+    temp.child(".gitignore").write_str("ignored.txt").unwrap();
+    temp.child("ignored.txt").write_str("hello world").unwrap();
+    temp.child("normal.txt").write_str("hello world").unwrap();
+
+    // Without -u flag, ignored file should not be processed
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args(["replace", "--no-regex", "hello", "hi", "--dry-run"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("normal.txt"))
+        .stdout(predicates::str::contains("ignored.txt").not());
+
+    // With -u flag, ignored file should be processed
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args(["replace", "--no-regex", "hello", "hi", "-u", "--dry-run"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("normal.txt"))
+        .stdout(predicates::str::contains("ignored.txt"));
+}
+
+#[test]
+fn test_replace_command_rename_dirs() {
+    let temp = TempDir::new().unwrap();
+
+    // Create directory with pattern in name
+    temp.child("foo_dir").create_dir_all().unwrap();
+    temp.child("foo_dir/test.txt").write_str("content").unwrap();
+
+    // Run replace with directory renaming
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args(["replace", "--no-regex", "foo", "bar", "--dry-run"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("bar_dir"));
+}
+
+#[test]
+fn test_replace_command_no_rename_dirs() {
+    let temp = TempDir::new().unwrap();
+
+    // Create directory with pattern in name
+    temp.child("foo_dir").create_dir_all().unwrap();
+    temp.child("foo_dir/test.txt")
+        .write_str("foo content")
+        .unwrap();
+
+    // Run replace without directory renaming
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args([
+            "replace",
+            "--no-regex",
+            "foo",
+            "bar",
+            "--no-rename-dirs",
+            "--dry-run",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("bar content"))
+        .stdout(predicates::str::contains("bar_dir").not());
+}
+
+#[test]
+fn test_replace_command_specific_paths() {
+    let temp = TempDir::new().unwrap();
+
+    // Create multiple files
+    temp.child("file1.txt").write_str("hello world").unwrap();
+    temp.child("file2.txt").write_str("hello world").unwrap();
+    temp.child("dir").create_dir_all().unwrap();
+    temp.child("dir/file3.txt")
+        .write_str("hello world")
+        .unwrap();
+
+    // Run replace only on specific files - should replace in both specified files
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args(["replace", "--no-regex", "hello", "hi", "--dry-run", "file1.txt", "file2.txt"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("hi world")) // Content was replaced
+        .stdout(predicates::str::contains("file2.txt")) // Second file is shown
+        .stdout(predicates::str::contains("file3.txt").not()); // Third file not touched
+}
+
+#[test]
+fn test_replace_command_with_backslash_in_replacement() {
+    let temp = TempDir::new().unwrap();
+
+    temp.child("test.txt").write_str("foo").unwrap();
+
+    // Test that backslashes in replacement are handled correctly
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args(["replace", "--no-regex", "foo", r"bar\baz", "--dry-run"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(r"bar\baz"));
+}
+
+#[test]
+fn test_replace_command_matches_output_format() {
+    let temp = TempDir::new().unwrap();
+
+    temp.child("test.txt").write_str("hello world").unwrap();
+
+    // Run replace with matches preview
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp.path())
+        .args([
+            "replace",
+            "--no-regex",
+            "hello",
+            "hi",
+            "--preview",
+            "matches",
+            "--dry-run",
+        ])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("test.txt"))
+        .stdout(predicates::str::contains("hello"));
+}

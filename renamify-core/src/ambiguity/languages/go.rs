@@ -92,4 +92,89 @@ mod tests {
         let result = suggest_style("var", &possible_styles);
         assert_eq!(result, Some(Style::Camel));
     }
+
+    #[test]
+    fn test_go_struct_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("struct", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        // Test with only Camel available
+        let possible_styles = vec![Style::Camel];
+        let result = suggest_style("struct", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_go_interface_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("interface", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+    }
+
+    #[test]
+    fn test_go_const_heuristic() {
+        let possible_styles = vec![Style::Camel, Style::Pascal];
+        let result = suggest_style("const", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_go_import_heuristic() {
+        let possible_styles = vec![Style::Lower, Style::Snake];
+        let result = suggest_style("import", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+
+        let result = suggest_style("import (", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+
+        // Test with only Snake available
+        let possible_styles = vec![Style::Snake];
+        let result = suggest_style("import", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_go_error_type_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("error", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        let result = suggest_style("Error", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        // Test with only Camel available
+        let possible_styles = vec![Style::Camel];
+        let result = suggest_style("error", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_go_build_directive_heuristic() {
+        let possible_styles = vec![Style::Lower, Style::Camel];
+        let result = suggest_style("//go:", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+
+        let result = suggest_style("// +build", &possible_styles);
+        assert_eq!(result, Some(Style::Lower));
+    }
+
+    #[test]
+    fn test_go_method_receiver_heuristic() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("func (", &possible_styles);
+        assert_eq!(result, Some(Style::Pascal));
+
+        // Test with only Camel available
+        let possible_styles = vec![Style::Camel];
+        let result = suggest_style("func (", &possible_styles);
+        assert_eq!(result, Some(Style::Camel));
+    }
+
+    #[test]
+    fn test_no_matching_style() {
+        let possible_styles = vec![Style::Kebab, Style::Title];
+        let result = suggest_style("type", &possible_styles);
+        assert_eq!(result, None);
+    }
 }

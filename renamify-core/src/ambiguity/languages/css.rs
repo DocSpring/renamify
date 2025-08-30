@@ -79,4 +79,83 @@ mod tests {
         let result = suggest_style("--", &possible_styles);
         assert_eq!(result, Some(Style::Kebab));
     }
+
+    #[test]
+    fn test_less_variable_heuristic() {
+        let possible_styles = vec![Style::Kebab, Style::Snake];
+        let result = suggest_style("@", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+
+        // Test with only Snake available
+        let possible_styles = vec![Style::Snake];
+        let result = suggest_style("@", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_scss_mixin_heuristic() {
+        let possible_styles = vec![Style::Kebab, Style::Snake];
+        let result = suggest_style("@mixin", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+
+        let result = suggest_style("@include", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+
+        let result = suggest_style("@function", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+
+        // Test with only Snake available
+        let possible_styles = vec![Style::Snake];
+        let result = suggest_style("@mixin", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_sass_placeholder_heuristic() {
+        let possible_styles = vec![Style::Kebab, Style::Camel];
+        let result = suggest_style("%", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_css_attribute_selector_heuristic() {
+        let possible_styles = vec![Style::Kebab, Style::Snake];
+        let result = suggest_style("[data-id=", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_html_data_attribute_heuristic() {
+        let possible_styles = vec![Style::Kebab, Style::Camel];
+        let result = suggest_style("data-", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_html_aria_attribute_heuristic() {
+        let possible_styles = vec![Style::Kebab, Style::Pascal];
+        let result = suggest_style("aria-", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_css_class_attribute_heuristic() {
+        let possible_styles = vec![Style::Kebab, Style::Snake];
+        let result = suggest_style("class=", &possible_styles);
+        assert_eq!(result, Some(Style::Kebab));
+    }
+
+    #[test]
+    fn test_scss_variable_snake_fallback() {
+        let possible_styles = vec![Style::Snake, Style::Camel];
+        let result = suggest_style("$", &possible_styles);
+        assert_eq!(result, Some(Style::Snake));
+    }
+
+    #[test]
+    fn test_no_matching_style() {
+        let possible_styles = vec![Style::Pascal, Style::Camel];
+        let result = suggest_style("--", &possible_styles);
+        assert_eq!(result, None);
+    }
 }
