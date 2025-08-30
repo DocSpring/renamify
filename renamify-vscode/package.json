@@ -4,6 +4,7 @@
   "description": "Smart case-aware search and replace with file renaming",
   "version": "0.1.0",
   "publisher": "DocSpring",
+  "icon": "images/icon.svg",
   "repository": {
     "type": "git",
     "url": "https://github.com/DocSpring/renamify"
