@@ -89,12 +89,16 @@ const MAX_RETRIES = 3; // SCREAMING_SNAKE in all-caps context
 process.env.NODE_ENV; // SCREAMING_SNAKE for env vars
 ```
 
-:::note These conventions only apply when there's actual ambiguity. If an
-identifier already has a clear case style then it's always preserved. :::
+<br /><br />
+
+:::note
+These conventions only apply when there's actual ambiguity. If an
+identifier already has a clear case style then it's always preserved.
+:::
 
 ### 2. File Context Analysis
 
-First, Renamify analyzes the predominant case style in your file. If a file uses
+Next, Renamify analyzes the predominant case style in your file. If a file uses
 mostly camelCase and the match starts with a lowercase letter, ambiguous
 identifiers will be resolved as camelCase.
 
@@ -106,13 +110,15 @@ function getUserName() { ... }
 function setUserEmail() { ... }
 const userId = 123;
 
-// If we are replacing "api" here, it's likely camelCase
-const api = new API();
+// If we replace "api" with "api_wrapper", these instances are likely camelCase:
+const api = new api();
+
+// =====> const apiWrapper = new apiWrapper();
 ```
 
 ### 3. Context from Other Related Files
 
-If file-wide analysis isn't conclusive, Renamify looks at the preceding word
+If file-wide analysis isn't conclusive, Renamify looks at the context within that line
 (e.g. `const`, `function`, `class`, etc.) and searches for other examples in the
 codebase that have the same file extension. (This operation is performed only
 when needed and cached.)
@@ -141,9 +147,8 @@ Renamify **never** changes the fundamental character properties of a match:
 - If a match starts with lowercase (like `api`), it can only be resolved to
   styles that also start with lowercase (snake_case, camelCase, kebab-case,
   lower)
-- If a match starts with uppercase (like `API`), it can only be resolved to
-  styles that also start with uppercase (PascalCase, Train-Case,
-  SCREAMING_SNAKE_CASE)
+- If a match starts with uppercase (like `Api`), it can only be resolved to
+  styles that also start with uppercase (PascalCase, Train-Case)
 
 ## Examples
 
@@ -174,7 +179,7 @@ class UserController {
 
 The file predominantly uses camelCase, so:
 
-- `.config` would become `.configData` (camelCase) even if the replacement is
+- `.config` would become `.configData` (camelCase) even if the replacement string is
   `config_data`
 
 ### Example 3: Mixed Styles
@@ -184,7 +189,7 @@ style for maximum predictability.
 
 ## Overriding Ambiguity Resolution
 
-You can always be explicit about the case style you want:
+You can always be explicit about the case styles you want to include or exclude:
 
 ```bash
 # Force specific styles only
@@ -211,5 +216,5 @@ The ambiguity resolution system:
 - Caches file analysis for performance
 - Can be disabled with `--ignore-ambiguous`
 
-This intelligent system ensures that Renamify makes sensible decisions about 95%
-of the time, while still giving you full control when needed.
+This intelligent system ensures that Renamify makes sensible decisions most of the time,
+while still giving you full control when needed.
