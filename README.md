@@ -1,6 +1,6 @@
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logo-white-wordmark.svg"><source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logo-wordmark.svg"><img alt="Renamify logo" src="docs/src/assets/logo-white-wordmark.svg" height="32" align="absmiddle"></picture>
 
-Smart search & replace for code and files with case-aware transformations and built-in undo/redo.
+Smart search & replace for code and filenames with case-aware transformations and built-in undo/redo.
 
 [![CI](https://github.com/DocSpring/renamify/actions/workflows/ci.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/DocSpring/renamify/graph/badge.svg)](https://codecov.io/gh/DocSpring/renamify)
@@ -9,11 +9,11 @@ Smart search & replace for code and files with case-aware transformations and bu
 [![VS Code](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml/badge.svg)](https://github.com/DocSpring/renamify/actions/workflows/vscode.yml)
 [![Docs](https://github.com/DocSpring/renamify/actions/workflows/docs.yml/badge.svg)](https://docspring.github.io/renamify/)
 
-- **CLI tool** - Production ready with full Windows, macOS, and Linux support<br>
+- **CLI tool** - Cross-platform with full Windows, macOS, and Linux support<br>
 - **MCP server** - AI integrations for Claude, Cursor, and other MCP-compatible tools<br>
-- **VS Code / Cursor extension** - Instant renaming without leaving your editor<br>
+- **VS Code + Cursor extension** - Instant renaming without leaving your editor<br>
 - **Written in Rust** - High performance and memory safety with >90% code coverage<br>
-- **Documentation** - Comprehensive guides at [docspring.github.io/renamify](https://docspring.github.io/renamify/)
+- **Documentation** - Learn more at [docspring.github.io/renamify](https://docspring.github.io/renamify/)
 
 ## Installation
 
