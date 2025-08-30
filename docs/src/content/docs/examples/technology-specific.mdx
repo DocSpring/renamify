@@ -6,6 +6,7 @@ description: Renaming examples for specific programming languages and frameworks
 ## React/TypeScript Projects
 
 ### Component Renaming
+
 ```bash
 # Rename a React component across the entire project
 renamify rename UserCard ProfileCard \
@@ -17,6 +18,7 @@ renamify rename UserCard ProfileCard src/components/ src/pages/
 ```
 
 **Changes made:**
+
 - Component files: `UserCard.tsx` → `ProfileCard.tsx`
 - Test files: `UserCard.test.tsx` → `ProfileCard.test.tsx` (if not excluded)
 - Import statements: `import UserCard from './UserCard'`
@@ -24,6 +26,7 @@ renamify rename UserCard ProfileCard src/components/ src/pages/
 - Type definitions: `UserCardProps` → `ProfileCardProps`
 
 ### Hook Renaming
+
 ```bash
 # Rename a custom React hook
 renamify rename useUserData useProfileData \
@@ -34,6 +37,7 @@ renamify rename useUserData useProfileData src/hooks/ src/components/
 ```
 
 **Changes made:**
+
 ```tsx
 // Before
 function useUserData(id: string) { ... }
@@ -47,6 +51,7 @@ const { data, loading } = useProfileData(userId);
 ## Python Projects
 
 ### Django Model Renaming
+
 ```bash
 # Rename Django models and related code
 renamify rename UserProfile AccountProfile \
@@ -58,6 +63,7 @@ renamify rename UserProfile AccountProfile apps/users/ apps/accounts/
 ```
 
 **Changes made:**
+
 ```python
 # models.py - Before
 class UserProfile(models.Model):
@@ -77,6 +83,7 @@ profile = AccountProfile.objects.get(id=1)
 ```
 
 ### Flask API Renaming
+
 ```bash
 # Rename Flask route handlers
 renamify rename getUserData fetchUserProfile \
@@ -90,6 +97,7 @@ renamify rename getUserData fetchUserProfile app/ routes/
 ## Rust Projects
 
 ### Module Renaming
+
 ```bash
 # Rename Rust modules and functions
 renamify rename user_manager profile_manager \
@@ -101,6 +109,7 @@ renamify rename user_manager profile_manager src/ lib/
 ```
 
 **Changes made:**
+
 ```rust
 // Before
 mod user_manager {
@@ -116,6 +125,7 @@ use profile_manager::ProfileManager;
 ```
 
 ### Cargo.toml Updates
+
 ```bash
 # Rename crate references
 renamify rename my_crate awesome_crate \
@@ -125,6 +135,7 @@ renamify rename my_crate awesome_crate \
 ## Go Projects
 
 ### Package Renaming
+
 ```bash
 # Rename Go packages
 renamify rename userservice profileservice \
@@ -136,6 +147,7 @@ renamify rename userservice profileservice pkg/ cmd/
 ```
 
 **Changes made:**
+
 ```go
 // Before
 package userservice
@@ -151,6 +163,7 @@ func GetProfileService() *ProfileService { ... }
 ## Node.js/JavaScript Projects
 
 ### NPM Package Renaming
+
 ```bash
 # Rename throughout a Node.js project
 renamify rename mypackage awesome_package \
@@ -162,12 +175,14 @@ renamify rename mypackage awesome_package src/ lib/ docs/
 ```
 
 **Changes made:**
+
 - `package.json` name field
 - Import statements: `require('mypackage')`
 - Documentation references
 - Configuration files
 
 ### Express.js Routes
+
 ```bash
 # Rename Express route handlers
 renamify rename userRoutes profileRoutes \
@@ -181,6 +196,7 @@ renamify rename userRoutes profileRoutes routes/ controllers/
 ## Database Projects
 
 ### SQL Schema Renaming
+
 ```bash
 # Rename database tables and columns (be careful!)
 renamify rename user_data profile_data \
@@ -190,6 +206,7 @@ renamify rename user_data profile_data \
 ```
 
 **Changes made:**
+
 ```sql
 -- Before
 CREATE TABLE user_data (
@@ -207,6 +224,7 @@ CREATE TABLE profile_data (
 ## Configuration Files
 
 ### Environment Variables
+
 ```bash
 # Update environment variable names
 renamify rename DATABASE_HOST DB_HOST \
@@ -214,6 +232,7 @@ renamify rename DATABASE_HOST DB_HOST \
 ```
 
 ### Docker and K8s
+
 ```bash
 # Rename service references in Docker/K8s files
 renamify rename userservice profileservice \
@@ -223,6 +242,7 @@ renamify rename userservice profileservice \
 ## Multi-Language Projects
 
 ### Microservices Architecture
+
 ```bash
 # Rename across multiple languages in a microservice setup
 renamify rename userservice profileservice \
@@ -234,6 +254,7 @@ renamify rename userservice profileservice services/ api/ config/
 ```
 
 This handles:
+
 - Service names in configuration files
 - API endpoint references
 - Docker service names
@@ -243,6 +264,7 @@ This handles:
 ## Framework-Specific Tips
 
 ### Next.js Projects
+
 ```bash
 # Include Next.js specific files
 renamify rename oldPage newPage \
@@ -255,6 +277,7 @@ renamify rename oldPage newPage pages/ app/ components/
 ```
 
 ### Vue.js Projects
+
 ```bash
 # Include Vue single file components
 renamify rename UserWidget ProfileWidget \
@@ -266,6 +289,7 @@ renamify rename UserWidget ProfileWidget src/components/ src/views/
 ```
 
 ### Laravel Projects
+
 ```bash
 # PHP Laravel project renaming
 renamify rename UserController ProfileController \
@@ -279,17 +303,20 @@ renamify rename UserController ProfileController app/Http/Controllers/ app/Model
 ## Best Practices by Technology
 
 ### Always Exclude Dependencies
+
 - **Node.js**: `--exclude "node_modules/**"`
 - **Rust**: `--exclude "target/**"`
 - **Python**: `--exclude "venv/**,__pycache__/**"`
 - **Go**: `--exclude "vendor/**"`
 
 ### Include Relevant Extensions
+
 - **Web**: `--include "**/*.{js,ts,tsx,jsx,html,css,scss}"`
 - **Backend**: `--include "**/*.{py,js,go,rs,rb,php}"`
 - **Config**: `--include "**/*.{json,yml,yaml,toml,env}"`
 
 ### Test Safely First
+
 ```bash
 # Always start with dry-run for unfamiliar codebases
 renamify dry-run pattern replacement --include "src/**"

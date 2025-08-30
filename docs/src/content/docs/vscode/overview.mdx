@@ -1,11 +1,13 @@
 ---
 title: VS Code + Cursor Extension
-description: VS Code extension for Renamify - Smart search & replace with visual previews
+description:
+  VS Code extension for Renamify - Smart search & replace with visual previews
 ---
 
 import { LinkCard, Card, CardGrid } from '@astrojs/starlight/components';
 
-The Renamify VS Code extension brings case-aware search & replace directly into your editor with visual previews and interactive controls.
+The Renamify VS Code extension brings case-aware search & replace directly into
+your editor with visual previews and interactive controls.
 
 ![Renamify VS Code Extension](../../../assets/vscode-extension.jpg)
 
@@ -43,6 +45,7 @@ code --install-extension DocSpring.renamify
 ### Undo Operations
 
 Use the Command Palette to access undo and history commands:
+
 - `Renamify: Undo Last Operation` - Undo the last rename operation
 - `Renamify: Show History` - View operation history
 
@@ -52,8 +55,10 @@ Configure Renamify in VS Code settings:
 
 - **`renamify.cliPath`** - Path to renamify CLI (auto-detected by default)
 - **`renamify.respectGitignore`** - Honor .gitignore files (default: true)
-- **`renamify.showContextLines`** - Number of context lines in results (default: 2)
-- **`renamify.autoSaveBeforeApply`** - Auto-save files before applying (default: true)
+- **`renamify.showContextLines`** - Number of context lines in results
+  (default: 2)
+- **`renamify.autoSaveBeforeApply`** - Auto-save files before applying (default:
+  true)
 - **`renamify.confirmBeforeApply`** - Show confirmation dialog (default: false)
 
 ## Compatibility

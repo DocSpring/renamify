@@ -3,36 +3,46 @@ title: File and Directory Renaming
 description: Rename files and directories that match your patterns
 ---
 
-In addition to replacing text within files, Renamify can rename files and directories that match your pattern.
+In addition to replacing text within files, Renamify can rename files and
+directories that match your pattern.
 
 ## What Gets Renamed
 
 ### Files
+
 Any file whose name contains your search pattern will be renamed:
+
 - `getUserName.js` → `fetchUserProfile.js`
 - `get_user_name.py` → `fetch_user_profile.py`
 - `GetUserName.tsx` → `FetchUserProfile.tsx`
 
 ### Directories
+
 Directory names are also transformed:
+
 - `user-name/` → `user-profile/`
 - `getUserName/` → `fetchUserProfile/`
 
 ### Rename Order
+
 Renamify renames in dependency order:
+
 1. Files first
-2. Then directories, deepest first
-This prevents conflicts and ensures all operations succeed.
+2. Then directories, deepest first This prevents conflicts and ensures all
+   operations succeed.
 
 ## Root Directory Renaming
 
-**NEW**: Renamify can now rename the project root directory itself when the directory name matches your pattern.
+**NEW**: Renamify can now rename the project root directory itself when the
+directory name matches your pattern.
 
 ### Safety First
+
 - **Default behavior**: Root directory renaming is disabled for safety
 - **Enable with `--rename-root`**: Explicitly allow root directory renaming
 - **Manual confirmation**: Always requires interactive confirmation
-- **Next steps snippet**: Provides instructions for rebuilding/reloading after root rename
+- **Next steps snippet**: Provides instructions for rebuilding/reloading after
+  root rename
 
 ### Example
 
@@ -43,6 +53,7 @@ renamify rename renamify renamed_renaming_tool --rename-root
 ```
 
 Renamify will show a "Next Steps" snippet like:
+
 ```
 Next Steps:
 1. cd ../renamed-renaming-tool-project
@@ -51,6 +62,7 @@ Next Steps:
 ```
 
 ### Safety Considerations
+
 - Always commit changes before root directory rename
 - Update build scripts, IDE settings, and documentation paths
 - Consider impact on CI/CD pipelines that reference the directory name
@@ -58,16 +70,19 @@ Next Steps:
 ## Controlling Rename Behavior
 
 ### Disable File Renaming
+
 ```bash
 renamify rename old_name new_name --no-rename-files
 ```
 
 ### Disable Directory Renaming
+
 ```bash
 renamify rename old_name new_name --no-rename-dirs
 ```
 
 ### Prevent Root Directory Renaming
+
 ```bash
 renamify rename old_name new_name --no-rename-root
 ```
@@ -75,11 +90,13 @@ renamify rename old_name new_name --no-rename-root
 ## Examples
 
 ### Basic File Renaming
+
 ```bash
 renamify rename getUserName fetchUserProfile
 ```
 
 Might show:
+
 ```
 Files to rename: 3
 ┌─────────────────────────────────────┬─────────────────────────────────────┐
@@ -92,11 +109,13 @@ Files to rename: 3
 ```
 
 ### Project-Wide Rename
+
 ```bash
 renamify rename myproject awesome_project --rename-root
 ```
 
 This could rename:
+
 - The root directory: `myproject/` → `awesome_project/`
 - Files: `myproject.config.js` → `awesome_project.config.js`
 - Directories: `src/myproject/` → `src/awesome_project/`
@@ -107,7 +126,9 @@ This could rename:
 Renamify detects several types of renaming conflicts:
 
 ### Multiple-to-One Conflicts
+
 When multiple files would be renamed to the same destination:
+
 ```
 ❌ Error: Multiple files would be renamed to 'utils.js':
   - old_utils.js
@@ -115,17 +136,22 @@ When multiple files would be renamed to the same destination:
 ```
 
 ### Case-Insensitive Filesystem Conflicts
+
 On macOS and Windows (case-insensitive filesystems):
+
 ```
 ⚠️  Warning: Renaming 'OldName.js' to 'oldName.js' requires special handling
 ```
 
 Renamify uses two-step renames for case-only changes:
+
 1. `OldName.js` → `temp_12345.js`
 2. `temp_12345.js` → `oldName.js`
 
 ### Windows Reserved Names
+
 Prevents creating files with Windows reserved names:
+
 ```
 ❌ Error: Cannot create file 'CON.js' (Windows reserved name)
 ```
@@ -133,16 +159,19 @@ Prevents creating files with Windows reserved names:
 ## Platform Compatibility
 
 ### Unix Systems (Linux, macOS)
+
 - Handles case-sensitive and case-insensitive filesystems
 - Supports long file paths
 - Preserves file permissions
 
 ### Windows
+
 - Handles path length limitations (260 chars)
 - Prevents reserved filenames (CON, PRN, AUX, etc.)
 - Supports both forward and backward slashes
 
 ### Symbolic Links
+
 - Symlink files can be renamed if their names match
 - Symlink targets are never modified
 - By default, symlinks are not followed during traversal

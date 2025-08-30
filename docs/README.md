@@ -1,6 +1,7 @@
 # Renamify Documentation Site
 
-This directory contains the Renamify documentation website built with [Starlight](https://starlight.astro.build).
+This directory contains the Renamify documentation website built with
+[Starlight](https://starlight.astro.build).
 
 ## 📖 Documentation Structure
 
@@ -28,7 +29,8 @@ The documentation is automatically built and deployed from the `main` branch.
 
 ## 📝 Content
 
-Documentation content is written in Markdown/MDX and located in `src/content/docs/`. The site includes:
+Documentation content is written in Markdown/MDX and located in
+`src/content/docs/`. The site includes:
 
 - Getting started guides
 - CLI command reference
@@ -36,4 +38,5 @@ Documentation content is written in Markdown/MDX and located in `src/content/doc
 - Live demo with self-hosting testing
 - Real-world case studies
 
-Visit the live documentation at https://docspring.github.io/renamify/ to learn more about Renamify.
+Visit the live documentation at https://docspring.github.io/renamify/ to learn
+more about Renamify.

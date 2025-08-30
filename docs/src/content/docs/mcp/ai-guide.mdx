@@ -5,20 +5,25 @@ description: Best practices for AI assistants using the Renamify MCP Server
 
 import { Card, CardGrid, Steps, Aside } from '@astrojs/starlight/components';
 
-A comprehensive guide for AI assistants to effectively use the Renamify MCP Server for intelligent, safe renaming operations.
+A comprehensive guide for AI assistants to effectively use the Renamify MCP
+Server for intelligent, safe renaming operations.
 
 ## Core Principles for AI Agents
 
 ### Plan First, Execute Second
+
 Always create a plan before applying changes. Never skip directly to apply.
 
 ### Start Narrow, Expand Gradually
+
 Begin with specific directories and expand scope only when confident.
 
 ### Communicate Clearly
+
 Explain what you're doing and why. Show summaries before applying.
 
 ### Handle Errors Gracefully
+
 When things go wrong, explain the issue and provide solutions.
 
 ## The Golden Workflow
@@ -30,6 +35,7 @@ When things go wrong, explain the issue and provide solutions.
    - Note any special requirements
 
 2. **Create a plan**
+
    ```
    Tool: renamify_plan
    Arguments: {
@@ -50,6 +56,7 @@ When things go wrong, explain the issue and provide solutions.
    - Offer to show different preview formats if requested
 
 5. **Apply the changes**
+
    ```
    Tool: renamify_apply
    Arguments: {
@@ -61,28 +68,30 @@ When things go wrong, explain the issue and provide solutions.
    - Confirm successful application
    - Mention the number of changes made
    - Suggest next steps if applicable
-</Steps>
+     </Steps>
 
 ## Understanding User Intent
 
 ### Interpreting Renaming Requests
 
-| User Says | You Should |
-|-----------|------------|
-| "Rename X to Y" | Create a plan for all case variants |
+| User Says                     | You Should                                    |
+| ----------------------------- | --------------------------------------------- |
+| "Rename X to Y"               | Create a plan for all case variants           |
 | "Update X to Y in tests only" | Use `includes: ["**/test/**", "**/*.test.*"]` |
-| "Change X to Y everywhere" | Use broad includes, minimal excludes |
-| "Carefully rename X to Y" | Use dry-run first, show diff preview |
-| "Fix the naming of X" | Ask for clarification on the new name |
+| "Change X to Y everywhere"    | Use broad includes, minimal excludes          |
+| "Carefully rename X to Y"     | Use dry-run first, show diff preview          |
+| "Fix the naming of X"         | Ask for clarification on the new name         |
 
 ### Scope Detection
 
 **Explicit Scope:**
+
 - "in the src folder" → `includes: ["src/**/*"]`
 - "only TypeScript files" → `includes: ["**/*.ts", "**/*.tsx"]`
 - "except tests" → `excludes: ["**/*.test.*", "**/test/**"]`
 
 **Implicit Scope:**
+
 - React component → Focus on `.jsx`, `.tsx` files
 - Database table → Include migrations, models, queries
 - API endpoint → Include routes, controllers, tests, docs
@@ -113,18 +122,22 @@ Based on the identifier pattern, intelligently select case styles:
 ### Language-Specific Conventions
 
 **JavaScript/TypeScript**
+
 - Primary: `camel`, `pascal`
 - Files: `kebab`, `camel`
 
 **Python**
+
 - Primary: `snake`
 - Classes: `pascal`
 
 **Go**
+
 - Primary: `camel`, `pascal`
 - Packages: lowercase
 
 **Rust**
+
 - Primary: `snake`
 - Types: `pascal`
 
@@ -150,6 +163,7 @@ Based on the identifier pattern, intelligently select case styles:
 ### Project Type Detection
 
 **React/Next.js Project:**
+
 ```json
 {
   "includes": ["src/**/*.{jsx,tsx,js,ts}", "pages/**/*.{jsx,tsx}"],
@@ -158,6 +172,7 @@ Based on the identifier pattern, intelligently select case styles:
 ```
 
 **Node.js Backend:**
+
 ```json
 {
   "includes": ["src/**/*.js", "lib/**/*.js", "routes/**/*.js"],
@@ -166,6 +181,7 @@ Based on the identifier pattern, intelligently select case styles:
 ```
 
 **Python Project:**
+
 ```json
 {
   "includes": ["**/*.py"],
@@ -254,11 +270,9 @@ Arguments: {
 Before applying changes in production:
 
 <Steps>
-1. Check git status with `renamify_status`
-2. Create plan with `dryRun: true` first
-3. Review with `format: "diff"` if requested
-4. Apply with `atomic: true` always
-5. Consider `commit: true` for automatic git commit
+  1. Check git status with `renamify_status` 2. Create plan with `dryRun: true`
+  first 3. Review with `format: "diff"` if requested 4. Apply with `atomic:
+  true` always 5. Consider `commit: true` for automatic git commit
 </Steps>
 
 ### 3. Intelligent Fallbacks
@@ -288,12 +302,10 @@ When a renaming fails:
 ## Common Pitfalls to Avoid
 
 <Aside type="caution">
-**Never:**
-- Apply without showing the plan summary first
-- Use overly broad patterns like replacing "data" everywhere
-- Ignore error messages about conflicts
-- Forget to exclude node_modules and build directories
-- Assume the user wants all case styles (ask if uncertain)
+  **Never:** - Apply without showing the plan summary first - Use overly broad
+  patterns like replacing "data" everywhere - Ignore error messages about
+  conflicts - Forget to exclude node_modules and build directories - Assume the
+  user wants all case styles (ask if uncertain)
 </Aside>
 
 ## Response Patterns
@@ -352,30 +364,27 @@ specifically needs to be renamed? For example:
 ### For Large Codebases (>10,000 files)
 
 1. **Use specific includes:**
+
    ```json
    {
-     "includes": ["src/**/*.js"],  // Better
-     "includes": ["**/*"]          // Avoid
+     "includes": ["src/**/*.js"], // Better
+     "includes": ["**/*"] // Avoid
    }
    ```
 
 2. **Exclude unnecessary directories:**
+
    ```json
    {
-     "excludes": [
-       "node_modules/**",
-       "coverage/**",
-       ".next/**",
-       "out/**"
-     ]
+     "excludes": ["node_modules/**", "coverage/**", ".next/**", "out/**"]
    }
    ```
 
 3. **Consider file type specific searches:**
    ```json
    {
-     "includes": ["**/*.ts"],  // Just TypeScript
-     "renameFiles": false      // Skip file renames if not needed
+     "includes": ["**/*.ts"], // Just TypeScript
+     "renameFiles": false // Skip file renames if not needed
    }
    ```
 
@@ -395,12 +404,14 @@ When developing or testing AI agent integrations:
 ### Expected Behaviors
 
 ✅ **Good agent behavior:**
+
 - Always shows plan summary before applying
 - Handles errors with helpful suggestions
 - Uses appropriate includes/excludes
 - Explains what's happening at each step
 
 ❌ **Poor agent behavior:**
+
 - Applies changes without user confirmation
 - Uses overly broad patterns by default
 - Doesn't explain errors clearly
@@ -411,16 +422,13 @@ When developing or testing AI agent integrations:
 For AI developers integrating Renamify MCP:
 
 <Steps>
-1. ✓ Install MCP Server and verify tools are available
-2. ✓ Implement the golden workflow (plan → preview → apply)
-3. ✓ Add appropriate error handling for all tools
-4. ✓ Include default excludes (node_modules, etc.)
-5. ✓ Show summaries in user-friendly format
-6. ✓ Wait for user confirmation before applying
-7. ✓ Handle conflicts and errors gracefully
-8. ✓ Provide undo information when things go wrong
-9. ✓ Test with various identifier patterns and case styles
-10. ✓ Document any custom behaviors or limitations
+  1. ✓ Install MCP Server and verify tools are available 2. ✓ Implement the
+  golden workflow (plan → preview → apply) 3. ✓ Add appropriate error handling
+  for all tools 4. ✓ Include default excludes (node_modules, etc.) 5. ✓ Show
+  summaries in user-friendly format 6. ✓ Wait for user confirmation before
+  applying 7. ✓ Handle conflicts and errors gracefully 8. ✓ Provide undo
+  information when things go wrong 9. ✓ Test with various identifier patterns
+  and case styles 10. ✓ Document any custom behaviors or limitations
 </Steps>
 
 ## Quick Reference
@@ -439,23 +447,26 @@ For AI developers integrating Renamify MCP:
 
 ```json
 {
-  "atomic": true,           // Always use atomic operations
-  "preview": "summary",  // Best for AI agents
-  "commit": false,          // Let user decide
-  "dryRun": false,         // Unless explicitly testing
-  "renameFiles": true,     // Include file renames
-  "renameDirs": true      // Include directory renames
+  "atomic": true, // Always use atomic operations
+  "preview": "summary", // Best for AI agents
+  "commit": false, // Let user decide
+  "dryRun": false, // Unless explicitly testing
+  "renameFiles": true, // Include file renames
+  "renameDirs": true // Include directory renames
 }
 ```
 
 ## Support and Resources
 
-- [**Tools Reference**](/renamify/mcp/tools) - Detailed documentation for each MCP tool
+- [**Tools Reference**](/renamify/mcp/tools) - Detailed documentation for each
+  MCP tool
 - [**Usage Examples**](/renamify/mcp/examples) - Real-world renaming scenarios
-- [**Installation**](/renamify/mcp/installation) - Setup guide for different platforms
+- [**Installation**](/renamify/mcp/installation) - Setup guide for different
+  platforms
 
 ---
 
 <Aside type="tip">
-**Remember:** The goal is to make renaming safe, predictable, and efficient. Always prioritize clarity and safety over speed.
+  **Remember:** The goal is to make renaming safe, predictable, and efficient.
+  Always prioritize clarity and safety over speed.
 </Aside>

@@ -3,7 +3,10 @@ title: renamify replace
 description: Simple regex or literal string replacement across your codebase
 ---
 
-The `replace` command performs straightforward search-and-replace operations using regular expressions or literal strings. Unlike the `rename` command which handles case transformations, `replace` is for mechanical replacements where you control the exact pattern and replacement.
+The `replace` command performs straightforward search-and-replace operations
+using regular expressions or literal strings. Unlike the `rename` command which
+handles case transformations, `replace` is for mechanical replacements where you
+control the exact pattern and replacement.
 
 ## Usage
 
@@ -14,21 +17,26 @@ renamify replace <PATTERN> <REPLACEMENT> [PATHS]... [OPTIONS]
 ## Arguments
 
 - `<PATTERN>` - Search pattern (regex by default, literal with --no-regex)
-- `<REPLACEMENT>` - Replacement string (supports $1, $2 capture groups in regex mode)
+- `<REPLACEMENT>` - Replacement string (supports $1, $2 capture groups in regex
+  mode)
 - `[PATHS]...` - Search paths (files or directories)
 
 ## Options
 
 ### Pattern Mode
+
 - `--no-regex` - Treat pattern as literal string instead of regex
 
 ### Preview and Confirmation
-- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json, none) [default: table]
+
+- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json,
+  none) [default: table]
 - `--dry-run` - Show preview only, don't apply changes
 - `--yes` / `-y` - Skip confirmation prompt and apply immediately
 - `--large` - Acknowledge large changes (>500 files or >100 renames)
 
 ### File Processing
+
 - `--include <PATTERNS>` - Only process files matching these glob patterns
 - `--exclude <PATTERNS>` - Skip files matching these glob patterns
 - `--no-rename-files` - Don't rename matching files
@@ -36,13 +44,17 @@ renamify replace <PATTERN> <REPLACEMENT> [PATHS]... [OPTIONS]
 - `--no-rename-paths` - Don't rename files or directories
 
 ### Line Filtering
-- `--exclude-matching-lines <REGEX>` - Skip matches on lines matching this regex pattern
+
+- `--exclude-matching-lines <REGEX>` - Skip matches on lines matching this regex
+  pattern
 
 ### Safety and Git
+
 - `--commit` - Create a git commit after applying changes
 - `--force-with-conflicts` - Force apply even with conflicts
 
 ### Unrestricted Mode
+
 - `-u` - Disable .gitignore files
 - `-uu` - Disable all ignore files, include hidden files
 - `-uuu` - Disable all ignore files, include hidden files, process binary files
@@ -155,6 +167,7 @@ renamify replace '(?<!\\)n' '\\n'
 ### No Case Transformation
 
 Unlike `rename`, the `replace` command does NOT:
+
 - Transform between case styles (snake_case, camelCase, etc.)
 - Respect token boundaries
 - Handle acronyms specially
@@ -165,6 +178,7 @@ If you need these features, use the `rename` command instead.
 ### File Renaming
 
 When pattern matches in filenames:
+
 - Files are renamed after content changes
 - Directories are renamed depth-first
 - Collisions are detected and reported
@@ -172,6 +186,7 @@ When pattern matches in filenames:
 ### Escaping in Regex Mode
 
 Common patterns that need escaping:
+
 - Dots: `\.` for literal dot
 - Parentheses: `\(` and `\)` for literal
 - Square brackets: `\[` and `\]`
@@ -181,15 +196,15 @@ Use `--no-regex` to avoid escaping entirely.
 
 ## Comparison with rename
 
-| Task | Use `rename` | Use `replace` |
-|------|--------------|---------------|
-| Rename a variable across case styles | ✅ | ❌ |
-| Update version numbers | ❌ | ✅ |
-| Fix typos | ❌ | ✅ |
-| Refactor class names | ✅ | ❌ |
-| Update config values | ❌ | ✅ |
-| Change import paths | ❌ | ✅ |
-| Rename functions preserving style | ✅ | ❌ |
+| Task                                 | Use `rename` | Use `replace` |
+| ------------------------------------ | ------------ | ------------- |
+| Rename a variable across case styles | ✅           | ❌            |
+| Update version numbers               | ❌           | ✅            |
+| Fix typos                            | ❌           | ✅            |
+| Refactor class names                 | ✅           | ❌            |
+| Update config values                 | ❌           | ✅            |
+| Change import paths                  | ❌           | ✅            |
+| Rename functions preserving style    | ✅           | ❌            |
 
 ## Interactive Flow
 

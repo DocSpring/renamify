@@ -3,18 +3,18 @@ title: Platform Support
 description: Cross-platform compatibility and platform-specific considerations
 ---
 
-Renamify is designed to work consistently across Linux, macOS, and Windows.
-It handles platform-specific quirks intelligently.
+Renamify is designed to work consistently across Linux, macOS, and Windows. It
+handles platform-specific quirks intelligently.
 
 ## Supported Platforms
 
-✅ **Linux** (x86_64, arm64)
-✅ **macOS** (Intel and Apple Silicon)
-✅ **Windows** (x86_64, arm64)
+✅ **Linux** (x86_64, arm64) ✅ **macOS** (Intel and Apple Silicon) ✅
+**Windows** (x86_64, arm64)
 
 ## Case-Insensitive Filesystems
 
 ### macOS (APFS/HFS+)
+
 Most macOS systems use case-insensitive filesystems. Renamify handles this by:
 
 - **Automatic detection** of filesystem case sensitivity
@@ -24,6 +24,7 @@ Most macOS systems use case-insensitive filesystems. Renamify handles this by:
 - **Conflict warnings** when case changes might cause issues
 
 ### Windows (NTFS)
+
 Windows filesystems are typically case-insensitive. Renamify provides:
 
 - **Smart rename handling** similar to macOS
@@ -31,6 +32,7 @@ Windows filesystems are typically case-insensitive. Renamify provides:
 - **Path length validation** (260 character limit without long path support)
 
 ### Linux (ext4/btrfs/etc.)
+
 Most Linux filesystems are case-sensitive, allowing:
 
 - **Direct renames** without intermediate steps
@@ -40,6 +42,7 @@ Most Linux filesystems are case-sensitive, allowing:
 ## Path Handling
 
 ### Path Separators
+
 Renamify accepts both forward slashes and backslashes:
 
 ```bash
@@ -51,6 +54,7 @@ renamify plan old new --include "src\\**\\*.js"
 ### Path Length Limits
 
 **Windows**: 260 characters by default
+
 ```bash
 # Renamify detects and warns about long paths
 ❌ Error: Path too long for Windows:
@@ -62,6 +66,7 @@ Enable long paths or use shorter directory names.
 **macOS/Linux**: Much higher limits (typically 4096+ characters)
 
 ### Unicode Support
+
 Renamify fully supports Unicode filenames and content:
 
 ```bash
@@ -73,6 +78,7 @@ renamify rename josé maria --preview table
 ## Symbolic Links
 
 ### Behavior
+
 - **Symlink files** can be renamed if their names match the pattern
 - **Symlink targets** are never modified
 - **Directory traversal** does not follow symlinks by default
@@ -80,16 +86,19 @@ renamify rename josé maria --preview table
 ### Cross-Platform Differences
 
 **Linux/macOS**:
+
 - Full symlink support
 - Can create and modify symlinks
 
 **Windows**:
+
 - Limited symlink support (requires admin privileges)
 - Renamify handles gracefully without errors
 
 ## File Permissions
 
 ### Unix-like Systems (Linux/macOS)
+
 ```bash
 # Renamify respects and preserves file permissions
 ls -la before.js    # -rw-r--r--
@@ -98,22 +107,26 @@ ls -la after.js     # -rw-r--r-- (preserved)
 ```
 
 ### Windows
+
 - Uses Windows ACLs appropriately
 - Handles read-only files with clear error messages
 
 ## Performance Characteristics
 
 ### Linux
+
 - **Fastest performance** due to efficient filesystem operations
 - **Parallel directory traversal** scales well with CPU cores
 - **Memory-mapped file I/O** for large files
 
 ### macOS
+
 - **Good performance** with some filesystem overhead
 - **APFS optimizations** for recent macOS versions
 - **Slightly slower renames** due to case-insensitivity handling
 
 ### Windows
+
 - **Good performance** with Windows-specific optimizations
 - **NTFS optimizations** for efficient file operations
 - **Long path support** (handles paths with \\?\ prefix)
@@ -122,22 +135,28 @@ ls -la after.js     # -rw-r--r-- (preserved)
 ## Known Platform Issues
 
 ### macOS
+
 - **Unicode normalization**: macOS may normalize Unicode differently
-- **Resource forks**: Very old HFS+ volumes may have resource forks (rarely an issue)
+- **Resource forks**: Very old HFS+ volumes may have resource forks (rarely an
+  issue)
 - **Spotlight indexing**: May temporarily slow file operations
 
 ### Windows
+
 - **Antivirus scanning**: Real-time scanners may slow file operations
 - **File locking**: Some editors/IDEs lock files more aggressively
 - **Long path support**: Automatically handled with \\?\ prefix when needed
 
 ### Linux
-- **Case sensitivity**: Be careful when moving code between case-sensitive and case-insensitive systems
+
+- **Case sensitivity**: Be careful when moving code between case-sensitive and
+  case-insensitive systems
 - **Filesystem differences**: Some network filesystems may have quirks
 
 ## Environment Variables
 
 ### Platform Detection
+
 Renamify automatically detects platform capabilities:
 
 ```bash
@@ -147,6 +166,7 @@ RENAMIFY_PLATFORM=windows renamify plan old new  # Force Windows behavior
 ```
 
 ### File System Override
+
 ```bash
 # Force case sensitivity detection (expert use only)
 RENAMIFY_CASE_SENSITIVE=true renamify plan old new
@@ -156,6 +176,7 @@ RENAMIFY_CASE_SENSITIVE=false renamify plan old new
 ## Best Practices by Platform
 
 ### Linux
+
 ```bash
 # Take advantage of case sensitivity
 renamify rename oldName OldName  # Works directly
@@ -165,6 +186,7 @@ renamify plan old new --include "**/*.rs"  # Fast on Linux
 ```
 
 ### macOS
+
 ```bash
 # Be aware of case insensitivity
 renamify rename oldName OldName --preview table  # Shows two-step rename
@@ -174,6 +196,7 @@ renamify plan old new --include "src/**" --exclude "node_modules/**"
 ```
 
 ### Windows
+
 ```bash
 # Use forward slashes for consistency
 renamify plan old new --include "src/**/*.js"
@@ -199,6 +222,7 @@ git push origin test-rename
 ## Platform-Specific Optimizations
 
 ### Planned Improvements
+
 - **macOS**: Better APFS optimization
 - **Linux**: io_uring support for faster file operations
 - **All**: Platform-specific ignore patterns

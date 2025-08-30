@@ -3,7 +3,8 @@ title: renamify apply
 description: Execute a previously generated renaming plan
 ---
 
-The `apply` command executes a previously generated plan, making all the planned changes to your codebase atomically.
+The `apply` command executes a previously generated plan, making all the planned
+changes to your codebase atomically.
 
 ## Usage
 
@@ -13,7 +14,8 @@ renamify apply [ID] [OPTIONS]
 
 ## Arguments
 
-- `[ID]` - Plan ID, file path, or "latest" (optional - defaults to .renamify/plan.json)
+- `[ID]` - Plan ID, file path, or "latest" (optional - defaults to
+  .renamify/plan.json)
 
 ## Options
 
@@ -36,6 +38,7 @@ When you run `apply`, Renamify:
 ## Examples
 
 ### Basic Apply
+
 ```bash
 # Apply the default plan at .renamify/plan.json
 renamify apply
@@ -45,6 +48,7 @@ renamify apply latest
 ```
 
 ### Apply by Plan ID
+
 ```bash
 # Apply a specific plan from history
 renamify apply abc123def456
@@ -57,6 +61,7 @@ renamify apply ./backups/old-plan.json
 ```
 
 ### Apply with Git Commit
+
 ```bash
 # Apply changes and create a git commit
 renamify apply --commit
@@ -66,6 +71,7 @@ renamify apply abc123def456 --commit
 ```
 
 ### Force Apply (Dangerous)
+
 ```bash
 # Apply even if conflicts are detected
 renamify apply --force-with-conflicts
@@ -76,17 +82,20 @@ renamify apply --force-with-conflicts
 By default, `apply` uses atomic operations:
 
 ### What "Atomic" Means
+
 - **All or nothing**: Either all changes succeed or none are applied
 - **Temporary files**: Changes are written to temporary files first
 - **Atomic rename**: Files are moved into place atomically
 - **Rollback on failure**: If any step fails, all changes are reverted
 
 ### Benefits
+
 - **No partial states**: Your codebase is never left in a half-modified state
 - **Safe interruption**: You can safely Ctrl+C during application
 - **Consistency**: All files are updated simultaneously
 
 ### Example Atomic Process
+
 ```bash
 $ renamify apply
 
@@ -105,6 +114,7 @@ Backups stored in: .renamify/backups/def456-20241201-150322/
 Before applying, Renamify checks for various conflicts:
 
 ### File Modification Conflicts
+
 ```
 ❌ Conflict: File 'src/utils.js' has been modified since plan was created
    Plan checksum: abc123...
@@ -116,6 +126,7 @@ Resolve by:
 ```
 
 ### File Rename Conflicts
+
 ```
 ❌ Conflict: Multiple files would be renamed to 'components/Utils.js':
   - components/old_utils.js
@@ -125,6 +136,7 @@ Resolve by recreating plan with --exclude patterns.
 ```
 
 ### Missing Files
+
 ```
 ❌ Conflict: File 'src/missing.js' in plan no longer exists
 
@@ -134,11 +146,13 @@ The plan may be outdated. Consider recreating it.
 ## Git Integration
 
 ### Automatic Commits
+
 ```bash
 renamify apply --commit
 ```
 
 Creates a commit message like:
+
 ```
 Renamify: getUserName → fetchUserProfile
 
@@ -151,7 +165,9 @@ Operation can be undone with: renamify undo def456-20241201-150322
 ```
 
 ### Pre-commit Requirements
+
 If using `--commit`, ensure:
+
 - Git working directory is clean (or you're okay with a mixed commit)
 - You have appropriate git configuration (user.name, user.email)
 
@@ -160,6 +176,7 @@ If using `--commit`, ensure:
 Every apply operation creates comprehensive backups:
 
 ### Backup Structure
+
 ```
 .renamify/backups/def456-20241201-150322/
 ├── src/
@@ -172,6 +189,7 @@ Every apply operation creates comprehensive backups:
 ```
 
 ### Backup Contents
+
 - **Original file contents**: Exact copies before modification
 - **Checksums**: SHA-256 hashes for integrity verification
 - **Operation metadata**: Plan details, timestamps, file paths
@@ -180,6 +198,7 @@ Every apply operation creates comprehensive backups:
 ## Error Handling
 
 ### Partial Application Failures
+
 If any step fails during application:
 
 ```bash
@@ -195,12 +214,14 @@ To fix:
 ```
 
 ### Recovery Steps
+
 1. **Check file permissions** - Ensure you can write to all files
 2. **Free disk space** - Ensure adequate space for operations
 3. **Close editors** - Some editors may lock files
 4. **Retry application** - Most errors are temporary
 
 ### Force Application
+
 Use `--force-with-conflicts` only when you understand the risks:
 
 ```bash
@@ -211,6 +232,7 @@ renamify apply --force-with-conflicts
 ## After Application
 
 ### Verify Changes
+
 ```bash
 # Check what was actually applied
 renamify history --limit 1
@@ -220,6 +242,7 @@ npm test  # or cargo test, etc.
 ```
 
 ### Undo if Needed
+
 ```bash
 # Undo the last operation
 renamify undo def456-20241201-150322
@@ -230,6 +253,7 @@ renamify undo <operation-id>
 ```
 
 ### Clean Up
+
 The plan file remains after application for reference:
 
 ```bash
@@ -242,13 +266,16 @@ rm .renamify/plan.json
 ## Performance Considerations
 
 ### Large Applications
+
 For very large renaming operations:
 
-- **Disk space**: Ensure you have space for backups (roughly 2x the size of modified files)
+- **Disk space**: Ensure you have space for backups (roughly 2x the size of
+  modified files)
 - **Memory usage**: Large plans may require significant RAM
 - **Time**: Atomic operations on thousands of files can take time
 
 ### Optimization Tips
+
 - **Close unnecessary programs** to free system resources
 - **Use SSD storage** for faster file operations
 - **Ensure stable power** for long operations
@@ -263,6 +290,7 @@ For very large renaming operations:
 ## Integration with Other Commands
 
 ### Typical Workflow
+
 ```bash
 # 1. Plan the changes
 renamify plan old_name new_name --preview table
@@ -279,7 +307,9 @@ npm test
 ```
 
 ### Alternative: Use rename
-For simpler cases, consider using `renamify rename` which combines planning and applying:
+
+For simpler cases, consider using `renamify rename` which combines planning and
+applying:
 
 ```bash
 # This does plan + apply in one step with confirmation

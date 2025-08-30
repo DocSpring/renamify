@@ -3,9 +3,16 @@ title: MCP Server Configuration
 description: Configure the Renamify MCP Server for your environment
 ---
 
-import { Code, Tabs, TabItem, Card, CardGrid } from '@astrojs/starlight/components';
+import {
+  Code,
+  Tabs,
+  TabItem,
+  Card,
+  CardGrid,
+} from '@astrojs/starlight/components';
 
-Learn how to configure the Renamify MCP Server for different AI assistants and customize its behavior.
+Learn how to configure the Renamify MCP Server for different AI assistants and
+customize its behavior.
 
 ## Basic Configuration
 
@@ -102,6 +109,7 @@ Enable debug logging for troubleshooting:
       }
     }
     ```
+
   </TabItem>
 
   <TabItem label="Cursor">
@@ -123,6 +131,7 @@ Enable debug logging for troubleshooting:
       }
     }
     ```
+
   </TabItem>
 
   <TabItem label="Continue">
@@ -143,6 +152,7 @@ Enable debug logging for troubleshooting:
       ]
     }
     ```
+
   </TabItem>
 
   <TabItem label="VS Code Extension">
@@ -165,6 +175,7 @@ Enable debug logging for troubleshooting:
       }
     }
     ```
+
   </TabItem>
 </Tabs>
 
@@ -173,21 +184,25 @@ Enable debug logging for troubleshooting:
 The MCP Server respects these environment variables:
 
 ### RENAMIFY_PATH
+
 - **Type:** String
 - **Default:** `renamify` (searches PATH)
 - **Description:** Path to the renamify binary
 
 ### DEBUG
+
 - **Type:** String
 - **Default:** (none)
 - **Description:** Enable debug output with `renamify:*`
 
 ### LOG_LEVEL
+
 - **Type:** String
 - **Default:** `info`
 - **Description:** Logging level: `error`, `warn`, `info`, `debug`
 
 ### NO_COLOR
+
 - **Type:** Boolean
 - **Default:** `false`
 - **Description:** Disable colored output
@@ -203,7 +218,7 @@ The MCP Server defaults to `summary` format for AI agents. To change:
 ```json
 {
   "env": {
-    "RENAMIFY_DEFAULT_PREVIEW": "table"  // or "diff", "json"
+    "RENAMIFY_DEFAULT_PREVIEW": "table" // or "diff", "json"
   }
 }
 ```
@@ -240,12 +255,7 @@ You can create a `.renamify/config.json` file in your project root:
 {
   "defaults": {
     "styles": ["snake", "camel", "pascal", "kebab"],
-    "excludes": [
-      "node_modules/**",
-      "dist/**",
-      "build/**",
-      ".git/**"
-    ],
+    "excludes": ["node_modules/**", "dist/**", "build/**", ".git/**"],
     "renameFiles": true,
     "renameDirs": true,
     "atomic": true
@@ -366,15 +376,18 @@ Enable comprehensive debugging:
 ### Common Issues
 
 **Tools not appearing:**
+
 - Check JSON syntax is valid
 - Ensure paths use forward slashes (even on Windows)
 - Restart your AI assistant after changes
 
 **Permission errors:**
+
 - Ensure the renamify binary is executable
 - Check file system permissions for your project
 
 **Binary not found:**
+
 - Use absolute paths in RENAMIFY_PATH
 - Verify the binary exists at the specified location
 

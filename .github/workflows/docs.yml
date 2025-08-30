@@ -23,13 +23,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Wait for required checks
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const script = require('./.github/wait-for-checks.js');
-            await script({ github, context, core });
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -42,6 +35,19 @@ jobs:
 
       - name: Install dependencies
         run: cd docs && pnpm install
+
+      - name: Check formatting
+        run: cd docs && pnpm format:check
+
+      - name: Lint code
+        run: cd docs && pnpm lint
+
+      - name: Wait for required checks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('./.github/wait-for-checks.js');
+            await script({ github, context, core });
 
       - name: Build with Astro
         run: cd docs && pnpm build

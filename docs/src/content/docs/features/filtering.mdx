@@ -1,9 +1,12 @@
 ---
 title: Filtering and Ignore Rules
-description: Control which files Renamify processes with includes, excludes, and ignore rules
+description:
+  Control which files Renamify processes with includes, excludes, and ignore
+  rules
 ---
 
-Renamify provides powerful filtering options to control exactly which files get processed during renaming operations.
+Renamify provides powerful filtering options to control exactly which files get
+processed during renaming operations.
 
 ## Default Behavior (Respects .gitignore)
 
@@ -15,13 +18,15 @@ By default, Renamify respects standard ignore mechanisms:
 - **`.rgignore` files** (ripgrep-specific ignore files)
 - **Hidden files and directories** are skipped (starting with `.`)
 
-This means Renamify won't process files in `node_modules/`, `target/`, `.git/`, etc. by default.
+This means Renamify won't process files in `node_modules/`, `target/`, `.git/`,
+etc. by default.
 
 ## Unrestricted Mode
 
 Use ripgrep-style unrestricted flags to reduce filtering:
 
 ### `-u` (Unrestricted Level 1)
+
 Disables `.gitignore` files but respects other ignore mechanisms:
 
 ```bash
@@ -34,6 +39,7 @@ renamify plan old_name new_name -u
 - ❌ Still skips binary files
 
 ### `-uu` (Unrestricted Level 2)
+
 Disables all ignore files and shows hidden files:
 
 ```bash
@@ -45,6 +51,7 @@ renamify plan old_name new_name -uu
 - ❌ Still skips binary files
 
 ### `-uuu` (Unrestricted Level 3)
+
 Processes everything, including binary files:
 
 ```bash
@@ -62,6 +69,7 @@ renamify plan old_name new_name -uuu
 Use glob patterns to specify exactly which files to process:
 
 ### Single Pattern
+
 ```bash
 # Only process Rust source files
 renamify plan old_name new_name --include "**/*.rs"
@@ -71,6 +79,7 @@ renamify plan old_name new_name --include "src/**"
 ```
 
 ### Multiple Patterns
+
 ```bash
 # Process Rust and TypeScript files
 renamify plan old_name new_name --include "**/*.rs,**/*.ts,**/*.tsx"
@@ -84,6 +93,7 @@ renamify plan old_name new_name --include "src/**,lib/**,tests/**"
 Skip specific files or directories:
 
 ### Common Exclusions
+
 ```bash
 # Exclude test files
 renamify plan old_name new_name --exclude "**/*test*"
@@ -96,6 +106,7 @@ renamify plan old_name new_name --exclude "**/*.min.js,**/*.bundle.js"
 ```
 
 ### Combining Include and Exclude
+
 ```bash
 # Process TypeScript files but skip tests and node_modules
 renamify plan old_name new_name \
@@ -105,7 +116,8 @@ renamify plan old_name new_name \
 
 ## Exclude Specific Matches
 
-Use `--exclude-match` to skip specific compound words or identifiers that match your pattern but shouldn't be changed:
+Use `--exclude-match` to skip specific compound words or identifiers that match
+your pattern but shouldn't be changed:
 
 ```bash
 # Skip specific compound words that contain your pattern
@@ -116,15 +128,19 @@ renamify rename config settings --exclude-match ConfigurationManager
 ```
 
 This is particularly useful when:
+
 - Your pattern matches part of a larger compound word
 - Certain identifiers contain your pattern but have different meanings
 - You want to be very selective about what gets changed
 
 ## Exclude Lines by Pattern
 
-Use `--exclude-matching-lines` to filter out matches on lines that match a regex pattern. This is perfect for skipping comments, TODO markers, or any other line-level patterns:
+Use `--exclude-matching-lines` to filter out matches on lines that match a regex
+pattern. This is perfect for skipping comments, TODO markers, or any other
+line-level patterns:
 
 ### Skip Comments
+
 ```bash
 # Skip C-style comment lines (starting with //)
 renamify plan old_name new_name --exclude-matching-lines '^//'
@@ -137,6 +153,7 @@ renamify plan old_name new_name --exclude-matching-lines '^\s*(//|/\*)'
 ```
 
 ### Skip TODO/FIXME Markers
+
 ```bash
 # Skip lines containing TODO or FIXME
 renamify plan old_name new_name --exclude-matching-lines '(TODO|FIXME)'
@@ -146,6 +163,7 @@ renamify plan old_name new_name --exclude-matching-lines '(TODO|FIXME|HACK|NOTE|
 ```
 
 ### Skip Debug or Test Code
+
 ```bash
 # Skip lines containing DEBUG
 renamify plan old_name new_name --exclude-matching-lines 'DEBUG'
@@ -158,6 +176,7 @@ renamify plan old_name new_name --exclude-matching-lines '(assert|expect|test|de
 ```
 
 ### Advanced Patterns
+
 ```bash
 # Skip Python linter directives
 renamify plan old_name new_name --exclude-matching-lines '#.*(pylint|type:|noqa)'
@@ -170,12 +189,14 @@ renamify plan old_name new_name --exclude-matching-lines '@(deprecated|internal|
 ```
 
 ### Important Notes
+
 - The regex matches against the **entire line** containing the match
 - Use `^` to match from the start of the line
 - The pattern is case-sensitive by default
 - Invalid regex patterns will cause an error before scanning begins
 
 This feature is particularly useful when:
+
 - You want to preserve comments that reference old names
 - You have TODO items mentioning future renames
 - You want to exclude matches in debug/logging code
@@ -185,16 +206,17 @@ This feature is particularly useful when:
 
 Renamify uses standard glob patterns:
 
-| Pattern | Matches |
-|---------|---------|
-| `*` | Any filename (not directories) |
-| `**` | Any number of directories |
-| `?` | Single character |
-| `[abc]` | Any character in brackets |
-| `[!abc]` | Any character not in brackets |
+| Pattern   | Matches                                 |
+| --------- | --------------------------------------- |
+| `*`       | Any filename (not directories)          |
+| `**`      | Any number of directories               |
+| `?`       | Single character                        |
+| `[abc]`   | Any character in brackets               |
+| `[!abc]`  | Any character not in brackets           |
 | `{a,b,c}` | Any of the comma-separated alternatives |
 
 ### Examples
+
 ```bash
 # All JavaScript files recursively
 "**/*.js"
@@ -214,11 +236,13 @@ Renamify uses standard glob patterns:
 Renamify automatically detects and skips binary files by default:
 
 ### Detection Methods
+
 - **File extension**: `.jpg`, `.png`, `.exe`, etc.
 - **Content analysis**: Checks for null bytes and non-UTF8 content
 - **Magic numbers**: Recognizes common binary file headers
 
 ### Override Binary Detection
+
 ```bash
 # Force processing of all files (dangerous!)
 renamify plan old_name new_name -uuu
@@ -232,6 +256,7 @@ renamify plan old_name new_name --include "**/*.{bin,dat}"
 Renamify automatically prompts to ignore its workspace directory on first use:
 
 ### Interactive Prompt
+
 ```
 Renamify uses .renamify/ for plans, backups, and history.
 Ignore it now?
@@ -240,6 +265,7 @@ Choice (Y/l/g/n):
 ```
 
 ### Command-Line Control
+
 ```bash
 # Automatically add to .gitignore without prompting
 renamify --auto-init=repo plan old new
@@ -254,6 +280,7 @@ renamify -y plan old new
 ## Performance Tips
 
 ### Optimize Large Codebases
+
 ```bash
 # Be specific with includes to avoid scanning unnecessary files
 renamify plan old new --include "src/**/*.{js,ts,tsx}"
@@ -263,11 +290,14 @@ renamify plan old new --exclude "node_modules/**,target/**,.git/**"
 ```
 
 ### Parallel Processing
-Renamify automatically uses parallel directory traversal and file processing for optimal performance on large codebases.
+
+Renamify automatically uses parallel directory traversal and file processing for
+optimal performance on large codebases.
 
 ## Common Patterns
 
 ### Frontend Projects
+
 ```bash
 # React/TypeScript project
 renamify rename oldName newName \
@@ -276,6 +306,7 @@ renamify rename oldName newName \
 ```
 
 ### Rust Projects
+
 ```bash
 # Rust project with tests
 renamify rename old_name new_name \
@@ -284,6 +315,7 @@ renamify rename old_name new_name \
 ```
 
 ### Python Projects
+
 ```bash
 # Python with tests in separate directory
 renamify rename old_name new_name \
@@ -292,6 +324,7 @@ renamify rename old_name new_name \
 ```
 
 ### Documentation Only
+
 ```bash
 # Only process markdown and text files
 renamify rename old_name new_name \

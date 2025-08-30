@@ -26,7 +26,8 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash -s -- --prefix
 curl -fsSL https://docspring.github.io/renamify/install.sh | bash -s -- --uninstall
 ```
 
-The install script defaults to `~/.local/bin` (no sudo required) and detects your OS and architecture automatically.
+The install script defaults to `~/.local/bin` (no sudo required) and detects
+your OS and architecture automatically.
 
 ## Download Binary
 
@@ -47,6 +48,7 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
     sudo chmod 755 /usr/local/bin/renamify
     renamify --version
     ```
+
   </TabItem>
 
   <TabItem label="macOS">
@@ -65,6 +67,7 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
     sudo chmod 755 /usr/local/bin/renamify
     renamify --version
     ```
+
   </TabItem>
 
   <TabItem label="Windows">
@@ -107,6 +110,7 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
     cargo build --release
     # Copy target/release/renamify.exe to your PATH
     ```
+
   </TabItem>
 </Tabs>
 
@@ -114,8 +118,9 @@ The install script defaults to `~/.local/bin` (no sudo required) and detects you
 
 Coming soon: Install via Cargo, Homebrew, Chocolatey, or Linux package managers.
 
-{/*
-```bash
+{/\*
+
+````bash
 # Cargo
 cargo install renamify
 
@@ -140,4 +145,4 @@ git clone https://github.com/DocSpring/renamify
 cd renamify
 cargo build --release
 cp ./target/release/renamify /usr/local/bin/
-```
+````

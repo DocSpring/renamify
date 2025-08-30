@@ -3,7 +3,8 @@ title: renamify init
 description: Initialize Renamify ignore settings
 ---
 
-The `init` command adds `.renamify/` to ignore files to prevent tracking of Renamify's workspace files.
+The `init` command adds `.renamify/` to ignore files to prevent tracking of
+Renamify's workspace files.
 
 ## Usage
 
@@ -16,29 +17,34 @@ renamify init [OPTIONS]
 - `--local` - Add to `.git/info/exclude` instead of `.gitignore`
 - `--global` - Add to global git excludes file
 - `--check` - Check if `.renamify` is ignored (exit 0 if yes, 1 if no)
-- `--configure-global` - Configure global excludes file if it doesn't exist (requires `--global`)
+- `--configure-global` - Configure global excludes file if it doesn't exist
+  (requires `--global`)
 
 ## Examples
 
 ### Initialize Repository Ignore
+
 ```bash
 # Add .renamify/ to .gitignore (most common)
 renamify init
 ```
 
 ### Local-Only Ignore
+
 ```bash
 # Add to .git/info/exclude (not committed)
 renamify init --local
 ```
 
 ### Global Ignore
+
 ```bash
 # Add to global git excludes file
 renamify init --global --configure-global
 ```
 
 ### Check Status
+
 ```bash
 # Check if .renamify is already ignored
 renamify init --check
@@ -57,6 +63,7 @@ Choice (Y/l/g/n): Y
 ```
 
 ### Disable Auto-Init
+
 ```bash
 # Prevent automatic initialization prompts
 renamify --no-auto-init plan old new
@@ -68,6 +75,7 @@ renamify --auto-init=repo plan old new
 ## Why Initialize?
 
 The `.renamify/` directory contains:
+
 - **Plans**: `plan.json` files with renaming details
 - **Backups**: Complete backups of modified files
 - **History**: `history.json` with operation records

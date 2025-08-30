@@ -1,15 +1,19 @@
 ---
 title: Rename vs. Replace
-description: Understanding when to use Renamify's smart rename vs. simple regex replace
+description:
+  Understanding when to use Renamify's smart rename vs. simple regex replace
 ---
 
 import { LinkCard } from '@astrojs/starlight/components';
 
-Renamify provides two distinct commands for different use cases: **rename** for intelligent case-aware renaming across naming conventions, and **replace** for straightforward regex or literal string replacements.
+Renamify provides two distinct commands for different use cases: **rename** for
+intelligent case-aware renaming across naming conventions, and **replace** for
+straightforward regex or literal string replacements.
 
 ## When to Use Replace
 
-The `replace` command brings simple, powerful search-and-replace to the CLI and AI agents:
+The `replace` command brings simple, powerful search-and-replace to the CLI and
+AI agents:
 
 ```bash
 # Regex replacement with capture groups
@@ -19,19 +23,30 @@ renamify replace 'foo-(.+)' 'bar-$1'
 renamify replace --no-regex 'exact[string]' 'new[string]'
 ```
 
-- **AI Agent Efficiency**: AI coding assistants often waste time updating files one-by-one or struggling with `sed` syntax differences across platforms. The `replace` command gives them a reliable, cross-platform tool that works the first time.
+- **AI Agent Efficiency**: AI coding assistants often waste time updating files
+  one-by-one or struggling with `sed` syntax differences across platforms. The
+  `replace` command gives them a reliable, cross-platform tool that works the
+  first time.
 
-- **Both Contents and Paths**: Most editors already have excellent regex search-and-replace, but very few also allow you to rename files and directories at the same time. The `replace` command replaces the search string in both contents and filenames.
+- **Both Contents and Paths**: Most editors already have excellent regex
+  search-and-replace, but very few also allow you to rename files and
+  directories at the same time. The `replace` command replaces the search string
+  in both contents and filenames.
 
-- **CLI Power Users**: Instead of running multiple `sed` and `find` commands (and hoping they work across macOS/Linux/BSD), you get one consistent CLI interface that works across all platforms.
+- **CLI Power Users**: Instead of running multiple `sed` and `find` commands
+  (and hoping they work across macOS/Linux/BSD), you get one consistent CLI
+  interface that works across all platforms.
 
 ### Replace Features
 
 - **Regex by default** with full capture group support (`$1`, `$2`, etc.)
-- **Literal mode** (`--no-regex`) for when you don't want to escape special characters
-- **Renames files and directories** - Also replaces the search string in filenames, not just file contents
+- **Literal mode** (`--no-regex`) for when you don't want to escape special
+  characters
+- **Renames files and directories** - Also replaces the search string in
+  filenames, not just file contents
 - **Same safety features** as rename: preview, atomic apply, undo/redo
-- **Same scope control**: respects `.gitignore`, supports `--include`/`--exclude` patterns
+- **Same scope control**: respects `.gitignore`, supports
+  `--include`/`--exclude` patterns
 - **Cross-platform**: Works identically on macOS, Linux, and Windows
 
 ### Replace Examples
@@ -55,9 +70,14 @@ renamify replace --no-regex 'https://exmaple.com' 'https://example.com'
 
 ## When to Use Rename
 
-The `rename` command is for intelligent identifier renaming that preserves code style conventions. Use it when you need to rename variables, functions, classes, or modules across different naming styles.
+The `rename` command is for intelligent identifier renaming that preserves code
+style conventions. Use it when you need to rename variables, functions, classes,
+or modules across different naming styles.
 
-> TLDR: Renamify's rename tokenizes identifiers, understands case styles and separators, knows common acronyms, respects boundaries, renames files and directories consistently, previews the plan, and applies changes atomically with undo.
+> TLDR: Renamify's rename tokenizes identifiers, understands case styles and
+> separators, knows common acronyms, respects boundaries, renames files and
+> directories consistently, previews the plan, and applies changes atomically
+> with undo.
 
 ### 1. Case style preservation across variants
 
@@ -102,7 +122,8 @@ Inflection-Rule-Set
 excludeInflectionRules
 ```
 
-How: we detect the container style, generate the correct target variant for that style, and only replace full tokens, not substrings.
+How: we detect the container style, generate the correct target variant for that
+style, and only replace full tokens, not substrings.
 
 ### 2. Compound word boundaries
 
@@ -136,25 +157,32 @@ FileSystemWatcher  -> DocumentSystemWatcher
 
 ### 3. Acronym intelligence for matching
 
-Acronyms are common: `HTTPSConnection`, `XMLHttpRequest`, `parseURL`, `ID`, `URLParser`.
+Acronyms are common: `HTTPSConnection`, `XMLHttpRequest`, `parseURL`, `ID`,
+`URLParser`.
 
 Renamify's tokenizer understands acronym spans for matching:
 
-- `HTMLGenerator` is parsed as `HTML` + `Generator`, so searches for `html_generator` or `HTMLGenerator` both match correctly.
-- `Rename-Tool-CLI` is Train-Case with an acronym tail. Searching for `rename_tool` correctly matches the `Rename-Tool` subspan and preserves `-CLI`.
+- `HTMLGenerator` is parsed as `HTML` + `Generator`, so searches for
+  `html_generator` or `HTMLGenerator` both match correctly.
+- `Rename-Tool-CLI` is Train-Case with an acronym tail. Searching for
+  `rename_tool` correctly matches the `Rename-Tool` subspan and preserves
+  `-CLI`.
 
 Acronym matching is configurable:
+
 - `--no-acronyms` disables acronym-aware matching.
 - `--include-acronyms "API,CLI,ID"`
 - `--exclude-acronyms "ID"`
 - `--only-acronyms "API,CLI"`
 
-> Note: snake_case is always lower for matching and rendering. Screaming snake is the uppercase variant.
-> Acronym options affect matching detection and case inference, not whether snake uses uppercase.
+> Note: snake_case is always lower for matching and rendering. Screaming snake
+> is the uppercase variant. Acronym options affect matching detection and case
+> inference, not whether snake uses uppercase.
 
 ### 4. File and directory renaming with consistency
 
-Renamify updates file and directory names alongside contents, in the right order, and checks for collisions.
+Renamify updates file and directory names alongside contents, in the right
+order, and checks for collisions.
 
 Example: rename `smart_search_and_replace` to `renamify`.
 
@@ -175,7 +203,8 @@ require('smart-search-and-replace')     -> require('renamify')
 use smart_search_and_replace::scanner;  -> use renamify::scanner;
 ```
 
-Root directory rename is suggested with a ready-to-paste snippet and opt-in flag to perform automatically.
+Root directory rename is suggested with a ready-to-paste snippet and opt-in flag
+to perform automatically.
 
 ### 5. Hyphenated mixed-style patterns
 
@@ -187,13 +216,16 @@ smart-search-and-replace-Guide
 Run-SmartSearchAndReplace
 ```
 
-Renamify treats the hyphen as a separator between differently styled segments, replaces only the matching subspan, and preserves each segment's style. For example:
+Renamify treats the hyphen as a separator between differently styled segments,
+replaces only the matching subspan, and preserves each segment's style. For
+example:
 
 ```
 Rename-Tool-CLI  -> Code-Transform-Engine-CLI
 ```
 
-This works because the tokenizer classifies the segment as Train-Case with an acronym tail, not as generic "mixed".
+This works because the tokenizer classifies the segment as Train-Case with an
+acronym tail, not as generic "mixed".
 
 ### 6. Special tokens that must be preserved
 
@@ -204,7 +236,8 @@ Renamify never splits these incorrectly:
 - `K8S`
 - `project1`, `b2b`, `b2c`
 
-These are single tokens with digits and are preserved in style-aware replacements.
+These are single tokens with digits and are preserved in style-aware
+replacements.
 
 ### 7. Round-trip preservation
 
@@ -216,37 +249,40 @@ b2b_sales -> b2c_sales -> b2b_sales
 ARM64_ARCH -> X86_ARCH -> ARM64_ARCH
 ```
 
-Renamify tracks exact tokenization and case rules so round-trips restore the original.
-We run end-to-end roundtrip tests on CI to ensure we catch any unhandled edgecases.
+Renamify tracks exact tokenization and case rules so round-trips restore the
+original. We run end-to-end roundtrip tests on CI to ensure we catch any
+unhandled edgecases.
 
 ## Safety Features (Both Commands)
 
 Both `rename` and `replace` share the same safety infrastructure:
 
-- Ignores binaries and build artifacts by default. (Same rules as ripgrep, same -u, -uu, -uuu flags.)
+- Ignores binaries and build artifacts by default. (Same rules as ripgrep, same
+  -u, -uu, -uuu flags.)
 - Honors `.gitignore`, `.ignore`, `.rgignore`, and `.rnignore`.
 - Plan and preview before apply.
 - Apply is atomic with rollback and undo history.
 
 ## Quick Comparison
 
-| Feature | rename | replace |
-|---------|--------|---------|
-| Case-aware transformations | ✅ | ❌ |
-| Regex patterns | ❌ | ✅ |
-| Capture groups | ❌ | ✅ |
-| Literal string mode | ❌ | ✅ |
-| Acronym detection | ✅ | ❌ |
-| Token boundary respect | ✅ | ❌ |
-| File/directory renaming | ✅ | ✅ |
-| Preview & undo | ✅ | ✅ |
-| Atomic apply | ✅ | ✅ |
+| Feature                    | rename | replace |
+| -------------------------- | ------ | ------- |
+| Case-aware transformations | ✅     | ❌      |
+| Regex patterns             | ❌     | ✅      |
+| Capture groups             | ❌     | ✅      |
+| Literal string mode        | ❌     | ✅      |
+| Acronym detection          | ✅     | ❌      |
+| Token boundary respect     | ✅     | ❌      |
+| File/directory renaming    | ✅     | ✅      |
+| Preview & undo             | ✅     | ✅      |
+| Atomic apply               | ✅     | ✅      |
 
 ## Real-world Examples
 
 ### Using Rename: Refactoring `URL` to `WebAddress`
 
 Challenges include:
+
 - `URLParser`, `parseURL`, `HTTPS_URL`, `url_encoder`
 - Plurals like `URLs` vs `WebAddresses`
 - Words that only contain `URL` but are different, like `CURL`

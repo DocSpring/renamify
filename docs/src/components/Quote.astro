@@ -1,10 +1,11 @@
 ---
-export interface Props {
+export type Props = {
   author?: string;
   source?: string;
   sourceUrl?: string;
-}
+};
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const { author, source, sourceUrl } = Astro.props;
 ---
 

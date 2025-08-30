@@ -3,7 +3,9 @@ title: search
 description: Search for identifiers across your codebase without creating a plan
 ---
 
-The `search` command finds all occurrences of an identifier across your codebase without making any changes or creating a plan file. This is useful for exploring where a name is used before deciding to rename it.
+The `search` command finds all occurrences of an identifier across your codebase
+without making any changes or creating a plan file. This is useful for exploring
+where a name is used before deciding to rename it.
 
 ## Usage
 
@@ -14,14 +16,17 @@ renamify search <term> [paths...] [options]
 ## Arguments
 
 - `<term>` - The identifier to search for
-- `[paths...]` - Optional paths to search (files or directories). Defaults to current directory
+- `[paths...]` - Optional paths to search (files or directories). Defaults to
+  current directory
 
 ## Options
 
 ### Include/Exclude Patterns
 
-- `--include <patterns>` - Include only files matching these glob patterns (comma-separated)
-- `--exclude <patterns>` - Exclude files matching these glob patterns (comma-separated)
+- `--include <patterns>` - Include only files matching these glob patterns
+  (comma-separated)
+- `--exclude <patterns>` - Exclude files matching these glob patterns
+  (comma-separated)
 
 ### Case Styles
 
@@ -29,25 +34,30 @@ renamify search <term> [paths...] [options]
 - `--include-styles <styles>` - Include additional case styles (title, dot)
 - `--only-styles <styles>` - Use only these case styles (overrides defaults)
 
-Available styles: `snake`, `kebab`, `camel`, `pascal`, `screaming-snake`, `train`, `screaming-train`, `title`, `dot`, `lower`, `upper`
+Available styles: `snake`, `kebab`, `camel`, `pascal`, `screaming-snake`,
+`train`, `screaming-train`, `title`, `dot`, `lower`, `upper`
 
 ### Line Filtering
 
-- `--exclude-matching-lines <regex>` - Skip matches on lines matching this regex pattern
+- `--exclude-matching-lines <regex>` - Skip matches on lines matching this regex
+  pattern
 
 ### File and Directory Renaming
 
 - `--no-rename-files` - Don't include file renames in search results
 - `--no-rename-dirs` - Don't include directory renames in search results
-- `--no-rename-paths` - Don't include any file or directory renames (equivalent to --no-rename-files --no-rename-dirs)
+- `--no-rename-paths` - Don't include any file or directory renames (equivalent
+  to --no-rename-files --no-rename-dirs)
 
 ### Case Detection
 
-- `--ignore-ambiguous` - Ignore mixed-case/ambiguous identifiers that don't match standard patterns
+- `--ignore-ambiguous` - Ignore mixed-case/ambiguous identifiers that don't
+  match standard patterns
 
 ### Output Control
 
-- `--preview <format>` - Preview format: `table`, `diff`, `matches`, `summary` (default: summary)
+- `--preview <format>` - Preview format: `table`, `diff`, `matches`, `summary`
+  (default: summary)
 - `--output <format>` - Output format: `summary` or `json` (default: summary)
 - `--quiet` - Suppress all output
 - `--fixed-table-width` - Use fixed column widths for table output
@@ -55,13 +65,15 @@ Available styles: `snake`, `kebab`, `camel`, `pascal`, `screaming-snake`, `train
 ### Acronym Handling
 
 - `--no-acronyms` - Disable acronym detection
-- `--include-acronyms <list>` - Additional acronyms to recognize (comma-separated)
+- `--include-acronyms <list>` - Additional acronyms to recognize
+  (comma-separated)
 - `--exclude-acronyms <list>` - Default acronyms to exclude (comma-separated)
 - `--only-acronyms <list>` - Replace default acronym list (comma-separated)
 
 ### Other Options
 
-- `-u`, `--unrestricted` - Reduce smart filtering (can be repeated up to 3 times)
+- `-u`, `--unrestricted` - Reduce smart filtering (can be repeated up to 3
+  times)
   - `-u`: Don't respect .gitignore files
   - `-uu`: Don't respect any ignore files, include hidden files
   - `-uuu`: Same as -uu, plus treat binary files as text
@@ -128,9 +140,12 @@ renamify search userData --output json > search-results.json
 
 ## Comparison with Plan
 
-The `search` command is essentially the `plan` command without a replacement term. It shows you where changes would be made but doesn't create a plan file or prepare for any modifications.
+The `search` command is essentially the `plan` command without a replacement
+term. It shows you where changes would be made but doesn't create a plan file or
+prepare for any modifications.
 
 Use `search` when you want to:
+
 - Explore where an identifier is used
 - Check the scope of a potential rename
 - Verify that your patterns are matching correctly

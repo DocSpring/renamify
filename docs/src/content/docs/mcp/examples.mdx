@@ -5,13 +5,15 @@ description: Real-world examples of using the Renamify MCP Server
 
 import { Code, Steps, Card, CardGrid } from '@astrojs/starlight/components';
 
-Learn how to use the Renamify MCP Server through practical, real-world scenarios.
+Learn how to use the Renamify MCP Server through practical, real-world
+scenarios.
 
 ## Basic Renaming Examples
 
 ### Example 1: Rename a React Component
 
-**Scenario:** Rename `UserProfile` component to `CustomerProfile` across your React application.
+**Scenario:** Rename `UserProfile` component to `CustomerProfile` across your
+React application.
 
 **AI Agent Conversation:**
 
@@ -62,7 +64,8 @@ The UserProfile component has been successfully renamed to CustomerProfile throu
 
 ### Example 2: Update Database Schema Names
 
-**Scenario:** Migrate database schema from `user_accounts` to `customer_accounts`.
+**Scenario:** Migrate database schema from `user_accounts` to
+`customer_accounts`.
 
 ```
 User: "Change all references from user_accounts table to customer_accounts"
@@ -101,7 +104,8 @@ Would you like me to apply these database schema changes?
 
 ### Example 3: API Endpoint Renaming
 
-**Scenario:** Update API endpoints from `/api/get-user` pattern to `/api/fetch-customer`.
+**Scenario:** Update API endpoints from `/api/get-user` pattern to
+`/api/fetch-customer`.
 
 ```
 User: "Replace all get-user API endpoints with fetch-customer"
@@ -150,6 +154,7 @@ Summary:
    ```
 
 2. **Create dry-run plan**
+
    ```
    Tool: renamify_plan
    Arguments: {
@@ -164,6 +169,7 @@ Summary:
 3. **Review the diff output carefully**
 
 4. **Create actual plan if satisfied**
+
    ```
    Tool: renamify_plan
    Arguments: {
@@ -175,6 +181,7 @@ Summary:
    ```
 
 5. **Apply with git commit**
+
    ```
    Tool: renamify_apply
    Arguments: {
@@ -190,7 +197,7 @@ Summary:
      "limit": 1
    }
    ```
-</Steps>
+   </Steps>
 
 ### Workflow 2: Incremental Migration
 
@@ -462,6 +469,7 @@ Arguments: {
 ## Language-Specific Examples
 
 ### JavaScript/TypeScript
+
 ```json
 {
   "includes": ["**/*.{js,jsx,ts,tsx,mjs}"],
@@ -470,6 +478,7 @@ Arguments: {
 ```
 
 ### Python
+
 ```json
 {
   "includes": ["**/*.py"],
@@ -479,6 +488,7 @@ Arguments: {
 ```
 
 ### Go
+
 ```json
 {
   "includes": ["**/*.go", "go.mod"],
@@ -487,6 +497,7 @@ Arguments: {
 ```
 
 ### Rust
+
 ```json
 {
   "includes": ["**/*.rs", "Cargo.toml"],
@@ -495,6 +506,7 @@ Arguments: {
 ```
 
 ### Java
+
 ```json
 {
   "includes": ["**/*.java"],
@@ -503,6 +515,7 @@ Arguments: {
 ```
 
 ### Ruby
+
 ```json
 {
   "includes": ["**/*.rb"],
@@ -513,5 +526,7 @@ Arguments: {
 
 ## Next Steps
 
-- [**AI Agent Guide**](/renamify/mcp/ai-guide) - Best practices for AI-assisted renaming
-- [**Tools Reference**](/renamify/mcp/tools) - Detailed documentation for each tool
+- [**AI Agent Guide**](/renamify/mcp/ai-guide) - Best practices for AI-assisted
+  renaming
+- [**Tools Reference**](/renamify/mcp/tools) - Detailed documentation for each
+  tool

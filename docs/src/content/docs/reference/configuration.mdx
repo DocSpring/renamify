@@ -36,13 +36,16 @@ See `.renamify/config.toml.example` for a complete example configuration.
 ## Environment Variables
 
 ### NO_COLOR
-Disable colored output (respects the [NO_COLOR standard](https://no-color.org/)):
+
+Disable colored output (respects the
+[NO_COLOR standard](https://no-color.org/)):
 
 ```bash
 NO_COLOR=1 renamify plan old new
 ```
 
 ### RENAMIFY_YES
+
 Equivalent to the `-y` flag (assume yes for all prompts):
 
 ```bash
@@ -51,6 +54,7 @@ RENAMIFY_YES=1 renamify plan old new
 ```
 
 Useful for:
+
 - CI/CD environments
 - Automated scripts
 - Non-interactive contexts
@@ -60,6 +64,7 @@ Useful for:
 Control how Renamify initializes its workspace:
 
 ### Command-Line Options
+
 ```bash
 # Automatically add to .gitignore without prompting
 renamify --auto-init=repo plan old new
@@ -75,6 +80,7 @@ renamify --no-auto-init plan old new
 ```
 
 ### Environment Integration
+
 ```bash
 # For CI/CD - assume yes and use repo initialization
 export RENAMIFY_YES=1
@@ -103,6 +109,7 @@ Renamify creates and manages these directories and files:
 ## Ignore Configuration
 
 ### Repository Level (.gitignore)
+
 Most users should add to their repository's `.gitignore`:
 
 ```
@@ -111,6 +118,7 @@ Most users should add to their repository's `.gitignore`:
 ```
 
 ### Local Level (.git/info/exclude)
+
 For personal use without affecting the team:
 
 ```
@@ -119,6 +127,7 @@ For personal use without affecting the team:
 ```
 
 ### Global Level
+
 For all your projects:
 
 ```bash
@@ -164,16 +173,19 @@ renamify apply
 ## Platform-Specific Settings
 
 ### Windows
+
 - Handles path length limitations (260 chars)
 - Prevents Windows reserved filenames (CON, PRN, AUX, etc.)
 - Supports both `/` and `\` path separators
 
 ### macOS
+
 - Detects case-insensitive APFS/HFS+ filesystems
 - Uses two-step renames for case-only changes
 - Handles Unicode normalization differences
 
 ### Linux
+
 - Generally case-sensitive filesystem support
 - Efficient parallel directory traversal
 - Memory-mapped file reading for performance

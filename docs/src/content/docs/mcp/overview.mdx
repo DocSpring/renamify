@@ -5,20 +5,22 @@ description: Use Renamify with AI assistants through the Model Context Protocol
 
 import { LinkCard, Steps, Aside } from '@astrojs/starlight/components';
 
-The Renamify MCP Server enables AI assistants to perform intelligent, case-aware renaming operations on your codebase.
+The Renamify MCP Server enables AI assistants to perform intelligent, case-aware
+renaming operations on your codebase.
 
 ## Quick Start
 
 <Steps>
 1. **Install Renamify CLI**
 
-   ```bash
-   curl -fsSL https://docspring.github.io/renamify/install.sh | bash
-   ```
+```bash
+curl -fsSL https://docspring.github.io/renamify/install.sh | bash
+```
 
 2. **Setup MCP Server**
 
    Add this to your AI assistant's MCP configuration:
+
    ```json
    {
      "mcpServers": {
@@ -29,11 +31,14 @@ The Renamify MCP Server enables AI assistants to perform intelligent, case-aware
      }
    }
    ```
-</Steps>
+
+   </Steps>
 
 ## What is MCP?
 
-The **Model Context Protocol (MCP)** is an open standard that enables AI assistants to securely connect to external tools and data sources. The Renamify MCP Server implements this protocol, allowing AI agents to:
+The **Model Context Protocol (MCP)** is an open standard that enables AI
+assistants to securely connect to external tools and data sources. The Renamify
+MCP Server implements this protocol, allowing AI agents to:
 
 - **Plan renames** with full case-awareness across your codebase
 - **Preview changes** in AI-friendly formats before applying
@@ -51,7 +56,8 @@ The **Model Context Protocol (MCP)** is an open standard that enables AI assista
 
 ### Designed for AI Agents
 
-The MCP Server provides structured, predictable outputs that AI agents can easily parse and understand:
+The MCP Server provides structured, predictable outputs that AI agents can
+easily parse and understand:
 
 - **Summary format** optimized for AI consumption
 - **Clear error messages** with actionable guidance
@@ -60,7 +66,8 @@ The MCP Server provides structured, predictable outputs that AI agents can easil
 
 ### Case-Aware Transformations
 
-When you rename `getUserName` to `fetchUserProfile`, the MCP Server automatically handles:
+When you rename `getUserName` to `fetchUserProfile`, the MCP Server
+automatically handles:
 
 - `getUserName` → `fetchUserProfile` (camelCase)
 - `get_user_name` → `fetch_user_profile` (snake_case)
@@ -83,16 +90,26 @@ Every renaming operation includes multiple safety layers:
 
 The MCP Server provides 10 specialized tools:
 
-- [**renamify_search**](/renamify/mcp/tools#renamify_search) - Search for identifiers across your codebase
-- [**renamify_plan**](/renamify/mcp/tools#renamify_plan) - Create a renaming plan with case-aware transformations
-- [**renamify_apply**](/renamify/mcp/tools#renamify_apply) - Execute a plan to make the actual changes
-- [**renamify_undo**](/renamify/mcp/tools#renamify_undo) - Revert a previously applied renaming
-- [**renamify_redo**](/renamify/mcp/tools#renamify_redo) - Re-apply an undone renaming
-- [**renamify_history**](/renamify/mcp/tools#renamify_history) - View past renaming operations
-- [**renamify_status**](/renamify/mcp/tools#renamify_status) - Check current state and pending plans
-- [**renamify_preview**](/renamify/mcp/tools#renamify_preview) - Review a plan in different formats
-- [**renamify_rename**](/renamify/mcp/tools#renamify_rename) - Case-aware rename (plan + apply in one step)
-- [**renamify_replace**](/renamify/mcp/tools#renamify_replace) - Simple regex/literal replacement without case transformations
+- [**renamify_search**](/renamify/mcp/tools#renamify_search) - Search for
+  identifiers across your codebase
+- [**renamify_plan**](/renamify/mcp/tools#renamify_plan) - Create a renaming
+  plan with case-aware transformations
+- [**renamify_apply**](/renamify/mcp/tools#renamify_apply) - Execute a plan to
+  make the actual changes
+- [**renamify_undo**](/renamify/mcp/tools#renamify_undo) - Revert a previously
+  applied renaming
+- [**renamify_redo**](/renamify/mcp/tools#renamify_redo) - Re-apply an undone
+  renaming
+- [**renamify_history**](/renamify/mcp/tools#renamify_history) - View past
+  renaming operations
+- [**renamify_status**](/renamify/mcp/tools#renamify_status) - Check current
+  state and pending plans
+- [**renamify_preview**](/renamify/mcp/tools#renamify_preview) - Review a plan
+  in different formats
+- [**renamify_rename**](/renamify/mcp/tools#renamify_rename) - Case-aware rename
+  (plan + apply in one step)
+- [**renamify_replace**](/renamify/mcp/tools#renamify_replace) - Simple
+  regex/literal replacement without case transformations
 
 ## Installation Steps
 
@@ -103,8 +120,9 @@ The MCP Server provides 10 specialized tools:
    # or download from GitHub releases
    ```
 
-2. **Configure your AI assistant**
-   Add the Renamify MCP server using npx (no installation needed):
+2. **Configure your AI assistant** Add the Renamify MCP server using npx (no
+   installation needed):
+
    ```json
    {
      "mcpServers": {
@@ -116,9 +134,9 @@ The MCP Server provides 10 specialized tools:
    }
    ```
 
-3. **Start renaming!**
-   Ask your AI assistant to use Renamify for renaming operations
-</Steps>
+3. **Start renaming!** Ask your AI assistant to use Renamify for renaming
+   operations
+   </Steps>
 
 ## Example Workflow
 
@@ -163,7 +181,8 @@ Result: Successfully applied 47 replacements across 12 files and renamed 3 files
 
 The Renamify MCP Server works with:
 
-- **[Claude Code](https://claude.ai/code)** - Anthropic's official CLI for Claude
+- **[Claude Code](https://claude.ai/code)** - Anthropic's official CLI for
+  Claude
 - **[Claude Desktop](https://claude.ai)** - Anthropic's AI assistant
 - **[Cursor](https://cursor.sh)** - AI-powered code editor
 - **[Continue](https://continue.dev)** - Open-source AI code assistant

@@ -1,10 +1,12 @@
 ---
 title: renamify rename
-description: Fast-path command that combines planning and applying with confirmation
+description:
+  Fast-path command that combines planning and applying with confirmation
 ---
 
-The `rename` command is the fastest way to rename terms in your codebase.
-It combines planning and applying in a single interactive command with preview and confirmation.
+The `rename` command is the fastest way to rename terms in your codebase. It
+combines planning and applying in a single interactive command with preview and
+confirmation.
 
 ## Usage
 
@@ -21,46 +23,64 @@ renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 ## Options
 
 ### Preview and Confirmation
-- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json, none) [default: table]
+
+- `--preview <FORMAT>` - Show preview before confirmation (table, diff, json,
+  none) [default: table]
 - `--dry-run` - Show preview only, don't apply changes
 - `--large` - Acknowledge large changes (>500 files or >100 renames)
 
 ### File Processing
+
 - `--include <PATTERNS>` - Only process files matching these glob patterns
 - `--exclude <PATTERNS>` - Skip files matching these glob patterns
 - `--no-rename-files` - Don't rename matching files
 - `--no-rename-dirs` - Don't rename matching directories
-- `--no-rename-paths` - Don't rename files or directories (equivalent to --no-rename-files --no-rename-dirs)
+- `--no-rename-paths` - Don't rename files or directories (equivalent to
+  --no-rename-files --no-rename-dirs)
 
 ### Root Directory
-- `--rename-root` - Allow renaming the root project directory (requires confirmation)
+
+- `--rename-root` - Allow renaming the root project directory (requires
+  confirmation)
 - `--no-rename-root` - Never rename the root project directory
 
 ### Case Styles
-- `--exclude-styles <STYLES>` - Exclude specific case styles from the default set
+
+- `--exclude-styles <STYLES>` - Exclude specific case styles from the default
+  set
 - `--include-styles <STYLES>` - Add additional case styles to the active set
 - `--only-styles <STYLES>` - Use only these case styles, ignoring defaults
-- `--ignore-ambiguous` - Ignore mixed-case/ambiguous identifiers that don't match standard patterns
+- `--ignore-ambiguous` - Ignore mixed-case/ambiguous identifiers that don't
+  match standard patterns
 
 ### Match Control
-- `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
-- `--exclude-matching-lines <REGEX>` - Skip matches on lines matching this regex pattern
+
+- `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to
+  ignore)
+- `--exclude-matching-lines <REGEX>` - Skip matches on lines matching this regex
+  pattern
 
 ### Acronym Handling
+
 - `--no-acronyms` - Disable acronym detection and transformation
-- `--include-acronyms <ACRONYMS>` - Add custom acronyms to detect (e.g., "API,URL")
+- `--include-acronyms <ACRONYMS>` - Add custom acronyms to detect (e.g.,
+  "API,URL")
 - `--exclude-acronyms <ACRONYMS>` - Exclude specific acronyms from detection
 - `--only-acronyms <ACRONYMS>` - Only use these acronyms, ignore defaults
 
 ### Display Options
-- `--fixed-table-width` - Use fixed column widths in table output for consistent formatting
+
+- `--fixed-table-width` - Use fixed column widths in table output for consistent
+  formatting
 
 ### Safety and Git
+
 - `--commit` - Create a git commit after applying changes
 - `--force-with-conflicts` - Force apply even with conflicts
 - `--confirm-collisions` - Confirm case-insensitive or collision renames
 
 ### Unrestricted Mode
+
 - `-u` - Disable .gitignore files
 - `-uu` - Disable all ignore files, include hidden files
 - `-uuu` - Disable all ignore files, include hidden files, process binary files
@@ -68,6 +88,7 @@ renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 ## Examples
 
 ### Basic Rename
+
 ```bash
 # Rename with automatic preview and confirmation
 renamify rename getUserName fetchUserProfile
@@ -77,6 +98,7 @@ renamify rename getUserName fetchUserProfile src/ tests/
 ```
 
 ### Specific File Types
+
 ```bash
 # Only process TypeScript files using patterns
 renamify rename oldName newName --include "**/*.{ts,tsx}"
@@ -86,6 +108,7 @@ renamify rename oldName newName src/components/ src/utils/
 ```
 
 ### Exclude Certain Areas
+
 ```bash
 # Skip test files and node_modules
 renamify rename oldApi newApi \
@@ -93,6 +116,7 @@ renamify rename oldApi newApi \
 ```
 
 ### Case Style Control
+
 ```bash
 # Only handle camelCase and PascalCase (common in React projects)
 renamify rename oldComponent newComponent \
@@ -100,12 +124,14 @@ renamify rename oldComponent newComponent \
 ```
 
 ### With Git Commit
+
 ```bash
 # Automatically commit changes after applying
 renamify rename old_function new_function --commit
 ```
 
 ### Project-Wide Rename
+
 ```bash
 # Rename entire project including root directory
 renamify rename myproject awesome_project \
@@ -114,6 +140,7 @@ renamify rename myproject awesome_project \
 ```
 
 ### Exclude Specific Matches
+
 ```bash
 # Skip compound words that contain your pattern
 renamify rename config settings \
@@ -121,12 +148,14 @@ renamify rename config settings \
 ```
 
 ### Content-Only Rename (No Path Changes)
+
 ```bash
 # Only modify file contents, don't rename files or directories
 renamify rename old_api new_api --no-rename-paths
 ```
 
 ### Ignore Ambiguous Identifiers
+
 ```bash
 # Skip mixed-case identifiers that don't match standard patterns
 renamify rename userName user_name --ignore-ambiguous
@@ -143,6 +172,7 @@ When you run `rename`, this is what happens:
 5. **Results**: Shows operation ID for potential undo
 
 ### Example Session
+
 ```bash
 $ renamify rename getUserName fetchUserProfile
 
@@ -170,12 +200,14 @@ Apply these changes? [y/N]: y
 ## When to Use rename vs plan/apply
 
 **Use `rename` when**:
+
 - Making smaller, focused changes
 - You want immediate feedback and confirmation
 - Working interactively and want speed
 - The preview looks correct and you're confident
 
 **Use `plan`/`apply` when**:
+
 - Making large, complex renaming operations
 - You need time to review the plan thoroughly
 - Working with teammates who need to review changes
@@ -184,6 +216,7 @@ Apply these changes? [y/N]: y
 ## Safety Features
 
 The `rename` command includes all of Renamify's safety features:
+
 - **Atomic operations**: All changes succeed or none do
 - **Automatic backups**: Created before applying changes
 - **Conflict detection**: Warns about potential issues

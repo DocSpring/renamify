@@ -25,6 +25,7 @@ renamify rename getUserName fetchUserProfile
 ### What Gets Changed
 
 **JavaScript/TypeScript files:**
+
 ```js
 // Before
 function getUserName(id) { ... }
@@ -38,6 +39,7 @@ export { fetchUserProfile };
 ```
 
 **Python files:**
+
 ```python
 # Before
 def get_user_name(user_id): ...
@@ -49,6 +51,7 @@ name = fetch_user_profile(id)
 ```
 
 **Files and directories:**
+
 - `utils/getUserName.js` → `utils/fetchUserProfile.js`
 - `tests/get_user_name.test.py` → `tests/fetch_user_profile.test.py`
 
@@ -63,14 +66,15 @@ renamify rename apiKey secretKey
 ### What Gets Changed
 
 **Various naming conventions:**
+
 ```js
 // Before
-const apiKey = "...";
+const apiKey = '...';
 const API_KEY = process.env.API_KEY;
 const api_key = config.api_key;
 
 // After
-const secretKey = "...";
+const secretKey = '...';
 const SECRET_KEY = process.env.SECRET_KEY;
 const secret_key = config.secret_key;
 ```
@@ -86,18 +90,20 @@ renamify rename UserCard ProfileCard
 ### What Gets Changed
 
 **Component files:**
+
 - `components/UserCard.tsx` → `components/ProfileCard.tsx`
 - `components/user-card.vue` → `components/profile-card.vue`
 
 **Component usage:**
+
 ```tsx
 // Before
 import UserCard from './UserCard';
-<UserCard user={currentUser} />
+<UserCard user={currentUser} />;
 
 // After
 import ProfileCard from './ProfileCard';
-<ProfileCard user={currentUser} />
+<ProfileCard user={currentUser} />;
 ```
 
 ## Class Renaming

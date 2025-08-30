@@ -5,30 +5,33 @@ description: Complete reference for all Renamify MCP Server tools
 
 import { Card, CardGrid, Code } from '@astrojs/starlight/components';
 
-The Renamify MCP Server provides 10 specialized tools for AI agents to perform intelligent renaming operations.
+The Renamify MCP Server provides 10 specialized tools for AI agents to perform
+intelligent renaming operations.
 
 ## renamify_plan
 
-Creates a comprehensive renaming plan that identifies all case variations of your identifiers.
+Creates a comprehensive renaming plan that identifies all case variations of
+your identifiers.
 
 ### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `old` | string | ✅ Yes | - | The identifier to replace |
-| `new` | string | ✅ Yes | - | The new identifier |
-| `paths` | string[] | No | Current dir | Paths to search (files or directories) |
-| `includes` | string[] | No | All files | Glob patterns to include |
-| `excludes` | string[] | No | None | Glob patterns to exclude |
-| `styles` | string[] | No | All styles | Case styles to detect |
-| `preview` | string | No | `summary` | Output format |
-| `dryRun` | boolean | No | `false` | Preview without saving |
-| `renameFiles` | boolean | No | `true` | Rename matching files |
-| `renameDirs` | boolean | No | `true` | Rename matching directories |
+| Parameter     | Type     | Required | Default     | Description                            |
+| ------------- | -------- | -------- | ----------- | -------------------------------------- |
+| `old`         | string   | ✅ Yes   | -           | The identifier to replace              |
+| `new`         | string   | ✅ Yes   | -           | The new identifier                     |
+| `paths`       | string[] | No       | Current dir | Paths to search (files or directories) |
+| `includes`    | string[] | No       | All files   | Glob patterns to include               |
+| `excludes`    | string[] | No       | None        | Glob patterns to exclude               |
+| `styles`      | string[] | No       | All styles  | Case styles to detect                  |
+| `preview`     | string   | No       | `summary`   | Output format                          |
+| `dryRun`      | boolean  | No       | `false`     | Preview without saving                 |
+| `renameFiles` | boolean  | No       | `true`      | Rename matching files                  |
+| `renameDirs`  | boolean  | No       | `true`      | Rename matching directories            |
 
 ### Case Styles
 
 Available case style options:
+
 - `snake` - snake_case
 - `camel` - camelCase
 - `pascal` - PascalCase
@@ -85,12 +88,12 @@ Applies a renaming plan to make the actual changes to your codebase.
 
 ### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `planId` | string | No | Latest | Specific plan ID to apply |
-| `planPath` | string | No | Auto | Path to plan file |
-| `atomic` | boolean | No | `true` | All-or-nothing execution |
-| `commit` | boolean | No | `false` | Create git commit after |
+| Parameter  | Type    | Required | Default | Description               |
+| ---------- | ------- | -------- | ------- | ------------------------- |
+| `planId`   | string  | No       | Latest  | Specific plan ID to apply |
+| `planPath` | string  | No       | Auto    | Path to plan file         |
+| `atomic`   | boolean | No       | `true`  | All-or-nothing execution  |
+| `commit`   | boolean | No       | `false` | Create git commit after   |
 
 ### Example Usage
 
@@ -117,6 +120,7 @@ All changes applied successfully.
 ### Error Handling
 
 If conflicts are detected:
+
 ```
 Error: Conflicts detected in 2 files:
   - src/api/handlers.ts: Content changed since plan creation
@@ -131,9 +135,9 @@ Reverts a previously applied renaming operation.
 
 ### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `id` | string | No | `latest` | History ID to undo (use "latest" for most recent non-revert entry) |
+| Parameter | Type   | Required | Default  | Description                                                        |
+| --------- | ------ | -------- | -------- | ------------------------------------------------------------------ |
+| `id`      | string | No       | `latest` | History ID to undo (use "latest" for most recent non-revert entry) |
 
 ### Example Usage
 
@@ -160,9 +164,9 @@ Re-applies a previously undone renaming.
 
 ### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `id` | string | No | `latest` | History ID to redo (use "latest" for most recent reverted entry) |
+| Parameter | Type   | Required | Default  | Description                                                      |
+| --------- | ------ | -------- | -------- | ---------------------------------------------------------------- |
+| `id`      | string | No       | `latest` | History ID to redo (use "latest" for most recent reverted entry) |
 
 ### Example Usage
 
@@ -189,9 +193,9 @@ Shows the history of renaming operations.
 
 ### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `limit` | number | No | `10` | Number of entries to show |
+| Parameter | Type   | Required | Default | Description               |
+| --------- | ------ | -------- | ------- | ------------------------- |
+| `limit`   | number | No       | `10`    | Number of entries to show |
 
 ### Example Usage
 
@@ -271,11 +275,11 @@ Preview a plan in different formats without applying changes.
 
 ### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `planId` | string | No | Latest | Plan ID to preview |
-| `planPath` | string | No | Auto | Path to plan file |
-| `format` | string | No | `summary` | Preview format |
+| Parameter  | Type   | Required | Default   | Description        |
+| ---------- | ------ | -------- | --------- | ------------------ |
+| `planId`   | string | No       | Latest    | Plan ID to preview |
+| `planPath` | string | No       | Auto      | Path to plan file  |
+| `format`   | string | No       | `summary` | Preview format     |
 
 ### Format Options
 
@@ -318,16 +322,16 @@ Perform case-aware renaming in a single step (combines plan + apply).
 
 ### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `old` | string | ✅ Yes | - | The identifier to replace |
-| `new` | string | ✅ Yes | - | The new identifier |
-| `paths` | string[] | No | Current dir | Paths to search |
-| `dryRun` | boolean | No | `false` | Preview without applying |
-| `preview` | string | No | `summary` | Preview format |
-| `excludeStyles` | string[] | No | None | Case styles to exclude |
-| `includeStyles` | string[] | No | None | Additional case styles |
-| `onlyStyles` | string[] | No | None | Use only these styles |
+| Parameter       | Type     | Required | Default     | Description               |
+| --------------- | -------- | -------- | ----------- | ------------------------- |
+| `old`           | string   | ✅ Yes   | -           | The identifier to replace |
+| `new`           | string   | ✅ Yes   | -           | The new identifier        |
+| `paths`         | string[] | No       | Current dir | Paths to search           |
+| `dryRun`        | boolean  | No       | `false`     | Preview without applying  |
+| `preview`       | string   | No       | `summary`   | Preview format            |
+| `excludeStyles` | string[] | No       | None        | Case styles to exclude    |
+| `includeStyles` | string[] | No       | None        | Additional case styles    |
+| `onlyStyles`    | string[] | No       | None        | Use only these styles     |
 
 ### Example Usage
 
@@ -353,18 +357,19 @@ Perform simple regex or literal string replacement without case transformations.
 
 ### Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `pattern` | string | ✅ Yes | - | Search pattern (regex or literal) |
-| `replacement` | string | ✅ Yes | - | Replacement string |
-| `paths` | string[] | No | Current dir | Paths to search |
-| `noRegex` | boolean | No | `false` | Treat pattern as literal |
-| `preview` | string | No | `summary` | Preview format |
-| `dryRun` | boolean | No | `false` | Preview without applying |
+| Parameter     | Type     | Required | Default     | Description                       |
+| ------------- | -------- | -------- | ----------- | --------------------------------- |
+| `pattern`     | string   | ✅ Yes   | -           | Search pattern (regex or literal) |
+| `replacement` | string   | ✅ Yes   | -           | Replacement string                |
+| `paths`       | string[] | No       | Current dir | Paths to search                   |
+| `noRegex`     | boolean  | No       | `false`     | Treat pattern as literal          |
+| `preview`     | string   | No       | `summary`   | Preview format                    |
+| `dryRun`      | boolean  | No       | `false`     | Preview without applying          |
 
 ### Example Usage
 
 **Regex replacement:**
+
 ```
 Tool: renamify_replace
 Arguments: {
@@ -375,6 +380,7 @@ Arguments: {
 ```
 
 **Literal replacement:**
+
 ```
 Tool: renamify_replace
 Arguments: {
@@ -430,23 +436,25 @@ graph LR
 
 ### Common Error Patterns
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "Renamify CLI not available" | Binary not in PATH | Check installation |
-| "No matches found" | Pattern too restrictive | Broaden search criteria |
-| "Conflicts detected" | Files changed since plan | Create new plan |
-| "Plan not found" | Invalid plan ID | Check with `renamify_history` |
-| "Permission denied" | File permissions | Check file ownership |
+| Error                        | Cause                    | Solution                      |
+| ---------------------------- | ------------------------ | ----------------------------- |
+| "Renamify CLI not available" | Binary not in PATH       | Check installation            |
+| "No matches found"           | Pattern too restrictive  | Broaden search criteria       |
+| "Conflicts detected"         | Files changed since plan | Create new plan               |
+| "Plan not found"             | Invalid plan ID          | Check with `renamify_history` |
+| "Permission denied"          | File permissions         | Check file ownership          |
 
 ### Recovery Strategies
 
 **When apply fails:**
+
 1. Note the error message
 2. Use `renamify_status` to check state
 3. If partially applied, use `renamify_undo`
 4. Fix the issue and create a new plan
 
 **When patterns don't match:**
+
 1. Start with broader patterns
 2. Use `dryRun: true` to test
 3. Adjust styles array if needed
@@ -457,6 +465,7 @@ graph LR
 ### Large Codebases
 
 For repositories with >10,000 files:
+
 - Use specific `includes` patterns
 - Exclude build/dist directories
 - Consider breaking into multiple operations
@@ -464,6 +473,7 @@ For repositories with >10,000 files:
 ### Memory Usage
 
 The MCP Server loads plans into memory:
+
 - Plans typically < 1MB for most renames
 - Very large plans (>10MB) may need chunking
 - Use `format: "summary"` for efficiency

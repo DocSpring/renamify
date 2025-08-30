@@ -12,6 +12,7 @@ renamify rename old_name new_name
 ```
 
 This will:
+
 1. Show you a preview of all changes
 2. Ask for confirmation
 3. Apply changes atomically
@@ -112,8 +113,10 @@ renamify rename old_name new_name --only-styles camel,snake
 
 ## Safe Practices
 
-1. **Preview is automatic** - Renamify shows a preview by default before applying
-2. **Commit before large renames** - Makes git-based rollback possible in addition to Renamify's built-in history
+1. **Preview is automatic** - Renamify shows a preview by default before
+   applying
+2. **Commit before large renames** - Makes git-based rollback possible in
+   addition to Renamify's built-in history
 3. **Start small** - Try on a subset with `--include` first
 4. **Use undo** - Renamify's undo is often faster than git reset
 

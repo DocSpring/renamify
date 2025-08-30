@@ -3,10 +3,12 @@ title: Renaming to Renamify
 description: How I used this tool to rename the project to something else
 ---
 
-The original name for this took was "Refaktor". I decided that "Renamify" would be a better
-name, because it's more about renaming thing and less about refactoring.
+The original name for this took was "Refaktor". I decided that "Renamify" would
+be a better name, because it's more about renaming thing and less about
+refactoring.
 
-We used a `.rfignore` file to exclude certain files from our end-to-end tests, so I needed to delete that first.
+We used a `.rfignore` file to exclude certain files from our end-to-end tests,
+so I needed to delete that first.
 
 Next, I ran this command:
 
@@ -15,6 +17,7 @@ Next, I ran this command:
 ```
 
 This renamed almost everything in one shot:
+
 ```diff
 # ...
 
@@ -48,9 +51,8 @@ Applying changes...
 Undo with: refaktor undo 86f7b48dbb2156c3
 ```
 
-Renamify excludes dotfiles by default, so I also had to run it on some
-specific dotfiles and directories:
-
+Renamify excludes dotfiles by default, so I also had to run it on some specific
+dotfiles and directories:
 
 ```bash
 ./target/release/refaktor rename refaktor renamify \
@@ -66,7 +68,8 @@ Applying changes...
 Undo with: refaktor undo fdc8f0abb4780d92
 ```
 
-Finally, I needed to rename the `.rfignore` (For **r**e**f**actor) file to `.rnignore` (for **r**e**n**amify):
+Finally, I needed to rename the `.rfignore` (For **r**e**f**actor) file to
+`.rnignore` (for **r**e**n**amify):
 
 ```bash
 ./target/release/refaktor rename rfignore rnignore
@@ -93,5 +96,5 @@ Applying changes...
 Undo with: refaktor undo 4900704a6a95999e
 ```
 
-All that was left to do was rename the GitHub repository and the project directory.
-Then I committed and pushed to the new repo.
+All that was left to do was rename the GitHub repository and the project
+directory. Then I committed and pushed to the new repo.

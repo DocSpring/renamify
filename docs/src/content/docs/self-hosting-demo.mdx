@@ -1,6 +1,8 @@
 ---
 title: Self-Hosting Demo
-description: Watch Renamify rename itself, run the test suite using the new name, then rename itself back
+description:
+  Watch Renamify rename itself, run the test suite using the new name, then
+  rename itself back
 ---
 
 import { LinkCard } from '@astrojs/starlight/components';
@@ -11,14 +13,13 @@ import Quote from '../../components/Quote.astro';
   source="Self-hosting (compilers)"
   sourceUrl="https://en.wikipedia.org/wiki/Self-hosting_(compilers)"
 >
-  In computer programming, self-hosting is the use of a program as part of the toolchain or operating
-  system that produces new versions of that same program—for example, a compiler that can compile
-  its own source code.
+  In computer programming, self-hosting is the use of a program as part of the
+  toolchain or operating system that produces new versions of that same
+  program—for example, a compiler that can compile its own source code.
 </Quote>
 
-
-Watch Renamify rename itself to `awesome_file_renaming_tool`, then use the new binary to rename itself back again.
-
+Watch Renamify rename itself to `awesome_file_renaming_tool`, then use the new
+binary to rename itself back again.
 
 ```bash
 # Clone and build
@@ -57,7 +58,7 @@ git status
 
 ---
 
-<br/>
+<br />
 
 P.S. We run all these steps on CI as an end-to-end integration test:
 

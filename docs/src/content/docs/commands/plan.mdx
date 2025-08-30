@@ -3,7 +3,9 @@ title: renamify plan
 description: Generate a detailed renaming plan without modifying files
 ---
 
-The `plan` command generates a detailed plan of all changes that will be made without modifying any files. This is the first step in Renamify's two-phase workflow.
+The `plan` command generates a detailed plan of all changes that will be made
+without modifying any files. This is the first step in Renamify's two-phase
+workflow.
 
 ## Usage
 
@@ -20,36 +22,49 @@ renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 ## Options
 
 ### Output Control
+
 - `--preview <FORMAT>` - Output format: table (default), diff, json
 - `--plan-out <PATH>` - Where to save the plan (default: .renamify/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
 
 ### File Processing
+
 - `--include <PATTERNS>` - Only process files matching these glob patterns
 - `--exclude <PATTERNS>` - Skip files matching these glob patterns
 - `--no-rename-files` - Don't rename matching files
 - `--no-rename-dirs` - Don't rename matching directories
-- `--no-rename-paths` - Don't rename files or directories (equivalent to --no-rename-files --no-rename-dirs)
+- `--no-rename-paths` - Don't rename files or directories (equivalent to
+  --no-rename-files --no-rename-dirs)
 
 ### Case Styles
-- `--exclude-styles <STYLES>` - Exclude specific case styles from the default set
+
+- `--exclude-styles <STYLES>` - Exclude specific case styles from the default
+  set
 - `--include-styles <STYLES>` - Add additional case styles to the active set
 - `--only-styles <STYLES>` - Use only these case styles, ignoring defaults
 
 ### Match Control
-- `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to ignore)
-- `--exclude-matching-lines <REGEX>` - Skip matches on lines matching this regex pattern (e.g., `^//` for comments, `(TODO|FIXME)` for todo markers)
+
+- `--exclude-match <PATTERNS>` - Skip specific matches (e.g., compound words to
+  ignore)
+- `--exclude-matching-lines <REGEX>` - Skip matches on lines matching this regex
+  pattern (e.g., `^//` for comments, `(TODO|FIXME)` for todo markers)
 
 ### Acronym Handling
+
 - `--no-acronyms` - Disable acronym detection and transformation
-- `--include-acronyms <ACRONYMS>` - Add custom acronyms to detect (e.g., "API,URL")
+- `--include-acronyms <ACRONYMS>` - Add custom acronyms to detect (e.g.,
+  "API,URL")
 - `--exclude-acronyms <ACRONYMS>` - Exclude specific acronyms from detection
 - `--only-acronyms <ACRONYMS>` - Only use these acronyms, ignore defaults
 
 ### Display Options
-- `--fixed-table-width` - Use fixed column widths in table output for consistent formatting
+
+- `--fixed-table-width` - Use fixed column widths in table output for consistent
+  formatting
 
 ### Unrestricted Mode
+
 - `-u` - Disable .gitignore files
 - `-uu` - Disable all ignore files, include hidden files
 - `-uuu` - Disable all ignore files, include hidden files, process binary files
@@ -57,11 +72,13 @@ renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 ## Output Formats
 
 ### Table Format (Default)
+
 ```bash
 renamify plan getUserName fetchUserProfile
 ```
 
 Shows a clear table view of all changes:
+
 ```
 Files to modify: 12
 ┌─────────────────────────────────────┬──────────┬────────────────────┬─────────────────────┐
@@ -83,11 +100,13 @@ Files to rename: 3
 ```
 
 ### Diff Format
+
 ```bash
 renamify plan getUserName fetchUserProfile --preview diff
 ```
 
 Shows changes in diff format:
+
 ```diff
 --- src/auth.js
 +++ src/auth.js
@@ -100,11 +119,13 @@ Shows changes in diff format:
 ```
 
 ### JSON Format
+
 ```bash
 renamify plan getUserName fetchUserProfile --preview json
 ```
 
 Outputs structured JSON for programmatic use:
+
 ```json
 {
   "id": "a3b7c9d4e8f2a6b1",
@@ -131,6 +152,7 @@ Outputs structured JSON for programmatic use:
 ## Examples
 
 ### Basic Planning
+
 ```bash
 # Create a plan with table preview (default)
 renamify plan old_name new_name
@@ -143,12 +165,14 @@ renamify plan old_name new_name src/ tests/
 ```
 
 ### Dry Run (No Plan File)
+
 ```bash
 # Just see what would change, don't create a plan file
 renamify plan old_name new_name --dry-run
 ```
 
 ### Excluding Lines by Pattern
+
 ```bash
 # Skip matches in comment lines (starting with //)
 renamify plan old_name new_name --exclude-matching-lines '^//'
@@ -164,12 +188,14 @@ renamify plan old_name new_name \
 ```
 
 ### Custom Plan Location
+
 ```bash
 # Save plan to a specific location
 renamify plan old_name new_name --plan-out ./renamify-plan.json
 ```
 
 ### Specific File Types
+
 ```bash
 # Only plan changes for Rust files using paths
 renamify plan old_name new_name src/ lib/
@@ -184,6 +210,7 @@ renamify plan old_name new_name \
 ```
 
 ### Case Style Control
+
 ```bash
 # Only plan camelCase and snake_case transformations
 renamify plan oldName newName --only-styles camel,snake
@@ -193,6 +220,7 @@ renamify plan oldName newName --exclude-styles screaming-snake
 ```
 
 ### Large Codebase Planning
+
 ```bash
 # Include gitignored files (like vendor directories)
 renamify plan old_name new_name -u
@@ -246,11 +274,13 @@ The generated plan file (`.renamify/plan.json`) contains:
 Once you have a plan, you can:
 
 ### Apply the Plan
+
 ```bash
 renamify apply
 ```
 
 ### Review Before Applying
+
 ```bash
 # Look at the plan in detail
 cat .renamify/plan.json | jq .
@@ -260,9 +290,12 @@ jq '.stats.total_matches' .renamify/plan.json
 ```
 
 ### Modify the Plan
-Advanced users can edit the plan file directly before applying (not recommended for beginners).
+
+Advanced users can edit the plan file directly before applying (not recommended
+for beginners).
 
 ### Create a New Plan
+
 Running `plan` again will overwrite the existing plan file.
 
 ## Exit Codes
@@ -275,6 +308,7 @@ Running `plan` again will overwrite the existing plan file.
 ## Performance Tips
 
 For large codebases:
+
 - Use specific `--include` patterns to limit scope
 - Use `--exclude` to skip large directories like `node_modules/`
 - Consider using `-u` flags judiciously to include necessary ignored files

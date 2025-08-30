@@ -3,12 +3,15 @@ title: Safety Features
 description: Renamify's comprehensive safety mechanisms for worry-free renaming
 ---
 
-Renamify is built with safety as a core principle. Multiple layers of protection ensure your code remains intact during renaming operations.
+Renamify is built with safety as a core principle. Multiple layers of protection
+ensure your code remains intact during renaming operations.
 
 ## Plan/Apply Workflow
 
 ### Two-Step Process
-1. **Plan**: Generate a detailed preview of all changes without modifying anything
+
+1. **Plan**: Generate a detailed preview of all changes without modifying
+   anything
 2. **Apply**: Execute the plan atomically after review
 
 ```bash
@@ -20,6 +23,7 @@ renamify apply
 ```
 
 ### Fast Path for Simple Changes
+
 The `rename` command combines planning and applying with confirmation:
 
 ```bash
@@ -32,12 +36,14 @@ renamify rename old_name new_name --preview table
 All file modifications are atomic by default:
 
 ### How It Works
+
 1. **Temporary files**: Changes are written to temporary files first
 2. **Atomic rename**: Files are atomically renamed into place
 3. **Directory sync**: Parent directories are synced (on Unix systems)
 4. **Rollback on failure**: If any operation fails, all changes are rolled back
 
 ### Benefits
+
 - **No partial states**: Your codebase never exists in a half-modified state
 - **Interruption safety**: Safe to interrupt (Ctrl+C) during operations
 - **Consistency**: All changes succeed together or none at all
@@ -45,6 +51,7 @@ All file modifications are atomic by default:
 ## Backup and History System
 
 ### Automatic Backups
+
 Before applying changes, Renamify creates backups of all affected files:
 
 ```
@@ -59,11 +66,13 @@ Before applying changes, Renamify creates backups of all affected files:
 ```
 
 ### Integrity Verification
+
 - Each backup includes SHA-256 checksums
 - Checksums are verified during restore operations
 - Corrupted backups are detected and reported
 
 ### Unlimited Undo/Redo
+
 ```bash
 # See all operations
 renamify history
@@ -82,6 +91,7 @@ Renamify detects various types of conflicts before making changes:
 ### File Rename Conflicts
 
 **Multiple-to-One**: When multiple files would rename to the same destination
+
 ```
 ❌ Conflict detected: Multiple files would be renamed to 'utils.js':
   - old_utils.js
@@ -91,30 +101,36 @@ Use --exclude or --include patterns to resolve this conflict.
 ```
 
 **Case-Insensitive Filesystems**: On macOS/Windows
+
 ```
 ⚠️  Case-insensitive rename detected: 'OldName.js' → 'oldName.js'
 This will be handled with a two-step rename process.
 ```
 
 **Windows Reserved Names**: Prevents creating invalid files
+
 ```
 ❌ Cannot create 'CON.js' - reserved filename on Windows
 ```
 
 ### Content Conflicts
+
 - **Overlapping matches**: When the same text would be replaced multiple times
-- **Boundary violations**: When matches don't respect word boundaries (with warnings)
+- **Boundary violations**: When matches don't respect word boundaries (with
+  warnings)
 
 ## Lock File Protection
 
 Renamify prevents concurrent operations that could corrupt your workspace:
 
 ### Lock Mechanism
+
 - Lock file created at `.renamify/renamify.lock` during operations
 - Contains process ID and timestamp for tracking
 - Automatically cleaned up when operations complete
 
 ### Stale Lock Handling
+
 - Stale locks (older than 5 minutes) are automatically removed
 - Manual cleanup if needed: `rm .renamify/renamify.lock`
 
@@ -132,6 +148,7 @@ rm .renamify/renamify.lock
 ## Git Integration
 
 ### Status Checking
+
 Renamify can check git status before operations:
 
 ```bash
@@ -140,6 +157,7 @@ renamify apply --commit
 ```
 
 ### Best Practices
+
 - **Commit before large rename operations**: Makes git-based rollback possible
 - **Clean working directory**: Start with committed changes when possible
 - **Branch for experiments**: Use git branches for exploratory renaming
@@ -154,6 +172,7 @@ renamify dry-run old_name new_name --preview table
 ```
 
 Perfect for:
+
 - Exploring potential changes
 - Testing include/exclude patterns
 - Understanding scope before committing to a plan
@@ -161,17 +180,21 @@ Perfect for:
 ## Error Handling
 
 ### Graceful Degradation
+
 - **Permission errors**: Clear reporting with suggested fixes
 - **Disk space**: Checks available space before large operations
 - **Filesystem errors**: Detailed error messages with context
 
 ### Recovery Guidance
+
 When operations fail, Renamify provides:
+
 - **Clear error messages**: What went wrong and why
 - **Recovery steps**: How to fix the issue
 - **Safe cleanup**: How to return to a clean state
 
 ### Example Error Handling
+
 ```bash
 ❌ Error: Permission denied writing to 'src/readonly.js'
 
@@ -193,4 +216,5 @@ renamify apply --force-with-conflicts
 renamify rename old new --confirm-collisions
 ```
 
-**⚠️ Warning**: Force options bypass safety checks. Use only when you understand the implications and have backups.
+**⚠️ Warning**: Force options bypass safety checks. Use only when you understand
+the implications and have backups.

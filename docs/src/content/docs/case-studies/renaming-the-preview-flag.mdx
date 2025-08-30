@@ -1,30 +1,36 @@
 ---
 title: Renaming the --preview flag
-description: A case study showing how we renamed a command-line argument across the codebase
+description:
+  A case study showing how we renamed a command-line argument across the
+  codebase
 ---
 
-This case study demonstrates using Renamify to rename a command-line argument across an entire codebase,
-including documentation, tests, and code.
+This case study demonstrates using Renamify to rename a command-line argument
+across an entire codebase, including documentation, tests, and code.
 
 ## Background
 
-The initial code for the Renamify CLI had an inconsistency in its argument naming:
+The initial code for the Renamify CLI had an inconsistency in its argument
+naming:
 
 - The `rename` command used `--preview` to choose the preview format
 - The `plan` command used `--preview-format` for the same purpose
 
-I wanted to standardize on `--preview` by renaming the `--preview-format` argument in the `plan` command to match `rename`.
+I wanted to standardize on `--preview` by renaming the `--preview-format`
+argument in the `plan` command to match `rename`.
 
 This refactoring involved:
+
 - Updating the CLI argument definition in the Rust code
 - Renaming test examples that use `preview_format` in compound matching tests
 - Updating this documentation site (in `./docs`)
 
 ## Step 1: Renaming Test Examples
 
-First, I needed to update the test cases in `compound_matcher.rs` and `compound_position_test.rs` that
-used `preview_format` strings as test data. (I had written extra tests during the initial attempt at this rename!)
-These tests verified compound word matching functionality and used:
+First, I needed to update the test cases in `compound_matcher.rs` and
+`compound_position_test.rs` that used `preview_format` strings as test data. (I
+had written extra tests during the initial attempt at this rename!) These tests
+verified compound word matching functionality and used:
 
 ```rust
 find_compound_variants(
@@ -35,8 +41,9 @@ find_compound_variants(
 );
 ```
 
-I needed to change the test examples to use a different compound word that won't conflict with our argument rename.
-I decided to rename "preview_format" to "foo_bar" and "preview" to "foo".
+I needed to change the test examples to use a different compound word that won't
+conflict with our argument rename. I decided to rename "preview_format" to
+"foo_bar" and "preview" to "foo".
 
 ```bash
 ./target/release/renamify rename preview_format foo_bar \
@@ -45,7 +52,8 @@ I decided to rename "preview_format" to "foo_bar" and "preview" to "foo".
 
 ![Preview of the refactoring changes](../../../assets/case-studies/preview-format-multi-replace-preview-format-foo-bar.png)
 
-This one command replaced all of these variants in one shot, and all converted to the right case:
+This one command replaced all of these variants in one shot, and all converted
+to the right case:
 
 ```
 preview_format_arg, preview_format_option, previewFormatArg,
@@ -65,7 +73,6 @@ Then a `preview` => `foo` rename to handle the remaining cases:
 ```
 
 ![Preview of the refactoring changes](../../../assets/case-studies/preview-format-multi-replace-preview-foo.png)
-
 
 Here's the result:
 
@@ -115,4 +122,5 @@ Some of the changes:
      use_color: bool,
 ```
 
-A few minor issues to tidy up, then everything was done and all the tests were passing.
+A few minor issues to tidy up, then everything was done and all the tests were
+passing.

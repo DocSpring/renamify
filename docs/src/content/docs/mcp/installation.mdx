@@ -3,18 +3,27 @@ title: MCP Server Installation
 description: Step-by-step guide to install and set up the Renamify MCP Server
 ---
 
-import { Tabs, TabItem, Steps, Card, CardGrid } from '@astrojs/starlight/components';
+import {
+  Tabs,
+  TabItem,
+  Steps,
+  Card,
+  CardGrid,
+} from '@astrojs/starlight/components';
 
-This guide will help you install and configure the Renamify MCP Server for use with AI assistants.
+This guide will help you install and configure the Renamify MCP Server for use
+with AI assistants.
 
 ## Prerequisites
 
 Before installing the MCP Server, you need:
 
 #### Renamify CLI
+
 The core Renamify command-line tool must be installed and accessible
 
 #### Node.js 18+
+
 Required to run the MCP Server (check with `node --version`)
 
 ## Step 1: Install Renamify CLI
@@ -46,6 +55,7 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
     sudo chmod 755 /usr/local/bin/renamify
     renamify --version
     ```
+
   </TabItem>
 
   <TabItem label="macOS">
@@ -64,6 +74,7 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
     sudo chmod 755 /usr/local/bin/renamify
     renamify --version
     ```
+
   </TabItem>
 
   <TabItem label="Windows">
@@ -106,6 +117,7 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
     cargo build --release
     # Copy target/release/renamify.exe to your PATH
     ```
+
   </TabItem>
 </Tabs>
 
@@ -113,14 +125,16 @@ curl -fsSL https://docspring.github.io/renamify/install.sh | bash
 
 ### Recommended: Use with npx (No Installation Required)
 
-The simplest way to use the MCP Server is with npx, which requires no installation:
+The simplest way to use the MCP Server is with npx, which requires no
+installation:
 
 ```bash
 # This command will be used in your MCP configuration
 npx @renamify/mcp-server
 ```
 
-This approach ensures you always use the latest version and avoids global package management issues.
+This approach ensures you always use the latest version and avoids global
+package management issues.
 
 ### Alternative: Global Installation
 
@@ -153,6 +167,7 @@ npm install -g @renamify/mcp-server
     ```
 
     4. Restart Claude Desktop for the changes to take effect
+
   </TabItem>
 
   <TabItem label="Cursor">
@@ -175,6 +190,7 @@ npm install -g @renamify/mcp-server
     ```
 
     5. Reload Cursor window (Cmd/Ctrl + R)
+
   </TabItem>
 
   <TabItem label="Continue">
@@ -196,6 +212,7 @@ npm install -g @renamify/mcp-server
     ```
 
     3. Restart Continue or reload the configuration
+
   </TabItem>
 
   <TabItem label="Other MCP Clients">
@@ -212,6 +229,7 @@ npm install -g @renamify/mcp-server
     **Arguments:** `[]`
 
     The server communicates via standard input/output (stdio) following the MCP protocol.
+
   </TabItem>
 </Tabs>
 
@@ -225,19 +243,21 @@ npm install -g @renamify/mcp-server
    ```
 
 2. **Check Node.js version**
+
    ```bash
    node --version
    # Should output: v18.x.x or higher
    ```
 
 3. **Test MCP Server directly (optional)**
+
    ```bash
    # This should start the server (Ctrl+C to exit)
    npx @renamify/mcp-server
    ```
 
-4. **Test in your AI assistant**
-   Ask your AI assistant: "Can you check if the Renamify MCP tools are available?"
+4. **Test in your AI assistant** Ask your AI assistant: "Can you check if the
+   Renamify MCP tools are available?"
 
    The assistant should list the 7 available Renamify tools:
    - renamify_plan
@@ -247,7 +267,7 @@ npm install -g @renamify/mcp-server
    - renamify_history
    - renamify_status
    - renamify_preview
-</Steps>
+     </Steps>
 
 ## Troubleshooting
 
@@ -256,12 +276,14 @@ npm install -g @renamify/mcp-server
 This error means the MCP Server cannot find the `renamify` binary:
 
 1. **Verify installation:**
+
    ```bash
    which renamify  # On macOS/Linux
    where renamify  # On Windows
    ```
 
 2. **Check PATH environment variable:**
+
    ```bash
    echo $PATH  # On macOS/Linux
    echo %PATH%  # On Windows
@@ -274,6 +296,7 @@ This error means the MCP Server cannot find the `renamify` binary:
 If you see this error with global installation:
 
 1. **Check global npm/pnpm bin directory is in PATH:**
+
    ```bash
    npm config get prefix
    # Add <prefix>/bin to your PATH
@@ -332,6 +355,8 @@ mv renamify ~/.local/bin/
 
 Now that you have the MCP Server configured:
 
-- [**Configuration**](/renamify/mcp/configuration) - Customize the MCP Server settings
+- [**Configuration**](/renamify/mcp/configuration) - Customize the MCP Server
+  settings
 - [**Tools Reference**](/renamify/mcp/tools) - Learn about each available tool
-- [**Usage Examples**](/renamify/mcp/examples) - See real-world renaming examples
+- [**Usage Examples**](/renamify/mcp/examples) - See real-world renaming
+  examples
