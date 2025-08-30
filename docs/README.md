@@ -38,5 +38,5 @@ Documentation content is written in Markdown/MDX and located in
 - Live demo with self-hosting testing
 - Real-world case studies
 
-Visit the live documentation at https://docspring.github.io/renamify/ to learn
+Visit the live documentation at [https://docspring.github.io/renamify/](https://docspring.github.io/renamify/) to learn
 more about Renamify.

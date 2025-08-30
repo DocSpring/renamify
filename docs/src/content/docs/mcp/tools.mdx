@@ -8,6 +8,47 @@ import { Card, CardGrid, Code } from '@astrojs/starlight/components';
 The Renamify MCP Server provides 10 specialized tools for AI agents to perform
 intelligent renaming operations.
 
+## renamify_search
+
+Search for identifiers across your codebase to understand their usage before
+renaming.
+
+### Parameters
+
+| Parameter     | Type     | Required | Default     | Description                            |
+| ------------- | -------- | -------- | ----------- | -------------------------------------- |
+| `search`      | string   | ✅ Yes   | -           | The identifier to search for           |
+| `paths`       | string[] | No       | Current dir | Paths to search (files or directories) |
+| `includes`    | string[] | No       | All files   | Glob patterns to include               |
+| `excludes`    | string[] | No       | None        | Glob patterns to exclude               |
+| `styles`      | string[] | No       | All styles  | Case styles to detect                  |
+| `preview`     | string   | No       | `summary`   | Output format                          |
+| `dryRun`      | boolean  | No       | `false`     | Preview without saving                 |
+| `renameFiles` | boolean  | No       | `true`      | Include file renames in search         |
+| `renameDirs`  | boolean  | No       | `true`      | Include directory renames in search    |
+
+### Example
+
+```
+Tool: renamify_search
+Arguments: {
+  "search": "UserAccount",
+  "includes": ["src/**/*.ts", "src/**/*.tsx"],
+  "preview": "summary"
+}
+
+Result:
+Found 45 occurrences across 12 files:
+  UserAccount (15)
+  userAccount (18)
+  user_account (8)
+  USER_ACCOUNT (4)
+Files that would be renamed: 2
+Directories that would be renamed: 0
+```
+
+Use this tool to explore the codebase before creating a renaming plan.
+
 ## renamify_plan
 
 Creates a comprehensive renaming plan that identifies all case variations of

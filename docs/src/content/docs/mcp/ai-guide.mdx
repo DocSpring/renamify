@@ -29,11 +29,11 @@ When things go wrong, explain the issue and provide solutions.
 ## The Golden Workflow
 
 <Steps>
+
 1. **Understand the request**
    - Identify the old and new identifiers
    - Determine the scope (whole project vs specific directories)
    - Note any special requirements
-
 2. **Create a plan**
 
    ```
@@ -50,11 +50,9 @@ When things go wrong, explain the issue and provide solutions.
    - Show the number of files and replacements
    - List the variants found
    - Mention any files that will be renamed
-
 4. **Get user confirmation**
    - Wait for explicit approval before applying
    - Offer to show different preview formats if requested
-
 5. **Apply the changes**
 
    ```
@@ -68,7 +66,8 @@ When things go wrong, explain the issue and provide solutions.
    - Confirm successful application
    - Mention the number of changes made
    - Suggest next steps if applicable
-     </Steps>
+
+</Steps>
 
 ## Understanding User Intent
 
@@ -270,9 +269,19 @@ Arguments: {
 Before applying changes in production:
 
 <Steps>
-  1. Check git status with `renamify_status` 2. Create plan with `dryRun: true`
-  first 3. Review with `format: "diff"` if requested 4. Apply with `atomic:
-  true` always 5. Consider `commit: true` for automatic git commit
+
+1. Check git status with `renamify_status`
+
+2. Create plan with `dryRun: true`
+   first
+
+3. Review with `format: "diff"` if requested
+
+4. Apply with `atomic:
+true` always
+
+5. Consider `commit: true` for automatic git commit
+
 </Steps>
 
 ### 3. Intelligent Fallbacks
@@ -422,13 +431,30 @@ When developing or testing AI agent integrations:
 For AI developers integrating Renamify MCP:
 
 <Steps>
-  1. ✓ Install MCP Server and verify tools are available 2. ✓ Implement the
-  golden workflow (plan → preview → apply) 3. ✓ Add appropriate error handling
-  for all tools 4. ✓ Include default excludes (node_modules, etc.) 5. ✓ Show
-  summaries in user-friendly format 6. ✓ Wait for user confirmation before
-  applying 7. ✓ Handle conflicts and errors gracefully 8. ✓ Provide undo
-  information when things go wrong 9. ✓ Test with various identifier patterns
-  and case styles 10. ✓ Document any custom behaviors or limitations
+
+1. ✓ Install MCP Server and verify tools are available
+
+2. ✓ Implement the
+   golden workflow (plan → preview → apply)
+
+3. ✓ Add appropriate error handling
+   for all tools
+
+4. ✓ Include default excludes (node_modules, etc.)
+
+5. ✓ Show summaries in user-friendly format
+
+6. ✓ Wait for user confirmation before
+   applying
+
+7. ✓ Handle conflicts and errors gracefully
+
+8. ✓ Provide undo
+   information when things go wrong
+
+9. ✓ Test with various identifier patterns
+   and case styles 10. ✓ Document any custom behaviors or limitations
+
 </Steps>
 
 ## Quick Reference
