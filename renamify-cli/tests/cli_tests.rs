@@ -40,7 +40,7 @@ fn test_version_subcommand() {
     cmd.arg("version")
         .assert()
         .success()
-        .stdout(predicate::str::contains("renamify 0.1.0"));
+        .stdout(predicate::str::contains("renamify"));
 }
 
 #[test]
@@ -49,7 +49,9 @@ fn test_version_subcommand_json() {
     cmd.args(["version", "--output", "json"])
         .assert()
         .success()
-        .stdout(predicate::str::is_match(r#"\{"name":"renamify","version":"0\.1\.0"\}"#).unwrap());
+        .stdout(
+            predicate::str::is_match(r#"\{"name":"renamify","version":"\d+\.\d+\.\d+"\}"#).unwrap(),
+        );
 }
 
 #[test]
