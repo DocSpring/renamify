@@ -1,22 +1,60 @@
 ---
 title: MCP Server Configuration
-description: Configure the Renamify MCP Server for your environment
+description: Configure the Renamify MCP server for AI assistants
 ---
 
 import {
   Code,
   Tabs,
   TabItem,
-  Card,
-  CardGrid,
+  Steps,
+  Aside,
 } from '@astrojs/starlight/components';
 
-Learn how to configure the Renamify MCP Server for different AI assistants and
-customize its behavior.
+The Renamify MCP server enables AI assistants like Claude Desktop, Cursor, and other MCP-compatible tools to perform intelligent renaming operations on your codebase.
 
-## Basic Configuration
+## Prerequisites
 
-The minimal configuration for any MCP client:
+<Steps>
+1. **Install Renamify CLI** - The MCP server requires the renamify binary to be available:
+   ```bash
+   # Quick install (Linux/macOS)
+   curl -fsSL https://docspring.github.io/renamify/install.sh | bash
+
+# Verify installation
+
+renamify --version
+
+````
+
+2. **Node.js 18+** - Required to run the MCP server via npx
+</Steps>
+
+## Configuration
+
+### Claude Desktop
+
+Add to your Claude Desktop configuration:
+
+<Tabs>
+<TabItem label="macOS">
+Location: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+"mcpServers": {
+ "renamify": {
+   "command": "npx",
+   "args": ["-y", "@renamify/mcp-server"]
+ }
+}
+}
+````
+
+</TabItem>
+
+<TabItem label="Windows">
+Location: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -29,248 +67,187 @@ The minimal configuration for any MCP client:
 }
 ```
 
-## Advanced Configuration Options
+</TabItem>
 
-### Custom Renamify Binary Path
-
-If `renamify` is not in your PATH, you can specify a custom location:
-
-```json
-{
-  "mcpServers": {
-    "renamify": {
-      "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"],
-      "env": {
-        "RENAMIFY_PATH": "/custom/path/to/renamify"
-      }
-    }
-  }
-}
-```
-
-### Working Directory
-
-Specify a default working directory for renaming operations:
+<TabItem label="Linux">
+Location: `~/.config/Claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "renamify": {
       "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"],
-      "cwd": "/path/to/your/project"
+      "args": ["-y", "@renamify/mcp-server"]
     }
   }
 }
 ```
 
-### Logging and Debugging
-
-Enable debug logging for troubleshooting:
-
-```json
-{
-  "mcpServers": {
-    "renamify": {
-      "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"],
-      "env": {
-        "DEBUG": "renamify:*",
-        "LOG_LEVEL": "debug"
-      }
-    }
-  }
-}
-```
-
-## Client-Specific Configurations
-
-<Tabs>
-  <TabItem label="Claude Desktop">
-    ### Claude Desktop
-
-    Location: Platform-specific configuration file
-    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-    - **Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-    Full configuration example:
-    ```json
-    {
-      "mcpServers": {
-        "renamify": {
-          "command": "npx",
-          "args": ["-y", "@renamify/mcp-server"],
-          "env": {
-            "RENAMIFY_PATH": "/usr/local/bin/renamify"
-          }
-        }
-      }
-    }
-    ```
-
-  </TabItem>
-
-  <TabItem label="Cursor">
-    ### Cursor
-
-    Location: Cursor settings file
-    - Access via: Settings → Features → MCP → Edit Configuration
-
-    ```json
-    {
-      "mcp": {
-        "servers": {
-          "renamify": {
-            "command": "npx",
-            "args": ["-y", "@renamify/mcp-server"],
-            "enabled": true
-          }
-        }
-      }
-    }
-    ```
-
-  </TabItem>
-
-  <TabItem label="Continue">
-    ### Continue
-
-    Location: `~/.continue/config.json`
-
-    ```json
-    {
-      "models": [...],
-      "mcpServers": [
-        {
-          "name": "renamify",
-          "command": "npx",
-          "args": ["-y", "@renamify/mcp-server"],
-          "description": "Smart case-aware renaming"
-        }
-      ]
-    }
-    ```
-
-  </TabItem>
-
-  <TabItem label="VS Code Extension">
-    ### VS Code with MCP Extension
-
-    If using a generic MCP extension for VS Code:
-
-    1. Install an MCP client extension
-    2. Open VS Code settings (Cmd/Ctrl + ,)
-    3. Search for MCP configuration
-    4. Add server configuration:
-
-    ```json
-    {
-      "mcp.servers": {
-        "renamify": {
-          "command": "npx",
-          "args": ["-y", "@renamify/mcp-server"]
-        }
-      }
-    }
-    ```
-
-  </TabItem>
+</TabItem>
 </Tabs>
+
+### Cursor
+
+For Cursor, add to your workspace `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "renamify": {
+      "command": "npx",
+      "args": ["-y", "@renamify/mcp-server"]
+    }
+  }
+}
+```
+
+### Local Development
+
+When developing the MCP server locally, you can run it directly:
+
+```json
+{
+  "mcpServers": {
+    "renamify": {
+      "command": "node",
+      "args": ["path/to/renamify-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+Or with TypeScript:
+
+```json
+{
+  "mcpServers": {
+    "renamify": {
+      "command": "tsx",
+      "args": ["path/to/renamify-mcp/src/index.ts"]
+    }
+  }
+}
+```
 
 ## Environment Variables
 
-The MCP Server respects these environment variables:
+The MCP server supports one environment variable:
 
-### RENAMIFY_PATH
+### `RENAMIFY_PATH`
 
-- **Type:** String
-- **Default:** `renamify` (searches PATH)
-- **Description:** Path to the renamify binary
-
-### DEBUG
-
-- **Type:** String
-- **Default:** (none)
-- **Description:** Enable debug output with `renamify:*`
-
-### LOG_LEVEL
-
-- **Type:** String
-- **Default:** `info`
-- **Description:** Logging level: `error`, `warn`, `info`, `debug`
-
-### NO_COLOR
-
-- **Type:** Boolean
-- **Default:** `false`
-- **Description:** Disable colored output
-
-## Default Tool Behaviors
-
-You can configure default behaviors for the MCP tools:
-
-### Default Preview Format
-
-The MCP Server defaults to `summary` format for AI agents. To change:
+Specify a custom path to the renamify binary if it's not in your system PATH:
 
 ```json
 {
-  "env": {
-    "RENAMIFY_DEFAULT_PREVIEW": "table" // or "diff", "json"
+  "mcpServers": {
+    "renamify": {
+      "command": "npx",
+      "args": ["-y", "@renamify/mcp-server"],
+      "env": {
+        "RENAMIFY_PATH": "/path/to/renamify"
+      }
+    }
   }
 }
 ```
 
-### Auto-commit Behavior
+<Aside type="tip">
+  The MCP server will automatically detect renamify in your PATH. You only need
+  to set `RENAMIFY_PATH` if: - renamify is installed in a non-standard location
+  - You want to use a specific version - You're testing a development build
+</Aside>
 
-To always create git commits after applying changes:
+## Verification
 
-```json
-{
-  "env": {
-    "RENAMIFY_AUTO_COMMIT": "true"
-  }
-}
+After configuration, restart your AI assistant and verify the connection:
+
+1. **Claude Desktop**: Look for "renamify" in the MCP tools list
+2. **Cursor**: Check the MCP panel for available tools
+3. **Test the connection**: Ask the AI to "Check renamify status"
+
+The AI should be able to call:
+
+```
+Tool: renamify_status
+Arguments: {}
 ```
 
-### Dry Run by Default
+And receive information about the current renamify installation.
 
-For extra safety, make all operations dry-run by default:
+## Troubleshooting
 
-```json
-{
-  "env": {
-    "RENAMIFY_DEFAULT_DRY_RUN": "true"
-  }
-}
+### "Renamify CLI is not available"
+
+The MCP server cannot find the renamify binary. Solutions:
+
+1. **Install renamify**:
+
+   ```bash
+   curl -fsSL https://docspring.github.io/renamify/install.sh | bash
+   ```
+
+2. **Set RENAMIFY_PATH** in your MCP configuration:
+
+   ```json
+   "env": {
+     "RENAMIFY_PATH": "/usr/local/bin/renamify"
+   }
+   ```
+
+3. **Verify installation**:
+   ```bash
+   which renamify
+   renamify --version
+   ```
+
+### "MCP server not connecting"
+
+1. **Check Node.js version**:
+
+   ```bash
+   node --version  # Should be 18.0.0 or higher
+   ```
+
+2. **Test npx directly**:
+
+   ```bash
+   npx @renamify/mcp-server
+   ```
+
+   You should see no output (the server waits for stdio input).
+
+3. **Check configuration file location** - Ensure you're editing the correct config file for your platform.
+
+### "Permission denied"
+
+On Unix systems, ensure the renamify binary is executable:
+
+```bash
+chmod +x /path/to/renamify
 ```
 
-## Project-Specific Configuration
+## Security Considerations
 
-You can create a `.renamify/config.json` file in your project root:
+<Aside type="caution">
+  The MCP server has full access to execute renamify commands in your filesystem. Only use it in trusted environments and be cautious when:
 
-```json
-{
-  "defaults": {
-    "styles": ["snake", "camel", "pascal", "kebab"],
-    "excludes": ["node_modules/**", "dist/**", "build/**", ".git/**"],
-    "renameFiles": true,
-    "renameDirs": true,
-    "atomic": true
-  },
-  "mcp": {
-    "preview": "summary",
-    "autoCommit": false,
-    "commitMessage": "renamify: {old} → {new}"
-  }
-}
-```
+- Working with sensitive codebases
+- Granting access to shared systems
+- Using with untrusted AI prompts
+  </Aside>
 
-## Multiple Projects Configuration
+The MCP server:
 
-Configure different settings for different projects:
+- Only executes renamify CLI commands
+- Cannot execute arbitrary shell commands
+- Respects all renamify safety features (atomic operations, undo/redo)
+- Uses the summary output format by default (minimal data exposure)
+
+## Advanced Configuration
+
+### Multiple Workspaces
+
+You can configure different renamify instances for different projects:
 
 ```json
 {
@@ -278,185 +255,27 @@ Configure different settings for different projects:
     "renamify-project1": {
       "command": "npx",
       "args": ["-y", "@renamify/mcp-server"],
-      "cwd": "/path/to/project1",
       "env": {
-        "RENAMIFY_AUTO_COMMIT": "true"
+        "RENAMIFY_PATH": "/projects/project1/bin/renamify"
       }
     },
     "renamify-project2": {
       "command": "npx",
       "args": ["-y", "@renamify/mcp-server"],
-      "cwd": "/path/to/project2",
       "env": {
-        "RENAMIFY_DEFAULT_DRY_RUN": "true"
+        "RENAMIFY_PATH": "/projects/project2/bin/renamify"
       }
     }
   }
 }
 ```
-
-## Performance Tuning
-
-### Memory Limits
-
-For large codebases, increase Node.js memory limit:
-
-```json
-{
-  "env": {
-    "NODE_OPTIONS": "--max-old-space-size=4096"
-  }
-}
-```
-
-### Parallel Processing
-
-Enable parallel file processing:
-
-```json
-{
-  "env": {
-    "RENAMIFY_PARALLEL": "true",
-    "RENAMIFY_WORKERS": "4"
-  }
-}
-```
-
-## Security Considerations
-
-### Restricted Mode
-
-Limit renaming to specific directories:
-
-```json
-{
-  "env": {
-    "RENAMIFY_ALLOWED_PATHS": "/home/user/projects,/home/user/work",
-    "RENAMIFY_RESTRICT_MODE": "true"
-  }
-}
-```
-
-### Read-Only Mode
-
-Enable read-only mode for planning without applying:
-
-```json
-{
-  "env": {
-    "RENAMIFY_READ_ONLY": "true"
-  }
-}
-```
-
-## Troubleshooting Configuration
-
-### Verify Configuration
-
-Test your configuration with a simple request to your AI assistant:
-
-> "Can you list the available Renamify tools?"
-
-The assistant should respond with the 7 available tools.
 
 ### Debug Mode
 
-Enable comprehensive debugging:
-
-```json
-{
-  "env": {
-    "DEBUG": "*",
-    "LOG_LEVEL": "debug",
-    "RENAMIFY_VERBOSE": "true"
-  }
-}
-```
-
-### Common Issues
-
-**Tools not appearing:**
-
-- Check JSON syntax is valid
-- Ensure paths use forward slashes (even on Windows)
-- Restart your AI assistant after changes
-
-**Permission errors:**
-
-- Ensure the renamify binary is executable
-- Check file system permissions for your project
-
-**Binary not found:**
-
-- Use absolute paths in RENAMIFY_PATH
-- Verify the binary exists at the specified location
-
-## Configuration Templates
-
-### Development Environment
-
-```json
-{
-  "mcpServers": {
-    "renamify-dev": {
-      "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"],
-      "env": {
-        "LOG_LEVEL": "debug",
-        "RENAMIFY_DEFAULT_DRY_RUN": "true",
-        "RENAMIFY_AUTO_COMMIT": "false"
-      }
-    }
-  }
-}
-```
-
-### Production Environment
-
-```json
-{
-  "mcpServers": {
-    "renamify-prod": {
-      "command": "renamify-mcp",
-      "env": {
-        "LOG_LEVEL": "error",
-        "RENAMIFY_AUTO_COMMIT": "true",
-        "RENAMIFY_RESTRICT_MODE": "true",
-        "RENAMIFY_ALLOWED_PATHS": "/var/www/app"
-      }
-    }
-  }
-}
-```
-
-### CI/CD Environment
-
-```json
-{
-  "mcpServers": {
-    "renamify-ci": {
-      "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"],
-      "env": {
-        "RENAMIFY_READ_ONLY": "true",
-        "RENAMIFY_DEFAULT_PREVIEW": "json",
-        "CI": "true"
-      }
-    }
-  }
-}
-```
+To debug MCP server issues, you can enable verbose logging in your AI assistant's developer tools or console output. The server uses stdio for communication, so errors will appear in the assistant's logs.
 
 ## Next Steps
 
-<CardGrid>
-  <Card title="Tools Reference" icon="document" href="/renamify/mcp/tools">
-    Detailed documentation for each MCP tool
-  </Card>
-  <Card title="Usage Examples" icon="rocket" href="/renamify/mcp/examples">
-    Real-world renaming scenarios
-  </Card>
-  <Card title="AI Agent Guide" icon="robot" href="/renamify/mcp/ai-guide">
-    Best practices for AI-assisted renaming
-  </Card>
-</CardGrid>
+- [Learn the available MCP tools](/mcp/tools)
+- [See example workflows](/mcp/examples)
+- [Read the AI agent guide](/mcp/ai-guide)

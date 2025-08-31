@@ -221,17 +221,17 @@ renamify rename old_name new_name \
 renamify rename old_name new_name src/ lib/
 ```
 
-### Use Dry Run First
+### Use Dry Run To Avoid Plan Creation
 
 ```bash
 # Explore the scope before committing
-renamify dry-run old_name new_name src/
+renamify plan old_name new_name src/ --dry-run
 
 # Or with patterns
-renamify dry-run old_name new_name --include "src/**"
+renamify plan old_name new_name --include "src/**" --dry-run
 
 # Count potential matches
-renamify dry-run old_name new_name | grep -c "│"
+renamify plan old_name new_name --dry-run | grep -c "│"
 ```
 
 ### Parallel Workflow

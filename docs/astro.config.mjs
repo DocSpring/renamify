@@ -89,11 +89,10 @@ export default defineConfig({
             { label: 'replace', slug: 'commands/replace' },
             { label: 'plan', slug: 'commands/plan' },
             { label: 'apply', slug: 'commands/apply' },
-            { label: 'dry-run', slug: 'commands/dry-run' },
-            { label: 'status', slug: 'commands/status' },
-            { label: 'history', slug: 'commands/history' },
             { label: 'undo', slug: 'commands/undo' },
             { label: 'redo', slug: 'commands/redo' },
+            { label: 'status', slug: 'commands/status' },
+            { label: 'history', slug: 'commands/history' },
           ],
         },
         {

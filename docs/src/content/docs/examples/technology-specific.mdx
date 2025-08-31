@@ -202,7 +202,7 @@ renamify rename userRoutes profileRoutes routes/ controllers/
 renamify rename user_data profile_data \
   --include "**/*.sql" \
   --exclude "migrations/**" \
-  --dry-run  # Always dry-run first for SQL!
+  --dry-run
 ```
 
 **Changes made:**
@@ -318,6 +318,6 @@ renamify rename UserController ProfileController app/Http/Controllers/ app/Model
 ### Test Safely First
 
 ```bash
-# Always start with dry-run for unfamiliar codebases
-renamify dry-run pattern replacement --include "src/**"
+# Always start with plan --dry-run for unfamiliar codebases
+renamify plan pattern replacement --include "src/**" --dry-run
 ```
