@@ -16,18 +16,19 @@ The Renamify MCP server enables AI assistants like Claude Desktop, Cursor, and o
 ## Prerequisites
 
 <Steps>
+
 1. **Install Renamify CLI** - The MCP server requires the renamify binary to be available:
+
    ```bash
    # Quick install (Linux/macOS)
    curl -fsSL https://docspring.github.io/renamify/install.sh | bash
 
-# Verify installation
-
-renamify --version
-
-````
+   # Verify installation
+   renamify --version
+   ```
 
 2. **Node.js 18+** - Required to run the MCP server via npx
+
 </Steps>
 
 ## Configuration
@@ -38,22 +39,23 @@ Add to your Claude Desktop configuration:
 
 <Tabs>
 <TabItem label="macOS">
+
 Location: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
-"mcpServers": {
- "renamify": {
-   "command": "npx",
-   "args": ["-y", "@renamify/mcp-server"]
- }
+  "mcpServers": {
+    "renamify": {
+      "command": "npx",
+      "args": ["-y", "@renamify/mcp-server"]
+    }
+  }
 }
-}
-````
+```
 
 </TabItem>
-
 <TabItem label="Windows">
+
 Location: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
@@ -68,8 +70,8 @@ Location: `%APPDATA%\Claude\claude_desktop_config.json`
 ```
 
 </TabItem>
-
 <TabItem label="Linux">
+
 Location: `~/.config/Claude/claude_desktop_config.json`
 
 ```json
@@ -152,9 +154,13 @@ Specify a custom path to the renamify binary if it's not in your system PATH:
 ```
 
 <Aside type="tip">
-  The MCP server will automatically detect renamify in your PATH. You only need
-  to set `RENAMIFY_PATH` if: - renamify is installed in a non-standard location
-  - You want to use a specific version - You're testing a development build
+
+The MCP server will automatically detect renamify in your PATH. You only need to set `RENAMIFY_PATH` if:
+
+- renamify is installed in a non-standard location
+- You want to use a specific version
+- You're testing a development build
+
 </Aside>
 
 ## Verification
@@ -195,6 +201,7 @@ The MCP server cannot find the renamify binary. Solutions:
    ```
 
 3. **Verify installation**:
+
    ```bash
    which renamify
    renamify --version
@@ -229,12 +236,14 @@ chmod +x /path/to/renamify
 ## Security Considerations
 
 <Aside type="caution">
-  The MCP server has full access to execute renamify commands in your filesystem. Only use it in trusted environments and be cautious when:
+
+The MCP server has full access to execute renamify commands in your filesystem. Only use it in trusted environments and be cautious when:
 
 - Working with sensitive codebases
 - Granting access to shared systems
 - Using with untrusted AI prompts
-  </Aside>
+
+</Aside>
 
 The MCP server:
 
