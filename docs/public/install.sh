@@ -108,18 +108,6 @@ uninstall_renamify() {
     exit 0
 }
 
-# Check for Homebrew on macOS
-check_homebrew() {
-    if [ "$PLATFORM" = "macos" ] && command -v brew &> /dev/null; then
-        echo -e "${BLUE}ℹ️  Homebrew detected${NC}"
-        echo ""
-        echo "For macOS, we recommend installing via Homebrew (when available):"
-        echo -e "  ${GREEN}brew install renamify${NC}  # Coming soon"
-        echo ""
-        echo "Continuing with manual installation to $INSTALL_DIR..."
-        echo ""
-    fi
-}
 
 # Detect user's shell
 detect_shell() {
@@ -355,12 +343,6 @@ main() {
     fi
 
     detect_platform
-
-    # Check for Homebrew on macOS (but continue with install)
-    if [ "$PLATFORM" = "macos" ] && [ "$INSTALL_MODE" = "local" ]; then
-        check_homebrew
-    fi
-
     install_renamify
     verify_installation
 }
