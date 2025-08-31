@@ -279,3 +279,60 @@ pub fn render_diff(plan: &Plan, use_color: bool) -> String {
 
     output
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scanner::MatchHunk;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_highlight_line_with_hunks() {
+        // Test the off-by-one bug in highlighting
+        // The line: require "active_support/core_ext/hash"
+        // Should highlight "core_ext" but was highlighting "ore_ext/"
+
+        let line = r#"require "active_support/core_ext/hash""#;
+
+        // Create a hunk that matches "core_ext" at position 24
+        let hunk = MatchHunk {
+            file: PathBuf::from("test.rb"),
+            line: 1,
+            col: 24, // Position of 'c' in 'core_ext' (0-based)
+            variant: "core_ext".to_string(),
+            content: "core_ext".to_string(),
+            replace: "ruby_extras".to_string(),
+            start: 24,
+            end: 32,
+            line_before: Some(line.to_string()),
+            line_after: Some(r#"require "active_support/ruby_extras/hash""#.to_string()),
+            coercion_applied: None,
+            original_file: None,
+            renamed_file: None,
+            patch_hash: None,
+        };
+
+        let hunks = vec![&hunk];
+
+        // Test delete line highlighting (red background)
+        let highlighted = highlight_line_with_hunks(line, &hunks, true, true);
+
+        // The ANSI codes should highlight exactly "core_ext", not "ore_ext/"
+        // Base style for deleted line: bg=#852134, fg=#FFFFFF
+        // Highlight style for match: bg=#c0526a, fg=#FFFFFF
+
+        // Check that the output contains the correct structure:
+        // 1. Base style from start to col 24: "require \"active_support/"
+        // 2. Highlight style from col 24 to 32: "core_ext"
+        // 3. Base style from col 32 to end: "/hash\""
+
+        // The expected output with correct ANSI codes
+        // Note: nu_ansi_term combines bg and fg into a single escape sequence
+        let expected = "\u{1b}[48;2;133;33;52;38;2;255;255;255mrequire \"active_support/\u{1b}[0m\u{1b}[48;2;192;82;106;38;2;255;255;255mcore_ext\u{1b}[0m\u{1b}[48;2;133;33;52;38;2;255;255;255m/hash\"\u{1b}[0m";
+
+        assert_eq!(
+            highlighted, expected,
+            "Highlighting should cover exactly 'core_ext', not 'ore_ext/'"
+        );
+    }
+}

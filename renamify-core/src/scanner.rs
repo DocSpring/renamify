@@ -972,7 +972,7 @@ pub fn create_simple_plan(
                         file: relative_path.to_path_buf(),
                         line: (line_num + 1) as u64,
                         #[allow(clippy::cast_possible_truncation)]
-                        col: (start + 1) as u32,
+                        col: start as u32,
                         variant: pattern.to_string(),
                         content: matched_text.to_string(),
                         replace: replacement_text,
@@ -1002,7 +1002,7 @@ pub fn create_simple_plan(
                         file: relative_path.to_path_buf(),
                         line: (line_num + 1) as u64,
                         #[allow(clippy::cast_possible_truncation)]
-                        col: (start + 1) as u32,
+                        col: start as u32,
                         variant: pattern.to_string(),
                         content: pattern.to_string(),
                         replace: replacement.to_string(),
