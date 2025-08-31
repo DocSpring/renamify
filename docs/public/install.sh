@@ -349,7 +349,7 @@ verify_installation() {
 # Main installation flow
 main() {
     echo "🔧 Renamify Installer"
-    echo "===================="
+    echo "====================="
     echo ""
 
     # Handle uninstall
