@@ -7,13 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@types/handlebars':
-        specifier: ^4.1.0
-        version: 4.1.0
-      handlebars:
-        specifier: ^4.7.8
-        version: 4.7.8
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.2.0
@@ -57,12 +50,18 @@ importers:
       concurrently:
         specifier: ^9.2.0
         version: 9.2.0
+      esbuild:
+        specifier: ^0.25.9
+        version: 0.25.9
       fantasticon:
         specifier: ^3.0.0
         version: 3.0.0
       glob:
         specifier: ^11.0.3
         version: 11.0.3
+      handlebars:
+        specifier: ^4.7.8
+        version: 4.7.8
       jsdom:
         specifier: ^26.1.0
         version: 26.1.0
@@ -650,10 +649,6 @@ packages:
 
   '@types/glob@8.1.0':
     resolution: {integrity: sha512-IO+MJPVhoqz+28h1qLAcBEH2+xHMK6MTyHJc7MTnnYb6wsoLR29POVGJ7LycmVXIqyy/4/2ShP5sUwTXuOwb/w==}
-
-  '@types/handlebars@4.1.0':
-    resolution: {integrity: sha512-gq9YweFKNNB1uFK71eRqsd4niVkXrxHugqWFQkeLRJvGjnxsLr16bYtcsG4tOFwmYi0Bax+wCkbf1reUfdl4kA==}
-    deprecated: This is a stub types definition. handlebars provides its own type definitions, so you do not need this installed.
 
   '@types/istanbul-lib-coverage@2.0.6':
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
@@ -3485,10 +3480,6 @@ snapshots:
     dependencies:
       '@types/minimatch': 5.1.2
       '@types/node': 20.19.11
-
-  '@types/handlebars@4.1.0':
-    dependencies:
-      handlebars: 4.7.8
 
   '@types/istanbul-lib-coverage@2.0.6': {}
 
