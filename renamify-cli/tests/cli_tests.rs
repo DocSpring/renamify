@@ -327,20 +327,6 @@ fn test_plan_command_table_format() {
 }
 
 #[test]
-fn test_dry_run_command() {
-    let temp_dir = TempDir::new().unwrap();
-    let test_file = temp_dir.child("test.rs");
-    test_file.write_str("fn old_name() {}").unwrap();
-
-    let mut cmd = Command::cargo_bin("renamify").unwrap();
-    cmd.current_dir(temp_dir.path())
-        .args(["dry-run", "old_name", "new_name"])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("test.rs"));
-}
-
-#[test]
 fn test_no_color_flag() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.child("test.rs");

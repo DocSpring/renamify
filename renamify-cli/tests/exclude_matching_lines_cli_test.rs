@@ -73,9 +73,10 @@ production:
     // Run dry-run with exclusion pattern
     let mut cmd = Command::cargo_bin("renamify").unwrap();
     cmd.current_dir(temp_dir.path()).args([
-        "dry-run",
+        "plan",
         "old_service",
         "new_service",
+        "--dry-run",
         "--exclude-matching-lines",
         r"(^\s*#|TODO)", // Exclude comments and TODO lines
         "--preview",

@@ -123,61 +123,23 @@ pub struct AcronymArgs {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Generate a renaming plan
-    Plan {
-        /// Old identifier to replace
-        search: String,
+    /// Initialize renamify in the current repository
+    Init {
+        /// Add to .git/info/exclude instead of .gitignore
+        #[arg(long, conflicts_with = "global")]
+        local: bool,
 
-        /// New identifier to replace with
-        replace: String,
+        /// Add to global git excludes file
+        #[arg(long, conflicts_with = "local")]
+        global: bool,
 
-        /// Paths to search (files or directories). Defaults to current directory
-        #[arg(help = "Search paths (files or directories)")]
-        paths: Vec<PathBuf>,
+        /// Check if .renamify is ignored (exit 0 if yes, 1 if no)
+        #[arg(long, conflicts_with_all = ["local", "global", "configure_global"])]
+        check: bool,
 
-        #[command(flatten)]
-        filter: FilterArgs,
-
-        #[command(flatten)]
-        rename_files: RenameFileArgs,
-
-        #[command(flatten)]
-        styles: StyleArgs,
-
-        /// Specific matches to exclude (e.g., compound words to ignore)
-        #[arg(long, value_delimiter = ',')]
-        exclude_match: Vec<String>,
-
-        /// Exclude matches on lines matching this regex pattern
-        #[arg(long)]
-        exclude_matching_lines: Option<String>,
-
-        /// Preview output format (defaults from config if not specified)
-        #[arg(long, value_enum)]
-        preview: Option<PreviewArg>,
-
-        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
-        #[arg(long)]
-        fixed_table_width: bool,
-
-        /// Output path for the plan
-        #[arg(long, default_value = ".renamify/plan.json")]
-        plan_out: PathBuf,
-
-        /// Only show preview, don't write plan (dry-run)
-        #[arg(long)]
-        dry_run: bool,
-
-        #[command(flatten)]
-        acronyms: AcronymArgs,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
+        /// Configure global excludes file if it doesn't exist
+        #[arg(long, requires = "global")]
+        configure_global: bool,
     },
 
     /// Search for identifiers without creating a plan
@@ -230,161 +192,6 @@ pub enum Commands {
         /// Suppress all output (alias for --preview none)
         #[arg(long)]
         quiet: bool,
-    },
-
-    /// Dry-run mode (alias for plan --dry-run)
-    DryRun {
-        /// Old identifier to replace
-        search: String,
-
-        /// New identifier to replace with
-        replace: String,
-
-        /// Paths to search (files or directories). Defaults to current directory
-        #[arg(help = "Search paths (files or directories)")]
-        paths: Vec<PathBuf>,
-
-        #[command(flatten)]
-        filter: FilterArgs,
-
-        #[command(flatten)]
-        rename_files: RenameFileArgs,
-
-        #[command(flatten)]
-        styles: StyleArgs,
-
-        /// Specific matches to exclude (e.g., compound words to ignore)
-        #[arg(long, value_delimiter = ',')]
-        exclude_match: Vec<String>,
-
-        /// Exclude matches on lines matching this regex pattern
-        #[arg(long)]
-        exclude_matching_lines: Option<String>,
-
-        /// Preview output format (defaults from config if not specified)
-        #[arg(long, value_enum)]
-        preview: Option<PreviewArg>,
-
-        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
-        #[arg(long)]
-        fixed_table_width: bool,
-
-        #[command(flatten)]
-        acronyms: AcronymArgs,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Apply a renaming plan
-    Apply {
-        /// Plan ID or path to apply (optional - defaults to .renamify/plan.json)
-        id: Option<String>,
-
-        /// Apply changes atomically
-        #[arg(long, default_value_t = true)]
-        atomic: bool,
-
-        /// Commit changes to git
-        #[arg(long)]
-        commit: bool,
-
-        /// Force apply even with conflicts
-        #[arg(long)]
-        force_with_conflicts: bool,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Undo a previous renaming
-    Undo {
-        /// History ID to undo (use 'latest' for the most recent non-revert entry)
-        id: String,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Redo a previously undone renaming
-    Redo {
-        /// History ID to redo (use 'latest' for the most recent reverted entry)
-        id: String,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Show renaming status
-    Status {
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Show renaming history
-    History {
-        /// Limit number of entries
-        #[arg(long)]
-        limit: Option<usize>,
-
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
-
-        /// Suppress all output (alias for --preview none)
-        #[arg(long)]
-        quiet: bool,
-    },
-
-    /// Initialize renamify in the current repository
-    Init {
-        /// Add to .git/info/exclude instead of .gitignore
-        #[arg(long, conflicts_with = "global")]
-        local: bool,
-
-        /// Add to global git excludes file
-        #[arg(long, conflicts_with = "local")]
-        global: bool,
-
-        /// Check if .renamify is ignored (exit 0 if yes, 1 if no)
-        #[arg(long, conflicts_with_all = ["local", "global", "configure_global"])]
-        check: bool,
-
-        /// Configure global excludes file if it doesn't exist
-        #[arg(long, requires = "global")]
-        configure_global: bool,
-    },
-
-    /// Show version information
-    Version {
-        /// Output format for machine consumption
-        #[arg(long, value_enum, default_value = "summary")]
-        output: OutputFormat,
     },
 
     /// Plan and apply a renaming in one step (with confirmation)
@@ -517,5 +324,149 @@ pub enum Commands {
         /// Suppress all output (alias for --preview none)
         #[arg(long)]
         quiet: bool,
+    },
+
+    /// Generate a renaming plan
+    Plan {
+        /// Old identifier to replace
+        search: String,
+
+        /// New identifier to replace with
+        replace: String,
+
+        /// Paths to search (files or directories). Defaults to current directory
+        #[arg(help = "Search paths (files or directories)")]
+        paths: Vec<PathBuf>,
+
+        #[command(flatten)]
+        filter: FilterArgs,
+
+        #[command(flatten)]
+        rename_files: RenameFileArgs,
+
+        #[command(flatten)]
+        styles: StyleArgs,
+
+        /// Specific matches to exclude (e.g., compound words to ignore)
+        #[arg(long, value_delimiter = ',')]
+        exclude_match: Vec<String>,
+
+        /// Exclude matches on lines matching this regex pattern
+        #[arg(long)]
+        exclude_matching_lines: Option<String>,
+
+        /// Preview output format (defaults from config if not specified)
+        #[arg(long, value_enum)]
+        preview: Option<PreviewArg>,
+
+        /// Use fixed column widths for table output (useful in CI environments or other non-TTY use cases)
+        #[arg(long)]
+        fixed_table_width: bool,
+
+        /// Output path for the plan
+        #[arg(long, default_value = ".renamify/plan.json")]
+        plan_out: PathBuf,
+
+        /// Only show preview, don't write plan (dry-run)
+        #[arg(long)]
+        dry_run: bool,
+
+        #[command(flatten)]
+        acronyms: AcronymArgs,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
+    },
+
+    /// Apply a renaming plan
+    Apply {
+        /// Plan ID or path to apply (optional - defaults to .renamify/plan.json)
+        id: Option<String>,
+
+        /// Apply changes atomically
+        #[arg(long, default_value_t = true)]
+        atomic: bool,
+
+        /// Commit changes to git
+        #[arg(long)]
+        commit: bool,
+
+        /// Force apply even with conflicts
+        #[arg(long)]
+        force_with_conflicts: bool,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
+    },
+
+    /// Undo a previous renaming
+    Undo {
+        /// History ID to undo (use 'latest' for the most recent non-revert entry)
+        id: String,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
+    },
+
+    /// Redo a previously undone renaming
+    Redo {
+        /// History ID to redo (use 'latest' for the most recent reverted entry)
+        id: String,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
+    },
+
+    /// Show renaming status
+    Status {
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
+    },
+
+    /// Show renaming history
+    History {
+        /// Limit number of entries
+        #[arg(long)]
+        limit: Option<usize>,
+
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
+
+        /// Suppress all output (alias for --preview none)
+        #[arg(long)]
+        quiet: bool,
+    },
+
+    /// Show version information
+    Version {
+        /// Output format for machine consumption
+        #[arg(long, value_enum, default_value = "summary")]
+        output: OutputFormat,
     },
 }

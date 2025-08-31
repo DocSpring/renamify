@@ -45,7 +45,6 @@ fn main() {
         cli.command,
         Commands::Plan { .. }
             | Commands::Apply { .. }
-            | Commands::DryRun { .. }
             | Commands::Rename { .. }
             | Commands::Replace { .. }
             | Commands::Search { .. }
@@ -115,60 +114,6 @@ fn main() {
                 output,
                 quiet,
                 false, // regex flag - not used in Plan command
-            )
-        },
-
-        Commands::DryRun {
-            search,
-            replace,
-            paths,
-            filter,
-            rename_files,
-            styles,
-            exclude_match,
-            exclude_matching_lines,
-            preview,
-            fixed_table_width,
-            acronyms,
-            output,
-            quiet,
-        } => {
-            // Use preview format from CLI arg or config default (unless JSON output)
-            let format = if output == OutputFormat::Json {
-                None // No preview for JSON output
-            } else {
-                Some(preview.map(std::convert::Into::into).unwrap_or_else(|| {
-                    Preview::from_str(&config.defaults.preview_format).unwrap_or(Preview::Diff)
-                }))
-            };
-
-            plan::handle_plan(
-                &search,
-                &replace,
-                paths,
-                filter.include,
-                filter.exclude,
-                filter.respect_gitignore,
-                cli.unrestricted,
-                !rename_files.no_rename_files && !rename_files.no_rename_paths,
-                !rename_files.no_rename_dirs && !rename_files.no_rename_paths,
-                styles.exclude_styles,
-                styles.include_styles,
-                styles.only_styles,
-                exclude_match,
-                exclude_matching_lines,
-                format,
-                fixed_table_width,
-                PathBuf::from(".renamify/plan.json"),
-                true, // Always dry-run
-                use_color,
-                acronyms.no_acronyms,
-                acronyms.include_acronyms,
-                acronyms.exclude_acronyms,
-                acronyms.only_acronyms,
-                output,
-                quiet,
-                false, // regex flag - not used in DryRun command
             )
         },
 
