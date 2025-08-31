@@ -136,23 +136,25 @@ pub fn rename_operation(
                 committed: false,
                 plan: Some(plan),
             },
-            Some("Nothing to do.".to_string()),
+            Some(format!("No matches found for '{}'", search)),
         ));
     }
-
-    // Safety checks
-    validate_operation_safety(&plan, auto_approve, large, force_with_conflicts)?;
 
     // Generate preview if requested
     let mut preview_output = None;
     if let Some(format) = preview_format.as_ref() {
         if *format != "none" {
             let preview = generate_preview_output(&plan, format, use_color)?;
-            preview_output = Some(preview);
+            preview_output = Some(preview.clone());
+
+            // Print preview BEFORE asking for confirmation (but not in dry-run)
+            if !dry_run && !auto_approve {
+                println!("{}", preview);
+            }
         }
     }
 
-    // If dry-run, stop here
+    // If dry-run, stop here (no safety checks needed for dry-run)
     if dry_run {
         return Ok((
             RenameResult {
@@ -168,6 +170,9 @@ pub fn rename_operation(
             preview_output,
         ));
     }
+
+    // Safety checks (only for non-dry-run operations)
+    validate_operation_safety(&plan, auto_approve, large, force_with_conflicts)?;
 
     // Get confirmation unless auto-approved
     if !auto_approve && !get_user_confirmation()? {

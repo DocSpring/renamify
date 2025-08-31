@@ -1535,6 +1535,151 @@ fn test_redo_after_undo() {
 }
 
 #[test]
+fn test_rename_command_shows_preview_before_prompt() {
+    // This test should fail if preview is not shown
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create files with content that will match
+    temp_dir
+        .child("test.rs")
+        .write_str("fn old_name() { old_name(); }")
+        .unwrap();
+    temp_dir
+        .child("old_name.txt")
+        .write_str("Documentation for old_name")
+        .unwrap();
+
+    // Test with dry-run to verify preview is shown
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    let output = cmd
+        .current_dir(temp_dir.path())
+        .args([
+            "rename",
+            "old_name",
+            "new_name",
+            "--preview",
+            "table",
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Also test with -y to ensure preview is shown even when auto-approved
+    let mut cmd2 = Command::cargo_bin("renamify").unwrap();
+    let output2 = cmd2
+        .current_dir(temp_dir.path())
+        .args(["rename", "old_name", "new_name", "--preview", "table", "-y"])
+        .output()
+        .unwrap();
+
+    let stdout2 = String::from_utf8_lossy(&output2.stdout);
+
+    // Check BOTH outputs have the preview
+    for (output_name, output) in [("dry-run", &stdout), ("auto-approve", &stdout2)] {
+        assert!(
+            output.contains("test.rs") || output.contains("old_name.txt"),
+            "{}: Preview must show at least one file that will be changed",
+            output_name
+        );
+
+        // Must show it's a table or diff
+        assert!(
+            output.contains("File")
+                || output.contains("+--")
+                || output.contains("---")
+                || output.contains("@@"),
+            "{}: Preview must show table headers or diff markers. Got: {}",
+            output_name,
+            output
+        );
+    }
+}
+
+#[test]
+fn test_rename_preview_formatting_with_prompt() {
+    // Test that the preview is properly formatted with newline before Apply prompt
+
+    let temp_dir = TempDir::new().unwrap();
+
+    temp_dir
+        .child("test.txt")
+        .write_str("old_value here")
+        .unwrap();
+
+    // We can't easily test interactive prompts, but we can verify with -y
+    // that the preview ends with proper newline spacing
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    let output = cmd
+        .current_dir(temp_dir.path())
+        .args([
+            "rename",
+            "old_value",
+            "new_value",
+            "--preview",
+            "table",
+            "-y",
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Check that table is shown
+    assert!(stdout.contains("test.txt"), "Should show the file");
+    assert!(
+        stdout.contains("File") || stdout.contains("+--"),
+        "Should show table structure"
+    );
+
+    // Check that the success message appears on its own line after the table
+    // This verifies proper newline handling
+    let lines: Vec<&str> = stdout.lines().collect();
+    let has_table_line = lines
+        .iter()
+        .any(|l| l.contains("+--") || l.contains("test.txt"));
+    let has_success_line = lines
+        .iter()
+        .any(|l| l.contains("Applied") || l.contains("Undo with"));
+
+    assert!(has_table_line, "Should have table content");
+    assert!(has_success_line, "Should have success message");
+
+    // Ensure they're on different lines (not concatenated)
+    assert!(
+        !lines
+            .iter()
+            .any(|l| l.contains("+--") && l.contains("Applied")),
+        "Table and result should be on separate lines"
+    );
+}
+
+#[test]
+fn test_rename_command_no_matches() {
+    // Test that rename command properly handles when there are no matches
+    let temp_dir = TempDir::new().unwrap();
+
+    // Create a test file that doesn't contain the pattern we'll search for
+    temp_dir
+        .child("test.txt")
+        .write_str("This is some test content with no matches")
+        .unwrap();
+
+    // Run rename command with a pattern that won't match anything
+    let mut cmd = Command::cargo_bin("renamify").unwrap();
+    cmd.current_dir(temp_dir.path())
+        .args(["rename", "nonexistent_pattern", "replacement", "-y"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("No matches found"));
+
+    // Verify the file content is unchanged
+    let content = std::fs::read_to_string(temp_dir.path().join("test.txt")).unwrap();
+    assert_eq!(content, "This is some test content with no matches");
+}
+
+#[test]
 fn test_undo_with_multiple_files() {
     // Test undo with multiple files and renames
     let temp_dir = TempDir::new().unwrap();

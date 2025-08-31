@@ -97,6 +97,14 @@ pub fn handle_replace(
         _ => {},
     }
 
+    // Check if there are any changes to apply
+    if plan.matches.is_empty() && plan.paths.is_empty() {
+        if !quiet {
+            println!("No matches found for pattern '{}'", pattern);
+        }
+        return Ok(());
+    }
+
     // Show preview if not in quiet mode
     if !quiet {
         let preview_format = preview.map(|p| p.into()).unwrap_or(Preview::Summary);

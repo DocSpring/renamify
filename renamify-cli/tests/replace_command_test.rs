@@ -447,7 +447,7 @@ fn test_replace_command_no_matches() {
 
     temp.child("test.txt").write_str("foo bar").unwrap();
 
-    // Run replace with pattern that doesn't match - should output nothing
+    // Run replace with pattern that doesn't match - should say no matches found
     let mut cmd = Command::cargo_bin("renamify").unwrap();
     cmd.current_dir(temp.path())
         .args([
@@ -459,7 +459,7 @@ fn test_replace_command_no_matches() {
         ])
         .assert()
         .success()
-        .stdout(predicates::str::is_empty());
+        .stdout(predicates::str::contains("No matches found"));
 }
 
 #[test]
