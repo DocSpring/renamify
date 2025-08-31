@@ -189,8 +189,9 @@ install_renamify() {
         fi
     fi
 
-    # Get the latest release URL
+    # Get the latest release URLs
     DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET_NAME}"
+    CHECKSUM_URL="https://github.com/${REPO}/releases/latest/download/${ASSET_NAME}.sha256"
 
     echo "Downloading from: $DOWNLOAD_URL"
 
@@ -198,16 +199,75 @@ install_renamify() {
     TEMP_DIR=$(mktemp -d)
     trap 'rm -rf "$TEMP_DIR"' EXIT
 
-    # Download and extract
+    # Download the tarball
+    echo "Downloading binary..."
     if command -v curl &> /dev/null; then
-        curl -fsSL "$DOWNLOAD_URL" | tar xz -C "$TEMP_DIR"
+        curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/${ASSET_NAME}"
     elif command -v wget &> /dev/null; then
-        wget -qO- "$DOWNLOAD_URL" | tar xz -C "$TEMP_DIR"
+        wget -q "$DOWNLOAD_URL" -O "$TEMP_DIR/${ASSET_NAME}"
     else
         echo -e "${RED}Error: Neither curl nor wget is available.${NC}"
         echo "Please install curl or wget and try again."
         exit 1
     fi
+
+    # Download and verify checksum
+    echo "Verifying checksum..."
+    if command -v curl &> /dev/null; then
+        if curl -fsSL "$CHECKSUM_URL" -o "$TEMP_DIR/${ASSET_NAME}.sha256" 2>/dev/null; then
+            CHECKSUM_DOWNLOADED=true
+        else
+            CHECKSUM_DOWNLOADED=false
+        fi
+    elif command -v wget &> /dev/null; then
+        if wget -q "$CHECKSUM_URL" -O "$TEMP_DIR/${ASSET_NAME}.sha256" 2>/dev/null; then
+            CHECKSUM_DOWNLOADED=true
+        else
+            CHECKSUM_DOWNLOADED=false
+        fi
+    fi
+
+    if [ "$CHECKSUM_DOWNLOADED" = true ]; then
+        # Extract expected checksum (format: "hash  filename" or just "hash")
+        EXPECTED_CHECKSUM=$(awk '{print $1}' "$TEMP_DIR/${ASSET_NAME}.sha256")
+
+        if [ -z "$EXPECTED_CHECKSUM" ]; then
+            echo -e "${YELLOW}Warning: Checksum file is empty${NC}"
+            echo "Proceeding without verification..."
+        else
+            # Calculate actual checksum
+            if command -v sha256sum &> /dev/null; then
+                ACTUAL_CHECKSUM=$(sha256sum "$TEMP_DIR/${ASSET_NAME}" | awk '{print $1}')
+            elif command -v shasum &> /dev/null; then
+                ACTUAL_CHECKSUM=$(shasum -a 256 "$TEMP_DIR/${ASSET_NAME}" | awk '{print $1}')
+            else
+                echo -e "${YELLOW}Warning: No checksum tool available (sha256sum or shasum)${NC}"
+                echo "Proceeding without verification..."
+                ACTUAL_CHECKSUM=""
+            fi
+
+            # Verify checksum if we calculated one
+            if [ -n "$ACTUAL_CHECKSUM" ]; then
+                if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then
+                    echo -e "${RED}Error: Checksum verification failed!${NC}"
+                    echo "Expected: $EXPECTED_CHECKSUM"
+                    echo "Actual:   $ACTUAL_CHECKSUM"
+                    echo ""
+                    echo "This could indicate a corrupted download or security issue."
+                    echo "Please try again or report this issue at:"
+                    echo "  https://github.com/${REPO}/issues"
+                    exit 1
+                fi
+                echo -e "${GREEN}✓ Checksum verified${NC}"
+            fi
+        fi
+    else
+        echo -e "${YELLOW}Warning: Could not download checksum file${NC}"
+        echo "Proceeding without verification..."
+    fi
+
+    # Extract the tarball
+    tar xz -C "$TEMP_DIR" -f "$TEMP_DIR/${ASSET_NAME}"
 
     # Move binary to install directory
     if [ "$NEED_SUDO" = true ]; then

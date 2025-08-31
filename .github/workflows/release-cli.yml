@@ -136,6 +136,23 @@ jobs:
             echo "tag=cli-v$VERSION" >> $GITHUB_OUTPUT
           fi
 
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          # Generate individual SHA256 checksum files for each artifact
+          for dir in */; do
+            cd "$dir"
+            for file in *.tar.gz *.zip 2>/dev/null; do
+              if [ -f "$file" ]; then
+                sha256sum "$file" > "${file}.sha256"
+                echo "Generated checksum for $file:"
+                cat "${file}.sha256"
+              fi
+            done
+            cd ..
+          done
+          cd ..
+
       - name: Generate changelog
         id: changelog
         run: |
@@ -191,5 +208,6 @@ jobs:
           files: |
             artifacts/**/*.tar.gz
             artifacts/**/*.zip
+            artifacts/**/*.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
