@@ -142,11 +142,13 @@ jobs:
           # Generate individual SHA256 checksum files for each artifact
           for dir in */; do
             cd "$dir"
-            for file in *.tar.gz *.zip 2>/dev/null; do
-              if [ -f "$file" ]; then
-                sha256sum "$file" > "${file}.sha256"
-                echo "Generated checksum for $file:"
-                cat "${file}.sha256"
+            for file in *; do
+              if [[ "$file" == *.tar.gz ]] || [[ "$file" == *.zip ]]; then
+                if [ -f "$file" ]; then
+                  sha256sum "$file" > "${file}.sha256"
+                  echo "Generated checksum for $file:"
+                  cat "${file}.sha256"
+                fi
               fi
             done
             cd ..
