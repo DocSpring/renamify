@@ -177,10 +177,25 @@ install_renamify() {
         fi
     fi
 
-    # Get the latest release URLs
-    DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET_NAME}"
-    CHECKSUM_URL="https://github.com/${REPO}/releases/latest/download/${ASSET_NAME}.sha256"
+    # Get the latest CLI release (not vscode or mcp releases)
+    # Use GitHub API to find the latest release with 'cli-v' tag
+    if command -v curl &> /dev/null; then
+        LATEST_CLI_TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases" | grep '"tag_name":' | grep 'cli-v' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+    elif command -v wget &> /dev/null; then
+        LATEST_CLI_TAG=$(wget -qO- "https://api.github.com/repos/${REPO}/releases" | grep '"tag_name":' | grep 'cli-v' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+    fi
 
+    if [ -z "$LATEST_CLI_TAG" ]; then
+        echo -e "${RED}Error: Could not determine latest CLI version${NC}"
+        echo "Please check https://github.com/${REPO}/releases for manual download"
+        exit 1
+    fi
+
+    # Get the release URLs using the CLI tag
+    DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST_CLI_TAG}/${ASSET_NAME}"
+    CHECKSUM_URL="https://github.com/${REPO}/releases/download/${LATEST_CLI_TAG}/${ASSET_NAME}.sha256"
+
+    echo "Latest CLI version: $LATEST_CLI_TAG"
     echo "Downloading from: $DOWNLOAD_URL"
 
     # Create temp directory
