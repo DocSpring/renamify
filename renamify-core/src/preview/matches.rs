@@ -78,13 +78,15 @@ pub fn render_matches(plan: &Plan, use_color: bool) -> String {
                     let end = col + hunk.content.len();
 
                     if use_color {
-                        write!(output, "    {}:{}: ", hunk.line, hunk.col).unwrap();
+                        write!(output, "    {}:{}: ", hunk.line, hunk.col + 1).unwrap();
 
                         // Print the line with the match highlighted with green background
-                        if col > 0 && col <= line_before.len() {
+                        // Print text before the match
+                        if col > 0 {
                             write!(output, "{}", &line_before[..col]).unwrap();
                         }
 
+                        // Print the highlighted match
                         if col < line_before.len() {
                             let actual_end = end.min(line_before.len());
                             write!(
@@ -97,6 +99,7 @@ pub fn render_matches(plan: &Plan, use_color: bool) -> String {
                             )
                             .unwrap();
 
+                            // Print text after the match
                             if actual_end < line_before.len() {
                                 write!(output, "{}", &line_before[actual_end..]).unwrap();
                             }

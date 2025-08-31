@@ -97,7 +97,7 @@ pub fn find_matches(pattern: &MatchPattern, content: &[u8], file: &str) -> Vec<M
             .iter()
             .rposition(|&b| b == b'\n')
             .map_or(0, |p| p + 1);
-        let column = m.start() - line_start + 1;
+        let column = m.start() - line_start;
 
         matches.push(Match {
             file: file.to_string(),
@@ -229,15 +229,15 @@ mod tests {
 
         assert_eq!(matches[0].text, "hello");
         assert_eq!(matches[0].line, 1);
-        assert_eq!(matches[0].column, 1);
+        assert_eq!(matches[0].column, 0); // 0-based: "hello" starts at position 0
 
         assert_eq!(matches[1].text, "world");
         assert_eq!(matches[1].line, 1);
-        assert_eq!(matches[1].column, 7);
+        assert_eq!(matches[1].column, 6); // 0-based: "world" starts at position 6
 
         assert_eq!(matches[2].text, "hello");
         assert_eq!(matches[2].line, 2);
-        assert_eq!(matches[2].column, 6);
+        assert_eq!(matches[2].column, 5); // 0-based: "hello" starts at position 5 on line 2
     }
 
     #[test]
@@ -285,9 +285,9 @@ mod tests {
         assert_eq!(matches.len(), 2);
 
         assert_eq!(matches[0].line, 2);
-        assert_eq!(matches[0].column, 7);
+        assert_eq!(matches[0].column, 6); // 0-based: "foo" starts at position 6 on line 2
 
         assert_eq!(matches[1].line, 3);
-        assert_eq!(matches[1].column, 1);
+        assert_eq!(matches[1].column, 0); // 0-based: "foo" starts at position 0 on line 3
     }
 }
