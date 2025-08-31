@@ -331,11 +331,17 @@ type SearchResult = {
     resultsSummary.textContent = '';
     openInEditorLink.style.display = 'none';
 
+    // Convert markdown links to HTML
+    const messageWithLinks = escapeHtml(errorMessage).replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank">$1</a>'
+    );
+
     resultsTree.innerHTML = `<div class="error-state">
       <div class="error-icon">⚠️</div>
       <div class="error-message">
         <strong>Search failed:</strong><br>
-        ${escapeHtml(errorMessage)}
+        ${messageWithLinks}
       </div>
     </div>`;
 

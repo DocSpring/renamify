@@ -37,34 +37,37 @@ class CommandMutex {
 }
 
 export class RenamifyCliService {
-  private readonly cliPath?: string;
   private readonly spawnFn: typeof spawn;
-  private readonly isAvailable: boolean;
   private readonly extensionVersion: string;
   private readonly commandMutex = new CommandMutex();
+  private readonly isMocked: boolean;
 
   constructor(spawnFn?: typeof spawn) {
     this.spawnFn = spawnFn || spawn;
+    this.isMocked = !!spawnFn;
 
     // Read version from package.json
     const packageJsonPath = path.join(__dirname, '..', 'package.json');
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
     this.extensionVersion = packageJson.version;
+  }
 
-    // If we're using a mock spawn function, assume the CLI is available for testing
-    if (spawnFn) {
-      this.cliPath = 'mocked-cli-path';
-      this.isAvailable = true;
-    } else {
-      // Only do real file system checks when not mocking
-      try {
-        this.cliPath = this.findCliPath();
-        this.isAvailable = true;
-      } catch {
-        this.cliPath = undefined;
-        this.isAvailable = false;
-      }
+  private get cliPath(): string | null {
+    // If we're using a mock spawn function, return mocked path
+    if (this.isMocked) {
+      return 'mocked-cli-path';
     }
+
+    // Always find the CLI path fresh - don't cache it
+    try {
+      return this.findCliPath();
+    } catch {
+      return null;
+    }
+  }
+
+  private get isAvailable(): boolean {
+    return !!this.cliPath;
   }
 
   private findCliPath(): string {
@@ -168,15 +171,39 @@ export class RenamifyCliService {
 
     // Check major version must match
     if (extMajor !== cliMajor) {
-      const message = `Version mismatch: VS Code extension v${this.extensionVersion} is not compatible with CLI v${cliVersion}.\nMajor versions must match (Extension major: ${extMajor}, CLI major: ${cliMajor}).`;
-      vscode.window.showErrorMessage(message);
+      const message = `Renamify version mismatch: VS Code extension v${this.extensionVersion} is not compatible with CLI v${cliVersion}.\nMajor versions must match (Extension major: ${extMajor}, CLI major: ${cliMajor}).\n\nPlease update your Renamify CLI: [Installation Guide](https://docspring.github.io/renamify/installation/)`;
+      const markdown = new vscode.MarkdownString(message);
+      markdown.isTrusted = true;
+      vscode.window
+        .showErrorMessage(message, 'Open Installation Guide')
+        .then((selection) => {
+          if (selection === 'Open Installation Guide') {
+            vscode.env.openExternal(
+              vscode.Uri.parse(
+                'https://docspring.github.io/renamify/installation/'
+              )
+            );
+          }
+        });
       throw new Error(message);
     }
 
     // Check minor version: Extension minor must be <= CLI minor
     if (extMinor > cliMinor) {
-      const message = `Version mismatch: VS Code extension v${this.extensionVersion} requires CLI v${extMajor}.${extMinor}.x or later.\nCurrent CLI version is v${cliVersion}.`;
-      vscode.window.showErrorMessage(message);
+      const message = `Renamify version mismatch: VS Code extension v${this.extensionVersion} requires CLI v${extMajor}.${extMinor}.x or later. Current CLI version is v${cliVersion}.\n\nPlease update your Renamify CLI: [Installation Guide](https://docspring.github.io/renamify/installation/)`;
+      const markdown = new vscode.MarkdownString(message);
+      markdown.isTrusted = true;
+      vscode.window
+        .showErrorMessage(message, 'Open Installation Guide')
+        .then((selection) => {
+          if (selection === 'Open Installation Guide') {
+            vscode.env.openExternal(
+              vscode.Uri.parse(
+                'https://docspring.github.io/renamify/installation/'
+              )
+            );
+          }
+        });
       throw new Error(message);
     }
   }
