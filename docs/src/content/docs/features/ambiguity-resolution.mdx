@@ -12,11 +12,9 @@ Renamify intelligently resolves these ambiguities.
 An identifier is ambiguous when it could validly belong to multiple case styles.
 For example:
 
-- `api` - all lowercase, could be part of snake_case, camelCase, kebab-case, or
-  just lowercase
-- `ID` - all uppercase, could be PascalCase with an acronym, uppercase, or
+- `api` - all lowercase, could be replaced with snake_case, camelCase, or kebab-case
+- `ID` - all uppercase, could be replaced with PascalCase with an acronym, or
   SCREAMING_SNAKE_CASE
-- `.config` - the word "config" after a dot could be various styles
 
 ## How Renamify Resolves Ambiguity
 
