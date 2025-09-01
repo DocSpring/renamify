@@ -75,6 +75,14 @@ export function createServer(
           .describe(
             "Ignore mixed-case/ambiguous identifiers that don't match standard patterns"
           ),
+        atomicSearch: z
+          .boolean()
+          .optional()
+          .describe('Treat search term as atomic (indivisible unit)'),
+        atomicReplace: z
+          .boolean()
+          .optional()
+          .describe('Treat replace term as atomic (indivisible unit)'),
       },
     },
     async (params) => {
@@ -138,6 +146,10 @@ export function createServer(
           .describe(
             "Ignore mixed-case/ambiguous identifiers that don't match standard patterns"
           ),
+        atomicSearch: z
+          .boolean()
+          .optional()
+          .describe('Treat search term as atomic (indivisible unit)'),
       },
     },
     async (params) => {
@@ -306,6 +318,14 @@ export function createServer(
           .array(z.string())
           .optional()
           .describe('Only use these specific case styles'),
+        atomicSearch: z
+          .boolean()
+          .optional()
+          .describe('Treat search term as atomic (indivisible unit)'),
+        atomicReplace: z
+          .boolean()
+          .optional()
+          .describe('Treat replace term as atomic (indivisible unit)'),
       },
     },
     async (params) => {
