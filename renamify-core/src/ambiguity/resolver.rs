@@ -66,6 +66,17 @@ impl AmbiguityResolver {
         replacement_text: &str,
         context: &AmbiguityContext,
     ) -> ResolvedStyle {
+        self.resolve_with_styles(matched_text, replacement_text, context, None)
+    }
+
+    /// Resolution method with pre-calculated replacement styles for performance
+    pub fn resolve_with_styles(
+        &self,
+        matched_text: &str,
+        replacement_text: &str,
+        context: &AmbiguityContext,
+        replacement_possible_styles: Option<&[Style]>,
+    ) -> ResolvedStyle {
         if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
             eprintln!(
                 "=== Resolving ambiguity for '{}' -> '{}' ===",
@@ -93,7 +104,11 @@ impl AmbiguityResolver {
         let possible_styles = get_possible_styles(matched_text);
         if possible_styles.is_empty() {
             // Shouldn't happen, but handle gracefully
-            return Self::default_fallback(&possible_styles, replacement_text);
+            return Self::default_fallback(
+                &possible_styles,
+                replacement_text,
+                replacement_possible_styles,
+            );
         }
 
         if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
@@ -125,7 +140,11 @@ impl AmbiguityResolver {
         }
 
         // Level 4: Replacement string preference (ultimate fallback)
-        Self::try_replacement_preference(&possible_styles, replacement_text)
+        Self::try_replacement_preference(
+            &possible_styles,
+            replacement_text,
+            replacement_possible_styles,
+        )
     }
 
     /// Try language-specific heuristics
@@ -236,6 +255,7 @@ impl AmbiguityResolver {
     fn try_replacement_preference(
         possible_styles: &[Style],
         replacement_text: &str,
+        replacement_possible_styles: Option<&[Style]>,
     ) -> ResolvedStyle {
         // Determine the style of the replacement string
         if let Some(replacement_style) = detect_style(replacement_text) {
@@ -250,12 +270,20 @@ impl AmbiguityResolver {
         }
 
         // Otherwise use default fallback
-        Self::default_fallback(possible_styles, replacement_text)
+        Self::default_fallback(
+            possible_styles,
+            replacement_text,
+            replacement_possible_styles,
+        )
     }
 
     /// Default fallback when all else fails
-    fn default_fallback(possible_styles: &[Style], _replacement_text: &str) -> ResolvedStyle {
-        // Default precedence order
+    fn default_fallback(
+        possible_styles: &[Style],
+        replacement_text: &str,
+        replacement_possible_styles: Option<&[Style]>,
+    ) -> ResolvedStyle {
+        // Define default precedence order at the top
         const DEFAULT_PRECEDENCE: &[Style] = &[
             Style::Snake,
             Style::Camel,
@@ -270,6 +298,56 @@ impl AmbiguityResolver {
             Style::Upper,
         ];
 
+        // Use pre-calculated styles if provided, otherwise calculate them
+        let calculated_styles;
+        let replacement_styles = if let Some(styles) = replacement_possible_styles {
+            styles
+        } else {
+            calculated_styles = get_possible_styles(replacement_text);
+            &calculated_styles
+        };
+
+        // Find styles that are possible for both the matched text and replacement
+        let common_styles: Vec<Style> = possible_styles
+            .iter()
+            .filter(|s| replacement_styles.contains(s))
+            .copied()
+            .collect();
+
+        // If there's exactly one common style, that's our answer
+        if common_styles.len() == 1 {
+            return ResolvedStyle {
+                style: common_styles[0],
+                confidence: ResolutionConfidence::High,
+                method: ResolutionMethod::DefaultFallback,
+            };
+        }
+
+        // If there are multiple common styles, prefer the one from the replacement
+        // Check if replacement has a definitive (non-ambiguous) style
+        if !common_styles.is_empty() {
+            if let Some(replacement_style) = detect_style(replacement_text) {
+                if common_styles.contains(&replacement_style) {
+                    return ResolvedStyle {
+                        style: replacement_style,
+                        confidence: ResolutionConfidence::Medium,
+                        method: ResolutionMethod::DefaultFallback,
+                    };
+                }
+            }
+            // Otherwise use the first common style from precedence order
+            for &style in DEFAULT_PRECEDENCE {
+                if common_styles.contains(&style) {
+                    return ResolvedStyle {
+                        style,
+                        confidence: ResolutionConfidence::Medium,
+                        method: ResolutionMethod::DefaultFallback,
+                    };
+                }
+            }
+        }
+
+        // No common styles - fall back to precedence order from possible_styles
         // Find the first style in our precedence order that's possible
         for &style in DEFAULT_PRECEDENCE {
             if possible_styles.contains(&style) {

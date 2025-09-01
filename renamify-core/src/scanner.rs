@@ -1,5 +1,5 @@
 use crate::acronym::AcronymSet;
-use crate::ambiguity::{is_ambiguous, AmbiguityContext, AmbiguityResolver};
+use crate::ambiguity::{get_possible_styles, is_ambiguous, AmbiguityContext, AmbiguityResolver};
 use crate::case_model::{parse_to_tokens, to_style, Style};
 use crate::pattern::{build_pattern, Match};
 use crate::rename::plan_renames;
@@ -324,7 +324,14 @@ pub fn scan_repository_multi(
                 // Sort by position to maintain order
                 file_matches.sort_by_key(|m| (m.line, m.column));
 
-                let hunks = generate_hunks(&file_matches, &content, &variant_map, path, options);
+                let hunks = generate_hunks(
+                    &file_matches,
+                    &content,
+                    &variant_map,
+                    path,
+                    options,
+                    replace,
+                );
 
                 stats.files_with_matches += 1;
                 stats.total_matches += hunks.len();
@@ -442,12 +449,16 @@ fn generate_hunks(
     variant_map: &VariantMap,
     path: &Path,
     options: &PlanOptions,
+    original_replacement: &str,
 ) -> Vec<MatchHunk> {
     let lines: Vec<&[u8]> = content.lines_with_terminator().collect();
     let mut hunks = Vec::new();
 
     // Create ambiguity resolver for handling ambiguous identifiers
     let ambiguity_resolver = AmbiguityResolver::new();
+
+    // Calculate possible styles for the replacement text ONCE for all matches in this file
+    let replacement_possible_styles = get_possible_styles(original_replacement);
 
     // Compile the exclude pattern if provided
     let exclude_line_regex = if let Some(ref pattern) = options.exclude_matching_lines {
@@ -495,16 +506,18 @@ fn generate_hunks(
                 project_root: None, // Could be added if needed
             };
 
-            // Get the replacement text from the variant map (it will be in some style)
-            let default_replacement = variant_map.get(&m.variant).unwrap();
-
             // Resolve what style should be used based on context
-            let resolved =
-                ambiguity_resolver.resolve(&m.variant, default_replacement, &ambiguity_context);
+            // Pass the ORIGINAL replacement text, not the styled one from variant map
+            let resolved = ambiguity_resolver.resolve_with_styles(
+                &m.variant,
+                original_replacement,
+                &ambiguity_context,
+                Some(&replacement_possible_styles),
+            );
 
             // Generate the replacement in the resolved style
             // We need to tokenize the original replacement to apply the new style
-            let replacement_tokens = parse_to_tokens(default_replacement);
+            let replacement_tokens = parse_to_tokens(original_replacement);
             let styled_replacement = to_style(&replacement_tokens, resolved.style);
 
             (m.variant.clone(), styled_replacement)
@@ -1383,6 +1396,7 @@ mod tests {
             &variant_map,
             Path::new("test.txt"),
             &opts,
+            "new_name",
         );
 
         assert_eq!(hunks.len(), 2);
@@ -1461,7 +1475,14 @@ mod tests {
         ];
 
         let opts = PlanOptions::default();
-        let hunks = generate_hunks(&matches, content, &variant_map, Path::new("test.rs"), &opts);
+        let hunks = generate_hunks(
+            &matches,
+            content,
+            &variant_map,
+            Path::new("test.rs"),
+            &opts,
+            "new_name",
+        );
 
         assert_eq!(hunks.len(), 3);
 
