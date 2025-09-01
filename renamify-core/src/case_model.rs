@@ -662,10 +662,10 @@ pub fn generate_variant_map_with_atomic(
     // CRITICAL: Add an exact match entry to preserve user's exact casing
     // This ensures that if the search term matches exactly as typed, the replacement
     // will be exactly as the user typed it (e.g., FormAPI not FormApi)
-    // BUT: Only do this when using default styles (not when user explicitly filters styles)
+    // BUT: Only do this when using default styles AND the search term is NOT ambiguous
     // This must come AFTER generating style variants to override any that match the exact input
-    if using_default_styles {
-        // Using default styles - add exact match preservation
+    if using_default_styles && !crate::ambiguity::is_ambiguous(search) {
+        // Using default styles and search is not ambiguous - add exact match preservation
         map.insert(search.to_string(), replace.to_string());
     }
 

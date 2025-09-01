@@ -66,9 +66,21 @@ impl AmbiguityResolver {
         replacement_text: &str,
         context: &AmbiguityContext,
     ) -> ResolvedStyle {
+        if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
+            eprintln!(
+                "=== Resolving ambiguity for '{}' -> '{}' ===",
+                matched_text, replacement_text
+            );
+            eprintln!("  File: {:?}", context.file_path);
+            eprintln!("  Content: {:?}", context.line_content);
+        }
+
         // First check if it's even ambiguous
         if !is_ambiguous(matched_text) {
             if let Some(style) = detect_style(matched_text) {
+                if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
+                    eprintln!("  -> Not ambiguous, detected style: {:?}", style);
+                }
                 return ResolvedStyle {
                     style,
                     confidence: ResolutionConfidence::High,
@@ -84,15 +96,25 @@ impl AmbiguityResolver {
             return Self::default_fallback(&possible_styles, replacement_text);
         }
 
+        if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
+            eprintln!("  Possible styles: {:?}", possible_styles);
+        }
+
         // Level 1: Language-specific heuristics
         if let Some(resolved) =
             Self::try_language_heuristics(matched_text, context, &possible_styles)
         {
+            if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
+                eprintln!("  -> Resolved by language heuristics: {:?}", resolved.style);
+            }
             return resolved;
         }
 
         // Level 2: File context analysis
         if let Some(resolved) = self.try_file_context(matched_text, context, &possible_styles) {
+            if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
+                eprintln!("  -> Resolved by file context: {:?}", resolved.style);
+            }
             return resolved;
         }
 

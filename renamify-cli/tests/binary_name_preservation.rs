@@ -9,24 +9,45 @@ fn test_binary_name_stays_snake_case() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path();
 
-    // Create a test Cargo.toml with a binary name
-    let cargo_toml_content = r#"
-[package]
-name = "tool"
-version = "1.0.0"
+    // Create a test Cargo.toml with enough context to show snake_case is predominant
+    let cargo_toml_content = r#"[package]
+name = "mytool"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Smart search & replace for code and files"
 
 [[bin]]
-name = "tool"
+name = "mytool"
 path = "src/main.rs"
+
+[dependencies]
+mytool-core = { path = "../mytool-core" }
+anyhow = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+ctrlc = "3.4"
+clap_complete = "4.5"
+dirs = "6.0"
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }
+assert_fs = { workspace = true }
+tempfile = { workspace = true }
 "#;
 
     let cargo_toml_path = temp_path.join("Cargo.toml");
     fs::write(&cargo_toml_path, cargo_toml_content).unwrap();
 
-    // Test renaming to PascalCase - binary name should stay snake_case
+    // Test renaming from ambiguous single word to clearly snake_case multi-word name
     let mut cmd = Command::cargo_bin("renamify").unwrap();
     cmd.arg("rename")
-        .arg("tool")
+        .arg("mytool")
         .arg("awesome_super_test_utility")
         .arg("--dry-run")
         .arg("--quiet")
@@ -41,8 +62,18 @@ path = "src/main.rs"
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
     let matches = json["plan"]["matches"].as_array().unwrap();
 
-    // Find the binary name replacement (line 7 in the TOML, under [[bin]])
-    let binary_replacement = matches.iter().find(|m| m["line"].as_u64().unwrap() == 7);
+    // Debug: print all matches to find the right line
+    // eprintln!("All matches:");
+    // for m in matches {
+    //     eprintln!("  Line {}: {} -> {}",
+    //         m["line"].as_u64().unwrap(),
+    //         m["content"].as_str().unwrap(),
+    //         m["replace"].as_str().unwrap()
+    //     );
+    // }
+
+    // Find the binary name replacement (line 12 in the TOML, under [[bin]])
+    let binary_replacement = matches.iter().find(|m| m["line"].as_u64().unwrap() == 12);
 
     // The binary name should be replaced with snake_case version
     assert!(

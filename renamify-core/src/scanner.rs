@@ -1,5 +1,6 @@
 use crate::acronym::AcronymSet;
-use crate::case_model::Style;
+use crate::ambiguity::{is_ambiguous, AmbiguityContext, AmbiguityResolver};
+use crate::case_model::{parse_to_tokens, to_style, Style};
 use crate::pattern::{build_pattern, Match};
 use crate::rename::plan_renames;
 use anyhow::Result;
@@ -445,6 +446,9 @@ fn generate_hunks(
     let lines: Vec<&[u8]> = content.lines_with_terminator().collect();
     let mut hunks = Vec::new();
 
+    // Create ambiguity resolver for handling ambiguous identifiers
+    let ambiguity_resolver = AmbiguityResolver::new();
+
     // Compile the exclude pattern if provided
     let exclude_line_regex = if let Some(ref pattern) = options.exclude_matching_lines {
         Regex::new(pattern).ok()
@@ -479,6 +483,31 @@ fn generate_hunks(
         let (content, mut replace) = if is_compound_match {
             // Compound match - text field has the replacement
             (m.variant.clone(), m.text.clone())
+        } else if is_ambiguous(&m.variant) {
+            // For ambiguous identifiers, use the ambiguity resolver to determine
+            // the appropriate style based on context
+            let file_content_str = String::from_utf8_lossy(content);
+            let ambiguity_context = AmbiguityContext {
+                file_path: Some(path.to_path_buf()),
+                file_content: Some(file_content_str.to_string()),
+                line_content: Some(line_string.clone()),
+                match_position: Some(m.column),
+                project_root: None, // Could be added if needed
+            };
+
+            // Get the replacement text from the variant map (it will be in some style)
+            let default_replacement = variant_map.get(&m.variant).unwrap();
+
+            // Resolve what style should be used based on context
+            let resolved =
+                ambiguity_resolver.resolve(&m.variant, default_replacement, &ambiguity_context);
+
+            // Generate the replacement in the resolved style
+            // We need to tokenize the original replacement to apply the new style
+            let replacement_tokens = parse_to_tokens(default_replacement);
+            let styled_replacement = to_style(&replacement_tokens, resolved.style);
+
+            (m.variant.clone(), styled_replacement)
         } else {
             // Exact match - use variant map
             let new_variant = variant_map.get(&m.variant).unwrap();
