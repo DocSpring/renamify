@@ -152,7 +152,7 @@ preview_format = "json"
     #[test]
     fn test_atomic_config() {
         let toml_content = r#"
-atomic = ["DocSpring", "TweetGit", "FormAPI"]
+atomic = ["DocSpring", "GitHub", "FormAPI"]
 
 [defaults]
 preview_format = "table"
@@ -161,7 +161,7 @@ preview_format = "table"
         let config: Config = toml::from_str(toml_content).unwrap();
         assert_eq!(config.atomic.len(), 3);
         assert!(config.atomic.contains(&"DocSpring".to_string()));
-        assert!(config.atomic.contains(&"TweetGit".to_string()));
+        assert!(config.atomic.contains(&"GitHub".to_string()));
         assert!(config.atomic.contains(&"FormAPI".to_string()));
         assert_eq!(config.defaults.preview_format, "table");
     }

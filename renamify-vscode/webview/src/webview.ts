@@ -33,10 +33,18 @@ type SearchResult = {
   const excludeLinesInput = document.getElementById(
     'excludeLines'
   ) as HTMLInputElement;
-  const renamePathsCheckbox = document.getElementById('renamePathsCheckbox') as HTMLInputElement;
-  const ignoreAmbiguousCheckbox = document.getElementById('ignoreAmbiguousCheckbox') as HTMLInputElement;
-  const atomicSearchCheckbox = document.getElementById('atomicSearchCheckbox') as HTMLInputElement;
-  const atomicReplaceCheckbox = document.getElementById('atomicReplaceCheckbox') as HTMLInputElement;
+  const renamePathsCheckbox = document.getElementById(
+    'renamePathsCheckbox'
+  ) as HTMLInputElement;
+  const ignoreAmbiguousCheckbox = document.getElementById(
+    'ignoreAmbiguousCheckbox'
+  ) as HTMLInputElement;
+  const atomicSearchCheckbox = document.getElementById(
+    'atomicSearchCheckbox'
+  ) as HTMLInputElement;
+  const atomicReplaceCheckbox = document.getElementById(
+    'atomicReplaceCheckbox'
+  ) as HTMLInputElement;
   const applyBtn = document.getElementById('applyBtn') as HTMLButtonElement;
   const expandAllBtn = document.getElementById(
     'expandAll'
@@ -170,6 +178,24 @@ type SearchResult = {
   includeInput.addEventListener('input', debouncedSearch);
   excludeInput.addEventListener('input', debouncedSearch);
   excludeLinesInput.addEventListener('input', debouncedSearch);
+
+  // Re-run search when checkboxes change
+  renamePathsCheckbox.addEventListener('change', () => {
+    performSearch();
+    saveState();
+  });
+  ignoreAmbiguousCheckbox.addEventListener('change', () => {
+    performSearch();
+    saveState();
+  });
+  atomicSearchCheckbox.addEventListener('change', () => {
+    performSearch();
+    saveState();
+  });
+  atomicReplaceCheckbox.addEventListener('change', () => {
+    performSearch();
+    saveState();
+  });
 
   // Update checked count and trigger search when checkboxes change
   function updateCheckedCount() {
@@ -767,6 +793,10 @@ type SearchResult = {
     include?: string;
     exclude?: string;
     excludeLines?: string;
+    renamePaths?: boolean;
+    ignoreAmbiguous?: boolean;
+    atomicSearch?: boolean;
+    atomicReplace?: boolean;
     results?: SearchResult[];
   } | null;
   if (state) {
@@ -775,6 +805,20 @@ type SearchResult = {
     includeInput.value = state.include || '';
     excludeInput.value = state.exclude || '';
     excludeLinesInput.value = state.excludeLines || '';
+
+    // Restore checkbox states (use defaults if not saved)
+    if (state.renamePaths !== undefined) {
+      renamePathsCheckbox.checked = state.renamePaths;
+    }
+    if (state.ignoreAmbiguous !== undefined) {
+      ignoreAmbiguousCheckbox.checked = state.ignoreAmbiguous;
+    }
+    if (state.atomicSearch !== undefined) {
+      atomicSearchCheckbox.checked = state.atomicSearch;
+    }
+    if (state.atomicReplace !== undefined) {
+      atomicReplaceCheckbox.checked = state.atomicReplace;
+    }
 
     if (state.results) {
       renderResults(state.results);
@@ -792,6 +836,10 @@ type SearchResult = {
       include: includeInput.value,
       exclude: excludeInput.value,
       excludeLines: excludeLinesInput.value,
+      renamePaths: renamePathsCheckbox.checked,
+      ignoreAmbiguous: ignoreAmbiguousCheckbox.checked,
+      atomicSearch: atomicSearchCheckbox.checked,
+      atomicReplace: atomicReplaceCheckbox.checked,
       results: currentResults,
     });
   }

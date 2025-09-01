@@ -161,7 +161,7 @@ mod tests {
             false,
             false,
             false,
-            vec!["DocSpring".to_string(), "TweetGit".to_string()],
+            vec!["DocSpring".to_string(), "GitHub".to_string()],
         );
 
         assert!(config.is_atomic("DocSpring"));
@@ -190,9 +190,9 @@ mod tests {
         assert_eq!(tokens.tokens.len(), 1);
         assert_eq!(tokens.tokens[0].text, "DocSpring");
 
-        let tokens = parse_atomic("TweetGit");
+        let tokens = parse_atomic("GitHub");
         assert_eq!(tokens.tokens.len(), 1);
-        assert_eq!(tokens.tokens[0].text, "TweetGit");
+        assert_eq!(tokens.tokens[0].text, "GitHub");
     }
 
     #[test]

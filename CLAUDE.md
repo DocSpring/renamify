@@ -139,7 +139,7 @@ Exit codes:
 `.renamify/config.toml`
 
 - Project configuration including atomic identifiers
-- `atomic = ["DocSpring", "TweetGit", "GitHub"]` - identifiers treated as indivisible units
+- `atomic = ["DocSpring", "GitHub", "GitHub"]` - identifiers treated as indivisible units
 
 ## Search and plan algorithm
 

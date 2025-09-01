@@ -1139,12 +1139,12 @@ mod tests {
         );
 
         let map =
-            generate_variant_map_with_atomic("DocSpring", "TweetGit", None, Some(&atomic_config));
+            generate_variant_map_with_atomic("DocSpring", "GitHub", None, Some(&atomic_config));
 
         // Should only have atomic variants (no word separation)
-        assert_eq!(map.get("docspring"), Some(&"tweetgit".to_string()));
-        assert_eq!(map.get("DOCSPRING"), Some(&"TWEETGIT".to_string()));
-        assert_eq!(map.get("DocSpring"), Some(&"TweetGit".to_string()));
+        assert_eq!(map.get("docspring"), Some(&"github".to_string()));
+        assert_eq!(map.get("DOCSPRING"), Some(&"GITHUB".to_string()));
+        assert_eq!(map.get("DocSpring"), Some(&"GitHub".to_string()));
 
         // Should NOT have word-separated variants
         assert!(!map.contains_key("doc_spring"));

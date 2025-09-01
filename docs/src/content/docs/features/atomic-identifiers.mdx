@@ -11,7 +11,7 @@ import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
 
 Atomic identifiers allow you to treat compound brand names and identifiers as indivisible units during case transformations. When an identifier is marked as atomic, Renamify preserves it as a single word without detecting internal word boundaries.
 
-This feature is essential for maintaining brand identity and preventing incorrect word splitting in compound names like "DocSpring", "GitHub", or "TweetGit".
+This feature is essential for maintaining brand identity and preventing incorrect word splitting in compound names like "DocSpring" or "GitHub".
 
 ## The Problem
 
@@ -45,18 +45,23 @@ DocSpring → DocSpring (PascalCase - preserved)
 You can specify atomic mode using CLI flags:
 
 <Tabs>
-  <TabItem label="Both atomic">
-    ```bash # Both search and replace terms are atomic renamify rename FormAPI
-    DocSpring --atomic ```
-  </TabItem>
-  <TabItem label="Search only">
-    ```bash # Only search term is atomic renamify rename FormAPI Helper
-    --atomic-search ```
-  </TabItem>
-  <TabItem label="Replace only">
-    ```bash # Only replace term is atomic renamify rename OldName DocSpring
-    --atomic-replace ```
-  </TabItem>
+<TabItem label="Both atomic">
+  ```bash # Both search and replace terms are atomic renamify rename FormAPI
+  DocSpring --atomic
+  ```
+</TabItem>
+<TabItem label="Search only">
+  ```bash # Only search term is atomic renamify rename FormAPI Helper
+  --atomic-search
+  ```
+</TabItem>
+<TabItem label="Replace only">
+
+```bash # Only replace term is atomic renamify rename OldName DocSpring
+--atomic-replace
+```
+
+</TabItem>
 </Tabs>
 
 ### Configuration File
@@ -65,7 +70,7 @@ You can configure commonly used atomic identifiers in `.renamify/config.toml`:
 
 ```toml
 # List of identifiers that should always be treated as atomic
-atomic = ["DocSpring", "GitHub", "TweetGit", "FormAPI"]
+atomic = ["DocSpring", "GitHub", "FormAPI"]
 ```
 
 When configured identifiers are detected, they're automatically treated as atomic without needing CLI flags.
@@ -98,7 +103,7 @@ renamify rename FormAPI DocSpring --atomic
 Results:
 
 - `FormAPIController` → `DocSpringController`
-- `form_api_client` → `docspring_client`
+- `formapi_client` → `docspring_client`
 - `FORMAPI_TOKEN` → `DOCSPRING_TOKEN`
 - `useFormAPIHook` → `useDocSpringHook`
 

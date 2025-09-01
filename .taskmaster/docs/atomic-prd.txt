@@ -1,10 +1,10 @@
 # Atomic Identifiers Feature - Product Requirements Document
 
 ## Executive Summary
-Add support for treating certain identifiers as "atomic" - indivisible units that should not have word boundaries detected during case transformations. This solves the problem where compound brand names like "DocSpring" or "TweetGit" need to maintain their identity as single words in all case styles.
+Add support for treating certain identifiers as "atomic" - indivisible units that should not have word boundaries detected during case transformations. This solves the problem where compound brand names like "DocSpring" or "GitHub" need to maintain their identity as single words in all case styles.
 
 ## Problem Statement
-Currently, when renaming identifiers like "DocSpring" or "TweetGit", renamify detects word boundaries and generates variants like:
+Currently, when renaming identifiers like "DocSpring" or "GitHub", renamify detects word boundaries and generates variants like:
 - `doc_spring` (snake_case)
 - `doc-spring` (kebab-case)
 - `DOC_SPRING` (SCREAMING_SNAKE_CASE)
@@ -20,9 +20,9 @@ This is similar to Rails' `inflect.acronym` feature, but for compound words that
 ## User Stories
 
 ### Story 1: CLI User with Atomic Identifiers
-As a developer renaming "TwitGit" to "TweetGit" in my codebase,
+As a developer renaming "HubGit" to "GitHub" in my codebase,
 I want to specify that both names are atomic,
-So that `twit_git_api` becomes `tweetgit_api` (not `tweet_git_api`).
+So that `hubgit_api` becomes `github_api` (not `git_hub_api`).
 
 ### Story 2: Project with Persistent Atomic Configuration
 As a team maintaining a project with brand names like "DocSpring",
@@ -56,7 +56,7 @@ So that it becomes "DocSpringController" (not "DocSpringAPIController").
 - Error if user specifies both `--atomic` and `--atomic-search`/`--atomic-replace`
 
 ### 3. Configuration File
-- Support `atomic = ["DocSpring", "TweetGit", "GitHub"]` in `.renamify/config.toml`
+- Support `atomic = ["DocSpring", "GitHub", "GitHub"]` in `.renamify/config.toml`
 - Config entries are case-insensitive matched (PascalCase in config matches all cases)
 - Config auto-applies when matching identifiers are used
 - CLI flags override config settings
@@ -104,7 +104,7 @@ When "FormAPI" is atomic:
 ### 4. Testing
 - Unit tests for atomic token parsing
 - Integration tests for compound identifiers
-- End-to-end tests with real examples (DocSpring, TweetGit)
+- End-to-end tests with real examples (DocSpring, GitHub)
 - Performance tests to ensure no regression
 
 ## Non-Functional Requirements
@@ -126,11 +126,11 @@ When "FormAPI" is atomic:
 
 ### Test Case 1: Basic Atomic Renaming
 ```bash
-renamify rename TwitGit TweetGit --atomic
+renamify rename GitLab GitHub --atomic
 ```
-- `twit_git_api` → `tweetgit_api`
-- `TWIT_GIT_TOKEN` → `TWEETGIT_TOKEN`
-- `TwitGitController` → `TweetGitController`
+- `git_lab_api` → `GitHub_api`
+- `GIT_LAB_TOKEN` → `GitHub_TOKEN`
+- `GitLabController` → `GitHubController`
 
 ### Test Case 2: Config File Auto-Application
 `.renamify/config.toml`:
