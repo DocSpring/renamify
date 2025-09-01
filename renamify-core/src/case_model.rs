@@ -228,48 +228,80 @@ pub fn parse_to_tokens_with_acronyms(
                 // Use trie to find longest matching acronym
                 // This handles both letter-starting acronyms (API, URL) and digit-starting ones (2FA, 3D)
                 if let Some(acronym) = acronym_set.find_longest_match(s, i) {
-                    let next_pos = i + acronym.len();
-                    let mut should_skip_acronym = false;
+                    // Verify the matched acronym has consistent casing
+                    // Don't match "Cli" as "CLI" - it's probably "Client"
+                    let has_consistent_case = acronym.chars().all(|c| c.is_ascii_uppercase())
+                        || acronym
+                            .chars()
+                            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit());
 
-                    // Check what comes after the potential acronym
-                    if next_pos < bytes.len() {
-                        let next_byte = bytes[next_pos];
+                    if has_consistent_case {
+                        let next_pos = i + acronym.len();
+                        let mut should_skip_acronym = false;
 
-                        // Skip if followed by a digit (e.g., "ARM" in "ARM64")
-                        if next_byte.is_ascii_digit()
-                            && !acronym.bytes().any(|b| b.is_ascii_digit())
-                        {
-                            should_skip_acronym = true;
-                        }
+                        // Check what comes after the potential acronym
+                        if next_pos < bytes.len() {
+                            let next_byte = bytes[next_pos];
 
-                        // Skip if the acronym match is part of a longer word
-                        // For example, "IDE" in "IDENTIFIERS" should not be matched
-                        // Check if we're in the same case style and continuing the word
-                        if bytes[i].is_ascii_uppercase() && next_byte.is_ascii_uppercase() {
-                            // Both uppercase - might be part of same word like "IDENTIFIERS"
-                            // Only accept the acronym if it's the complete uppercase sequence
-                            let mut j = next_pos;
-                            while j < bytes.len() && bytes[j].is_ascii_uppercase() {
-                                j += 1;
-                            }
-                            // If there are more uppercase letters, this might be a longer word
-                            // Only accept known acronyms if they're followed by a clear boundary
-                            if j > next_pos {
-                                // There are more uppercase letters - likely part of a longer word
+                            // Skip if followed by a digit (e.g., "ARM" in "ARM64")
+                            if next_byte.is_ascii_digit()
+                                && !acronym.bytes().any(|b| b.is_ascii_digit())
+                            {
                                 should_skip_acronym = true;
                             }
-                        } else if bytes[i].is_ascii_lowercase() && next_byte.is_ascii_lowercase() {
-                            // Both lowercase - definitely part of same word
-                            should_skip_acronym = true;
-                        }
-                    }
 
-                    if !should_skip_acronym {
-                        tokens.push(Token::new(acronym));
-                        i += acronym.len();
-                        continue;
+                            // Skip if the acronym match is part of a longer word
+                            // For example, "IDE" in "IDENTIFIERS" should not be matched
+                            // Check if we're in the same case style and continuing the word
+                            if bytes[i].is_ascii_uppercase() && next_byte.is_ascii_uppercase() {
+                                // Both uppercase - might be part of same word like "IDENTIFIERS"
+                                // OR might be consecutive acronyms like "HTTPSAPIClient"
+
+                                // Check if what follows is also a known acronym
+                                if let Some(_next_acronym) =
+                                    acronym_set.find_longest_match(s, next_pos)
+                                {
+                                    // The following text is also a known acronym!
+                                    // Accept the current acronym (e.g., "HTTPS" before "API")
+                                    should_skip_acronym = false;
+                                } else {
+                                    // Not a known acronym - check if it's just more uppercase letters
+                                    let mut j = next_pos;
+                                    while j < bytes.len() && bytes[j].is_ascii_uppercase() {
+                                        j += 1;
+                                    }
+                                    // If there are more uppercase letters, this might be a longer word
+                                    // Only accept known acronyms if they're followed by a clear boundary
+                                    if j > next_pos {
+                                        // There are more uppercase letters - likely part of a longer word
+                                        should_skip_acronym = true;
+                                    }
+                                }
+                            } else if bytes[i].is_ascii_lowercase()
+                                && next_byte.is_ascii_lowercase()
+                            {
+                                // Both lowercase - definitely part of same word
+                                should_skip_acronym = true;
+                            }
+                        }
+
+                        if !should_skip_acronym {
+                            if debug {
+                                eprintln!(
+                                    "    -> Found acronym '{}' at position {}, jumping to {}",
+                                    acronym,
+                                    i,
+                                    i + acronym.len()
+                                );
+                            }
+                            tokens.push(Token::new(acronym));
+                            i += acronym.len();
+                            continue;
+                        }
+                        // Otherwise, fall through to normal processing
                     }
-                    // Otherwise, fall through to normal processing
+                    // else: Mixed case like "Cli" - probably not an acronym in this context
+                    // Fall through to normal processing
                 }
 
                 // Handle uppercase sequences that might be acronyms
@@ -283,10 +315,27 @@ pub fn parse_to_tokens_with_acronyms(
                     // If we have multiple uppercase letters followed by lowercase,
                     // this might be an acronym followed by a word (e.g., "URLParser" -> "URL" + "Parser")
                     if j > i + 1 && j < bytes.len() && bytes[j].is_ascii_lowercase() {
-                        // Take all but the last uppercase letter as the acronym
-                        let acronym_part = std::str::from_utf8(&bytes[i..j - 1]).unwrap_or("");
-                        tokens.push(Token::new(acronym_part));
-                        i = j - 1; // Continue from the last uppercase letter
+                        // Check if any prefix of this uppercase sequence is a known acronym
+                        // Start from the longest possible and work down
+                        let mut found_acronym = false;
+                        for k in (i + 1..j).rev() {
+                            let potential_acronym = std::str::from_utf8(&bytes[i..k]).unwrap_or("");
+                            if acronym_set.is_acronym(potential_acronym) {
+                                // Found a known acronym! Split here
+                                tokens.push(Token::new(potential_acronym));
+                                i = k; // Continue from after the acronym
+                                found_acronym = true;
+                                break;
+                            }
+                        }
+
+                        if !found_acronym {
+                            // No known acronym found, use the heuristic:
+                            // Take all but the last uppercase letter as the acronym
+                            let acronym_part = std::str::from_utf8(&bytes[i..j - 1]).unwrap_or("");
+                            tokens.push(Token::new(acronym_part));
+                            i = j - 1; // Continue from the last uppercase letter
+                        }
                         continue;
                     }
                 }
@@ -299,8 +348,25 @@ pub fn parse_to_tokens_with_acronyms(
                 // Check for various split conditions
                 let mut should_split = false;
 
+                // Check if current buffer is a known acronym and we're about to add another uppercase letter
+                // This handles cases like "APIClient" where API is a known acronym
+                if b.is_ascii_uppercase() && prev.is_ascii_uppercase() {
+                    // Check if what we have so far is a known acronym
+                    if let Ok(current_str) = std::str::from_utf8(&current) {
+                        if current_str.chars().all(|c| c.is_ascii_uppercase())
+                            && acronym_set.is_acronym(current_str)
+                        {
+                            // Look ahead - if the next character is lowercase, this uppercase letter
+                            // starts a new word (e.g., "API" + "Client")
+                            if i + 1 < bytes.len() && bytes[i + 1].is_ascii_lowercase() {
+                                should_split = true;
+                            }
+                        }
+                    }
+                }
+
                 // 1. lowercase to uppercase (e.g., "camelCase" -> "camel", "Case")
-                if prev.is_ascii_lowercase() && b.is_ascii_uppercase() {
+                if !should_split && prev.is_ascii_lowercase() && b.is_ascii_uppercase() {
                     should_split = true;
                 }
                 // 2. letter to digit - DON'T split (e.g., "project1" -> "project1")
@@ -402,22 +468,42 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
             .join("-"),
 
         Style::Camel => {
+            let acronym_set = crate::acronym::get_default_acronym_set();
             let mut result = String::new();
             for (i, token) in model.tokens.iter().enumerate() {
                 if i == 0 {
                     result.push_str(&token.text.to_lowercase());
                 } else {
-                    result.push_str(&capitalize_first(&token.text));
+                    // If the token is an all-uppercase known acronym, preserve it
+                    if token.text.chars().all(|c| c.is_ascii_uppercase())
+                        && acronym_set.is_acronym(&token.text)
+                    {
+                        result.push_str(&token.text);
+                    } else {
+                        result.push_str(&capitalize_first(&token.text));
+                    }
                 }
             }
             result
         },
 
-        Style::Pascal => model
-            .tokens
-            .iter()
-            .map(|t| capitalize_first(&t.text))
-            .collect::<String>(),
+        Style::Pascal => {
+            let acronym_set = crate::acronym::get_default_acronym_set();
+            model
+                .tokens
+                .iter()
+                .map(|t| {
+                    // If the token is an all-uppercase known acronym, preserve it
+                    if t.text.chars().all(|c| c.is_ascii_uppercase())
+                        && acronym_set.is_acronym(&t.text)
+                    {
+                        t.text.clone()
+                    } else {
+                        capitalize_first(&t.text)
+                    }
+                })
+                .collect::<String>()
+        },
 
         Style::ScreamingSnake => model
             .tokens
@@ -510,6 +596,7 @@ pub fn generate_variant_map_with_atomic(
     styles: Option<&[Style]>,
     atomic_config: Option<&crate::atomic::AtomicConfig>,
 ) -> BTreeMap<String, String> {
+    let using_default_styles = styles.is_none();
     let default_styles = [
         Style::Snake,
         Style::Kebab,
@@ -570,6 +657,16 @@ pub fn generate_variant_map_with_atomic(
 
         // Add the variant to the map
         map.insert(search_variant, replace_variant);
+    }
+
+    // CRITICAL: Add an exact match entry to preserve user's exact casing
+    // This ensures that if the search term matches exactly as typed, the replacement
+    // will be exactly as the user typed it (e.g., FormAPI not FormApi)
+    // BUT: Only do this when using default styles (not when user explicitly filters styles)
+    // This must come AFTER generating style variants to override any that match the exact input
+    if using_default_styles {
+        // Using default styles - add exact match preservation
+        map.insert(search.to_string(), replace.to_string());
     }
 
     // Removed automatic case variants - they were causing incorrect matches
