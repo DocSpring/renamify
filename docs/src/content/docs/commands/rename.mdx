@@ -67,6 +67,15 @@ renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 - `--exclude-acronyms <ACRONYMS>` - Exclude specific acronyms from detection
 - `--only-acronyms <ACRONYMS>` - Only use these acronyms, ignore defaults
 
+### Atomic Mode
+
+- `--atomic` - Treat both search and replace terms as indivisible units
+- `--atomic-search` - Only treat search term as atomic
+- `--atomic-replace` - Only treat replace term as atomic
+- `--no-atomic` - Disable atomic mode (override config)
+- `--no-atomic-search` - Disable atomic for search term
+- `--no-atomic-replace` - Disable atomic for replace term
+
 ### Display Options
 
 - `--fixed-table-width` - Use fixed column widths in table output for consistent
@@ -112,6 +121,16 @@ renamify rename oldName newName src/components/ src/utils/
 # Skip test files and node_modules
 renamify rename oldApi newApi \
   --exclude "**/*test*,node_modules/**"
+```
+
+### Atomic Mode
+
+```bash
+# Treat compound words as single units
+renamify rename DocSpring FormAPI --atomic
+
+# Without --atomic, DocSpring would match doc_spring in snake_case
+# With --atomic, DocSpring only matches docspring (as single unit)
 ```
 
 ### Case Style Control

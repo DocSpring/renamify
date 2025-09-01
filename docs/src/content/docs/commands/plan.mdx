@@ -58,6 +58,15 @@ renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 - `--exclude-acronyms <ACRONYMS>` - Exclude specific acronyms from detection
 - `--only-acronyms <ACRONYMS>` - Only use these acronyms, ignore defaults
 
+### Atomic Mode
+
+- `--atomic` - Treat both search and replace terms as indivisible units
+- `--atomic-search` - Only treat search term as atomic
+- `--atomic-replace` - Only treat replace term as atomic
+- `--no-atomic` - Disable atomic mode (override config)
+- `--no-atomic-search` - Disable atomic for search term
+- `--no-atomic-replace` - Disable atomic for replace term
+
 ### Display Options
 
 - `--fixed-table-width` - Use fixed column widths in table output for consistent
@@ -169,6 +178,19 @@ renamify plan old_name new_name src/ tests/
 ```bash
 # Just see what would change, don't create a plan file
 renamify plan old_name new_name --dry-run
+```
+
+### Atomic Mode
+
+```bash
+# Treat compound words as single units
+renamify plan DocSpring FormAPI --atomic
+
+# Only search term is atomic
+renamify plan DocSpring form_api --atomic-search
+
+# Only replace term is atomic
+renamify plan doc_spring FormAPI --atomic-replace
 ```
 
 ### Excluding Lines by Pattern
