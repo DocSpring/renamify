@@ -60,6 +60,9 @@ renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 
 ### Atomic Mode
 
+"Atomic" means treating a search or replace identifier as a single unit,
+not splitting it into separate components. E.g. GitHub → github, not git_hub
+
 - `--atomic` - Treat both search and replace terms as indivisible units
 - `--atomic-search` - Only treat search term as atomic
 - `--atomic-replace` - Only treat replace term as atomic

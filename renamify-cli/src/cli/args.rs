@@ -128,11 +128,11 @@ pub struct AtomicArgs {
     #[arg(long, conflicts_with_all = ["atomic_search", "atomic_replace"])]
     pub atomic: bool,
 
-    /// Treat search term as atomic (DocSpring → docspring, not doc_spring)
+    /// Treat search term as atomic (GitHub → github, not git_hub)
     #[arg(long)]
     pub atomic_search: bool,
 
-    /// Treat replace term as atomic (DocSpring → docspring, not doc_spring)
+    /// Treat replace term as atomic (GitHub → github, not git_hub)
     #[arg(long)]
     pub atomic_replace: bool,
 

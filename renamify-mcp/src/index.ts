@@ -78,11 +78,15 @@ export function createServer(
         atomicSearch: z
           .boolean()
           .optional()
-          .describe('Treat search term as atomic (indivisible unit)'),
+          .describe(
+            'Treat search term as atomic (GitHub → github, not git_hub)'
+          ),
         atomicReplace: z
           .boolean()
           .optional()
-          .describe('Treat replace term as atomic (indivisible unit)'),
+          .describe(
+            'Treat replace term as atomic (GitHub → github, not git_hub)'
+          ),
       },
     },
     async (params) => {
@@ -149,7 +153,9 @@ export function createServer(
         atomicSearch: z
           .boolean()
           .optional()
-          .describe('Treat search term as atomic (indivisible unit)'),
+          .describe(
+            'Treat search term as atomic (GitHub → github, not git_hub)'
+          ),
       },
     },
     async (params) => {
@@ -321,11 +327,15 @@ export function createServer(
         atomicSearch: z
           .boolean()
           .optional()
-          .describe('Treat search term as atomic (indivisible unit)'),
+          .describe(
+            'Treat search term as atomic (GitHub → github, not git_hub)'
+          ),
         atomicReplace: z
           .boolean()
           .optional()
-          .describe('Treat replace term as atomic (indivisible unit)'),
+          .describe(
+            'Treat replace term as atomic (GitHub → github, not git_hub)'
+          ),
       },
     },
     async (params) => {
