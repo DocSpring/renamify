@@ -124,8 +124,8 @@ pub fn get_possible_styles(text: &str) -> Vec<Style> {
         Style::ScreamingTrain,
         Style::Title,
         Style::Dot,
-        Style::Lower,
-        Style::Upper,
+        // NOTE: Lower and Upper are excluded as they destroy word boundaries
+        // and should never be used for identifier transformations
     ] {
         if could_be_style(text, *style) {
             styles.push(*style);

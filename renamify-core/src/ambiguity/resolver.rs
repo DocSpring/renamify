@@ -294,8 +294,6 @@ impl AmbiguityResolver {
             Style::ScreamingTrain,
             Style::Title,
             Style::Dot,
-            Style::Lower,
-            Style::Upper,
         ];
 
         // Use pre-calculated styles if provided, otherwise calculate them
