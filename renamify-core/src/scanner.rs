@@ -58,6 +58,8 @@ pub struct PlanOptions {
     pub exclude_acronyms: Vec<String>, // Default acronyms to exclude
     pub only_acronyms: Vec<String>, // Replace default list with these acronyms
     pub ignore_ambiguous: bool,     // Ignore mixed-case/ambiguous identifiers
+    #[ts(optional)]
+    pub atomic_config: Option<crate::atomic::AtomicConfig>, // Atomic identifier configuration
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -95,6 +97,7 @@ impl Default for PlanOptions {
             exclude_acronyms: vec![],
             only_acronyms: vec![],
             ignore_ambiguous: false, // Default: process ambiguous identifiers
+            atomic_config: None,     // Default: no atomic configuration
         }
     }
 }
@@ -222,6 +225,7 @@ pub fn scan_repository_multi(
         replace,
         options.styles.as_deref(),
         &acronym_set,
+        options.atomic_config.as_ref(),
     );
     let variants: Vec<String> = variant_map.keys().cloned().collect();
     let _pattern = build_pattern(&variants)?;
@@ -796,8 +800,27 @@ fn generate_variant_map_with_acronyms(
     replace: &str,
     styles: Option<&[Style]>,
     acronym_set: &AcronymSet,
+    atomic_config: Option<&crate::atomic::AtomicConfig>,
 ) -> VariantMap {
-    // Use the acronym-aware tokenization
+    // If we have atomic config, use atomic-aware variant generation
+    if let Some(atomic_cfg) = atomic_config {
+        // Convert to BTreeMap first
+        let btree_map = crate::case_model::generate_variant_map_with_atomic(
+            search,
+            replace,
+            styles,
+            Some(atomic_cfg),
+        );
+
+        // Convert BTreeMap to VariantMap
+        let mut variant_map = VariantMap::new();
+        for (key, value) in btree_map {
+            variant_map.insert(key, None, value);
+        }
+        return variant_map;
+    }
+
+    // Otherwise use the acronym-aware tokenization (existing logic)
     let old_tokens = crate::case_model::parse_to_tokens_with_acronyms(search, acronym_set);
     let new_tokens = crate::case_model::parse_to_tokens_with_acronyms(replace, acronym_set);
 

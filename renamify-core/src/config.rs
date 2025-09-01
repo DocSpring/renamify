@@ -7,6 +7,10 @@ use std::path::Path;
 pub struct Config {
     #[serde(default)]
     pub defaults: DefaultsConfig,
+
+    /// List of atomic identifiers (treated as indivisible units)
+    #[serde(default)]
+    pub atomic: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -143,5 +147,22 @@ preview_format = "json"
         assert!(config.defaults.rename_files);
         assert!(config.defaults.rename_dirs);
         assert_eq!(config.defaults.unrestricted_level, 0);
+    }
+
+    #[test]
+    fn test_atomic_config() {
+        let toml_content = r#"
+atomic = ["DocSpring", "TweetGit", "FormAPI"]
+
+[defaults]
+preview_format = "table"
+"#;
+
+        let config: Config = toml::from_str(toml_content).unwrap();
+        assert_eq!(config.atomic.len(), 3);
+        assert!(config.atomic.contains(&"DocSpring".to_string()));
+        assert!(config.atomic.contains(&"TweetGit".to_string()));
+        assert!(config.atomic.contains(&"FormAPI".to_string()));
+        assert_eq!(config.defaults.preview_format, "table");
     }
 }

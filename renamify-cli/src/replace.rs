@@ -47,6 +47,7 @@ pub fn handle_replace(
         rename_root: false,
         plan_out: PathBuf::from(".renamify/plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Off,
+        atomic_config: None, // Replace doesn't use atomic mode
     };
 
     // Create the plan using simple regex/literal replacement

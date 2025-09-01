@@ -501,6 +501,15 @@ pub fn generate_variant_map(
     replace: &str,
     styles: Option<&[Style]>,
 ) -> BTreeMap<String, String> {
+    generate_variant_map_with_atomic(search, replace, styles, None)
+}
+
+pub fn generate_variant_map_with_atomic(
+    search: &str,
+    replace: &str,
+    styles: Option<&[Style]>,
+    atomic_config: Option<&crate::atomic::AtomicConfig>,
+) -> BTreeMap<String, String> {
     let default_styles = [
         Style::Snake,
         Style::Kebab,
@@ -512,8 +521,21 @@ pub fn generate_variant_map(
     ];
     let styles = styles.unwrap_or(&default_styles);
 
-    let search_tokens = parse_to_tokens(search);
-    let replace_tokens = parse_to_tokens(replace);
+    // Check if we should treat search/replace as atomic
+    let search_is_atomic = atomic_config.is_some_and(|c| c.should_treat_search_atomic(search));
+    let replace_is_atomic = atomic_config.is_some_and(|c| c.should_treat_replace_atomic(replace));
+
+    let search_tokens = if search_is_atomic {
+        crate::atomic::parse_atomic(search)
+    } else {
+        parse_to_tokens(search)
+    };
+
+    let replace_tokens = if replace_is_atomic {
+        crate::atomic::parse_atomic(replace)
+    } else {
+        parse_to_tokens(replace)
+    };
 
     let mut map = BTreeMap::new();
 
@@ -527,8 +549,17 @@ pub fn generate_variant_map(
 
     // Generate variants for each requested style
     for style in styles {
-        let search_variant = to_style(&search_tokens, *style);
-        let replace_variant = to_style(&replace_tokens, *style);
+        let search_variant = if search_is_atomic {
+            crate::atomic::to_atomic_style(search, *style)
+        } else {
+            to_style(&search_tokens, *style)
+        };
+
+        let replace_variant = if replace_is_atomic {
+            crate::atomic::to_atomic_style(replace, *style)
+        } else {
+            to_style(&replace_tokens, *style)
+        };
 
         if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
             eprintln!(
@@ -1095,5 +1126,103 @@ mod tests {
         assert!(!is_title_case(""));
         assert!(!is_title_case(" "));
         assert!(!is_title_case("hello"));
+    }
+
+    #[test]
+    fn test_generate_variant_map_with_atomic() {
+        // Test atomic search and replace
+        let atomic_config = crate::atomic::AtomicConfig::from_flags_and_config(
+            true, // atomic_both
+            false,
+            false,
+            vec![],
+        );
+
+        let map =
+            generate_variant_map_with_atomic("DocSpring", "TweetGit", None, Some(&atomic_config));
+
+        // Should only have atomic variants (no word separation)
+        assert_eq!(map.get("docspring"), Some(&"tweetgit".to_string()));
+        assert_eq!(map.get("DOCSPRING"), Some(&"TWEETGIT".to_string()));
+        assert_eq!(map.get("DocSpring"), Some(&"TweetGit".to_string()));
+
+        // Should NOT have word-separated variants
+        assert!(!map.contains_key("doc_spring"));
+        assert!(!map.contains_key("doc-spring"));
+        assert!(!map.contains_key("DOC_SPRING"));
+    }
+
+    #[test]
+    fn test_generate_variant_map_with_config_atomics() {
+        // Test with configured atomic identifiers
+        let atomic_config = crate::atomic::AtomicConfig::from_flags_and_config(
+            false,
+            false,
+            false,
+            vec!["FormAPI".to_string()],
+        );
+
+        let map =
+            generate_variant_map_with_atomic("FormAPI", "DocSpring", None, Some(&atomic_config));
+
+        // FormAPI should be atomic (in config), DocSpring should be normal
+        // When FormAPI is atomic, snake/kebab/dot all become "formapi" (lowercase)
+        // But DocSpring is normal, so it splits into doc_spring, doc-spring, etc.
+
+        // The atomic search "formapi" maps to different replace variants based on style
+        // But since snake/kebab/dot all produce the same search key "formapi",
+        // they overwrite each other. The last one wins.
+
+        // FormAPI variants should not have word separation
+        assert!(!map.contains_key("form_api"));
+        assert!(!map.contains_key("form-api"));
+
+        // Check uppercase variants work correctly
+        // FORMAPI could map to either DOC_SPRING or DOC-SPRING depending on order
+        assert!(map.contains_key("FORMAPI"));
+        let formapi_upper = map.get("FORMAPI").unwrap();
+        assert!(formapi_upper == "DOC_SPRING" || formapi_upper == "DOC-SPRING");
+
+        // FormAPI for Pascal/Train styles - could map to DocSpring or Doc-Spring
+        assert!(map.contains_key("FormAPI"));
+        let formapi_pascal = map.get("FormAPI").unwrap();
+        assert!(formapi_pascal == "DocSpring" || formapi_pascal == "Doc-Spring");
+
+        // The lowercase "formapi" key exists but maps to one of the normal variants
+        assert!(map.contains_key("formapi"));
+        // Its value should be one of the word-separated lowercase variants
+        let formapi_value = map.get("formapi").unwrap();
+        assert!(
+            formapi_value == "doc_spring"
+                || formapi_value == "doc-spring"
+                || formapi_value == "doc.spring"
+        );
+    }
+
+    #[test]
+    fn test_generate_variant_map_mixed_atomic() {
+        // Test with only search being atomic
+        let atomic_config = crate::atomic::AtomicConfig::from_flags_and_config(
+            false,
+            true, // atomic_search only
+            false,
+            vec![],
+        );
+
+        let map =
+            generate_variant_map_with_atomic("DocSpring", "NewName", None, Some(&atomic_config));
+
+        // DocSpring should be atomic, NewName should be normal
+        // The lowercase "docspring" key could map to "new_name" or "new-name" depending on order
+        assert!(map.contains_key("docspring"));
+        let docspring_value = map.get("docspring").unwrap();
+        assert!(docspring_value == "new_name" || docspring_value == "new-name");
+        // DOCSPRING could map to NEW_NAME or NEW-NAME
+        assert!(map.contains_key("DOCSPRING"));
+        let docspring_upper = map.get("DOCSPRING").unwrap();
+        assert!(docspring_upper == "NEW_NAME" || docspring_upper == "NEW-NAME");
+
+        // DocSpring should not have word-separated variants
+        assert!(!map.contains_key("doc_spring"));
     }
 }

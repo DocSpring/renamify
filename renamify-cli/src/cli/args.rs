@@ -121,6 +121,34 @@ pub struct AcronymArgs {
     pub only_acronyms: Vec<String>,
 }
 
+/// Atomic identifier arguments
+#[derive(Args, Debug, Clone)]
+pub struct AtomicArgs {
+    /// Treat both terms as atomic (single words). E.g. DocSpring becomes docspring in snake_case, not doc_spring
+    #[arg(long, conflicts_with_all = ["atomic_search", "atomic_replace"])]
+    pub atomic: bool,
+
+    /// Treat search term as atomic (DocSpring → docspring, not doc_spring)
+    #[arg(long)]
+    pub atomic_search: bool,
+
+    /// Treat replace term as atomic (DocSpring → docspring, not doc_spring)
+    #[arg(long)]
+    pub atomic_replace: bool,
+
+    /// Override config: allow word boundary detection
+    #[arg(long, conflicts_with = "atomic")]
+    pub no_atomic: bool,
+
+    /// Override config for search: allow word boundaries
+    #[arg(long, conflicts_with = "atomic_search")]
+    pub no_atomic_search: bool,
+
+    /// Override config for replace: allow word boundaries
+    #[arg(long, conflicts_with = "atomic_replace")]
+    pub no_atomic_replace: bool,
+}
+
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Initialize renamify in the current repository
@@ -258,6 +286,9 @@ pub enum Commands {
         #[command(flatten)]
         acronyms: AcronymArgs,
 
+        #[command(flatten)]
+        atomic: AtomicArgs,
+
         /// Output format for machine consumption
         #[arg(long, value_enum, default_value = "summary")]
         output: OutputFormat,
@@ -373,6 +404,9 @@ pub enum Commands {
 
         #[command(flatten)]
         acronyms: AcronymArgs,
+
+        #[command(flatten)]
+        atomic: AtomicArgs,
 
         /// Output format for machine consumption
         #[arg(long, value_enum, default_value = "summary")]

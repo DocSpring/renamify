@@ -136,6 +136,11 @@ Exit codes:
 
 - append only with checksums and revert info
 
+`.renamify/config.toml`
+
+- Project configuration including atomic identifiers
+- `atomic = ["DocSpring", "TweetGit", "GitHub"]` - identifiers treated as indivisible units
+
 ## Search and plan algorithm
 
 1. Detect input case of `<old>` and `<new>`
