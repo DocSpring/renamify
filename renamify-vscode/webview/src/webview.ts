@@ -33,6 +33,10 @@ type SearchResult = {
   const excludeLinesInput = document.getElementById(
     'excludeLines'
   ) as HTMLInputElement;
+  const renamePathsCheckbox = document.getElementById('renamePathsCheckbox') as HTMLInputElement;
+  const ignoreAmbiguousCheckbox = document.getElementById('ignoreAmbiguousCheckbox') as HTMLInputElement;
+  const atomicSearchCheckbox = document.getElementById('atomicSearchCheckbox') as HTMLInputElement;
+  const atomicReplaceCheckbox = document.getElementById('atomicReplaceCheckbox') as HTMLInputElement;
   const applyBtn = document.getElementById('applyBtn') as HTMLButtonElement;
   const expandAllBtn = document.getElementById(
     'expandAll'
@@ -231,6 +235,10 @@ type SearchResult = {
       exclude: excludeInput.value,
       excludeMatchingLines: excludeLinesInput.value,
       caseStyles: selectedStyles,
+      renamePaths: renamePathsCheckbox.checked,
+      ignoreAmbiguous: ignoreAmbiguousCheckbox.checked,
+      atomicSearch: atomicSearchCheckbox.checked,
+      atomicReplace: atomicReplaceCheckbox.checked,
       searchId, // Include search ID to match responses
     });
   }
@@ -258,6 +266,10 @@ type SearchResult = {
       exclude: excludeInput.value,
       excludeMatchingLines: excludeLinesInput.value,
       caseStyles: selectedStyles,
+      renamePaths: renamePathsCheckbox.checked,
+      ignoreAmbiguous: ignoreAmbiguousCheckbox.checked,
+      atomicSearch: atomicSearchCheckbox.checked,
+      atomicReplace: atomicReplaceCheckbox.checked,
     });
   }
 
