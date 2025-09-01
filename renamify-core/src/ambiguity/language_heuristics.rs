@@ -13,12 +13,17 @@ impl LanguageHeuristics {
         preceding_context: &str,
         possible_styles: &[Style],
     ) -> Option<Style> {
-        if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
-            eprintln!("DEBUG LanguageHeuristics: called suggest_style");
-        }
-
         let extension = file_path.extension()?.to_str()?;
         let context = preceding_context.trim();
+
+        if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
+            eprintln!("DEBUG LanguageHeuristics: called suggest_style");
+            eprintln!("  file_path: {}", file_path.display());
+            eprintln!("  extension: {}", extension);
+            eprintln!("  preceding_context: {:?}", preceding_context);
+            eprintln!("  context (trimmed): {:?}", context);
+            eprintln!("  possible_styles: {:?}", possible_styles);
+        }
 
         match extension {
             // Programming languages

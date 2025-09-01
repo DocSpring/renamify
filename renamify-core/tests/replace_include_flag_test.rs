@@ -48,6 +48,7 @@ fn test_replace_include_flag_respects_pattern() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec!["test/**/*".to_string()], // Only include test directory
         excludes: vec![],
         respect_gitignore: false,
@@ -171,6 +172,7 @@ fn test_replace_include_flag_with_specific_file() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec!["file1.txt".to_string()], // Only include file1.txt
         excludes: vec![],
         respect_gitignore: false,
@@ -234,6 +236,7 @@ fn test_replace_include_with_directory_pattern() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec!["test/".to_string()],
         excludes: vec![],
         respect_gitignore: false,

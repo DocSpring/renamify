@@ -46,8 +46,8 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
             first_char.is_lowercase() && !has_underscore && !has_hyphen && !has_dot
         },
         Style::Pascal => {
-            // PascalCase: starts uppercase
-            first_char.is_uppercase()
+            // PascalCase: starts uppercase, has mixed case, no separators
+            first_char.is_uppercase() && !has_underscore && !has_hyphen && !has_dot
         },
         Style::ScreamingSnake => {
             // SCREAMING_SNAKE: all uppercase, may have underscores
@@ -58,21 +58,38 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
                         .all(|c| c.is_uppercase() || c.is_numeric() || c == '_'))
         },
         Style::Train => {
-            // Train-Case: starts uppercase, has hyphens
-            first_char.is_uppercase()
-                && (has_hyphen || text.chars().all(|c| c.is_alphanumeric() || c == '-'))
+            // Train-Case: Each segment is Title case (First-Second) or all caps acronym (API-Service)
+            // Must have hyphens for multi-segment, single segment must be Title or all caps
+            if has_hyphen {
+                // Check if all segments follow Train-Case pattern
+                text.split('-').all(|segment| {
+                    !segment.is_empty()
+                        && (
+                            // Title case: First letter upper, rest lower
+                            (segment.chars().next().unwrap().is_uppercase()
+                         && segment.chars().skip(1).all(|c| c.is_lowercase() || c.is_numeric()))
+                        // Or all uppercase (acronym)
+                        || segment.chars().all(|c| c.is_uppercase() || c.is_numeric())
+                        )
+                })
+            } else {
+                // Single segment: must be Title case or all uppercase
+                first_char.is_uppercase()
+                    && (
+                        // All uppercase (like API, SAML)
+                        text.chars().all(|c| c.is_uppercase() || c.is_numeric())
+                    // Or Title case (like Hello, World)
+                    || text.chars().skip(1).all(|c| c.is_lowercase() || c.is_numeric())
+                    )
+            }
         },
         Style::ScreamingTrain => {
-            // SCREAMING-TRAIN: all uppercase, has hyphens
-            !has_lowercase
-                && (has_hyphen
-                    || text
-                        .chars()
-                        .all(|c| c.is_uppercase() || c.is_numeric() || c == '-'))
+            // SCREAMING-TRAIN: all uppercase, MUST have hyphens
+            !has_lowercase && has_hyphen
         },
         Style::Title => {
-            // Title Case: has spaces and capital letters
-            text.contains(' ') || first_char.is_uppercase()
+            // Title Case: MUST have spaces and capital letters
+            text.contains(' ') && first_char.is_uppercase()
         },
         Style::Dot => {
             // dot.case: all lowercase with dots
@@ -107,8 +124,8 @@ pub fn get_possible_styles(text: &str) -> Vec<Style> {
         Style::ScreamingTrain,
         Style::Title,
         Style::Dot,
-        Style::Lower,
-        Style::Upper,
+        // NOTE: Lower and Upper are excluded as they destroy word boundaries
+        // and should never be used for identifier transformations
     ] {
         if could_be_style(text, *style) {
             styles.push(*style);

@@ -23,6 +23,7 @@ fn test_multiple_matches_per_line() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -83,6 +84,7 @@ fn test_module_path_replacement() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -119,10 +121,10 @@ fn test_dot_path_replacement() {
     let test_file = root.join("script.sh");
     std::fs::write(
         &test_file,
-        "mkdir .renamify\n\
-         cd .renamify\n\
-         echo 'renamify' > .renamify/config\n\
-         rm -rf .renamify\n",
+        "mkdir .awesometool\n\
+         cd .awesometool\n\
+         echo 'awesometool' > .awesometool/config\n\
+         rm -rf .awesometool\n",
     )
     .unwrap();
 
@@ -134,6 +136,7 @@ fn test_dot_path_replacement() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -146,25 +149,28 @@ fn test_dot_path_replacement() {
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     };
 
-    let plan = scan_repository(&root, "renamify", "smart_search", &options).unwrap();
+    let plan = scan_repository(&root, "awesometool", "smart_search", &options).unwrap();
 
     // Should find all occurrences including dot-prefixed
     assert!(
         plan.stats.total_matches >= 5,
-        "Should find renamify in regular text and .renamify paths"
+        "Should find awesometool in regular text and .awesometool paths"
     );
 
-    // Check that .renamify occurrences are found
+    // Check that .awesometool occurrences are found
     let dot_matches: Vec<_> = plan
         .matches
         .iter()
         .filter(|h| {
             h.line_before
                 .as_ref()
-                .is_some_and(|l| l.contains(".renamify"))
+                .is_some_and(|l| l.contains(".awesometool"))
         })
         .collect();
-    assert!(!dot_matches.is_empty(), "Should find .renamify occurrences");
+    assert!(
+        !dot_matches.is_empty(),
+        "Should find .awesometool occurrences"
+    );
 }
 
 #[test]
@@ -184,6 +190,7 @@ fn test_consecutive_occurrences() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -237,6 +244,7 @@ fn test_camel_case_variant_multiple_per_line() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -284,6 +292,7 @@ fn test_mixed_separators_on_same_line() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,
@@ -346,6 +355,7 @@ fn test_markdown_code_blocks() {
         exclude_acronyms: vec![],
         only_acronyms: vec![],
         ignore_ambiguous: false,
+        atomic_config: None,
         includes: vec![],
         excludes: vec![],
         respect_gitignore: false,

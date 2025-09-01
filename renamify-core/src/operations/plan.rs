@@ -32,6 +32,7 @@ pub fn plan_operation(
     exclude_acronyms: Vec<String>,
     only_acronyms: Vec<String>,
     working_dir: Option<&std::path::Path>,
+    atomic_config: Option<&crate::atomic::AtomicConfig>,
 ) -> Result<(PlanResult, Option<String>)> {
     let current_dir = working_dir.map_or_else(
         || std::env::current_dir().expect("Failed to get current directory"),
@@ -77,6 +78,7 @@ pub fn plan_operation(
         exclude_acronyms,
         only_acronyms,
         ignore_ambiguous: false, // TODO: Get from args
+        atomic_config: atomic_config.cloned(),
     };
 
     // Resolve all search paths to absolute paths and canonicalize them

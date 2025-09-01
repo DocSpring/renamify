@@ -7,6 +7,8 @@ export type SearchOptions = {
   caseStyles?: string[];
   renamePaths?: boolean;
   ignoreAmbiguous?: boolean;
+  atomicSearch?: boolean;
+  atomicReplace?: boolean;
 };
 
 // Match type is now imported from Rust bindings above
@@ -34,6 +36,8 @@ export type SearchMessage = {
   caseStyles?: string[];
   renamePaths?: boolean;
   ignoreAmbiguous?: boolean;
+  atomicSearch?: boolean;
+  atomicReplace?: boolean;
   searchId?: number;
 };
 
@@ -47,6 +51,8 @@ export type PlanMessage = {
   caseStyles?: string[];
   renamePaths?: boolean;
   ignoreAmbiguous?: boolean;
+  atomicSearch?: boolean;
+  atomicReplace?: boolean;
 };
 
 export type ApplyMessage = {
@@ -59,6 +65,8 @@ export type ApplyMessage = {
   caseStyles?: string[];
   renamePaths?: boolean;
   ignoreAmbiguous?: boolean;
+  atomicSearch?: boolean;
+  atomicReplace?: boolean;
   planId?: string;
 };
 

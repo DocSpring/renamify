@@ -15,17 +15,18 @@ renaming.
 
 ### Parameters
 
-| Parameter     | Type     | Required | Default     | Description                            |
-| ------------- | -------- | -------- | ----------- | -------------------------------------- |
-| `search`      | string   | ✅ Yes   | -           | The identifier to search for           |
-| `paths`       | string[] | No       | Current dir | Paths to search (files or directories) |
-| `includes`    | string[] | No       | All files   | Glob patterns to include               |
-| `excludes`    | string[] | No       | None        | Glob patterns to exclude               |
-| `styles`      | string[] | No       | All styles  | Case styles to detect                  |
-| `preview`     | string   | No       | `summary`   | Output format                          |
-| `dryRun`      | boolean  | No       | `false`     | Preview without saving                 |
-| `renameFiles` | boolean  | No       | `true`      | Include file renames in search         |
-| `renameDirs`  | boolean  | No       | `true`      | Include directory renames in search    |
+| Parameter      | Type     | Required | Default     | Description                            |
+| -------------- | -------- | -------- | ----------- | -------------------------------------- |
+| `search`       | string   | ✅ Yes   | -           | The identifier to search for           |
+| `paths`        | string[] | No       | Current dir | Paths to search (files or directories) |
+| `includes`     | string[] | No       | All files   | Glob patterns to include               |
+| `excludes`     | string[] | No       | None        | Glob patterns to exclude               |
+| `styles`       | string[] | No       | All styles  | Case styles to detect                  |
+| `preview`      | string   | No       | `summary`   | Output format                          |
+| `dryRun`       | boolean  | No       | `false`     | Preview without saving                 |
+| `renameFiles`  | boolean  | No       | `true`      | Include file renames in search         |
+| `renameDirs`   | boolean  | No       | `true`      | Include directory renames in search    |
+| `atomicSearch` | boolean  | No       | `false`     | Treat search term as indivisible unit  |
 
 ### Example
 
@@ -56,18 +57,20 @@ your identifiers.
 
 ### Parameters
 
-| Parameter     | Type     | Required | Default     | Description                            |
-| ------------- | -------- | -------- | ----------- | -------------------------------------- |
-| `old`         | string   | ✅ Yes   | -           | The identifier to replace              |
-| `new`         | string   | ✅ Yes   | -           | The new identifier                     |
-| `paths`       | string[] | No       | Current dir | Paths to search (files or directories) |
-| `includes`    | string[] | No       | All files   | Glob patterns to include               |
-| `excludes`    | string[] | No       | None        | Glob patterns to exclude               |
-| `styles`      | string[] | No       | All styles  | Case styles to detect                  |
-| `preview`     | string   | No       | `summary`   | Output format                          |
-| `dryRun`      | boolean  | No       | `false`     | Preview without saving                 |
-| `renameFiles` | boolean  | No       | `true`      | Rename matching files                  |
-| `renameDirs`  | boolean  | No       | `true`      | Rename matching directories            |
+| Parameter       | Type     | Required | Default     | Description                            |
+| --------------- | -------- | -------- | ----------- | -------------------------------------- |
+| `old`           | string   | ✅ Yes   | -           | The identifier to replace              |
+| `new`           | string   | ✅ Yes   | -           | The new identifier                     |
+| `paths`         | string[] | No       | Current dir | Paths to search (files or directories) |
+| `includes`      | string[] | No       | All files   | Glob patterns to include               |
+| `excludes`      | string[] | No       | None        | Glob patterns to exclude               |
+| `styles`        | string[] | No       | All styles  | Case styles to detect                  |
+| `preview`       | string   | No       | `summary`   | Output format                          |
+| `dryRun`        | boolean  | No       | `false`     | Preview without saving                 |
+| `renameFiles`   | boolean  | No       | `true`      | Rename matching files                  |
+| `renameDirs`    | boolean  | No       | `true`      | Rename matching directories            |
+| `atomicSearch`  | boolean  | No       | `false`     | Treat search term as indivisible unit  |
+| `atomicReplace` | boolean  | No       | `false`     | Treat replace term as indivisible unit |
 
 ### Case Styles
 
@@ -103,6 +106,21 @@ Arguments: {
   "dryRun": false
 }
 ```
+
+### Atomic Mode Example
+
+```
+Tool: renamify_plan
+Arguments: {
+  "old": "DocSpring",
+  "new": "FormAPI",
+  "atomicSearch": true,
+  "atomicReplace": true,
+  "preview": "summary"
+}
+```
+
+With atomic mode, compound words like "DocSpring" are treated as single units, preventing unwanted word boundary detection (e.g., `doc_spring`).
 
 ### Response Example
 
@@ -306,7 +324,7 @@ Last Applied:
 
 System:
   Renamify Version: 1.2.0
-  Config: .renamify/config.json found
+  Config: .renamify/config.toml found
   History Entries: 47
 ```
 
@@ -363,16 +381,18 @@ Perform case-aware renaming in a single step (combines plan + apply).
 
 ### Parameters
 
-| Parameter       | Type     | Required | Default     | Description               |
-| --------------- | -------- | -------- | ----------- | ------------------------- |
-| `old`           | string   | ✅ Yes   | -           | The identifier to replace |
-| `new`           | string   | ✅ Yes   | -           | The new identifier        |
-| `paths`         | string[] | No       | Current dir | Paths to search           |
-| `dryRun`        | boolean  | No       | `false`     | Preview without applying  |
-| `preview`       | string   | No       | `summary`   | Preview format            |
-| `excludeStyles` | string[] | No       | None        | Case styles to exclude    |
-| `includeStyles` | string[] | No       | None        | Additional case styles    |
-| `onlyStyles`    | string[] | No       | None        | Use only these styles     |
+| Parameter       | Type     | Required | Default     | Description                       |
+| --------------- | -------- | -------- | ----------- | --------------------------------- |
+| `old`           | string   | ✅ Yes   | -           | The identifier to replace         |
+| `new`           | string   | ✅ Yes   | -           | The new identifier                |
+| `paths`         | string[] | No       | Current dir | Paths to search                   |
+| `dryRun`        | boolean  | No       | `false`     | Preview without applying          |
+| `preview`       | string   | No       | `summary`   | Preview format                    |
+| `excludeStyles` | string[] | No       | None        | Case styles to exclude            |
+| `includeStyles` | string[] | No       | None        | Additional case styles            |
+| `onlyStyles`    | string[] | No       | None        | Use only these styles             |
+| `atomicSearch`  | boolean  | No       | `false`     | Treat search term as indivisible  |
+| `atomicReplace` | boolean  | No       | `false`     | Treat replace term as indivisible |
 
 ### Example Usage
 

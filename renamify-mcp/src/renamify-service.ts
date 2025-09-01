@@ -26,6 +26,7 @@ export type SearchOptions = {
   renameFiles?: boolean;
   renameDirs?: boolean;
   ignoreAmbiguous?: boolean;
+  atomicSearch?: boolean;
 };
 
 export type PlanOptions = {
@@ -40,6 +41,8 @@ export type PlanOptions = {
   renameFiles?: boolean;
   renameDirs?: boolean;
   ignoreAmbiguous?: boolean;
+  atomicSearch?: boolean;
+  atomicReplace?: boolean;
 };
 
 export type ApplyOptions = {
@@ -166,6 +169,7 @@ export class RenamifyService {
     this.addDryRunArg(args, options.dryRun);
     this.addRenameArgs(args, options.renameFiles, options.renameDirs);
     this.addIgnoreAmbiguousArg(args, options.ignoreAmbiguous);
+    this.addAtomicSearchArg(args, options.atomicSearch);
 
     return args;
   }
@@ -185,6 +189,8 @@ export class RenamifyService {
     this.addDryRunArg(args, options.dryRun);
     this.addRenameArgs(args, options.renameFiles, options.renameDirs);
     this.addIgnoreAmbiguousArg(args, options.ignoreAmbiguous);
+    this.addAtomicSearchArg(args, options.atomicSearch);
+    this.addAtomicReplaceArg(args, options.atomicReplace);
 
     return args;
   }
@@ -242,6 +248,18 @@ export class RenamifyService {
   ): void {
     if (ignoreAmbiguous) {
       args.push('--ignore-ambiguous');
+    }
+  }
+
+  private addAtomicSearchArg(args: string[], atomicSearch?: boolean): void {
+    if (atomicSearch) {
+      args.push('--atomic-search');
+    }
+  }
+
+  private addAtomicReplaceArg(args: string[], atomicReplace?: boolean): void {
+    if (atomicReplace) {
+      args.push('--atomic-replace');
     }
   }
 
@@ -438,6 +456,8 @@ export class RenamifyService {
     excludeStyles?: string[];
     includeStyles?: string[];
     onlyStyles?: string[];
+    atomicSearch?: boolean;
+    atomicReplace?: boolean;
   }): Promise<string> {
     const args = ['rename', options.old, options.new];
 
@@ -460,6 +480,14 @@ export class RenamifyService {
     }
     if (options.onlyStyles?.length) {
       args.push('--only-styles', options.onlyStyles.join(','));
+    }
+
+    // Add atomic flags
+    if (options.atomicSearch) {
+      args.push('--atomic-search');
+    }
+    if (options.atomicReplace) {
+      args.push('--atomic-replace');
     }
 
     // Add dry-run flag

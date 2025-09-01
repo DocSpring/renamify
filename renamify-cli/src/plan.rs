@@ -2,7 +2,7 @@ use anyhow::Result;
 use renamify_core::{plan_operation, OutputFormatter, Style};
 use std::path::PathBuf;
 
-use crate::cli::{types::StyleArg, OutputFormat};
+use crate::cli::{args::AtomicArgs, types::StyleArg, OutputFormat};
 use renamify_core::Preview;
 
 #[allow(clippy::too_many_arguments)]
@@ -30,6 +30,7 @@ pub fn handle_plan(
     include_acronyms: Vec<String>,
     exclude_acronyms: Vec<String>,
     only_acronyms: Vec<String>,
+    atomic: AtomicArgs,
     output: OutputFormat,
     quiet: bool,
     _regex: bool, // TODO: Implement regex mode
@@ -51,6 +52,17 @@ pub fn handle_plan(
     let exclude_styles: Vec<Style> = exclude_styles.into_iter().map(Into::into).collect();
     let include_styles: Vec<Style> = include_styles.into_iter().map(Into::into).collect();
     let only_styles: Vec<Style> = only_styles.into_iter().map(Into::into).collect();
+
+    // Load config to get atomic identifiers
+    let config = renamify_core::Config::load().unwrap_or_default();
+
+    // Build atomic config from CLI args and config file
+    let atomic_config = renamify_core::atomic::AtomicConfig::from_flags_and_config(
+        atomic.atomic,
+        atomic.atomic_search || (atomic.atomic && !atomic.no_atomic_search),
+        atomic.atomic_replace || (atomic.atomic && !atomic.no_atomic_replace),
+        config.atomic,
+    );
 
     // Handle quiet mode - overrides preview to none unless output is json
     let effective_preview = if quiet && output != OutputFormat::Json {
@@ -98,6 +110,7 @@ pub fn handle_plan(
         exclude_acronyms,
         only_acronyms,
         None, // working_dir
+        Some(&atomic_config),
     )?;
 
     // Handle output based on format

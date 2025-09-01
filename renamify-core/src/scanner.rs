@@ -1,5 +1,6 @@
 use crate::acronym::AcronymSet;
-use crate::case_model::Style;
+use crate::ambiguity::{get_possible_styles, is_ambiguous, AmbiguityContext, AmbiguityResolver};
+use crate::case_model::{parse_to_tokens, to_style, Style};
 use crate::pattern::{build_pattern, Match};
 use crate::rename::plan_renames;
 use anyhow::Result;
@@ -58,6 +59,8 @@ pub struct PlanOptions {
     pub exclude_acronyms: Vec<String>, // Default acronyms to exclude
     pub only_acronyms: Vec<String>, // Replace default list with these acronyms
     pub ignore_ambiguous: bool,     // Ignore mixed-case/ambiguous identifiers
+    #[ts(optional)]
+    pub atomic_config: Option<crate::atomic::AtomicConfig>, // Atomic identifier configuration
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -95,6 +98,7 @@ impl Default for PlanOptions {
             exclude_acronyms: vec![],
             only_acronyms: vec![],
             ignore_ambiguous: false, // Default: process ambiguous identifiers
+            atomic_config: None,     // Default: no atomic configuration
         }
     }
 }
@@ -222,6 +226,7 @@ pub fn scan_repository_multi(
         replace,
         options.styles.as_deref(),
         &acronym_set,
+        options.atomic_config.as_ref(),
     );
     let variants: Vec<String> = variant_map.keys().cloned().collect();
     let _pattern = build_pattern(&variants)?;
@@ -319,7 +324,14 @@ pub fn scan_repository_multi(
                 // Sort by position to maintain order
                 file_matches.sort_by_key(|m| (m.line, m.column));
 
-                let hunks = generate_hunks(&file_matches, &content, &variant_map, path, options);
+                let hunks = generate_hunks(
+                    &file_matches,
+                    &content,
+                    &variant_map,
+                    path,
+                    options,
+                    replace,
+                );
 
                 stats.files_with_matches += 1;
                 stats.total_matches += hunks.len();
@@ -437,9 +449,16 @@ fn generate_hunks(
     variant_map: &VariantMap,
     path: &Path,
     options: &PlanOptions,
+    original_replacement: &str,
 ) -> Vec<MatchHunk> {
     let lines: Vec<&[u8]> = content.lines_with_terminator().collect();
     let mut hunks = Vec::new();
+
+    // Create ambiguity resolver for handling ambiguous identifiers
+    let ambiguity_resolver = AmbiguityResolver::new();
+
+    // Calculate possible styles for the replacement text ONCE for all matches in this file
+    let replacement_possible_styles = get_possible_styles(original_replacement);
 
     // Compile the exclude pattern if provided
     let exclude_line_regex = if let Some(ref pattern) = options.exclude_matching_lines {
@@ -475,6 +494,33 @@ fn generate_hunks(
         let (content, mut replace) = if is_compound_match {
             // Compound match - text field has the replacement
             (m.variant.clone(), m.text.clone())
+        } else if is_ambiguous(&m.variant) {
+            // For ambiguous identifiers, use the ambiguity resolver to determine
+            // the appropriate style based on context
+            let file_content_str = String::from_utf8_lossy(content);
+            let ambiguity_context = AmbiguityContext {
+                file_path: Some(path.to_path_buf()),
+                file_content: Some(file_content_str.to_string()),
+                line_content: Some(line_string.clone()),
+                match_position: Some(m.column),
+                project_root: None, // Could be added if needed
+            };
+
+            // Resolve what style should be used based on context
+            // Pass the ORIGINAL replacement text, not the styled one from variant map
+            let resolved = ambiguity_resolver.resolve_with_styles(
+                &m.variant,
+                original_replacement,
+                &ambiguity_context,
+                Some(&replacement_possible_styles),
+            );
+
+            // Generate the replacement in the resolved style
+            // We need to tokenize the original replacement to apply the new style
+            let replacement_tokens = parse_to_tokens(original_replacement);
+            let styled_replacement = to_style(&replacement_tokens, resolved.style);
+
+            (m.variant.clone(), styled_replacement)
         } else {
             // Exact match - use variant map
             let new_variant = variant_map.get(&m.variant).unwrap();
@@ -796,8 +842,27 @@ fn generate_variant_map_with_acronyms(
     replace: &str,
     styles: Option<&[Style]>,
     acronym_set: &AcronymSet,
+    atomic_config: Option<&crate::atomic::AtomicConfig>,
 ) -> VariantMap {
-    // Use the acronym-aware tokenization
+    // If we have atomic config, use atomic-aware variant generation
+    if let Some(atomic_cfg) = atomic_config {
+        // Convert to BTreeMap first
+        let btree_map = crate::case_model::generate_variant_map_with_atomic(
+            search,
+            replace,
+            styles,
+            Some(atomic_cfg),
+        );
+
+        // Convert BTreeMap to VariantMap
+        let mut variant_map = VariantMap::new();
+        for (key, value) in btree_map {
+            variant_map.insert(key, None, value);
+        }
+        return variant_map;
+    }
+
+    // Otherwise use the acronym-aware tokenization (existing logic)
     let old_tokens = crate::case_model::parse_to_tokens_with_acronyms(search, acronym_set);
     let new_tokens = crate::case_model::parse_to_tokens_with_acronyms(replace, acronym_set);
 
@@ -1331,6 +1396,7 @@ mod tests {
             &variant_map,
             Path::new("test.txt"),
             &opts,
+            "new_name",
         );
 
         assert_eq!(hunks.len(), 2);
@@ -1409,7 +1475,14 @@ mod tests {
         ];
 
         let opts = PlanOptions::default();
-        let hunks = generate_hunks(&matches, content, &variant_map, Path::new("test.rs"), &opts);
+        let hunks = generate_hunks(
+            &matches,
+            content,
+            &variant_map,
+            Path::new("test.rs"),
+            &opts,
+            "new_name",
+        );
 
         assert_eq!(hunks.len(), 3);
 

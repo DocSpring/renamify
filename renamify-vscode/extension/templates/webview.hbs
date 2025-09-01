@@ -83,7 +83,39 @@
         <label class="checkbox-label">
           <input type="checkbox" id="ignoreAmbiguousCheckbox" />
           Ignore ambiguous identifiers
+          <a
+            href="https://docspring.github.io/renamify/features/ambiguity-resolution/"
+            class="more-info-link"
+            target="_blank"
+            >more info</a
+          >
         </label>
+        <div class="atomic-checkboxes">
+          <label class="checkbox-label">
+            <input type="checkbox" id="atomicSearchCheckbox" />
+            Atomic search
+            <span class="tooltip-wrapper tooltip-left">
+              <span class="codicon codicon-info tooltip-icon"></span>
+              <span class="tooltip-text">
+                Treats compound words in PascalCase as single units in other cases.<br />
+                <strong>Example:</strong> GitHub → github<br />
+                <strong>Not:</strong> GitHub → git_hub
+              </span>
+            </span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="atomicReplaceCheckbox" />
+            Atomic replace
+            <span class="tooltip-wrapper tooltip-right">
+              <span class="codicon codicon-info tooltip-icon"></span>
+              <span class="tooltip-text">
+                Treats compound words in PascalCase as single units in other cases.<br />
+                <strong>Example:</strong> GitHub → github<br />
+                <strong>Not:</strong> GitHub → git_hub
+              </span>
+            </span>
+          </label>
+        </div>
       </div>
 
       <div class="button-group">

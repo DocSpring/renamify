@@ -54,6 +54,13 @@ Available styles: `snake`, `kebab`, `camel`, `pascal`, `screaming-snake`,
 - `--ignore-ambiguous` - Ignore mixed-case/ambiguous identifiers that don't
   match standard patterns
 
+### Atomic Mode
+
+- `--atomic` - Treat the search term as an indivisible unit (no word boundaries)
+- `--atomic-search` - Same as `--atomic` for search command
+- `--no-atomic` - Disable atomic mode (override config)
+- `--no-atomic-search` - Same as `--no-atomic` for search command
+
 ### Output Control
 
 - `--preview <format>` - Preview format: `table`, `diff`, `matches`, `summary`
@@ -130,6 +137,15 @@ renamify search myFunction --no-rename-paths
 
 ```bash
 renamify search cleanName --ignore-ambiguous
+```
+
+### Atomic Search
+
+Search for compound words as single units:
+
+```bash
+# DocSpring will match as a whole word, not doc_spring
+renamify search DocSpring --atomic
 ```
 
 ### JSON Output for Processing

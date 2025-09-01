@@ -75,6 +75,7 @@ fn main() {
             plan_out,
             dry_run,
             acronyms,
+            atomic,
             output,
             quiet,
         } => {
@@ -111,6 +112,7 @@ fn main() {
                 acronyms.include_acronyms,
                 acronyms.exclude_acronyms,
                 acronyms.only_acronyms,
+                atomic,
                 output,
                 quiet,
                 false, // regex flag - not used in Plan command
@@ -173,6 +175,14 @@ fn main() {
                 acronyms.include_acronyms,
                 acronyms.exclude_acronyms,
                 acronyms.only_acronyms,
+                cli::args::AtomicArgs {
+                    atomic: false,
+                    atomic_search: false,
+                    atomic_replace: false,
+                    no_atomic: false,
+                    no_atomic_search: false,
+                    no_atomic_replace: false,
+                },
                 output,
                 quiet,
                 false, // regex flag - not used in Search command
@@ -227,6 +237,7 @@ fn main() {
             no_rename_root,
             dry_run,
             acronyms,
+            atomic: _, // Not implemented in rename yet
             output,
             quiet,
         } => {

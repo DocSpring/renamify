@@ -73,7 +73,8 @@ pub fn rename_operation(
         include_acronyms: include_acronyms.to_owned(),
         exclude_acronyms: exclude_acronyms.to_owned(),
         only_acronyms: only_acronyms.to_owned(),
-        ignore_ambiguous: false, // TODO: Get from args
+        ignore_ambiguous: false,
+        atomic_config: None, // Rename doesn't need atomic config yet
     };
 
     // Resolve all search paths to absolute paths and canonicalize them

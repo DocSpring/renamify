@@ -1,0 +1,208 @@
+# Atomic Identifiers Feature - Product Requirements Document
+
+## Executive Summary
+Add support for treating certain identifiers as "atomic" - indivisible units that should not have word boundaries detected during case transformations. This solves the problem where compound brand names like "DocSpring" or "GitHub" need to maintain their identity as single words in all case styles.
+
+## Problem Statement
+Currently, when renaming identifiers like "DocSpring" or "GitHub", renamify detects word boundaries and generates variants like:
+- `doc_spring` (snake_case)
+- `doc-spring` (kebab-case)
+- `DOC_SPRING` (SCREAMING_SNAKE_CASE)
+
+However, these brand names should be treated as single, indivisible units:
+- `docspring` (snake_case)
+- `docspring` (kebab-case)
+- `DOCSPRING` (SCREAMING_SNAKE_CASE)
+- `DocSpring` (PascalCase - the only time there is a word break)
+
+This is similar to Rails' `inflect.acronym` feature, but for compound words that aren't acronyms.
+
+## User Stories
+
+### Story 1: CLI User with Atomic Identifiers
+As a developer renaming "HubGit" to "GitHub" in my codebase,
+I want to specify that both names are atomic,
+So that `hubgit_api` becomes `github_api` (not `git_hub_api`).
+
+### Story 2: Project with Persistent Atomic Configuration
+As a team maintaining a project with brand names like "DocSpring",
+I want to configure these as atomic in a config file,
+So that all team members automatically get correct renaming behavior.
+
+### Story 3: VS Code Extension User
+As a VS Code user,
+I want checkboxes to mark search/replace terms as atomic,
+So that I can control word boundary detection visually.
+
+### Story 4: Partial Atomic Matching
+As a developer with "FormAPIController" in my code,
+I want atomic "FormAPI" to match and replace the atomic portion correctly,
+So that it becomes "DocSpringController" (not "DocSpringAPIController").
+
+## Functional Requirements
+
+### 1. Core Atomic Detection
+- When an identifier is marked as atomic, it should be treated as a single token
+- Atomic identifiers should not have internal word boundaries detected
+- The atomic property applies to the identifier wherever it appears (standalone or as part of larger identifiers)
+
+### 2. CLI Flags
+- `--atomic` - Both search and replace are atomic
+- `--atomic-search` - Only search term is atomic
+- `--atomic-replace` - Only replace term is atomic
+- `--no-atomic` - Override config, treat as normal
+- `--no-atomic-search` - Override config for search term
+- `--no-atomic-replace` - Override config for replace term
+- Error if user specifies both `--atomic` and `--atomic-search`/`--atomic-replace`
+
+### 3. Configuration File
+- Support `atomic = ["DocSpring", "GitHub", "GitHub"]` in `.renamify/config.toml`
+- Config entries are case-insensitive matched (PascalCase in config matches all cases)
+- Config auto-applies when matching identifiers are used
+- CLI flags override config settings
+
+### 4. Variant Generation
+For atomic identifier "DocSpring":
+- Generate only: `DocSpring`, `docspring`, `DOCSPRING`
+- Do NOT generate: `doc_spring`, `DOC_SPRING`, `doc-spring`, `docSpring`
+
+### 5. Compound Identifier Handling
+When "FormAPI" is atomic:
+- `FormAPIController` → `DocSpringController`
+- `form_api_client` → `docspring_client`
+- `FORMAPI_TOKEN` → `DOCSPRING_TOKEN`
+- The atomic portion is preserved as a unit within larger identifiers
+
+### 6. VS Code Extension
+- Add "Atomic" checkbox under Search field with tooltip
+- Add "Atomic" checkbox under Replace field with tooltip
+- Tooltips explain: "Treat as indivisible (no word boundaries)"
+- Pre-check boxes if terms match config entries
+
+### 7. MCP Server
+- Add `atomicSearch: boolean` parameter
+- Add `atomicReplace: boolean` parameter
+- Read and respect `.renamify/config.toml` atomic entries
+
+## Technical Requirements
+
+### 1. Case Model Refactoring
+- Split `case_model.rs` into smaller modules (it's currently 1100 lines)
+- Create `atomic.rs` module for atomic-specific logic
+- Maintain backward compatibility
+
+### 2. Token Generation
+- Modify `parse_to_tokens` to accept atomic hints
+- When atomic, return single token regardless of internal capitals
+- Preserve existing behavior when not atomic
+
+### 3. Variant Map Generation
+- Update `generate_variant_map` to accept atomic flags
+- Generate limited variants for atomic identifiers
+- Handle mixed atomic/non-atomic scenarios
+
+### 4. Testing
+- Unit tests for atomic token parsing
+- Integration tests for compound identifiers
+- End-to-end tests with real examples (DocSpring, GitHub)
+- Performance tests to ensure no regression
+
+## Non-Functional Requirements
+
+### 1. Performance
+- Atomic detection should not significantly impact scan performance
+- Config file parsing should be cached
+
+### 2. Documentation
+- Create "Atomic Identifiers" page in Features section
+- Include examples of when to use atomic mode
+- Document config file format
+
+### 3. Error Handling
+- Clear error messages for conflicting flags
+- Warn if atomic identifier contains delimiters
+
+## Acceptance Criteria
+
+### Test Case 1: Basic Atomic Renaming
+```bash
+renamify rename GitLab GitHub --atomic
+```
+- `git_lab_api` → `GitHub_api`
+- `GIT_LAB_TOKEN` → `GitHub_TOKEN`
+- `GitLabController` → `GitHubController`
+
+### Test Case 2: Config File Auto-Application
+`.renamify/config.toml`:
+```toml
+atomic = ["DocSpring"]
+```
+```bash
+renamify rename DocSpring Helper
+```
+- `docspring_api` → `helper_api` (NOT `doc_spring_api` → `helper_api`)
+
+### Test Case 3: Partial Identifier Matching
+```bash
+renamify rename FormAPI DocSpring --atomic
+```
+- `FormAPIController` → `DocSpringController`
+- `useFormAPIHook` → `useDocSpringHook`
+
+### Test Case 4: Override Config
+`.renamify/config.toml`:
+```toml
+atomic = ["DocSpring"]
+```
+```bash
+renamify rename DocSpring doc_spring --no-atomic-search
+```
+- `DocSpring` → `doc_spring` (word boundary detected due to override)
+
+## Implementation Plan
+
+### Phase 1: Core Support (Week 1)
+1. Refactor case_model.rs into modules
+2. Implement atomic token parsing
+3. Update variant generation
+4. Add comprehensive tests
+
+### Phase 2: CLI Integration (Week 1)
+1. Add CLI flags
+2. Implement config file support
+3. Wire up to plan operation
+4. Add integration tests
+
+### Phase 3: UI Integration (Week 2)
+1. Update VS Code extension
+2. Update MCP server
+3. Add tooltips and help text
+4. End-to-end testing
+
+### Phase 4: Documentation (Week 2)
+1. Create atomic identifiers documentation
+2. Update existing docs with atomic examples
+3. Add to README and help text
+
+## Success Metrics
+- All test cases pass
+- No performance regression (scan time within 5% of baseline)
+- User feedback positive on solving word boundary issues
+- Documentation clear (no support questions about basic usage)
+
+## Risks and Mitigations
+
+### Risk 1: Breaking Changes
+**Mitigation**: Atomic mode is opt-in, existing behavior unchanged by default
+
+### Risk 2: Performance Impact
+**Mitigation**: Early detection during parsing, benchmark before/after
+
+### Risk 3: User Confusion
+**Mitigation**: Clear documentation, intuitive naming ("atomic"), helpful tooltips
+
+## Future Enhancements
+- Support for regex patterns in atomic config
+- Auto-detection of likely atomic identifiers based on casing patterns
+- Project-specific dictionaries of atomic terms
+- Integration with language-specific naming conventions
