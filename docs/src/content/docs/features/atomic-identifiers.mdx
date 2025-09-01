@@ -1,0 +1,173 @@
+---
+title: Atomic Identifiers
+description: Treat compound brand names and identifiers as indivisible units during case transformations
+sidebar:
+  order: 7
+---
+
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+
+## Overview
+
+Atomic identifiers allow you to treat compound brand names and identifiers as indivisible units during case transformations. When an identifier is marked as atomic, Renamify preserves it as a single word without detecting internal word boundaries.
+
+This feature is essential for maintaining brand identity and preventing incorrect word splitting in compound names like "DocSpring", "GitHub", or "TweetGit".
+
+## The Problem
+
+Without atomic mode, compound identifiers are split at word boundaries:
+
+```bash
+# Without atomic mode
+DocSpring → doc_spring (snake_case)
+DocSpring → doc-spring (kebab-case)
+DocSpring → DOC_SPRING (SCREAMING_SNAKE_CASE)
+```
+
+These transformations break the brand identity and can cause issues when the name should remain as a single unit.
+
+## The Solution
+
+With atomic mode, compound identifiers are preserved as single units:
+
+```bash
+# With atomic mode
+DocSpring → docspring (snake_case)
+DocSpring → docspring (kebab-case)
+DocSpring → DOCSPRING (SCREAMING_SNAKE_CASE)
+DocSpring → DocSpring (PascalCase - preserved)
+```
+
+## Using Atomic Mode
+
+### Command Line Flags
+
+You can specify atomic mode using CLI flags:
+
+<Tabs>
+  <TabItem label="Both atomic">
+    ```bash # Both search and replace terms are atomic renamify rename FormAPI
+    DocSpring --atomic ```
+  </TabItem>
+  <TabItem label="Search only">
+    ```bash # Only search term is atomic renamify rename FormAPI Helper
+    --atomic-search ```
+  </TabItem>
+  <TabItem label="Replace only">
+    ```bash # Only replace term is atomic renamify rename OldName DocSpring
+    --atomic-replace ```
+  </TabItem>
+</Tabs>
+
+### Configuration File
+
+You can configure commonly used atomic identifiers in `.renamify/config.toml`:
+
+```toml
+# List of identifiers that should always be treated as atomic
+atomic = ["DocSpring", "GitHub", "TweetGit", "FormAPI"]
+```
+
+When configured identifiers are detected, they're automatically treated as atomic without needing CLI flags.
+
+### Overriding Configuration
+
+You can override the configuration file settings:
+
+```bash
+# Override config to allow word boundaries
+renamify rename DocSpring doc_spring --no-atomic-search
+
+# Override for search term only
+renamify rename DocSpring Helper --no-atomic-search
+
+# Override for replace term only
+renamify rename OldName DocSpring --no-atomic-replace
+```
+
+## Real-World Examples
+
+### Renaming a Brand Name
+
+When renaming "FormAPI" to "DocSpring" with atomic mode:
+
+```bash
+renamify rename FormAPI DocSpring --atomic
+```
+
+Results:
+
+- `FormAPIController` → `DocSpringController`
+- `form_api_client` → `docspring_client`
+- `FORMAPI_TOKEN` → `DOCSPRING_TOKEN`
+- `useFormAPIHook` → `useDocSpringHook`
+
+### Partial Matching
+
+Atomic identifiers are preserved even when they appear as part of larger identifiers:
+
+```bash
+# GitHub is atomic
+GitHubActions → GitHubActions (preserved in PascalCase)
+github_api → github_api (preserved as single unit)
+GITHUB_TOKEN → GITHUB_TOKEN (preserved as single unit)
+```
+
+## Case Transformation Behavior
+
+When an identifier is atomic, case transformations follow these rules:
+
+| Case Style           | Non-Atomic | Atomic    |
+| -------------------- | ---------- | --------- |
+| snake_case           | doc_spring | docspring |
+| kebab-case           | doc-spring | docspring |
+| camelCase            | docSpring  | docspring |
+| PascalCase           | DocSpring  | DocSpring |
+| SCREAMING_SNAKE_CASE | DOC_SPRING | DOCSPRING |
+| Train-Case           | Doc-Spring | Docspring |
+| lowercase            | docspring  | docspring |
+| UPPERCASE            | DOCSPRING  | DOCSPRING |
+
+## VS Code Extension
+
+The VS Code extension provides checkboxes for atomic mode:
+
+- **Atomic search**: Treat the search term as an indivisible unit
+- **Atomic replace**: Treat the replace term as an indivisible unit
+
+These checkboxes include tooltips explaining their behavior and are automatically checked when terms match configured atomic identifiers.
+
+## Best Practices
+
+1. **Configure Common Brand Names**: Add frequently used brand names to your `.renamify/config.toml`
+2. **Use for Compound Words**: Apply atomic mode to compound brand names and technical terms that should remain unified
+3. **Consider Context**: Use atomic mode when the identifier's meaning depends on being a single unit
+4. **Test First**: Use `--dry-run` to preview how atomic mode affects your renaming
+
+## Technical Details
+
+### How It Works
+
+1. **Token Parsing**: When atomic mode is enabled, the identifier bypasses normal word boundary detection
+2. **Variant Generation**: Only case variants are generated, not word-separated variants
+3. **Pattern Matching**: The atomic identifier is matched and replaced as a complete unit
+
+### Performance
+
+Atomic mode has minimal performance impact:
+
+- Detection happens during the parsing phase
+- No additional scanning or regex operations required
+- Config file is cached after first read
+
+## Limitations
+
+- Atomic mode applies to the entire identifier - you cannot make part of an identifier atomic
+- Case-insensitive matching is used for configured atomic identifiers
+- Atomic identifiers should not contain delimiters (underscores, hyphens, etc.)
+
+## See Also
+
+- [Case Transformations](/features/case-transformations) - Learn about supported case styles
+- [Configuration](/cli/configuration) - Set up persistent atomic identifiers
+- [CLI Reference](/cli/commands/rename) - Full command options

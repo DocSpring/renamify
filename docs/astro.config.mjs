@@ -63,6 +63,10 @@ export default defineConfig({
               label: 'Resolving Case Ambiguity',
               slug: 'features/ambiguity-resolution',
             },
+            {
+              label: 'Atomic Identifiers',
+              slug: 'features/atomic-identifiers',
+            },
           ],
         },
         {
