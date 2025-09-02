@@ -29,7 +29,8 @@ fn create_sample_plan() -> Plan {
             MatchHunk {
                 file: PathBuf::from("src/models/user.rs"),
                 line: 15,
-                col: 12,
+                byte_offset: 12,
+                char_offset: 12,
                 variant: "user_name".to_string(),
                 content: "user_name".to_string(),
                 replace: "customer_name".to_string(),
@@ -45,7 +46,8 @@ fn create_sample_plan() -> Plan {
             MatchHunk {
                 file: PathBuf::from("src/models/user.rs"),
                 line: 25,
-                col: 8,
+                byte_offset: 8,
+                char_offset: 8,
                 variant: "userName".to_string(),
                 content: "userName".to_string(),
                 replace: "customerName".to_string(),
@@ -61,7 +63,8 @@ fn create_sample_plan() -> Plan {
             MatchHunk {
                 file: PathBuf::from("src/api/handlers.rs"),
                 line: 42,
-                col: 16,
+                byte_offset: 16,
+                char_offset: 16,
                 variant: "UserName".to_string(),
                 content: "UserName".to_string(),
                 replace: "CustomerName".to_string(),
@@ -77,7 +80,8 @@ fn create_sample_plan() -> Plan {
             MatchHunk {
                 file: PathBuf::from("src/api/handlers.rs"),
                 line: 50,
-                col: 20,
+                byte_offset: 20,
+                char_offset: 20,
                 variant: "user_name".to_string(),
                 content: "user_name".to_string(),
                 replace: "customer_name".to_string(),
@@ -227,7 +231,8 @@ fn test_root_directory_rename_handling() {
         matches: vec![MatchHunk {
             file: PathBuf::from("README.md"),
             line: 1,
-            col: 0,
+            byte_offset: 0,
+            char_offset: 0,
             variant: "oldtool".to_string(),
             content: "oldtool".to_string(),
             replace: "newtool".to_string(),

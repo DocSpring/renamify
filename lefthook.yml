@@ -93,7 +93,7 @@ pre-commit:
           - name: vscode-tsc
             root: renamify-vscode/
             glob: "*.ts"
-            run: pnpm compile
+            run: pnpm typecheck
 
           - name: shellcheck
             glob: "*.sh"

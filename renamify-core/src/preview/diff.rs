@@ -21,7 +21,7 @@ fn highlight_line_with_hunks(
 
     // Sort hunks by column position
     let mut sorted_hunks = hunks.to_vec();
-    sorted_hunks.sort_by_key(|h| h.col);
+    sorted_hunks.sort_by_key(|h| h.byte_offset);
 
     // Base style for the whole line (Claude Code custom colors)
     let base_style = if is_delete {
@@ -37,7 +37,7 @@ fn highlight_line_with_hunks(
     };
 
     for hunk in sorted_hunks {
-        let col = hunk.col as usize;
+        let col = hunk.byte_offset as usize;
         let term = if is_delete {
             &hunk.content
         } else {
@@ -166,11 +166,11 @@ pub fn render_diff(plan: &Plan, use_color: bool) -> String {
 
                 // Sort hunks by column position (reverse order to avoid position shifts)
                 let mut sorted_hunks = line_hunk_group.clone();
-                sorted_hunks.sort_by(|a, b| b.col.cmp(&a.col));
+                sorted_hunks.sort_by(|a, b| b.byte_offset.cmp(&a.byte_offset));
 
                 // Apply replacements from right to left to maintain positions
                 for hunk in sorted_hunks {
-                    let col = hunk.col as usize;
+                    let col = hunk.byte_offset as usize;
                     if col < after_line.len() && after_line[col..].starts_with(&hunk.content) {
                         let end = col + hunk.content.len();
                         after_line.replace_range(col..end, &hunk.replace);
@@ -298,7 +298,8 @@ mod tests {
         let hunk = MatchHunk {
             file: PathBuf::from("test.rb"),
             line: 1,
-            col: 24, // Position of 'c' in 'core_ext' (0-based)
+            byte_offset: 24, // Position of 'c' in 'core_ext' (0-based)
+            char_offset: 24, // Same as byte_offset for ASCII text
             variant: "core_ext".to_string(),
             content: "core_ext".to_string(),
             replace: "ruby_extras".to_string(),

@@ -362,6 +362,12 @@ fn test_replace_command_with_commit() {
         .output()
         .unwrap();
 
+    std::process::Command::new("git")
+        .current_dir(temp.path())
+        .args(["config", "commit.gpgsign", "false"])
+        .output()
+        .unwrap();
+
     // Create and commit initial file
     temp.child("test.txt").write_str("hello world").unwrap();
 

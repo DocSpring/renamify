@@ -41,7 +41,8 @@ fn test_apply_undo_content_changes_only() {
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -57,7 +58,8 @@ fn test_apply_undo_content_changes_only() {
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
         line: 2,
-        col: 14,
+        byte_offset: 14,
+        char_offset: 14,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -217,7 +219,8 @@ fn test_apply_undo_content_and_file_rename() {
     plan.matches.push(MatchHunk {
         file: old_file.clone(),
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -233,7 +236,8 @@ fn test_apply_undo_content_and_file_rename() {
     plan.matches.push(MatchHunk {
         file: old_file.clone(),
         line: 2,
-        col: 14,
+        byte_offset: 14,
+        char_offset: 14,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -305,7 +309,8 @@ fn test_apply_undo_content_and_dir_rename() {
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -321,7 +326,8 @@ fn test_apply_undo_content_and_dir_rename() {
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
         line: 2,
-        col: 14,
+        byte_offset: 14,
+        char_offset: 14,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -466,7 +472,8 @@ fn test_apply_undo_all_changes() {
     plan.matches.push(MatchHunk {
         file: old_file.clone(),
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -482,7 +489,8 @@ fn test_apply_undo_all_changes() {
     plan.matches.push(MatchHunk {
         file: old_file.clone(),
         line: 2,
-        col: 14,
+        byte_offset: 14,
+        char_offset: 14,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -500,7 +508,8 @@ fn test_apply_undo_all_changes() {
     plan.matches.push(MatchHunk {
         file: stable_file.clone(),
         line: 1,
-        col: 4,
+        byte_offset: 4,
+        char_offset: 4,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -516,7 +525,8 @@ fn test_apply_undo_all_changes() {
     plan.matches.push(MatchHunk {
         file: stable_file.clone(),
         line: 2,
-        col: 13,
+        byte_offset: 13,
+        char_offset: 13,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -610,7 +620,8 @@ fn test_apply_undo_multiple_files_in_renamed_dir() {
     plan.matches.push(MatchHunk {
         file: file1.clone(),
         line: 1,
-        col: 18,
+        byte_offset: 18,
+        char_offset: 18,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -628,7 +639,8 @@ fn test_apply_undo_multiple_files_in_renamed_dir() {
     plan.matches.push(MatchHunk {
         file: file2.clone(),
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),

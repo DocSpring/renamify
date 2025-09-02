@@ -127,9 +127,10 @@ suite('CLI Service Test Suite', () => {
     assert.ok(args.includes('--only-styles'));
     assert.ok(args.includes('camel,pascal'));
 
-    assert.strictEqual(results.matches.length, 1);
-    assert.strictEqual(results.matches[0].file, 'test.ts');
-    assert.strictEqual(results.id, 'test-plan');
+    assert.ok(results);
+    assert.strictEqual(results?.matches.length, 1);
+    assert.strictEqual(results?.matches[0].file, 'test.ts');
+    assert.strictEqual(results?.id, 'test-plan');
   });
 
   test('CLI service performs a real search', async function () {
@@ -156,8 +157,9 @@ suite('CLI Service Test Suite', () => {
       });
 
       // Results should be a Plan object
-      assert.ok(results.id, 'Plan should have an ID');
-      assert.ok(Array.isArray(results.matches), 'Matches should be an array');
+      assert.ok(results, 'Results should not be null');
+      assert.ok(results?.id, 'Plan should have an ID');
+      assert.ok(Array.isArray(results?.matches), 'Matches should be an array');
     } finally {
       // Restore original directory and clean up
       process.chdir(originalCwd);
@@ -347,7 +349,8 @@ suite('CLI Service Test Suite', () => {
     assert.ok(args.includes('--limit'));
     assert.ok(args.includes('5'));
 
-    assert.strictEqual(history.length, 1);
-    assert.strictEqual(history[0].id, 'op-1');
+    assert.ok(history);
+    assert.strictEqual(history?.length, 1);
+    assert.strictEqual(history?.[0].id, 'op-1');
   });
 });

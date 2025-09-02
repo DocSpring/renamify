@@ -129,11 +129,11 @@ fn test_diff_highlighting() {
         .expect("Should find core_ext in line");
 
     assert_eq!(
-        hunk.col as usize, expected_col,
+        hunk.char_offset as usize, expected_col,
         "Column position should be {} but got {}. This would cause highlighting to start at '{}' instead of 'core_ext'",
         expected_col,
-        hunk.col,
-        &expected_line[(hunk.col as usize)..(hunk.col as usize + 8)]
+        hunk.char_offset,
+        &expected_line[(hunk.char_offset as usize)..(hunk.char_offset as usize + 8)]
     );
 
     // Also verify that line_before contains the full line
@@ -143,13 +143,13 @@ fn test_diff_highlighting() {
         "line_before should contain the full line"
     );
 
-    // Verify that when we slice the line at hunk.col, we get "core_ext"
+    // Verify that when we slice the line at hunk.char_offset, we get "core_ext"
     let line = hunk.line_before.as_ref().unwrap();
-    let sliced = &line[hunk.col as usize..];
+    let sliced = &line[hunk.char_offset as usize..];
     assert!(
         sliced.starts_with("core_ext"),
         "Slicing line at column {} should yield 'core_ext...' but got '{}'",
-        hunk.col,
+        hunk.char_offset,
         &sliced[..20.min(sliced.len())]
     );
 }

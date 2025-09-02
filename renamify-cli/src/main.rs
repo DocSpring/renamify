@@ -5,6 +5,8 @@ use std::io::{self, BufRead, IsTerminal};
 use std::path::PathBuf;
 use std::process;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 mod apply;
 mod cli;
@@ -16,16 +18,33 @@ mod replace;
 mod status;
 mod undo;
 
+#[cfg(test)]
+mod test_lock_signals;
+
 // Import from our new cli module
 use cli::{Cli, Commands, OutputFormat, PreviewArg};
 
 fn main() {
-    // Set up signal handler for graceful shutdown
+    // Set up signal handler for graceful shutdown (both SIGINT and SIGTERM)
+    let interrupted = Arc::new(AtomicBool::new(false));
+
+    // Handle SIGINT (Ctrl-C)
+    let interrupted_clone = Arc::clone(&interrupted);
     ctrlc::set_handler(move || {
-        eprintln!("\nInterrupted. Cleaning up...");
-        process::exit(130); // Standard exit code for SIGINT
+        eprintln!("\nReceived SIGINT. Cleaning up...");
+        interrupted_clone.store(true, Ordering::SeqCst);
     })
-    .expect("Error setting Ctrl-C handler");
+    .expect("Error setting SIGINT handler");
+
+    // Handle SIGTERM (sent by VS Code)
+    let interrupted_clone = Arc::clone(&interrupted);
+    unsafe {
+        signal_hook::low_level::register(signal_hook::consts::SIGTERM, move || {
+            eprintln!("\nReceived SIGTERM. Cleaning up...");
+            interrupted_clone.store(true, Ordering::SeqCst);
+        })
+        .expect("Error setting SIGTERM handler");
+    }
 
     let cli = Cli::parse();
     let use_color = !cli.no_color && io::stdout().is_terminal();
@@ -219,6 +238,8 @@ fn main() {
 
         Commands::Version { output } => handle_version(output),
 
+        Commands::TestLock { delay } => handle_test_lock(delay, Arc::clone(&interrupted)),
+
         Commands::Rename {
             search,
             replace,
@@ -321,8 +342,15 @@ fn main() {
         },
     };
 
+    // Check if we were interrupted during execution
+    if interrupted.load(Ordering::SeqCst) {
+        // We were interrupted - exit gracefully to allow Drop destructors to run
+        eprintln!("Operation interrupted, cleaning up...");
+        std::process::exit(130);
+    }
+
     match result {
-        Ok(()) => process::exit(0),
+        Ok(()) => std::process::exit(0),
         Err(e) => {
             eprintln!("Error: {e:#}");
 
@@ -335,7 +363,7 @@ fn main() {
                 3 // Internal error
             };
 
-            process::exit(exit_code);
+            std::process::exit(exit_code);
         },
     }
 }
@@ -713,6 +741,44 @@ fn handle_version(output: OutputFormat) -> Result<()> {
     };
 
     println!("{}", formatted);
+    Ok(())
+}
+
+fn handle_test_lock(delay: u64, interrupted: Arc<AtomicBool>) -> Result<()> {
+    use renamify_core::LockFile;
+    use std::thread;
+    use std::time::Duration;
+
+    let current_dir = std::env::current_dir().expect("Failed to get current directory");
+    let renamify_dir = current_dir.join(".renamify");
+
+    // Ensure .renamify directory exists
+    if !renamify_dir.exists() {
+        std::fs::create_dir_all(&renamify_dir).context("Failed to create .renamify directory")?;
+    }
+
+    eprintln!("Acquiring lock...");
+    let _lock = LockFile::acquire(&renamify_dir)
+        .context("Failed to acquire lock for test-lock operation")?;
+
+    eprintln!("Lock acquired. Sleeping for {}ms...", delay);
+
+    // Check for interruption periodically during sleep
+    let sleep_interval = 100; // Check every 100ms
+    let mut remaining = delay;
+
+    while remaining > 0 && !interrupted.load(Ordering::SeqCst) {
+        let sleep_time = std::cmp::min(remaining, sleep_interval);
+        thread::sleep(Duration::from_millis(sleep_time));
+        remaining = remaining.saturating_sub(sleep_time);
+    }
+
+    if interrupted.load(Ordering::SeqCst) {
+        eprintln!("Interrupted during sleep, releasing lock...");
+        return Ok(()); // Let Drop handle cleanup
+    }
+
+    eprintln!("Sleep complete. Lock will be released automatically on exit.");
     Ok(())
 }
 

@@ -77,12 +77,16 @@ export class RenamifyCommands {
   async undoLastOperation() {
     try {
       const history = await this.cliService.history(1);
-      if (history.length === 0) {
+      if (!history || history.length === 0) {
         vscode.window.showInformationMessage('No operations to undo');
         return;
       }
 
-      await this.cliService.undo(history[0].id);
+      const result = await this.cliService.undo(history[0].id);
+      if (!result) {
+        console.log('Undo request cancelled');
+        return;
+      }
       vscode.window.showInformationMessage('Operation undone successfully');
     } catch (error) {
       vscode.window.showErrorMessage(
@@ -95,12 +99,12 @@ export class RenamifyCommands {
     try {
       const history = await this.cliService.history(10);
 
-      if (history.length === 0) {
+      if (!history || history.length === 0) {
         vscode.window.showInformationMessage('No history available');
         return;
       }
 
-      const items = history.map((h) => ({
+      const items = history?.map((h) => ({
         label: `${h.id}: ${h.search} → ${h.replace}`,
         description: `${new Date(h.created_at).toLocaleString()}`,
         id: h.id,

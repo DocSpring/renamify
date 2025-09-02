@@ -55,18 +55,18 @@ fn test_replace_command_column_positions() {
     let expected_col = 24;
 
     assert_eq!(
-        hunk.col, expected_col,
+        hunk.char_offset, expected_col,
         "Column position should be {} (0-based) but got {}",
-        expected_col, hunk.col
+        expected_col, hunk.char_offset
     );
 
     // Verify that the column points to the correct position in the line
     let line = hunk.line_before.as_ref().unwrap();
     assert_eq!(
-        &line[hunk.col as usize..(hunk.col as usize + 8)],
+        &line[hunk.char_offset as usize..(hunk.char_offset as usize + 8)],
         "core_ext",
         "Column {} should point to 'core_ext' in the line",
-        hunk.col
+        hunk.char_offset
     );
 }
 
@@ -118,7 +118,7 @@ fn test_replace_command_regex_column_positions() {
     let hunk1 = &plan.matches[0];
     assert_eq!(hunk1.content, "42");
     assert_eq!(
-        hunk1.col, 14,
+        hunk1.char_offset, 14,
         "First number '42' should be at column 14 (0-based)"
     );
 
@@ -126,7 +126,7 @@ fn test_replace_command_regex_column_positions() {
     let hunk2 = &plan.matches[1];
     assert_eq!(hunk2.content, "99");
     assert_eq!(
-        hunk2.col, 32,
+        hunk2.char_offset, 32,
         "Second number '99' should be at column 32 (0-based)"
     );
 
@@ -172,19 +172,20 @@ fn test_replace_highlighting_compatibility() {
 
     let hunk = &plan.matches[0];
 
-    // The highlighting function expects to slice the line at hunk.col
+    // The highlighting function expects to slice the line at hunk.char_offset
     // to get the exact match text
     let line = hunk.line_before.as_ref().unwrap();
     let expected_col = 4; // Position of "old_name" in the line (0-based)
 
     assert_eq!(
-        hunk.col, expected_col,
+        hunk.char_offset, expected_col,
         "Column should be {} for proper highlighting",
         expected_col
     );
 
     // This is what the highlighting function does - it should extract "old_name"
-    let extracted = &line[hunk.col as usize..(hunk.col as usize + hunk.content.len())];
+    let extracted =
+        &line[hunk.char_offset as usize..(hunk.char_offset as usize + hunk.content.len())];
     assert_eq!(
         extracted, "old_name",
         "Highlighting function should be able to extract the correct text at column position"

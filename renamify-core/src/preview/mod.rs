@@ -109,7 +109,8 @@ mod tests {
                 MatchHunk {
                     file: PathBuf::from("src/main.rs"),
                     line: 10,
-                    col: 5,
+                    byte_offset: 5,
+                    char_offset: 5,
                     variant: "old_name".to_string(),
                     content: "old_name".to_string(),
                     replace: "new_name".to_string(),
@@ -125,7 +126,8 @@ mod tests {
                 MatchHunk {
                     file: PathBuf::from("src/main.rs"),
                     line: 20,
-                    col: 10,
+                    byte_offset: 10,
+                    char_offset: 10,
                     variant: "oldName".to_string(),
                     content: "oldName".to_string(),
                     replace: "newName".to_string(),
@@ -232,7 +234,8 @@ mod tests {
             matches: vec![MatchHunk {
                 file: PathBuf::from("src/lib.rs"),
                 line: 42,
-                col: 12,
+                byte_offset: 12,
+                char_offset: 12,
                 variant: "old_func".to_string(),
                 // Word-level replacement for apply
                 content: "old_func".to_string(),

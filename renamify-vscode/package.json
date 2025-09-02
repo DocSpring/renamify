@@ -111,7 +111,8 @@
   },
   "scripts": {
     "build:icons": "fantasticon",
-    "check": "biome check && prettier --check '**/*.hbs'",
+    "check": "pnpm typecheck && biome check && prettier --check '**/*.hbs'",
+    "typecheck": "tsc --noEmit -p extension && tsc --noEmit -p webview",
     "compile:extension": "rm -rf dist && node scripts/bundle-extension.js",
     "compile:webview": "rm -f media/*.js media/*.js.map && tsc -p webview && node scripts/bundle-webview.js",
     "compile": "pnpm compile:extension && pnpm compile:webview",

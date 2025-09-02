@@ -458,7 +458,8 @@ mod tests {
             matches: vec![crate::scanner::MatchHunk {
                 file: temp_dir.path().join("old_name.txt"),
                 line: 1,
-                col: 0,
+                byte_offset: 0,
+                char_offset: 0,
                 variant: "old_name".to_string(),
                 content: "old_name".to_string(),
                 replace: "new_name".to_string(),
@@ -914,7 +915,8 @@ mod tests {
             matches: vec![crate::scanner::MatchHunk {
                 file: test_file.clone(),
                 line: 2,
-                col: 0,
+                byte_offset: 0,
+                char_offset: 0,
                 variant: "old".to_string(),
                 content: "old".to_string(),
                 replace: "new".to_string(),
@@ -1065,7 +1067,8 @@ mod tests {
                 crate::scanner::MatchHunk {
                     file: old_file.clone(),
                     line: 2,
-                    col: 0,
+                    byte_offset: 0,
+                    char_offset: 0,
                     variant: "old".to_string(),
                     content: "old".to_string(),
                     replace: "new".to_string(),
@@ -1081,7 +1084,8 @@ mod tests {
                 crate::scanner::MatchHunk {
                     file: modified_file.clone(),
                     line: 2,
-                    col: 0,
+                    byte_offset: 0,
+                    char_offset: 0,
                     variant: "old".to_string(),
                     content: "old".to_string(),
                     replace: "new".to_string(),

@@ -18,6 +18,22 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use ts_rs::TS;
 
+/// Convert byte offset to character offset in a UTF-8 string
+fn byte_offset_to_char_offset(text: &str, byte_offset: usize) -> usize {
+    let mut char_offset = 0;
+    let mut current_byte_offset = 0;
+
+    for ch in text.chars() {
+        if current_byte_offset >= byte_offset {
+            break;
+        }
+        current_byte_offset += ch.len_utf8();
+        char_offset += 1;
+    }
+
+    char_offset
+}
+
 /// Normalize a path by removing Windows long path prefix if present
 fn normalize_path(path: &Path) -> PathBuf {
     #[cfg(windows)]
@@ -111,7 +127,9 @@ pub struct MatchHunk {
     #[ts(type = "number")]
     pub line: u64,
     #[ts(type = "number")]
-    pub col: u32,
+    pub byte_offset: u32, // Byte offset from start of line
+    #[ts(type = "number")]
+    pub char_offset: u32, // Character offset from start of line (for JS/frontend)
     pub variant: String,
     pub content: String, // The word/variant being replaced
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -589,10 +607,14 @@ fn generate_hunks(
                 }
             };
 
+        // Calculate character offset from byte offset
+        let char_offset = byte_offset_to_char_offset(&line_before, m.column);
+
         hunks.push(MatchHunk {
             file: normalize_path(path),
             line: m.line as u64,
-            col: u32::try_from(m.column).unwrap_or(u32::MAX),
+            byte_offset: u32::try_from(m.column).unwrap_or(u32::MAX),
+            char_offset: u32::try_from(char_offset).unwrap_or(u32::MAX),
             variant: m.variant.clone(),
             content,
             replace,
@@ -978,11 +1000,16 @@ fn process_file_content(
                 has_matches = true;
                 let line_after = format!("{}{}{}", &line[..start], &replacement_text, &line[end..]);
 
+                // Calculate character offset from byte offset
+                let char_offset = byte_offset_to_char_offset(line, start);
+
                 file_matches.push(MatchHunk {
                     file: relative_path.to_path_buf(),
                     line: (line_num + 1) as u64,
                     #[allow(clippy::cast_possible_truncation)]
-                    col: start as u32,
+                    byte_offset: start as u32,
+                    #[allow(clippy::cast_possible_truncation)]
+                    char_offset: char_offset as u32,
                     variant: pattern.to_string(),
                     content: matched_text.to_string(),
                     replace: replacement_text,
@@ -1006,11 +1033,16 @@ fn process_file_content(
                 has_matches = true;
                 let line_after = format!("{}{}{}", &line[..start], replacement, &line[end..]);
 
+                // Calculate character offset from byte offset
+                let char_offset = byte_offset_to_char_offset(line, start);
+
                 file_matches.push(MatchHunk {
                     file: relative_path.to_path_buf(),
                     line: (line_num + 1) as u64,
                     #[allow(clippy::cast_possible_truncation)]
-                    col: start as u32,
+                    byte_offset: start as u32,
+                    #[allow(clippy::cast_possible_truncation)]
+                    char_offset: char_offset as u32,
                     variant: pattern.to_string(),
                     content: pattern.to_string(),
                     replace: replacement.to_string(),

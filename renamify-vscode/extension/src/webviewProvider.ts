@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as Handlebars from 'handlebars';
 import * as vscode from 'vscode';
-import { RenamifyCliService } from './cliService';
+import type { RenamifyCliService } from './cliService';
 import type {
   ApplyMessage,
   ExtensionMessage,
@@ -102,8 +102,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           );
           break;
         case 'refresh':
-          // Recreate the CLI service and refresh the webview
-          this._cliService = new RenamifyCliService();
+          // Refresh the webview (don't recreate CLI service - keep the shared instance)
           this._loadTemplates(); // Reload templates
           if (this._view) {
             this._view.webview.html = this._getHtmlForWebview(
@@ -121,9 +120,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handleSearch(data: SearchMessage) {
-    // Kill any running command before starting a new search
-    this._cliService.killCurrentCommand();
-
+    // ProcessCoordinator handles canceling previous requests automatically
     try {
       let results: SearchResult[];
       let paths: Rename[] = [];
@@ -144,17 +141,22 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           }
         );
 
+        // Check if request was cancelled
+        if (!planResult) {
+          console.log('Plan request cancelled by newer request');
+          // Send cancelled message to webview to clear loading state
+          this._view?.webview.postMessage({
+            type: 'searchCancelled',
+            searchId: data.searchId,
+          });
+          return;
+        }
+
         // When dryRun is true with replace, we get a Plan object
         const plan = planResult as Plan;
 
         // Convert plan matches to SearchResult format
-        const fileMap = new Map<string, MatchHunk[]>();
-        for (const match of plan.matches) {
-          if (!fileMap.has(match.file)) {
-            fileMap.set(match.file, []);
-          }
-          fileMap.get(match.file)?.push(match);
-        }
+        const fileMap = this.validateAndGroupMatches(plan);
 
         results = Array.from(fileMap.entries()).map(([file, matches]) => ({
           file,
@@ -173,14 +175,14 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           ignoreAmbiguous: data.ignoreAmbiguous,
         });
 
-        // Convert plan matches to SearchResult format
-        const fileMap = new Map<string, MatchHunk[]>();
-        for (const match of plan.matches) {
-          if (!fileMap.has(match.file)) {
-            fileMap.set(match.file, []);
-          }
-          fileMap.get(match.file)?.push(match);
+        // Check if request was cancelled
+        if (!plan) {
+          console.log('Search request cancelled by newer request');
+          return;
         }
+
+        // Convert plan matches to SearchResult format
+        const fileMap = this.validateAndGroupMatches(plan);
 
         results = Array.from(fileMap.entries()).map(([file, matches]) => ({
           file,
@@ -190,6 +192,9 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         paths = plan.paths;
       }
 
+      console.log(
+        `Sending searchResults with searchId: ${data.searchId}, results count: ${results.length}`
+      );
       this._view?.webview.postMessage({
         type: 'searchResults',
         results,
@@ -219,9 +224,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handlePlan(data: PlanMessage) {
-    // Kill any running command before starting a new plan
-    this._cliService.killCurrentCommand();
-
+    // ProcessCoordinator handles canceling previous requests automatically
     try {
       const plan = await this._cliService.createPlan(
         data.search,
@@ -233,6 +236,12 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           caseStyles: data.caseStyles,
         }
       );
+
+      // Check if request was cancelled
+      if (!plan) {
+        console.log('Plan request cancelled by newer request');
+        return;
+      }
 
       this._view?.webview.postMessage({
         type: 'planCreated',
@@ -250,9 +259,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handleApply(data: ApplyMessage) {
-    // Kill any running command before starting apply
-    this._cliService.killCurrentCommand();
-
+    // ProcessCoordinator handles canceling previous requests automatically
     const config = vscode.workspace.getConfiguration('renamify');
 
     // Get current search and replace from the message
@@ -281,7 +288,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
     try {
       // Create and apply the plan directly (without dry-run)
-      await this._cliService.rename(data.search, data.replace, {
+      const result = await this._cliService.rename(data.search, data.replace, {
         include: data.include,
         exclude: data.exclude,
         excludeMatchingLines: data.excludeMatchingLines,
@@ -289,6 +296,12 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         renamePaths: data.renamePaths,
         ignoreAmbiguous: data.ignoreAmbiguous,
       });
+
+      // Check if request was cancelled
+      if (!result) {
+        console.log('Rename request cancelled by newer request');
+        return;
+      }
 
       vscode.window.showInformationMessage('Changes applied successfully');
 
@@ -349,7 +362,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         args.push('-u');
       }
 
-      // Run CLI to get preview output
+      // Run CLI to get preview output`
       const result = await this._cliService.runCliRaw(args);
 
       // Create title for the document
@@ -357,7 +370,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         ? `Renamify: ${data.search} → ${data.replace}`
         : `Renamify: Search for "${data.search}"`;
 
-      // Create a new untitled document with the preview content
+      // Create a new untitled document with the preview contens
       const doc = await vscode.workspace.openTextDocument({
         content: `# ${title}\n\n${result}`,
         language: 'diff', // Use diff language for syntax highlighting
@@ -369,6 +382,12 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         viewColumn: vscode.ViewColumn.Active,
       });
     } catch (error) {
+      // Handle cancelled requests silently
+      if (error instanceof Error && error.name === 'RequestCancelledError') {
+        console.log('Preview request cancelled by newer request');
+        return;
+      }
+
       vscode.window.showErrorMessage(
         `Failed to open preview: ${
           error instanceof Error ? error.message : String(error)
@@ -379,6 +398,41 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
   public postMessage(message: ExtensionMessage) {
     this._view?.webview.postMessage(message);
+  }
+
+  private validateAndGroupMatches(plan: Plan): Map<string, MatchHunk[]> {
+    if (!(plan.matches && Array.isArray(plan.matches))) {
+      throw new Error(
+        'Invalid plan structure: missing or invalid matches array'
+      );
+    }
+
+    const fileMap = new Map<string, MatchHunk[]>();
+    for (const match of plan.matches) {
+      // Validate required fields
+      if (
+        !match.file ||
+        match.line === undefined ||
+        match.char_offset === undefined
+      ) {
+        console.error('Invalid match structure:', match);
+        throw new Error(
+          `Invalid match structure: missing required fields (file, line, char_offset). Got: ${JSON.stringify(match)}`
+        );
+      }
+      if (!match.content) {
+        console.error('Invalid match structure:', match);
+        throw new Error(
+          `Invalid match structure: missing content field. Got: ${JSON.stringify(match)}`
+        );
+      }
+
+      if (!fileMap.has(match.file)) {
+        fileMap.set(match.file, []);
+      }
+      fileMap.get(match.file)?.push(match);
+    }
+    return fileMap;
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {

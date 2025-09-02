@@ -2,6 +2,33 @@
 
 This is the VS Code extension for Renamify. We use pnpm as the package manager, not npm.
 
+## CRITICAL: ALWAYS TEST BEFORE CLAIMING COMPLETION
+
+**NEVER claim something is done without running:**
+- `pnpm check` - Run linting and type checking
+- `pnpm test` - Run all tests
+
+If you make changes to code, you MUST run these commands BEFORE saying it's complete, fixed, or working. NO EXCEPTIONS.
+
+## CRITICAL: IMMEDIATE USER REQUEST EXECUTION
+
+**When the user requests something, DO IT IMMEDIATELY.**
+- Don't explain what you're going to do first
+- Don't ask for confirmation
+- Just DO IT
+- The user knows what they want
+
+## TypeScript Type Generation
+
+**IMPORTANT**: TypeScript types are automatically generated from Rust structs using `ts-rs`:
+- The Rust core library uses the `ts-rs` crate to annotate structs with `#[derive(TS)]`
+- Types are exported to `renamify-core/bindings/*.d.ts` as ambient type declarations
+- The VS Code extension includes these bindings via `tsconfig.json`: `"../../renamify-core/bindings/*.d.ts"`
+- **DO NOT manually create TypeScript interfaces for types that exist in Rust** - they are already generated
+- Types like `MatchHunk`, `Plan`, `Rename`, `PlanStats`, `HistoryEntry` etc. are all auto-generated
+- To regenerate bindings: run `cargo test export_bindings` in `renamify-core/`
+- The bindings are automatically formatted with Biome after generation
+
 Ultracite enforces strict type safety, accessibility standards, and consistent code quality for JavaScript/TypeScript projects using Biome's lightning-fast formatter and linter.
 
 ## Key Principles

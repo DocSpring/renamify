@@ -51,7 +51,7 @@ fn test_multiple_matches_per_line() {
     }
 
     // Check that columns are different
-    let mut columns: Vec<u32> = plan.matches.iter().map(|h| h.col).collect();
+    let mut columns: Vec<u32> = plan.matches.iter().map(|h| h.char_offset).collect();
     columns.sort_unstable();
     columns.dedup();
     assert_eq!(
@@ -210,7 +210,7 @@ fn test_consecutive_occurrences() {
     for hunk in &plan.matches {
         println!(
             "Match: '{}' -> '{}' at col {}",
-            hunk.content, hunk.replace, hunk.col
+            hunk.content, hunk.replace, hunk.char_offset
         );
     }
 

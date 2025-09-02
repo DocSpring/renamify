@@ -234,12 +234,13 @@ renamify plan old_name new_name --include "src/**" --dry-run
 renamify plan old_name new_name --dry-run | grep -c "│"
 ```
 
-### Parallel Workflow
+### JSON Output for Scripting
 
 ```bash
-# Create plan and review while system is idle
-renamify plan large_change huge_change --preview json > plan.json
+# Display JSON output to terminal for scripting/piping
+renamify plan large_change huge_change --output json | jq '.stats'
 
-# Apply later when ready
-renamify apply --plan plan.json
+# Note: The plan is always saved to .renamify/plan.json regardless of output format
+# Apply the saved plan later
+renamify apply
 ```

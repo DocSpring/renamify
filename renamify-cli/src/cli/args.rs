@@ -503,4 +503,11 @@ pub enum Commands {
         #[arg(long, value_enum, default_value = "summary")]
         output: OutputFormat,
     },
+
+    #[command(hide = true)]
+    TestLock {
+        /// Delay in milliseconds before releasing lock
+        #[arg(long, default_value = "2000")]
+        delay: u64,
+    },
 }

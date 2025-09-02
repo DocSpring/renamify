@@ -67,18 +67,18 @@ pub fn render_matches(plan: &Plan, use_color: bool) -> String {
 
             // Sort hunks by line number
             let mut sorted_hunks = hunks.clone();
-            sorted_hunks.sort_by_key(|h| (h.line, h.col));
+            sorted_hunks.sort_by_key(|h| (h.line, h.byte_offset));
 
             // Show up to first 5 matches per file with context
             let display_count = sorted_hunks.len().min(5);
             for hunk in sorted_hunks.iter().take(display_count) {
                 if let Some(ref line_before) = hunk.line_before {
                     // Highlight the match in the line
-                    let col = hunk.col as usize;
+                    let col = hunk.byte_offset as usize;
                     let end = col + hunk.content.len();
 
                     if use_color {
-                        write!(output, "    {}:{}: ", hunk.line, hunk.col + 1).unwrap();
+                        write!(output, "    {}:{}: ", hunk.line, hunk.byte_offset + 1).unwrap();
 
                         // Print the line with the match highlighted with green background
                         // Print text before the match
@@ -110,7 +110,7 @@ pub fn render_matches(plan: &Plan, use_color: bool) -> String {
                             output,
                             "    {}:{}: {}",
                             hunk.line,
-                            hunk.col,
+                            hunk.byte_offset,
                             line_before.trim()
                         )
                         .unwrap();
@@ -122,7 +122,7 @@ pub fn render_matches(plan: &Plan, use_color: bool) -> String {
                             output,
                             "    {}:{}: {} ({})",
                             hunk.line,
-                            hunk.col,
+                            hunk.byte_offset,
                             Style::new()
                                 .on(AnsiColor::Yellow)
                                 .fg(AnsiColor::Black)
@@ -135,7 +135,7 @@ pub fn render_matches(plan: &Plan, use_color: bool) -> String {
                         writeln!(
                             output,
                             "    {}:{}: {} ({})",
-                            hunk.line, hunk.col, hunk.content, hunk.variant
+                            hunk.line, hunk.byte_offset, hunk.content, hunk.variant
                         )
                         .unwrap();
                     }
@@ -312,7 +312,8 @@ mod tests {
                 MatchHunk {
                     file: PathBuf::from("/project/src/lib.rs"),
                     line: 10,
-                    col: 5,
+                    byte_offset: 5,
+                    char_offset: 5,
                     variant: "old_name".to_string(),
                     content: "old_name".to_string(),
                     replace: "new_name".to_string(),
@@ -328,7 +329,8 @@ mod tests {
                 MatchHunk {
                     file: PathBuf::from("/project/src/main.rs"),
                     line: 25,
-                    col: 12,
+                    byte_offset: 12,
+                    char_offset: 12,
                     variant: "OldName".to_string(),
                     content: "OldName".to_string(),
                     replace: "NewName".to_string(),
@@ -345,7 +347,8 @@ mod tests {
                 MatchHunk {
                     file: PathBuf::from("/project/src/utils.rs"),
                     line: 1,
-                    col: 0,
+                    byte_offset: 0,
+                    char_offset: 0,
                     variant: "old_name".to_string(),
                     content: "old_name".to_string(),
                     replace: "new_name".to_string(),
@@ -471,7 +474,8 @@ mod tests {
             .map(|i| MatchHunk {
                 file: PathBuf::from("/project/src/lib.rs"),
                 line: 50 + i,
-                col: 5,
+                byte_offset: 5,
+                char_offset: 5,
                 variant: "old_name".to_string(),
                 content: "old_name".to_string(),
                 replace: "new_name".to_string(),
@@ -503,7 +507,8 @@ mod tests {
         plan.matches.push(MatchHunk {
             file: PathBuf::from("/project/edge.rs"),
             line: 1,
-            col: 15,
+            byte_offset: 15,
+            char_offset: 15,
             variant: "old_name".to_string(),
             content: "old_name".to_string(),
             replace: "new_name".to_string(),
@@ -521,7 +526,8 @@ mod tests {
         plan.matches.push(MatchHunk {
             file: PathBuf::from("/project/edge.rs"),
             line: 2,
-            col: 0,
+            byte_offset: 0,
+            char_offset: 0,
             variant: "old_name".to_string(),
             content: "old_name".to_string(),
             replace: "new_name".to_string(),

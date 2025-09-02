@@ -23,9 +23,12 @@ renamify plan <OLD> <NEW> [PATHS]... [OPTIONS]
 
 ### Output Control
 
-- `--preview <FORMAT>` - Output format: table (default), diff, json
+- `--preview <FORMAT>` - Human-readable preview format: table (default), diff, matches, summary, none
+- `--output <FORMAT>` - Terminal output format for scripting: summary (default), json
 - `--plan-out <PATH>` - Where to save the plan (default: .renamify/plan.json)
 - `--dry-run` - Only show preview, don't write plan file
+
+Note: The plan is always saved to `.renamify/plan.json` (or the path specified by `--plan-out`) regardless of the `--output` format. The `--output json` flag only controls what's displayed in the terminal.
 
 ### File Processing
 
@@ -133,10 +136,10 @@ Shows changes in diff format:
 ### JSON Format
 
 ```bash
-renamify plan getUserName fetchUserProfile --preview json
+renamify plan getUserName fetchUserProfile --output json
 ```
 
-Outputs structured JSON for programmatic use:
+Displays structured JSON to the terminal for scripting/piping:
 
 ```json
 {

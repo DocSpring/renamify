@@ -18,7 +18,8 @@ fn test_search_highlighting_positions() {
     matches.push(MatchHunk {
         file: PathBuf::from("test/xml_mini_test.rb"),
         line: 6,
-        col: 24, // Position of 'c' in 'core_ext' (0-based)
+        byte_offset: 24, // Position of 'c' in 'core_ext' (0-based)
+        char_offset: 24,
         variant: "core_ext".to_string(),
         content: "core_ext".to_string(),
         replace: "".to_string(), // Empty for search
@@ -120,7 +121,8 @@ fn test_search_highlighting_multiple_matches() {
         matches.push(MatchHunk {
             file: PathBuf::from("test.rb"),
             line: (i + 1) as u64,
-            col: *col as u32,
+            byte_offset: *col as u32,
+            char_offset: *col as u32,
             variant: variant.to_string(),
             content: content.to_string(),
             replace: "".to_string(),

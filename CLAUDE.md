@@ -49,6 +49,9 @@ They should be mentioned in any package files, copyright notices, etc.
   - `bstr` for fast byte string operations
 - JSON for plan and history
 - TypeScript for VS Code extension and MCP wrapper
+  - `ts-rs` for automatic TypeScript type generation from Rust structs
+  - Types are generated as ambient `.d.ts` files in `renamify-core/bindings/`
+  - VS Code and MCP projects include these bindings directly in their tsconfig
 - Optional Node bindings in future via `napi-rs` if needed
 
 ## Functional scope
@@ -110,7 +113,8 @@ Commands:
   - `--include` `--exclude` `--respect-gitignore` (default true, respects all ignore files)
   - `--rename-files` `--rename-dirs` (default true)
   - `--styles=<list>`
-  - `--preview table|diff|json`
+  - `--preview table|diff|matches|summary|none` (human-readable preview)
+  - `--output summary|json` (machine-readable output)
   - `--plan-out`
   - `-u/-uu/-uuu` (unrestricted levels to control ignore file handling)
 - `renamify apply [--plan PATH | --id ID] [--atomic true] [--commit]`
@@ -286,5 +290,42 @@ If the user insists after your pushback, then proceed, but always voice concerns
 
 Remember to update your own CLAUDE.md file with corrections and improvements while you are working.
 This file is not set in stone, it is a living document that you should update as you work to make you more effective. Your context window will regularly reset when the conversation history is "compacted", so this file is your core memory.
+
+## CRITICAL: ALWAYS TEST BEFORE CLAIMING COMPLETION
+
+**NEVER claim something is done without running tests and linters for the language you're working in:**
+
+For JavaScript/TypeScript projects:
+- `pnpm check` or `npm run lint` - Run linting and type checking
+- `pnpm test` or `npm test` - Run all tests
+- `pnpm build` or `npm run build` - Ensure the project builds
+
+For Rust projects:
+- `cargo build` - Ensure the project compiles
+- `cargo clippy` - Run linter (warnings should be treated as errors)
+- `cargo test` - Run all tests
+- `cargo fmt --check` - Check formatting
+
+For Python projects:
+- `pytest` or `python -m pytest` - Run tests
+- `mypy` or `pyright` - Run type checking
+- `ruff check` or `flake8` - Run linting
+- `black --check` - Check formatting
+
+For Go projects:
+- `go build` - Ensure the project compiles
+- `go test ./...` - Run all tests
+- `go vet ./...` - Run static analysis
+- `golangci-lint run` - Run comprehensive linting
+
+If you make changes to code, you MUST run these commands BEFORE saying it's complete, fixed, or working. NO EXCEPTIONS.
+
+## CRITICAL: IMMEDIATE USER REQUEST EXECUTION
+
+**When the user requests something, DO IT IMMEDIATELY.**
+- Don't explain what you're going to do first
+- Don't ask for confirmation
+- Just DO IT
+- The user knows what they want
 
 ## CRITICAL REMINDER: YOU ARE AN AUTONOMOUS AGENT. DO NOT STOP WORKING UNTIL ALL TASKMASTER TASKS ARE COMPLETE. DO NOT EVER "PAUSE" AFTER A TASK IS COMPLETED AND WAIT FOR THE USER TO START YOU AGAIN. START THE NEXT TASK IMMEDIATELY.

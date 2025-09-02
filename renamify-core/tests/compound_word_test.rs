@@ -57,7 +57,7 @@ fn getFooBarOption() -> FooBarOption { }",
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.content, hunk.replace
+            hunk.line, hunk.char_offset, hunk.content, hunk.replace
         );
         if let Some(line_after) = &hunk.line_after {
             println!("  After: {line_after}");
@@ -227,7 +227,7 @@ function setFooBarType(fooBarType) {
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.content, hunk.replace
+            hunk.line, hunk.char_offset, hunk.content, hunk.replace
         );
     }
 
@@ -317,7 +317,7 @@ fn getFooBarOption() -> FooBarOption { }",
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.content, hunk.replace
+            hunk.line, hunk.char_offset, hunk.content, hunk.replace
         );
     }
 
@@ -387,7 +387,10 @@ fn test_multiple_compounds_same_line() {
     println!("\n=== Multiple Compounds Same Line Test ===");
     println!("Total matches: {}", plan.stats.total_matches);
     for hunk in &plan.matches {
-        println!("Col {}: '{}' -> '{}'", hunk.col, hunk.content, hunk.replace);
+        println!(
+            "Col {}: '{}' -> '{}'",
+            hunk.char_offset, hunk.content, hunk.replace
+        );
     }
 
     // Should find:
@@ -528,7 +531,7 @@ fn test_repeated_word_compound_bug() {
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}, Pos [{}, {}]: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.start, hunk.end, hunk.content, hunk.replace
+            hunk.line, hunk.char_offset, hunk.start, hunk.end, hunk.content, hunk.replace
         );
     }
 

@@ -1,7 +1,7 @@
-import { type ChildProcess, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import { ProcessCoordinator } from './processCoordinator';
 import type { SearchOptions, SearchResult, Status } from './types';
 
 export type { SearchOptions, SearchResult } from './types';
@@ -11,40 +11,20 @@ type VersionInfo = {
   version: string;
 };
 
-class CommandMutex {
-  private currentProcess: ChildProcess | null = null;
-
-  acquire(): void {
-    // Kill any existing process immediately
-    this.killCurrentProcess();
-    // No waiting, no queuing - just proceed
-  }
-
-  release(): void {
-    this.currentProcess = null;
-  }
-
-  setCurrentProcess(process: ChildProcess): void {
-    this.currentProcess = process;
-  }
-
-  killCurrentProcess(): void {
-    if (this.currentProcess) {
-      this.currentProcess.kill('SIGKILL');
-      this.currentProcess = null;
-    }
-  }
-}
-
 export class RenamifyCliService {
-  private readonly spawnFn: typeof spawn;
   private readonly extensionVersion: string;
-  private readonly commandMutex = new CommandMutex();
-  private readonly isMocked: boolean;
+  private readonly processCoordinator: ProcessCoordinator;
 
-  constructor(spawnFn?: typeof spawn) {
-    this.spawnFn = spawnFn || spawn;
-    this.isMocked = !!spawnFn;
+  constructor(processCoordinator?: ProcessCoordinator) {
+    console.log(
+      `[${new Date().toISOString()}] [CliService] CONSTRUCTOR CALLED - creating new CliService instance`
+    );
+
+    this.processCoordinator = processCoordinator ?? new ProcessCoordinator();
+
+    console.log(
+      `[${new Date().toISOString()}] [CliService] CliService constructor completed - ProcessCoordinator instance created`
+    );
 
     // Read version from package.json
     const packageJsonPath = path.join(__dirname, '..', 'package.json');
@@ -53,11 +33,6 @@ export class RenamifyCliService {
   }
 
   private get cliPath(): string | null {
-    // If we're using a mock spawn function, return mocked path
-    if (this.isMocked) {
-      return 'mocked-cli-path';
-    }
-
     // Always find the CLI path fresh - don't cache it
     try {
       return this.findCliPath();
@@ -88,7 +63,27 @@ export class RenamifyCliService {
       }
     }
 
-    // Try to find in PATH
+    // FIRST: Try local development path relative to workspace (for development)
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (workspaceRoot) {
+      const devPath = path.join(workspaceRoot, 'target', 'debug', 'renamify');
+      if (fs.existsSync(devPath)) {
+        console.log(`[Renamify] Using local development binary: ${devPath}`);
+        return devPath;
+      }
+      const devPathExe = path.join(
+        workspaceRoot,
+        'target',
+        'debug',
+        'renamify.exe'
+      );
+      if (fs.existsSync(devPathExe)) {
+        console.log(`[Renamify] Using local development binary: ${devPathExe}`);
+        return devPathExe;
+      }
+    }
+
+    // THEN: Try to find in PATH
     const pathEnv = process.env.PATH || '';
     const paths = pathEnv.split(path.delimiter);
 
@@ -100,24 +95,6 @@ export class RenamifyCliService {
       const cliPathExe = path.join(p, 'renamify.exe');
       if (fs.existsSync(cliPathExe)) {
         return cliPathExe;
-      }
-    }
-
-    // Try local development path relative to workspace
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (workspaceRoot) {
-      const devPath = path.join(workspaceRoot, 'target', 'debug', 'renamify');
-      if (fs.existsSync(devPath)) {
-        return devPath;
-      }
-      const devPathExe = path.join(
-        workspaceRoot,
-        'target',
-        'debug',
-        'renamify.exe'
-      );
-      if (fs.existsSync(devPathExe)) {
-        return devPathExe;
       }
     }
 
@@ -151,10 +128,10 @@ export class RenamifyCliService {
   }
 
   /**
-   * Get CLI version information
+   * Get CLI version information (bypasses ProcessCoordinator since it doesn't need locking)
    */
   private async getCliVersion(): Promise<VersionInfo> {
-    const result = await this.runCliRaw(['version', '--output', 'json']);
+    const result = await this.runCliDirect(['version', '--output', 'json']);
     return JSON.parse(result) as VersionInfo;
   }
 
@@ -208,7 +185,10 @@ export class RenamifyCliService {
     }
   }
 
-  async search(searchTerm: string, options: SearchOptions): Promise<Plan> {
+  async search(
+    searchTerm: string,
+    options: SearchOptions
+  ): Promise<Plan | null> {
     const args = ['search', searchTerm, '--output', 'json'];
 
     if (options.include) {
@@ -245,6 +225,10 @@ export class RenamifyCliService {
     }
 
     const result = await this.runCli(args);
+    if (!result) {
+      return null; // Cancelled request
+    }
+
     const parsed = JSON.parse(result);
     // The CLI returns a wrapper object with the plan nested inside
     if (!parsed.plan) {
@@ -257,7 +241,7 @@ export class RenamifyCliService {
     searchTerm: string,
     replaceTerm: string,
     options: SearchOptions & { dryRun?: boolean }
-  ): Promise<Plan | SearchResult[]> {
+  ): Promise<Plan | SearchResult[] | null> {
     const args = ['plan', searchTerm, replaceTerm, '--output', 'json'];
 
     if (options.dryRun) {
@@ -302,6 +286,10 @@ export class RenamifyCliService {
     }
 
     const result = await this.runCli(args);
+    if (!result) {
+      return null; // Cancelled request
+    }
+
     const parsed = JSON.parse(result);
     // The CLI returns a wrapper object with the plan nested inside
     if (!parsed.plan) {
@@ -314,7 +302,7 @@ export class RenamifyCliService {
     searchTerm: string,
     replaceTerm: string,
     options: SearchOptions
-  ): Promise<{ planId: string }> {
+  ): Promise<{ planId: string } | null> {
     const args = ['rename', searchTerm, replaceTerm, '-y', '--output', 'json'];
 
     if (options.include) {
@@ -355,6 +343,9 @@ export class RenamifyCliService {
     }
 
     const result = await this.runCli(args);
+    if (!result) {
+      return null; // Cancelled request
+    }
 
     // Parse the JSON response
     const parsed = JSON.parse(result);
@@ -366,25 +357,34 @@ export class RenamifyCliService {
     return { planId };
   }
 
-  async apply(planId?: string): Promise<void> {
+  async apply(planId?: string): Promise<undefined | null> {
     const args = ['apply', '--output', 'json'];
 
     if (planId) {
       args.push('--id', planId);
     }
 
-    await this.runCli(args);
+    const result = await this.runCli(args);
+    if (!result) {
+      return null; // Cancelled request
+    }
   }
 
-  async undo(id: string): Promise<void> {
-    await this.runCli(['undo', id, '--output', 'json']);
+  async undo(id: string): Promise<undefined | null> {
+    const result = await this.runCli(['undo', id, '--output', 'json']);
+    if (!result) {
+      return null; // Cancelled request
+    }
   }
 
-  async redo(id: string): Promise<void> {
-    await this.runCli(['redo', id, '--output', 'json']);
+  async redo(id: string): Promise<undefined | null> {
+    const result = await this.runCli(['redo', id, '--output', 'json']);
+    if (!result) {
+      return null; // Cancelled request
+    }
   }
 
-  async history(limit?: number): Promise<HistoryEntry[]> {
+  async history(limit?: number): Promise<HistoryEntry[] | null> {
     const args = ['history', '--output', 'json'];
 
     if (limit) {
@@ -392,15 +392,22 @@ export class RenamifyCliService {
     }
 
     const result = await this.runCli(args);
+    if (!result) {
+      return null; // Cancelled request
+    }
     return JSON.parse(result);
   }
 
-  async status(): Promise<Status> {
+  async status(): Promise<Status | null> {
     const result = await this.runCli(['status', '--output', 'json']);
+    if (!result) {
+      return null; // Cancelled request
+    }
     return JSON.parse(result);
   }
 
-  public runCliRaw(args: string[]): Promise<string> {
+  public runCliRaw(args: string[]): Promise<string | null> {
+    // runCliRaw is used by openPreviewInEditor which needs the ProcessCoordinator
     return this.runCli(args);
   }
 
@@ -409,58 +416,32 @@ export class RenamifyCliService {
   }
 
   public getBinaryPath(): string | undefined {
-    return this.cliPath;
+    return this.cliPath ?? undefined;
   }
 
-  public killCurrentCommand(): void {
-    this.commandMutex.killCurrentProcess();
+  public async killCurrentCommand(): Promise<void> {
+    await this.processCoordinator.killCurrentCommand();
   }
 
-  private async runCli(args: string[]): Promise<string> {
+  /**
+   * Run CLI directly without ProcessCoordinator (for version checks and other non-locking operations)
+   */
+  private runCliDirect(args: string[]): Promise<string> {
     if (!(this.isAvailable && this.cliPath)) {
       throw new Error(
         'Renamify CLI not found. Please install it or configure the path in settings.'
       );
     }
 
-    // Acquire mutex to ensure only one command runs at a time
-    this.commandMutex.acquire();
-
-    try {
-      // Check version compatibility before every command (except for version command itself)
-      // Skip version check when using mock spawn (in tests)
-      if (!args.includes('version') && this.cliPath !== 'mocked-cli-path') {
-        await this.checkVersionCompatibility();
-      }
-
-      // Try the command, with one retry after 100ms if it fails
-      try {
-        return await this.executeCliCommand(args);
-      } catch (_error) {
-        // Wait 100ms and retry once
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return await this.executeCliCommand(args);
-      }
-    } finally {
-      this.commandMutex.release();
-    }
-  }
-
-  private executeCliCommand(args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
+      const { spawn } = require('node:child_process');
       const workspaceRoot =
         vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
 
-      // Log the full command for debugging
-      console.log(`[Renamify] Executing: ${this.cliPath} ${args.join(' ')}`);
-
-      const proc = this.spawnFn(this.cliPath as string, args, {
+      const proc = spawn(this.cliPath, args, {
         cwd: workspaceRoot,
         env: process.env,
       });
-
-      // Track this process so it can be killed if needed
-      this.commandMutex.setCurrentProcess(proc);
 
       let stdout = '';
       let stderr = '';
@@ -476,9 +457,6 @@ export class RenamifyCliService {
       proc.on('close', (code: number | null) => {
         if (code === 0) {
           resolve(stdout);
-        } else if (code === null) {
-          // Process was killed
-          reject(new Error('Command was cancelled'));
         } else {
           const errorMessage = stderr.trim() || `CLI exited with code ${code}`;
           reject(new Error(errorMessage));
@@ -489,5 +467,22 @@ export class RenamifyCliService {
         reject(err);
       });
     });
+  }
+
+  private async runCli(args: string[]): Promise<string | null> {
+    if (!(this.isAvailable && this.cliPath)) {
+      throw new Error(
+        'Renamify CLI not found. Please install it or configure the path in settings.'
+      );
+    }
+
+    // Check version compatibility before every command (except for version command itself)
+    if (!args.includes('version')) {
+      await this.checkVersionCompatibility();
+    }
+
+    // Use ProcessCoordinator to execute the command with proper serialization
+    const result = await this.processCoordinator.execute(this.cliPath, args);
+    return result;
   }
 }

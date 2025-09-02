@@ -46,10 +46,16 @@ pub fn plan_operation(
         paths
     };
 
-    // Check for .renamify lock
+    // Only acquire lock for non-dry-run operations (actual plan writes)
     let renamify_dir = current_dir.join(".renamify");
-    let _lock = LockFile::acquire(&renamify_dir)
-        .context("Failed to acquire lock for renamify operation")?;
+    let _lock = if dry_run {
+        None // No lock needed for dry-run/search operations
+    } else {
+        Some(
+            LockFile::acquire(&renamify_dir)
+                .context("Failed to acquire lock for renamify operation")?,
+        )
+    };
 
     // Build styles list
     let styles = build_styles_list(

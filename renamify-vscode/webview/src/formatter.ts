@@ -67,14 +67,16 @@ export function applyReplacements(
   let finalText = originalText;
 
   // Sort matches by column position
-  const sortedMatches = [...matches].sort((a, b) => a.col - b.col);
+  const sortedMatches = [...matches].sort(
+    (a, b) => a.char_offset - b.char_offset
+  );
 
   // Apply replacements from right to left to avoid position shifts
   for (let i = sortedMatches.length - 1; i >= 0; i--) {
     const match = sortedMatches[i];
     if (match.replace && match.content) {
       // col is 0-indexed from Rust
-      const lineStart = match.col;
+      const lineStart = match.char_offset;
       const lineEnd = lineStart + match.content.length;
 
       const before = finalText.substring(0, lineStart);
@@ -94,12 +96,14 @@ export function insertSearchPlaceholders(
   let result = text;
 
   // Sort matches by position (right to left) to avoid position shifts when inserting
-  const sortedMatches = [...matches].sort((a, b) => b.col - a.col);
+  const sortedMatches = [...matches].sort(
+    (a, b) => b.char_offset - a.char_offset
+  );
 
   for (const match of sortedMatches) {
     if (match.content) {
-      // col is 0-indexed from Rust
-      const lineStart = match.col;
+      // char_offset is 0-indexed from Rust
+      const lineStart = match.char_offset;
       const lineEnd = lineStart + match.content.length;
 
       const before = result.substring(0, lineStart);
@@ -125,12 +129,14 @@ export function calculateReplacementPositions(
   const replacements: Array<{ pos: number; length: number }> = [];
 
   // Sort matches by column position
-  const sortedMatches = [...matches].sort((a, b) => a.col - b.col);
+  const sortedMatches = [...matches].sort(
+    (a, b) => a.char_offset - b.char_offset
+  );
 
   let cumulativeShift = 0;
   for (const match of sortedMatches) {
     if (match.replace && match.content) {
-      const originalPos = match.col; // col is 0-indexed
+      const originalPos = match.char_offset; // char_offset is 0-indexed
       const finalPos = originalPos + cumulativeShift;
 
       replacements.push({

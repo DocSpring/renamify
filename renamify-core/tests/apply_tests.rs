@@ -42,7 +42,8 @@ fn test_apply_content_edits() {
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -58,7 +59,8 @@ fn test_apply_content_edits() {
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
         line: 2,
-        col: 14,
+        byte_offset: 14,
+        char_offset: 14,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -157,7 +159,8 @@ fn test_rollback_on_error() {
     plan.matches.push(MatchHunk {
         file: test_file.clone(),
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "wrong_content".to_string(), // This will cause an error
         replace: "new_name".to_string(),
@@ -233,7 +236,8 @@ fn test_atomic_operations() {
     plan.matches.push(MatchHunk {
         file: file1.clone(),
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -251,7 +255,8 @@ fn test_atomic_operations() {
     plan.matches.push(MatchHunk {
         file: file2,
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "wrong_name".to_string(), // This will cause failure
         replace: "new_name".to_string(),
@@ -365,7 +370,8 @@ fn test_apply_with_git_commit() {
     plan.matches.push(MatchHunk {
         file: test_file,
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -492,7 +498,8 @@ fn test_apply_with_both_renames_and_content_changes() {
     plan.matches.push(MatchHunk {
         file: old_file1.clone(), // Using original path
         line: 1,
-        col: 3,
+        byte_offset: 3,
+        char_offset: 3,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -509,7 +516,8 @@ fn test_apply_with_both_renames_and_content_changes() {
     plan.matches.push(MatchHunk {
         file: old_file1.clone(), // Same file, different location
         line: 2,
-        col: 14,
+        byte_offset: 14,
+        char_offset: 14,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -530,7 +538,8 @@ fn test_apply_with_both_renames_and_content_changes() {
     plan.matches.push(MatchHunk {
         file: stable_file.clone(),
         line: 1,
-        col: 4,
+        byte_offset: 4,
+        char_offset: 4,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -547,7 +556,8 @@ fn test_apply_with_both_renames_and_content_changes() {
     plan.matches.push(MatchHunk {
         file: stable_file.clone(),
         line: 2,
-        col: 13,
+        byte_offset: 13,
+        char_offset: 13,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -565,7 +575,8 @@ fn test_apply_with_both_renames_and_content_changes() {
     plan.matches.push(MatchHunk {
         file: nested_file.clone(), // Using original path
         line: 1,
-        col: 4,
+        byte_offset: 4,
+        char_offset: 4,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -582,7 +593,8 @@ fn test_apply_with_both_renames_and_content_changes() {
     plan.matches.push(MatchHunk {
         file: nested_file.clone(),
         line: 2,
-        col: 4,
+        byte_offset: 4,
+        char_offset: 4,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),
@@ -601,7 +613,8 @@ fn test_apply_with_both_renames_and_content_changes() {
     plan.matches.push(MatchHunk {
         file: service_file.clone(),
         line: 2,
-        col: 2,
+        byte_offset: 2,
+        char_offset: 2,
         variant: "old_name".to_string(),
         content: "old_name".to_string(),
         replace: "new_name".to_string(),

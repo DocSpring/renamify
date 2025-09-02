@@ -633,7 +633,7 @@ type SearchResult = {
 
       matchItem.addEventListener('click', (event) => {
         // Find which match was clicked based on click position
-        let targetColumn = matches[0].col; // Default to first match
+        let targetColumn = matches[0].char_offset; // Default to first match
 
         // Check if we clicked on a specific highlight
         const target = event.target as HTMLElement;
@@ -644,7 +644,7 @@ type SearchResult = {
             matchText.querySelectorAll('.search-highlight');
           const clickedIndex = Array.from(searchHighlights).indexOf(target);
           if (clickedIndex >= 0 && clickedIndex < matches.length) {
-            targetColumn = matches[clickedIndex].col;
+            targetColumn = matches[clickedIndex].char_offset;
           }
         } else if (target.classList.contains('replace-highlight')) {
           // Clicked on a replace highlight in the added line
@@ -653,7 +653,7 @@ type SearchResult = {
             matchText.querySelectorAll('.replace-highlight');
           const clickedIndex = Array.from(replaceHighlights).indexOf(target);
           if (clickedIndex >= 0 && clickedIndex < matches.length) {
-            targetColumn = matches[clickedIndex].col;
+            targetColumn = matches[clickedIndex].char_offset;
           }
         }
 

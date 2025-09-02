@@ -8,7 +8,19 @@ suite('Integration Test Suite', () => {
   let provider: RenamifyViewProvider;
   let cliService: RenamifyCliService;
 
-  setup(() => {
+  setup(async () => {
+    // Set the CLI path to the debug binary for tests
+    const debugBinaryPath = path.join(
+      process.cwd(),
+      '..',
+      'target',
+      'debug',
+      'renamify'
+    );
+    await vscode.workspace
+      .getConfiguration('renamify')
+      .update('cliPath', debugBinaryPath, vscode.ConfigurationTarget.Global);
+
     // Create test instances
     const extensionUri = vscode.Uri.file(
       path.join(__dirname, '..', '..', '..')
@@ -128,7 +140,8 @@ suite('Integration Test Suite', () => {
             {
               file: 'test.ts',
               line: 10,
-              col: 5,
+              byte_offset: 5,
+              char_offset: 5,
               variant: 'oldName',
               content: 'oldName',
               replace: 'newName',

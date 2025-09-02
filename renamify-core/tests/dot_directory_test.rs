@@ -153,7 +153,7 @@ coerce_separators: renamify_core::scanner::CoercionMode::Auto,
     for hunk in &plan.matches {
         println!(
             "Line {}, Col {}: '{}' -> '{}'",
-            hunk.line, hunk.col, hunk.content, hunk.replace
+            hunk.line, hunk.char_offset, hunk.content, hunk.replace
         );
     }
 
@@ -276,7 +276,7 @@ impl From<PreviewFormatArg> for PreviewFormat {",
         println!(
             "Line {}, Col {}: '{}' -> '{}' in '{}'",
             hunk.line,
-            hunk.col,
+            hunk.char_offset,
             hunk.content,
             hunk.replace,
             hunk.line_before.as_ref().unwrap_or(&String::new())

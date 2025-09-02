@@ -23,6 +23,22 @@ fn normalize_path(path: &Path) -> PathBuf {
     }
 }
 
+/// Convert byte offset to character offset in a UTF-8 string
+fn byte_offset_to_char_offset(text: &str, byte_offset: usize) -> usize {
+    let mut char_offset = 0;
+    let mut current_byte_offset = 0;
+
+    for ch in text.chars() {
+        if current_byte_offset >= byte_offset {
+            break;
+        }
+        current_byte_offset += ch.len_utf8();
+        char_offset += 1;
+    }
+
+    char_offset
+}
+
 /// Find all potential identifiers in the content using a broad regex pattern
 fn find_all_identifiers(content: &[u8], styles: &[Style]) -> Vec<(usize, usize, String)> {
     let mut identifiers = Vec::new();
@@ -327,10 +343,18 @@ pub fn enhanced_matches_to_hunks(
             None
         };
 
+        // Calculate character offset from byte offset
+        let char_offset = if let Some(ref line_str) = line_before {
+            byte_offset_to_char_offset(line_str, m.column)
+        } else {
+            m.column
+        };
+
         hunks.push(MatchHunk {
             file: normalize_path(path),
             line: m.line as u64,
-            col: u32::try_from(m.column).unwrap_or(u32::MAX),
+            byte_offset: u32::try_from(m.column).unwrap_or(u32::MAX),
+            char_offset: u32::try_from(char_offset).unwrap_or(u32::MAX),
             variant: content.clone(),
             content,
             replace,

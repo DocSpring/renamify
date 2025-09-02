@@ -72,8 +72,9 @@ Non-goals for v1.0.0
     - --include, --exclude, --respect-gitignore (default true)
     - --rename-files, --rename-dirs (both default true)
     - --styles=<comma list> to restrict styles
-    - --preview table|diff|json (default table)
-    - --plan-out path (default .renamify/plan.json)
+    - --preview table|diff|matches|summary|none (human-readable preview, default table)
+    - --output summary|json (terminal output format for scripting)
+    - --plan-out path (where to save plan, default .renamify/plan.json - always created)
   - renamify apply [--plan path or --id <history id>] [--atomic true] [--commit]
     - --commit optionally creates a git commit with a generated message
   - renamify undo <id>

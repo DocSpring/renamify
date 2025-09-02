@@ -21,7 +21,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6, // 0-indexed
+          char_offset: 6, // 0-indexed
           variant: 'oldName',
           content: 'oldName',
           replace: 'newName',
@@ -40,7 +40,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 8, // 0-indexed
+          char_offset: 8, // 0-indexed
           variant: 'caseStyles',
           content: 'caseStyles',
           replace: 'braceStyles',
@@ -51,7 +51,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 25, // 0-indexed
+          char_offset: 25, // 0-indexed
           variant: 'caseStyles',
           content: 'caseStyles',
           replace: 'braceStyles',
@@ -75,7 +75,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6, // 0-indexed
+          char_offset: 6, // 0-indexed
           variant: 'oldName',
           content: 'oldName',
           replace: 'newName',
@@ -98,7 +98,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6, // 0-indexed
+          char_offset: 6, // 0-indexed
           variant: 'oldName',
           content: 'oldName',
           replace: 'newName',
@@ -119,7 +119,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 8, // 0-indexed
+          char_offset: 8, // 0-indexed
           variant: 'caseStyles',
           content: 'caseStyles', // 10 chars
           replace: 'braceStyles', // 11 chars
@@ -130,7 +130,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 25, // 0-indexed
+          char_offset: 25, // 0-indexed
           variant: 'caseStyles',
           content: 'caseStyles', // 10 chars
           replace: 'braceStyles', // 11 chars
@@ -179,7 +179,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.html',
           line: 1,
-          col: 12, // Position where "caseStyles" starts (0-indexed)
+          char_offset: 12, // Position where "caseStyles" starts (0-indexed)
           variant: 'camelCase',
           content: 'caseStyles', // Full matched token
           replace: 'braceStyles', // Full replacement token
@@ -209,7 +209,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 226,
-          col: 8, // First "caseStyles" (0-indexed)
+          char_offset: 8, // First "caseStyles" (0-indexed)
           variant: 'camelCase',
           content: 'caseStyles',
           replace: 'braceStyles',
@@ -220,7 +220,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 226,
-          col: 25, // Second "caseStyles" after "data." (0-indexed)
+          char_offset: 25, // Second "caseStyles" after "data." (0-indexed)
           variant: 'camelCase',
           content: 'caseStyles',
           replace: 'braceStyles',
@@ -247,7 +247,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.html',
           line: 1,
-          col: 12, // Position of first "caseStyles" in class attribute (0-indexed)
+          char_offset: 12, // Position of first "caseStyles" in class attribute (0-indexed)
           variant: 'camelCase',
           content: 'caseStyles',
           replace: 'braceStyles',
@@ -258,7 +258,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.html',
           line: 1,
-          col: 28, // Position of "caseStylesContainer" in id attribute (0-indexed)
+          char_offset: 28, // Position of "caseStylesContainer" in id attribute (0-indexed)
           variant: 'camelCase',
           content: 'caseStylesContainer',
           replace: 'braceStylesContainer',
@@ -372,7 +372,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'oldName',
           content: 'oldName',
           replace: 'newName',
@@ -394,7 +394,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'foo',
           content: 'foo',
           replace: 'bar',
@@ -406,7 +406,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 8,
+          char_offset: 8,
           variant: 'hello',
           content: 'hello',
           replace: 'baz',
@@ -433,7 +433,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'foo',
           content: 'foo',
           replace: '',
@@ -457,7 +457,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'foo',
           content: 'foo',
           replace: 'bar',
@@ -476,7 +476,7 @@ describe('Formatter Test Suite', () => {
         {
           file: '/Users/ndbroadbent/code/renamify/Cargo.toml',
           line: 2,
-          col: 12,
+          char_offset: 12,
           variant: 'renamify-core',
           content: 'renamify-core',
           replace: 'rename-thingy-core',
@@ -488,7 +488,7 @@ describe('Formatter Test Suite', () => {
         {
           file: '/Users/ndbroadbent/code/renamify/Cargo.toml',
           line: 2,
-          col: 29,
+          char_offset: 29,
           variant: 'renamify-cli',
           content: 'renamify-cli',
           replace: 'rename-thingy-cli',
@@ -514,7 +514,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'test',
           content: 'test',
           replace: 'testing',
@@ -526,7 +526,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'code',
           content: 'code',
           replace: 'testing',
@@ -549,7 +549,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'old',
           content: 'old',
           replace: '',
@@ -572,7 +572,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6, // 0-indexed position where "oldName" starts
+          char_offset: 6, // 0-indexed position where "oldName" starts
           variant: 'oldName',
           content: 'oldName',
           replace: '',
@@ -596,7 +596,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 6, // 0-indexed position where "oldName" starts
+          char_offset: 6, // 0-indexed position where "oldName" starts
           variant: 'oldName',
           content: 'oldName',
           replace: 'newName',
@@ -623,7 +623,7 @@ describe('Formatter Test Suite', () => {
         {
           file: '/Users/ndbroadbent/code/renamify/Cargo.toml',
           line: 2,
-          col: 12, // 0-indexed position where "renamify-core" starts
+          char_offset: 12, // 0-indexed position where "renamify-core" starts
           variant: 'renamify-core',
           content: 'renamify-core',
           replace: 'rename-thingy-core',
@@ -635,7 +635,7 @@ describe('Formatter Test Suite', () => {
         {
           file: '/Users/ndbroadbent/code/renamify/Cargo.toml',
           line: 2,
-          col: 29, // 0-indexed position where "renamify-cli" starts
+          char_offset: 29, // 0-indexed position where "renamify-cli" starts
           variant: 'renamify-cli',
           content: 'renamify-cli',
           replace: 'rename-thingy-cli',
@@ -681,7 +681,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 7, // 1-indexed position where "<script>" starts
+          char_offset: 7, // 1-indexed position where "<script>" starts
           variant: '<script>',
           content: '<script>',
           replace: '<div>',
@@ -704,7 +704,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'oldValue',
           content: 'oldValue',
           replace: 'newValue',
@@ -722,7 +722,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 7, // 1-indexed position where "oldName" starts
+          char_offset: 7, // 1-indexed position where "oldName" starts
           variant: 'oldName',
           content: 'oldName',
           replace: '',
@@ -742,7 +742,7 @@ describe('Formatter Test Suite', () => {
         {
           file: 'test.ts',
           line: 1,
-          col: 1, // 1-indexed
+          char_offset: 1, // 1-indexed
           variant: 'test',
           content: 'test',
           replace: '',

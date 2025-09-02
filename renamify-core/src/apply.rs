@@ -855,7 +855,8 @@ mod tests {
             matches: vec![MatchHunk {
                 file: test_file.clone(),
                 line: 1,
-                col: 3,
+                byte_offset: 3,
+                char_offset: 3,
                 variant: "old_name".to_string(),
                 content: "old_name".to_string(),
                 replace: "new_name".to_string(),
@@ -982,7 +983,8 @@ mod tests {
             matches: vec![MatchHunk {
                 file: test_file.clone(),
                 line: 1,
-                col: 3,
+                byte_offset: 3,
+                char_offset: 3,
                 variant: "old".to_string(),
                 content: "old".to_string(),
                 replace: "new".to_string(),

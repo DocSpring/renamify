@@ -74,13 +74,13 @@ APIClass = API
     for m in matches {
         eprintln!(
             "  Line {}, Col {}: '{}' -> '{}'",
-            m.line, m.col, m.content, m.replace
+            m.line, m.char_offset, m.content, m.replace
         );
     }
 
     // Find the class definition - should be PascalCase
     let class_match = matches.iter()
-        .find(|m| m.line == 1 && m.col == 6)  // "class api" - col is 0-based
+        .find(|m| m.line == 1 && m.char_offset == 6)  // "class api" - char_offset is 0-based
         .expect("Should find class definition");
 
     // This SHOULD be "ServiceHandler" (PascalCase) if ambiguity resolver works
@@ -93,7 +93,7 @@ APIClass = API
 
     // Find the function definition - should be snake_case
     let func_match = matches.iter()
-        .find(|m| m.line == 5 && m.col == 4)  // "def api" - col is 0-based
+        .find(|m| m.line == 5 && m.char_offset == 4)  // "def api" - char_offset is 0-based
         .expect("Should find function definition");
 
     // This SHOULD be "service_handler" (snake_case) if ambiguity resolver works
@@ -106,7 +106,7 @@ APIClass = API
     // Lowercase variable should be snake_case
     let var_match = matches
         .iter()
-        .find(|m| m.line == 9 && m.col == 0 && m.content == "api_key")
+        .find(|m| m.line == 9 && m.char_offset == 0 && m.content == "api_key")
         .expect("Should find variable assignment");
 
     assert_eq!(
@@ -118,7 +118,7 @@ APIClass = API
     // Uppercase constant should be SCREAMING_SNAKE_CASE
     let const_match = matches
         .iter()
-        .find(|m| m.line == 10 && m.col == 0 && m.content == "API_URL")
+        .find(|m| m.line == 10 && m.char_offset == 0 && m.content == "API_URL")
         .expect("Should find constant assignment");
 
     assert_eq!(
@@ -202,7 +202,7 @@ const API_TIMEOUT = 5000;
     // const variable should be camelCase
     let const_match = matches
         .iter()
-        .find(|m| m.line == 5 && m.col == 6)
+        .find(|m| m.line == 5 && m.char_offset == 6)
         .expect("Should find const variable");
 
     assert_eq!(
@@ -278,7 +278,7 @@ def get_api():
     // Function reference should be "backend" (snake_case)
     let func_ref = matches
         .iter()
-        .find(|m| m.line == 5 && m.col > 10)
+        .find(|m| m.line == 5 && m.char_offset > 10)
         .expect("Should find function call");
 
     assert_eq!(
