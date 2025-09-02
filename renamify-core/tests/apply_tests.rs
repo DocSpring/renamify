@@ -177,7 +177,6 @@ fn test_rollback_on_error() {
     // Apply should fail
     let options = ApplyOptions {
         backup_dir: temp_dir.path().join(".backups"),
-        atomic: true,
         ..Default::default()
     };
 
@@ -272,7 +271,6 @@ fn test_atomic_operations() {
 
     let options = ApplyOptions {
         backup_dir: temp_dir.path().join(".backups"),
-        atomic: true,
         ..Default::default()
     };
 
@@ -632,7 +630,6 @@ fn test_apply_with_both_renames_and_content_changes() {
     let options = ApplyOptions {
         backup_dir: temp_dir.path().join(".renamify/backups"),
         create_backups: true,
-        atomic: true,
         ..Default::default()
     };
 

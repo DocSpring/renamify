@@ -597,7 +597,6 @@ fn test_repeated_word_compound_bug() {
     let apply_options = ApplyOptions {
         create_backups: true,
         backup_dir: temp_dir.path().join(".renamify/backups"),
-        atomic: true,
         force: false,
         commit: false,
         skip_symlinks: true,

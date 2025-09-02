@@ -15,8 +15,6 @@ pub struct ApplyOptions {
     pub create_backups: bool,
     /// Path to backup directory
     pub backup_dir: PathBuf,
-    /// Perform atomic operations
-    pub atomic: bool,
     /// Commit changes to git after successful apply
     pub commit: bool,
     /// Force apply even with conflicts
@@ -32,7 +30,6 @@ impl Default for ApplyOptions {
         Self {
             create_backups: true,
             backup_dir: PathBuf::from(".renamify/backups"),
-            atomic: true,
             commit: false,
             force: false,
             skip_symlinks: true,
@@ -621,9 +618,7 @@ pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
                 e
             ))?;
 
-            if options.atomic {
-                rollback(&mut state)?;
-            }
+            rollback(&mut state)?;
 
             return Err(e);
         }
@@ -693,9 +688,7 @@ pub fn apply_plan(plan: &mut Plan, options: &ApplyOptions) -> Result<()> {
         if let Err(e) = perform_rename(&adjusted_from, &adjusted_to, is_dir, &mut state) {
             state.log(&format!("Error performing rename: {}", e))?;
 
-            if options.atomic {
-                rollback(&mut state)?;
-            }
+            rollback(&mut state)?;
 
             return Err(e);
         }

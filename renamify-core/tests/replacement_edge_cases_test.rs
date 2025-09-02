@@ -38,7 +38,6 @@ let mixed = renamify_someCAMEL-case;
     let apply_opts = ApplyOptions {
         create_backups: true,
         backup_dir,
-        atomic: true,
         commit: false,
         force: false,
         skip_symlinks: false,
@@ -137,7 +136,6 @@ let env = std::env::var("RENAMIFY_ENABLED").unwrap_or_default();
     let apply_opts = ApplyOptions {
         create_backups: true,
         backup_dir,
-        atomic: true,
         commit: false,
         force: false,
         skip_symlinks: false,

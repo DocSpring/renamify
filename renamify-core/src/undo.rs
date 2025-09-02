@@ -392,7 +392,6 @@ pub fn redo_renaming(id: &str, renamify_dir: &Path) -> Result<()> {
     let options = ApplyOptions {
         backup_dir: renamify_dir.join("backups"),
         create_backups: true,
-        atomic: true,
         ..Default::default()
     };
 

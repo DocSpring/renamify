@@ -120,7 +120,7 @@ Arguments: {
 }
 ```
 
-With atomic mode, compound words like "DocSpring" are treated as single units, preventing unwanted word boundary detection (e.g., `doc_spring`).
+With atomic identifiers, compound words like "DocSpring" are treated as single units, preventing unwanted word boundary detection (e.g., `doc_spring`).
 
 ### Response Example
 
@@ -151,7 +151,6 @@ Applies a renaming plan to make the actual changes to your codebase.
 | ---------- | ------- | -------- | ------- | ------------------------- |
 | `planId`   | string  | No       | Latest  | Specific plan ID to apply |
 | `planPath` | string  | No       | Auto    | Path to plan file         |
-| `atomic`   | boolean | No       | `true`  | All-or-nothing execution  |
 | `commit`   | boolean | No       | `false` | Create git commit after   |
 
 ### Example Usage
@@ -159,7 +158,6 @@ Applies a renaming plan to make the actual changes to your codebase.
 ```
 Tool: renamify_apply
 Arguments: {
-  "atomic": true,
   "commit": true
 }
 ```

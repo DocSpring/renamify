@@ -63,7 +63,6 @@ fn test_train_case_patterns_are_replaced_in_apply() {
     let apply_options = ApplyOptions {
         backup_dir: root.join(".backups"),
         create_backups: true,
-        atomic: true,
         commit: false,
         force: false,
         skip_symlinks: false,

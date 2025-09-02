@@ -144,7 +144,6 @@ pub fn handle_replace(
     let apply_options = renamify_core::ApplyOptions {
         create_backups: true,
         backup_dir: PathBuf::from(".renamify/backups"),
-        atomic: true,
         commit: false,
         force: force_with_conflicts,
         skip_symlinks: false,

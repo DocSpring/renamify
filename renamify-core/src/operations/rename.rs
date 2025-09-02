@@ -381,7 +381,6 @@ fn apply_rename_changes(plan: &mut Plan, commit: bool, force_with_conflicts: boo
     let apply_options = ApplyOptions {
         create_backups: true,
         backup_dir,
-        atomic: true,
         commit,
         force: force_with_conflicts,
         skip_symlinks: false,

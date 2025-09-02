@@ -44,7 +44,6 @@ pub fn apply_operation(
     let apply_options = ApplyOptions {
         backup_dir: renamify_dir.join("backups"),
         create_backups: true,
-        atomic: true,
         commit,
         force,
         skip_symlinks: false,

@@ -57,9 +57,6 @@ When things go wrong, explain the issue and provide solutions.
 
    ```
    Tool: renamify_apply
-   Arguments: {
-     "atomic": true
-   }
    ```
 
 6. **Report the results**
@@ -277,10 +274,7 @@ Before applying changes in production:
 
 3. Review with `format: "diff"` if requested
 
-4. Apply with `atomic:
-true` always
-
-5. Consider `commit: true` for automatic git commit
+4. Consider `commit: true` for automatic git commit
 
 </Steps>
 
@@ -473,7 +467,6 @@ For AI developers integrating Renamify MCP:
 
 ```json
 {
-  "atomic": true, // Always use atomic operations
   "preview": "summary", // Best for AI agents
   "commit": false, // Let user decide
   "dryRun": false, // Unless explicitly testing
