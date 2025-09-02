@@ -58,9 +58,9 @@ pub fn handle_plan(
 
     // Build atomic config from CLI args and config file
     let atomic_config = renamify_core::atomic::AtomicConfig::from_flags_and_config(
-        atomic.atomic,
-        atomic.atomic_search || (atomic.atomic && !atomic.no_atomic_search),
-        atomic.atomic_replace || (atomic.atomic && !atomic.no_atomic_replace),
+        atomic.atomic_identifiers,
+        atomic.atomic_search || (atomic.atomic_identifiers && !atomic.no_atomic_search),
+        atomic.atomic_replace || (atomic.atomic_identifiers && !atomic.no_atomic_replace),
         config.atomic,
     );
 

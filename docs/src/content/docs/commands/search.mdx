@@ -56,10 +56,10 @@ Available styles: `snake`, `kebab`, `camel`, `pascal`, `screaming-snake`,
 
 ### Atomic Mode
 
-- `--atomic` - Treat the search term as an indivisible unit (no word boundaries)
-- `--atomic-search` - Same as `--atomic` for search command
-- `--no-atomic` - Disable atomic mode (override config)
-- `--no-atomic-search` - Same as `--no-atomic` for search command
+- `--atomic-identifiers` - Treat the search term as an indivisible unit (no word boundaries)
+- `--atomic-search` - Same as `--atomic-identifiers` for search command
+- `--no-atomic-identifiers` - Disable atomic mode (override config)
+- `--no-atomic-search` - Same as `--no-atomic-identifiers` for search command
 
 ### Output Control
 
@@ -145,7 +145,7 @@ Search for compound words as single units:
 
 ```bash
 # DocSpring will match as a whole word, not doc_spring
-renamify search DocSpring --atomic
+renamify search DocSpring --atomic-identifiers
 ```
 
 ### JSON Output for Processing

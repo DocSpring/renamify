@@ -248,6 +248,7 @@ The Rename-Tool-Based-Solution is working.
         &[],    // include_acronyms
         &[],    // exclude_acronyms
         &[],    // only_acronyms
+        None,   // atomic_config
         true,   // auto_approve
         true,   // use_color
     )

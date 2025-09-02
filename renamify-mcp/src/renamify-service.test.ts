@@ -229,13 +229,11 @@ describe('RenamifyService', () => {
       mockedExeca.mockResolvedValueOnce({ stdout: 'Applied' } as never);
 
       await service.apply({
-        atomic: false,
         commit: true,
       });
 
       expect(mockedExeca).toHaveBeenCalledWith('renamify', [
         'apply',
-        '--no-atomic',
         '--commit',
       ]);
     });

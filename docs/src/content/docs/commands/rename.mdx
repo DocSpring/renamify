@@ -72,10 +72,10 @@ renamify rename <OLD> <NEW> [PATHS]... [OPTIONS]
 "Atomic" means treating a search or replace identifier as a single unit,
 not splitting it into separate components. E.g. GitHub → github, not git_hub
 
-- `--atomic` - Treat both search and replace terms as indivisible units
+- `--atomic-identifiers` - Treat both search and replace terms as indivisible units
 - `--atomic-search` - Only treat search term as atomic
 - `--atomic-replace` - Only treat replace term as atomic
-- `--no-atomic` - Disable atomic mode (override config)
+- `--no-atomic-identifiers` - Disable atomic mode (override config)
 - `--no-atomic-search` - Disable atomic for search term
 - `--no-atomic-replace` - Disable atomic for replace term
 
@@ -130,10 +130,10 @@ renamify rename oldApi newApi \
 
 ```bash
 # Treat compound words as single units
-renamify rename DocSpring FormAPI --atomic
+renamify rename DocSpring FormAPI --atomic-identifiers
 
-# Without --atomic, DocSpring would match doc_spring in snake_case
-# With --atomic, DocSpring only matches docspring (as single unit)
+# Without --atomic-identifiers, DocSpring would match doc_spring in snake_case
+# With --atomic-identifiers, DocSpring only matches docspring (as single unit)
 ```
 
 ### Case Style Control

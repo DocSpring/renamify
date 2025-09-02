@@ -124,21 +124,21 @@ pub struct AcronymArgs {
 /// Atomic identifier arguments
 #[derive(Args, Debug, Clone)]
 pub struct AtomicArgs {
-    /// Treat both terms as atomic (single words). E.g. DocSpring becomes docspring in snake_case, not doc_spring
+    /// Treat both search and replace terms as atomic identifiers (no word boundaries). E.g. GitHub becomes github in snake_case, not git_hub
     #[arg(long, conflicts_with_all = ["atomic_search", "atomic_replace"])]
-    pub atomic: bool,
+    pub atomic_identifiers: bool,
 
-    /// Treat search term as atomic (GitHub → github, not git_hub)
+    /// Treat search term as atomic identifier (GitHub → github, not git_hub)
     #[arg(long)]
     pub atomic_search: bool,
 
-    /// Treat replace term as atomic (GitHub → github, not git_hub)
+    /// Treat replace term as atomic identifier (GitHub → github, not git_hub)
     #[arg(long)]
     pub atomic_replace: bool,
 
-    /// Override config: allow word boundary detection
-    #[arg(long, conflicts_with = "atomic")]
-    pub no_atomic: bool,
+    /// Override config: allow word boundary detection for both terms
+    #[arg(long, conflicts_with = "atomic_identifiers")]
+    pub no_atomic_identifiers: bool,
 
     /// Override config for search: allow word boundaries
     #[arg(long, conflicts_with = "atomic_search")]
@@ -421,10 +421,6 @@ pub enum Commands {
     Apply {
         /// Plan ID or path to apply (optional - defaults to .renamify/plan.json)
         id: Option<String>,
-
-        /// Apply changes atomically
-        #[arg(long, default_value_t = true)]
-        atomic: bool,
 
         /// Commit changes to git
         #[arg(long)]

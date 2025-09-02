@@ -117,7 +117,6 @@ Apply a renaming plan to make the actual changes.
 
 - `planId`: Plan ID to apply (uses latest if not specified)
 - `planPath`: Path to plan file
-- `atomic`: Apply changes atomically (default: true)
 - `commit`: Create a git commit after applying (default: false)
 
 **Example Usage (by AI agent):**
@@ -125,7 +124,6 @@ Apply a renaming plan to make the actual changes.
 ```
 Tool: renamify_apply
 Arguments: {
-  "atomic": true,
   "commit": true
 }
 ```
@@ -256,7 +254,7 @@ For comprehensive documentation, visit: https://docspring.github.io/renamify/mcp
 4. **Handle Errors Gracefully**
    - Check if renamify CLI is available
    - Verify files haven't changed since planning
-   - Use atomic=false only when debugging specific issues
+   - Verify the plan before applying changes
 
 ### Common Scenarios
 
@@ -336,7 +334,7 @@ npm run dev
 
 - Files may have changed since plan creation
 - Create a fresh plan with current file state
-- Consider using `atomic: false` to skip problematic files
+- Consider force applying if conflicts are expected
 
 ## License
 

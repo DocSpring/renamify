@@ -66,10 +66,10 @@ Note: The plan is always saved to `.renamify/plan.json` (or the path specified b
 "Atomic" means treating a search or replace identifier as a single unit,
 not splitting it into separate components. E.g. GitHub → github, not git_hub
 
-- `--atomic` - Treat both search and replace terms as indivisible units
+- `--atomic-identifiers` - Treat both search and replace terms as indivisible units
 - `--atomic-search` - Only treat search term as atomic
 - `--atomic-replace` - Only treat replace term as atomic
-- `--no-atomic` - Disable atomic mode (override config)
+- `--no-atomic-identifiers` - Disable atomic mode (override config)
 - `--no-atomic-search` - Disable atomic for search term
 - `--no-atomic-replace` - Disable atomic for replace term
 
@@ -190,7 +190,7 @@ renamify plan old_name new_name --dry-run
 
 ```bash
 # Treat compound words as single units
-renamify plan DocSpring FormAPI --atomic
+renamify plan DocSpring FormAPI --atomic-identifiers
 
 # Only search term is atomic
 renamify plan DocSpring form_api --atomic-search

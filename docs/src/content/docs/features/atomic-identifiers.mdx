@@ -46,19 +46,22 @@ You can specify atomic mode using CLI flags:
 
 <Tabs>
 <TabItem label="Both atomic">
-  ```bash # Both search and replace terms are atomic renamify rename FormAPI
-  DocSpring --atomic
+  ```bash
+  # Both search and replace terms are atomic
+  renamify rename FormAPI DocSpring --atomic-identifiers
   ```
 </TabItem>
 <TabItem label="Search only">
-  ```bash # Only search term is atomic renamify rename FormAPI Helper
-  --atomic-search
+  ```bash
+  # Only search term is atomic
+  renamify rename FormAPI Helper --atomic-search
   ```
 </TabItem>
 <TabItem label="Replace only">
 
-```bash # Only replace term is atomic renamify rename OldName DocSpring
---atomic-replace
+```bash
+# Only replace term is atomic
+renamify rename OldName DocSpring --atomic-replace
 ```
 
 </TabItem>
@@ -97,7 +100,7 @@ renamify rename OldName DocSpring --no-atomic-replace
 When renaming "FormAPI" to "DocSpring" with atomic mode:
 
 ```bash
-renamify rename FormAPI DocSpring --atomic
+renamify rename FormAPI DocSpring --atomic-identifiers
 ```
 
 Results:

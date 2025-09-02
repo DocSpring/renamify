@@ -1,6 +1,6 @@
 use crate::{
-    apply_plan, output::RenameResult, scan_repository_multi, ApplyOptions, LockFile, Plan,
-    PlanOptions, Style,
+    apply_plan, atomic::AtomicConfig, output::RenameResult, scan_repository_multi, ApplyOptions,
+    LockFile, Plan, PlanOptions, Style,
 };
 use anyhow::{anyhow, Context, Result};
 use std::fs;
@@ -35,6 +35,7 @@ pub fn rename_operation(
     include_acronyms: &[String],
     exclude_acronyms: &[String],
     only_acronyms: &[String],
+    atomic_config: Option<&AtomicConfig>,
     auto_approve: bool,
     use_color: bool,
 ) -> Result<(RenameResult, Option<String>)> {
@@ -74,7 +75,7 @@ pub fn rename_operation(
         exclude_acronyms: exclude_acronyms.to_owned(),
         only_acronyms: only_acronyms.to_owned(),
         ignore_ambiguous: false,
-        atomic_config: None, // Rename doesn't need atomic config yet
+        atomic_config: atomic_config.cloned(),
     };
 
     // Resolve all search paths to absolute paths and canonicalize them

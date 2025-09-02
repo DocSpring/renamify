@@ -195,10 +195,10 @@ fn main() {
                 acronyms.exclude_acronyms,
                 acronyms.only_acronyms,
                 cli::args::AtomicArgs {
-                    atomic: false,
+                    atomic_identifiers: false,
                     atomic_search: false,
                     atomic_replace: false,
-                    no_atomic: false,
+                    no_atomic_identifiers: false,
                     no_atomic_search: false,
                     no_atomic_replace: false,
                 },
@@ -210,7 +210,6 @@ fn main() {
 
         Commands::Apply {
             id,
-            atomic: _,
             commit,
             force_with_conflicts,
             output,
@@ -258,7 +257,7 @@ fn main() {
             no_rename_root,
             dry_run,
             acronyms,
-            atomic: _, // Not implemented in rename yet
+            atomic,
             output,
             quiet,
         } => {
@@ -291,6 +290,7 @@ fn main() {
                 acronyms.include_acronyms,
                 acronyms.exclude_acronyms,
                 acronyms.only_acronyms,
+                atomic,
                 cli.yes,
                 use_color,
                 output,

@@ -186,7 +186,7 @@ Binary: `renamify`
 Commands:
 
 - `renamify plan <old> <new> [opts]`
-- `renamify apply [--plan PATH | --id ID] [--atomic true] [--commit]`
+- `renamify apply [--plan PATH | --id ID] [--commit]`
 - `renamify undo <id>`
 - `renamify redo <id>`
 - `renamify history [--limit N]`

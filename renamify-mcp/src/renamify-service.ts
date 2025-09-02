@@ -48,7 +48,6 @@ export type PlanOptions = {
 export type ApplyOptions = {
   planId?: string;
   planPath?: string;
-  atomic?: boolean;
   commit?: boolean;
 };
 
@@ -317,10 +316,6 @@ export class RenamifyService {
       args.push('--plan', options.planPath);
     } else if (options.planId) {
       args.push('--id', options.planId);
-    }
-
-    if (options.atomic === false) {
-      args.push('--no-atomic');
     }
 
     if (options.commit) {

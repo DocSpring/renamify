@@ -175,11 +175,6 @@ export function createServer(
           .optional()
           .describe('Plan ID to apply (uses latest if not specified)'),
         planPath: z.string().optional().describe('Path to plan file'),
-        atomic: z
-          .boolean()
-          .optional()
-          .default(true)
-          .describe('Apply changes atomically'),
         commit: z
           .boolean()
           .optional()
