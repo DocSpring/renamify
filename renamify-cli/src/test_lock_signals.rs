@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[cfg(unix)] // Signal tests only work on Unix-like systems
 #[allow(unused_mut)]
 mod signal_tests {
     use assert_cmd::Command as AssertCommand;
