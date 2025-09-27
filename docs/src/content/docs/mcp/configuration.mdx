@@ -75,7 +75,21 @@ Restart Codex after saving the configuration file so the new MCP server is detec
 
 ### Local Development
 
-When developing the MCP server locally, you can run it directly:
+For day-to-day development we prefer running the TypeScript entrypoint through Bun so you get fast startup without rebuilding the dist bundle.
+Make sure Bun is installed (`brew install bun` or see https://bun.sh/) and that you have already run `task mcp:deps` to install project dependencies.
+
+```json
+{
+  "mcpServers": {
+    "renamify": {
+      "command": "bun",
+      "args": ["run", "renamify-mcp/src/index.ts"]
+    }
+  }
+}
+```
+
+If you want to test the published build, point your configuration at the compiled JavaScript instead:
 
 ```json
 {
@@ -83,19 +97,6 @@ When developing the MCP server locally, you can run it directly:
     "renamify": {
       "command": "node",
       "args": ["path/to/renamify-mcp/dist/index.js"]
-    }
-  }
-}
-```
-
-Or with TypeScript:
-
-```json
-{
-  "mcpServers": {
-    "renamify": {
-      "command": "tsx",
-      "args": ["path/to/renamify-mcp/src/index.ts"]
     }
   }
 }

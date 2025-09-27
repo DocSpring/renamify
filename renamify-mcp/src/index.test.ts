@@ -21,6 +21,48 @@ describe('MCP Server', () => {
     }
   });
 
+  it(
+    'should remain alive while waiting for input',
+    { timeout: 10_000 },
+    async () => {
+      const serverPath = join(__dirname, '..', 'dist', 'index.js');
+
+      serverProcess = spawn('node', [serverPath], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        setTimeout(() => {
+          if (!serverProcess) {
+            reject(new Error('Server process not started'));
+          } else if (serverProcess.exitCode !== null) {
+            reject(
+              new Error(
+                `Server exited early with code ${serverProcess.exitCode}`
+              )
+            );
+          } else if (serverProcess.signalCode) {
+            reject(
+              new Error(
+                `Server terminated early with signal ${serverProcess.signalCode}`
+              )
+            );
+          } else {
+            resolve();
+          }
+        }, 1000);
+      });
+
+      // Close stdin to let the server shut down gracefully
+      serverProcess.stdin?.end();
+      await new Promise<void>((resolve) => {
+        serverProcess?.once('exit', () => resolve());
+      });
+
+      serverProcess = null;
+    }
+  );
+
   it('should start without errors', { timeout: 10_000 }, async () => {
     const serverPath = join(__dirname, '..', 'dist', 'index.js');
 

@@ -392,8 +392,82 @@ export async function main() {
   const service = renamifyPath ? new RenamifyService(renamifyPath) : undefined;
   const server = createServer(service);
   const transport = new StdioServerTransport();
+
   await server.connect(transport);
-  // Server started successfully - MCP servers communicate via stdio
+
+  await new Promise<void>((resolve, reject) => {
+    let finished = false;
+    let closing = false;
+
+    const toError = (value: unknown): Error =>
+      value instanceof Error ? value : new Error(String(value));
+
+    const originalOnClose = transport.onclose;
+    const originalOnError = transport.onerror;
+
+    const cleanup = () => {
+      transport.onclose = originalOnClose;
+      transport.onerror = originalOnError;
+      process.off('SIGINT', onSignal);
+      process.off('SIGTERM', onSignal);
+      process.stdin.off('end', onStdinEnd);
+      process.stdin.off('error', onStdinError);
+    };
+
+    const finish = (error?: unknown) => {
+      if (!finished) {
+        finished = true;
+        cleanup();
+        if (error !== undefined) {
+          reject(toError(error));
+        } else {
+          resolve();
+        }
+      }
+    };
+
+    const closeServer = async () => {
+      if (!closing) {
+        closing = true;
+        try {
+          await server.close();
+        } catch (error) {
+          finish(error);
+        }
+      }
+    };
+
+    function onSignal() {
+      closeServer();
+    }
+
+    function onStdinEnd() {
+      closeServer();
+    }
+
+    function onStdinError(error: unknown) {
+      finish(error);
+    }
+
+    transport.onclose = () => {
+      originalOnClose?.();
+      finish();
+    };
+
+    transport.onerror = (error) => {
+      originalOnError?.(error);
+      finish(error);
+    };
+
+    process.once('SIGINT', onSignal);
+    process.once('SIGTERM', onSignal);
+    process.stdin.once('end', onStdinEnd);
+    process.stdin.once('error', onStdinError);
+
+    if (typeof process.stdin.resume === 'function') {
+      process.stdin.resume();
+    }
+  });
 }
 
 // Only run main if this file is executed directly

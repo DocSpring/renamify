@@ -195,16 +195,25 @@ describe('index.ts', () => {
         connect: mockConnect,
       }));
 
-      await main();
+      const mainPromise = main();
 
-      // Verify StdioServerTransport was created
+      await vi.waitFor(() => {
+        expect(mockConnect).toHaveBeenCalled();
+      });
+
       const { StdioServerTransport } = await import(
         '@modelcontextprotocol/sdk/server/stdio.js'
       );
       expect(StdioServerTransport).toHaveBeenCalled();
 
-      // Verify server.connect was called
-      expect(mockConnect).toHaveBeenCalled();
+      const transportInstance = (StdioServerTransport as any).mock.results[0]
+        ?.value;
+      expect(transportInstance).toBeDefined();
+
+      // Simulate the transport closing to allow main() to resolve
+      transportInstance.onclose?.();
+
+      await mainPromise;
     });
 
     it('should handle errors in main', async () => {
