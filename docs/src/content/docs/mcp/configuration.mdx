@@ -33,60 +33,25 @@ The Renamify MCP server enables AI assistants like Claude Desktop, Cursor, and o
 
 ## Configuration
 
-### Claude Desktop
+### Claude Code
 
-Add to your Claude Desktop configuration:
+Claude Code loads settings from `~/.claude/settings.json`. Merge the following
+configuration (keeping any existing keys) to register the Renamify MCP server:
 
-<Tabs>
-<TabItem label="macOS">
-
-Location: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-```json
+```jsonc
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "mcpServers": {
     "renamify": {
       "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"]
-    }
-  }
+      "args": ["-y", "@renamify/mcp-server"],
+    },
+  },
 }
 ```
 
-</TabItem>
-<TabItem label="Windows">
-
-Location: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "renamify": {
-      "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"]
-    }
-  }
-}
-```
-
-</TabItem>
-<TabItem label="Linux">
-
-Location: `~/.config/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "renamify": {
-      "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"]
-    }
-  }
-}
-```
-
-</TabItem>
-</Tabs>
+After saving the file, restart Claude Code so the new MCP server is available in
+future sessions.
 
 ### Cursor
 
@@ -102,6 +67,20 @@ For Cursor, add to your workspace `.mcp.json`:
   }
 }
 ```
+
+### Codex CLI
+
+Location: `~/.codex/config.toml`
+
+OpenAI's [Codex CLI](https://openai.com/codex/) reads MCP configuration from this file.
+
+```toml
+[mcp_servers.renamify]
+command = "npx"
+args = ["-y", "@renamify/mcp-server"]
+```
+
+Restart Codex after saving the configuration file so the new MCP server is detected.
 
 ### Local Development
 

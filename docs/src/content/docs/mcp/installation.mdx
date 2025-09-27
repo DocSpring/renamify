@@ -148,15 +148,15 @@ npm install -g @renamify/mcp-server
 ## Step 3: Configure Your AI Assistant
 
 <Tabs>
-  <TabItem label="Claude Desktop">
-    ### Claude Desktop Configuration
+  <TabItem label="Claude Code">
+    ### Claude Code Configuration
 
-    1. Open Claude Desktop settings
-    2. Navigate to the Developer section
-    3. Add the following to your MCP servers configuration:
+    Claude Code reads its settings from `~/.claude/settings.json`. Merge the
+    following snippet into that file (preserving any existing settings):
 
-    ```json
+    ```jsonc
     {
+      "$schema": "https://json.schemastore.org/claude-code-settings.json",
       "mcpServers": {
         "renamify": {
           "command": "npx",
@@ -166,7 +166,7 @@ npm install -g @renamify/mcp-server
     }
     ```
 
-    4. Restart Claude Desktop for the changes to take effect
+    Restart Claude Code so it reloads the updated MCP server list.
 
   </TabItem>
 
@@ -190,6 +190,24 @@ npm install -g @renamify/mcp-server
     ```
 
     5. Reload Cursor window (Cmd/Ctrl + R)
+
+  </TabItem>
+
+  <TabItem label="Codex CLI">
+    ### Codex CLI Configuration
+
+    OpenAI's [Codex CLI](https://openai.com/codex/) reads MCP settings from `~/.codex/config.toml`.
+
+    1. Open (or create) `~/.codex/config.toml`
+    2. Add the Renamify server configuration:
+
+    ```toml
+    [mcp_servers.renamify]
+    command = "npx"
+    args = ["-y", "@renamify/mcp-server"]
+    ```
+
+    3. Save the file and restart Codex to load the new MCP server
 
   </TabItem>
 

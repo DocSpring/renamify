@@ -4,14 +4,9 @@ The ONLY reason you should stop is if you have a blocking question for the user.
 
 ---
 
-# Renamify - CLAUDE Agent Guide
+# Renamify - AI Agent Guide
 
 Smart case-aware search and replace across code and files with atomic apply and undo.
-
-## Import Task Master rules
-
-Treat this file as if it imports Task Master rules:
-@./.taskmaster/CLAUDE.md
 
 ## Project background
 
@@ -75,9 +70,9 @@ They should be mentioned in any package files, copyright notices, etc.
 
 - `renamify-core` - core logic
 - `renamify-cli` - CLI frontend
-- `.claude/agents` - orchestrator, executor, checker role specs
-- `.taskmaster` - Task Master config, templates, and docs
-- `.taskmaster/docs/prd.txt` - PRD used by Task Master
+- `renamify-mcp` - MCP server
+- `renamify-vscode` - VS Code extension
+- `docs` - Starlight documentation
 
 ## Agent roles and behavior
 
@@ -196,6 +191,7 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - Node TypeScript wrapper around the CLI
 - Tools: `plan`, `apply`, `undo`, `history`, `preview`
 - Installed via `npx`, expects `renamify` on PATH
+- Codex CLI uses `~/.codex/config.toml`; ensure docs include the TOML MCP example
 
 ## Coding standards
 
@@ -288,7 +284,7 @@ If the user insists after your pushback, then proceed, but always voice concerns
 
 ## UPDATE THIS FILE!
 
-Remember to update your own CLAUDE.md file with corrections and improvements while you are working.
+Remember to update your own AGENTS.md file with corrections and improvements while you are working.
 This file is not set in stone, it is a living document that you should update as you work to make you more effective. Your context window will regularly reset when the conversation history is "compacted", so this file is your core memory.
 
 ## CRITICAL: ALWAYS TEST BEFORE CLAIMING COMPLETION
