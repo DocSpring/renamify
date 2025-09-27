@@ -35,23 +35,14 @@ The Renamify MCP server enables AI assistants like Claude Desktop, Cursor, and o
 
 ### Claude Code
 
-Claude Code loads settings from `~/.claude/settings.json`. Merge the following
-configuration (keeping any existing keys) to register the Renamify MCP server:
+Run the following command to add the Renamify MCP server:
 
-```jsonc
-{
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "mcpServers": {
-    "renamify": {
-      "command": "npx",
-      "args": ["-y", "@renamify/mcp-server"],
-    },
-  },
-}
+```bash
+claude mcp add renamify -- npx -y @renamify/mcp-server
 ```
 
-After saving the file, restart Claude Code so the new MCP server is available in
-future sessions.
+Claude Code loads MCP server settings from `~/.claude.json` or
+from `.mcp.json` in the project root.
 
 ### Cursor
 

@@ -151,22 +151,14 @@ npm install -g @renamify/mcp-server
   <TabItem label="Claude Code">
     ### Claude Code Configuration
 
-    Claude Code reads its settings from `~/.claude/settings.json`. Merge the
-    following snippet into that file (preserving any existing settings):
+    Run the following command to add the Renamify MCP server:
 
-    ```jsonc
-    {
-      "$schema": "https://json.schemastore.org/claude-code-settings.json",
-      "mcpServers": {
-        "renamify": {
-          "command": "npx",
-          "args": ["-y", "@renamify/mcp-server"]
-        }
-      }
-    }
+    ```bash
+    claude mcp add renamify -- npx -y @renamify/mcp-server
     ```
 
-    Restart Claude Code so it reloads the updated MCP server list.
+    Claude Code loads MCP server settings from `~/.claude.json` or
+    from `.mcp.json` in the project root.
 
   </TabItem>
 
