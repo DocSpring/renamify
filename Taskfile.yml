@@ -1,0 +1,110 @@
+version: "3"
+run: once
+
+vars:
+  RUST_TARGET_DIR: "{{.RUST_TARGET_DIR | default \"target\"}}"
+
+includes:
+  rust: ./Taskfile.rust.yml
+  mcp: ./Taskfile.mcp.yml
+  vscode: ./Taskfile.vscode.yml
+  docs: ./Taskfile.docs.yml
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  setup:
+    desc: Install toolchains and project dependencies
+    deps:
+      - rust:install-tools
+      - mcp:deps
+      - vscode:deps
+      - docs:deps
+      - rust:bindings:deps
+
+  deps:
+    desc: Ensure all project dependencies are installed
+    deps:
+      - mcp:deps
+      - vscode:deps
+      - docs:deps
+      - rust:bindings:deps
+
+  format:
+    desc: Format Rust and TypeScript sources
+    deps:
+      - rust:format
+      - rust:bindings:format
+      - mcp:format
+      - vscode:format
+      - docs:format
+
+  lint:
+    desc: Run non-destructive lint and type checks across the repo
+    deps:
+      - rust:lint
+      - mcp:lint
+      - vscode:lint
+      - docs:lint
+
+  lint:fix:
+    desc: Auto-fix lint issues across all projects (safe operations only)
+    deps:
+      - rust:lint:fix
+      - mcp:lint:fix
+      - vscode:lint:fix
+      - docs:lint:fix
+
+  test:
+    desc: Run unit and integration test suites
+    deps:
+      - rust:test
+      - mcp:test
+      - vscode:test
+
+  test:e2e:
+    desc: Execute the full end-to-end test flow
+    cmds:
+      - ./scripts/e2e-test.sh
+
+  build:
+    desc: Build all binaries and bundles
+    deps:
+      - rust:build
+      - mcp:build
+      - vscode:build
+      - docs:build
+
+  check:
+    desc: Run lightweight validation (lint + tests)
+    cmds:
+      - task: lint
+      - task: test
+
+  ci:
+    desc: Run the full CI pipeline
+    cmds:
+      - task: lint
+      - task: rust:lint:strict
+      - task: test
+      - task: rust:test:release
+      - task: test:e2e
+      - task: rust:doc
+      - task: docs:build
+
+  clean:
+    desc: Remove build artifacts across all projects
+    deps:
+      - rust:clean
+      - mcp:clean
+      - vscode:clean
+      - docs:clean
+
+  run-all-tests:
+    desc: Run the legacy all-tests script (kept for parity)
+    cmds:
+      - ./scripts/run-all-tests.sh

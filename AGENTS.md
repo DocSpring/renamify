@@ -225,6 +225,13 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 - When showing commands, always use `pnpm` not `npm`
 - Examples: `pnpm install`, `pnpm test`, `pnpm build`
 
+## Task Runner
+
+- Use the Taskfile-based runner (`task`) for orchestrating workflows instead of the old justfile.
+- Install go-task if needed (e.g. `brew install go-task` or follow https://taskfile.dev).
+- Core commands: `task lint`, `task test`, `task build`, `task ci`, `task format`, `task test:e2e`.
+- Each project (Rust, MCP server, VS Code extension, docs) exposes its own namespace via includes such as `task rust:lint` or `task docs:build`.
+
 ## CRITICAL: Think Before Acting - The User Is Not Always Right!
 
 **DO NOT BLINDLY FOLLOW INSTRUCTIONS!** Always think critically:

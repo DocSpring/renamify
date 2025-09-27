@@ -1,0 +1,80 @@
+version: "3"
+run: once
+
+tasks:
+  deps:
+    desc: Install VS Code extension dependencies (pnpm)
+    dir: renamify-vscode
+    run: once
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  build:
+    desc: Build the VS Code extension and webview bundles
+    dir: renamify-vscode
+    deps: [deps]
+    cmds:
+      - pnpm compile
+
+  build:package:
+    desc: Package the VS Code extension for distribution
+    dir: renamify-vscode
+    deps: [build]
+    cmds:
+      - pnpm package
+
+  check:
+    desc: Run VS Code extension type checking and linting
+    dir: renamify-vscode
+    deps: [deps]
+    cmds:
+      - pnpm check
+
+  lint:
+    desc: Run VS Code extension lint checks (non-destructive)
+    dir: renamify-vscode
+    deps: [check]
+
+  lint:fix:
+    desc: Apply safe lint fixes for the VS Code extension
+    dir: renamify-vscode
+    deps: [deps]
+    cmds:
+      - pnpm lint
+
+  format:
+    desc: Format VS Code extension sources
+    dir: renamify-vscode
+    deps: [deps]
+    cmds:
+      - pnpm format
+
+  test:
+    desc: Run VS Code extension tests (extension + webview)
+    dir: renamify-vscode
+    deps: [check]
+    cmds:
+      - pnpm test
+
+  test:webview:
+    desc: Run webview-only tests
+    dir: renamify-vscode
+    deps: [deps]
+    cmds:
+      - pnpm test:webview
+
+  dev:
+    desc: Start extension and webview watchers
+    dir: renamify-vscode
+    deps: [deps]
+    cmds:
+      - pnpm watch
+
+  clean:
+    desc: Remove extension build artifacts
+    dir: renamify-vscode
+    cmds:
+      - rm -rf dist
+      - find media -name '*.js' -delete || true
+      - find media -name '*.js.map' -delete || true
+      - rm -rf node_modules

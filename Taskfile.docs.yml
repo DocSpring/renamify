@@ -1,0 +1,65 @@
+version: "3"
+run: once
+
+tasks:
+  deps:
+    desc: Install documentation site dependencies (pnpm)
+    dir: docs
+    run: once
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  build:
+    desc: Build the documentation site
+    dir: docs
+    deps: [deps]
+    cmds:
+      - pnpm build
+
+  preview:
+    desc: Preview the built documentation site locally
+    dir: docs
+    deps: [build]
+    cmds:
+      - pnpm preview
+
+  dev:
+    desc: Start docs in dev/watch mode
+    dir: docs
+    deps: [deps]
+    cmds:
+      - pnpm dev
+
+  check:
+    desc: Run docs linting and formatting checks
+    dir: docs
+    deps: [deps]
+    cmds:
+      - pnpm check
+
+  lint:
+    desc: Run docs lint checks (non-destructive)
+    dir: docs
+    deps: [check]
+
+  lint:fix:
+    desc: Apply safe lint fixes for docs
+    dir: docs
+    deps: [deps]
+    cmds:
+      - pnpm lint:fix
+
+  format:
+    desc: Format Markdown, MDX, and Astro sources
+    dir: docs
+    deps: [deps]
+    cmds:
+      - pnpm format
+
+  clean:
+    desc: Remove docs build artifacts
+    dir: docs
+    cmds:
+      - rm -rf node_modules
+      - rm -rf .astro
+      - rm -rf dist

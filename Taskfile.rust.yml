@@ -1,0 +1,102 @@
+version: "3"
+run: once
+
+tasks:
+  format:
+    desc: Format Rust sources with rustfmt
+    cmds:
+      - cargo fmt --all
+
+  fmt:check:
+    desc: Verify Rust formatting without modifying files
+    cmds:
+      - cargo fmt --all -- --check
+
+  clippy:
+    desc: Run clippy lint checks (allow warnings)
+    cmds:
+      - cargo clippy --all-targets --all-features
+
+  clippy:strict:
+    desc: Run clippy with warnings treated as errors
+    cmds:
+      - cargo clippy --all-targets --all-features -- -D warnings
+
+  check:
+    desc: Run cargo check across the workspace
+    cmds:
+      - cargo check --all
+
+  test:
+    desc: Run Rust unit and integration tests
+    cmds:
+      - cargo test --all
+
+  test:release:
+    desc: Run Rust tests with release optimizations
+    cmds:
+      - cargo test --all --release
+
+  build:
+    desc: Build all Rust targets (debug)
+    cmds:
+      - cargo build --all
+
+  build:release:
+    desc: Build all Rust targets (release)
+    cmds:
+      - cargo build --all --release
+
+  doc:
+    desc: Build Rust documentation
+    cmds:
+      - cargo doc --no-deps --all-features
+
+  lint:
+    desc: Run Rust formatting, linting, and spelling checks
+    deps: [fmt:check, clippy]
+    cmds:
+      - taplo format --check *.toml */*.toml
+      - typos
+
+  lint:strict:
+    desc: Run Rust linting with clippy warnings treated as errors
+    deps: [fmt:check, clippy:strict]
+    cmds:
+      - taplo format --check *.toml */*.toml
+      - typos
+
+  lint:fix:
+    desc: Apply Rust formatting, clippy fixes, and whitespace cleanup
+    cmds:
+      - cargo fmt --all
+      - cargo clippy --all-targets --all-features --fix --allow-dirty
+      - taplo format *.toml */*.toml
+      - typos --write-changes
+
+  clean:
+    desc: Clean Rust build artifacts and temporary state
+    cmds:
+      - cargo clean
+      - rm -rf target/
+      - rm -rf .renamify/
+
+  install-tools:
+    desc: Install shared Rust developer tooling
+    cmds:
+      - cargo install taplo-cli typos-cli lefthook
+      - lefthook install
+
+  bindings:deps:
+    desc: Install Node tooling used for formatting generated bindings
+    run: once
+    dir: renamify-core
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  bindings:format:
+    desc: Format generated TypeScript bindings in renamify-core
+    deps: [bindings:deps]
+    dir: renamify-core
+    cmds:
+      - pnpm format-bindings

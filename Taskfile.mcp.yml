@@ -1,0 +1,64 @@
+version: "3"
+run: once
+
+tasks:
+  deps:
+    desc: Install MCP server dependencies (pnpm)
+    dir: renamify-mcp
+    run: once
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  build:
+    desc: Build the MCP server
+    dir: renamify-mcp
+    deps: [deps]
+    cmds:
+      - pnpm build
+
+  check:
+    desc: Run type checking and linting in check mode
+    dir: renamify-mcp
+    deps: [deps]
+    cmds:
+      - pnpm check
+
+  lint:
+    desc: Run MCP server lint checks (non-destructive)
+    dir: renamify-mcp
+    deps: [check]
+
+  lint:fix:
+    desc: Apply safe lint fixes for the MCP server
+    dir: renamify-mcp
+    deps: [deps]
+    cmds:
+      - pnpm lint
+
+  format:
+    desc: Format MCP server sources
+    dir: renamify-mcp
+    deps: [deps]
+    cmds:
+      - pnpm format
+
+  test:
+    desc: Run MCP server tests
+    dir: renamify-mcp
+    deps: [check]
+    cmds:
+      - pnpm test
+
+  dev:
+    desc: Start the MCP server in watch mode
+    dir: renamify-mcp
+    deps: [deps]
+    cmds:
+      - pnpm dev
+
+  clean:
+    desc: Remove MCP build outputs
+    dir: renamify-mcp
+    cmds:
+      - rm -rf dist
+      - rm -rf node_modules
