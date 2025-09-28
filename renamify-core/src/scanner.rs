@@ -3,15 +3,17 @@ use crate::ambiguity::{get_possible_styles, is_ambiguous, AmbiguityContext, Ambi
 use crate::case_model::{parse_to_tokens, to_style, Style};
 use crate::pattern::{build_pattern, Match};
 use crate::rename::plan_renames;
+use aho_corasick::{AhoCorasick, MatchKind};
 use anyhow::Result;
 use bstr::ByteSlice;
 use content_inspector::ContentType;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use memmap2::Mmap;
+use rayon::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, File};
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
@@ -199,6 +201,13 @@ pub struct Stats {
     pub files_with_matches: usize,
 }
 
+#[derive(Default)]
+struct FileOutcome {
+    scanned: bool,
+    hunks: Vec<MatchHunk>,
+    matches_by_variant: HashMap<String, usize>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct Plan {
@@ -224,6 +233,7 @@ pub fn scan_repository(root: &Path, old: &str, new: &str, options: &PlanOptions)
 }
 
 /// Multi-path repository scan
+#[allow(clippy::too_many_lines)]
 pub fn scan_repository_multi(
     roots: &[PathBuf],
     search: &str,
@@ -249,6 +259,92 @@ pub fn scan_repository_multi(
     let variants: Vec<String> = variant_map.keys().cloned().collect();
     let _pattern = build_pattern(&variants)?;
 
+    let search_tokens = crate::case_model::parse_to_tokens_with_acronyms(search, &acronym_set);
+    let mut matcher_patterns = variants;
+    let mut token_variant_groups: Vec<Vec<String>> = Vec::new();
+    for token in &search_tokens.tokens {
+        let text = token.text.trim();
+        if text.len() < 3 {
+            continue;
+        }
+
+        let mut variants_for_token = Vec::new();
+        let original = text.to_string();
+        matcher_patterns.push(original.clone());
+        variants_for_token.push(original.clone());
+
+        let lower = text.to_lowercase();
+        if !variants_for_token.iter().any(|v| v == &lower) {
+            matcher_patterns.push(lower.clone());
+            variants_for_token.push(lower);
+        }
+
+        let upper = text.to_uppercase();
+        if !variants_for_token.iter().any(|v| v == &upper) {
+            matcher_patterns.push(upper.clone());
+            variants_for_token.push(upper);
+        }
+
+        if let Some(first_char) = text.chars().next() {
+            let rest = &text[first_char.len_utf8()..];
+            let mut title = String::new();
+            title.extend(first_char.to_uppercase());
+            title.push_str(&rest.to_lowercase());
+            if !variants_for_token.iter().any(|v| v == &title) {
+                matcher_patterns.push(title.clone());
+                variants_for_token.push(title);
+            }
+        }
+
+        token_variant_groups.push(variants_for_token);
+    }
+    matcher_patterns.sort();
+    matcher_patterns.dedup();
+
+    let mut token_patterns = Vec::new();
+    let mut token_pattern_to_group = Vec::new();
+    for (idx, variants) in token_variant_groups.iter().enumerate() {
+        for variant in variants {
+            token_pattern_to_group.push(idx);
+            token_patterns.push(variant.clone());
+        }
+    }
+
+    // Precompute helpers shared across files.
+    let default_styles = vec![
+        Style::Snake,
+        Style::Kebab,
+        Style::Camel,
+        Style::Pascal,
+        Style::ScreamingSnake,
+        Style::Train, // Include Train-Case in default styles
+    ];
+    let styles_slice: &[Style] = options
+        .styles
+        .as_deref()
+        .unwrap_or(default_styles.as_slice());
+    let identifier_extractor = crate::compound_scanner::IdentifierExtractor::new(styles_slice);
+
+    let variant_matcher = if matcher_patterns.is_empty() {
+        None
+    } else {
+        Some(
+            AhoCorasick::builder()
+                .match_kind(MatchKind::LeftmostFirst)
+                .build(&matcher_patterns)?,
+        )
+    };
+
+    let token_matcher = if token_patterns.is_empty() {
+        None
+    } else {
+        Some(
+            AhoCorasick::builder()
+                .match_kind(MatchKind::LeftmostFirst)
+                .build(&token_patterns)?,
+        )
+    };
+
     let include_globs = build_globset(&options.includes)?;
     let exclude_globs = build_globset(&options.excludes)?;
 
@@ -263,63 +359,106 @@ pub fn scan_repository_multi(
     // Use shared walker configuration
     let walker = crate::configure_walker(roots, options).build();
 
+    let mut file_entries = Vec::new();
     for entry in walker {
         let Ok(entry) = entry else {
             continue;
         };
 
-        // Skip non-files
         if !entry.file_type().is_some_and(|t| t.is_file()) {
             continue;
         }
 
-        let path = entry.path();
-
-        // Apply include/exclude filters (use relative path for matching)
-        // For multi-path, find the root that this path belongs to
-        let relative_path = roots
+        let path = entry.path().to_path_buf();
+        let relative = roots
             .iter()
             .find_map(|root| path.strip_prefix(root).ok())
-            .unwrap_or(path);
+            .map_or_else(|| path.clone(), std::borrow::ToOwned::to_owned);
 
         if let Some(ref includes) = include_globs {
-            if !includes.is_match(relative_path) {
+            if !includes.is_match(&relative) {
                 continue;
             }
         }
 
         if let Some(ref excludes) = exclude_globs {
-            if excludes.is_match(relative_path) {
+            if excludes.is_match(&relative) {
                 continue;
             }
         }
 
-        if let Ok(content) = read_file_content(path) {
-            stats.files_scanned += 1;
+        file_entries.push(path);
+    }
 
-            // Skip binary files unless we're in -uuu mode
+    let outcomes: Vec<FileOutcome> = file_entries
+        .par_iter()
+        .map(|path| {
+            let mut outcome = FileOutcome::default();
+
+            let content = match read_file_content(path) {
+                Ok(content) => {
+                    outcome.scanned = true;
+                    content
+                },
+                Err(_) => return outcome,
+            };
+
             if !options.binary_as_text() && is_binary(&content) {
-                continue;
+                return outcome;
             }
 
-            // Only use compound scanner (which also finds exact matches)
-            // Debug: Check what styles are being used
-            let actual_styles = options.styles.as_deref().unwrap_or(&[
-                Style::Snake,
-                Style::Kebab,
-                Style::Camel,
-                Style::Pascal,
-                Style::ScreamingSnake,
-                Style::Train, // Include Train-Case in default styles
-            ]);
+            let mut token_line_hits: BTreeSet<usize> = BTreeSet::new();
+            let mut line_offsets = Vec::new();
+            let mut pos = 0;
+            for line in content.lines_with_terminator() {
+                line_offsets.push(pos);
+                pos += line.len();
+            }
+            if line_offsets.is_empty() {
+                line_offsets.push(0);
+            }
+
+            let tokens_satisfied = if let Some(token_matcher) = token_matcher.as_ref() {
+                if token_variant_groups.is_empty() {
+                    false
+                } else {
+                    let mut present = vec![false; token_variant_groups.len()];
+                    for mat in token_matcher.find_iter(&content) {
+                        let token_idx = token_pattern_to_group[mat.pattern()];
+                        present[token_idx] = true;
+                        let offset = mat.start();
+                        let line = match line_offsets.binary_search(&offset) {
+                            Ok(idx) => idx + 1,
+                            Err(idx) => {
+                                if idx == 0 {
+                                    1
+                                } else {
+                                    idx
+                                }
+                            },
+                        };
+                        token_line_hits.insert(line);
+                    }
+                    present.iter().all(|&p| p)
+                }
+            } else {
+                false
+            };
+
+            let variant_found = variant_matcher
+                .as_ref()
+                .is_some_and(|matcher| matcher.find(&content).is_some());
+
+            if !variant_found && !tokens_satisfied {
+                return outcome;
+            }
 
             if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-                eprintln!("SCANNER: Using styles: {:?}", actual_styles);
+                eprintln!("SCANNER: Using styles: {:?}", styles_slice);
                 eprintln!("SCANNER: options.styles = {:?}", options.styles);
             }
 
             let mut file_matches = if replace.is_empty() {
-                // For search operations, use simple pattern matching without compound matches
                 let variants: Vec<String> = variant_map.keys().cloned().collect();
                 if let Ok(pattern) = build_pattern(&variants) {
                     crate::pattern::find_matches(&pattern, &content, path.to_str().unwrap_or(""))
@@ -327,44 +466,65 @@ pub fn scan_repository_multi(
                     Vec::new()
                 }
             } else {
-                // For replace operations, use full compound matching
                 crate::compound_scanner::find_enhanced_matches(
                     &content,
                     path.to_str().unwrap_or(""),
                     search,
                     replace,
                     &variant_map,
-                    actual_styles,
+                    styles_slice,
+                    &identifier_extractor,
+                    if token_line_hits.is_empty() {
+                        None
+                    } else {
+                        Some(&token_line_hits)
+                    },
                 )
             };
 
-            if !file_matches.is_empty() {
-                // Sort by position to maintain order
-                file_matches.sort_by_key(|m| (m.line, m.column));
-
-                let hunks = generate_hunks(
-                    &file_matches,
-                    &content,
-                    &variant_map,
-                    path,
-                    options,
-                    replace,
-                );
-
-                stats.files_with_matches += 1;
-                stats.total_matches += hunks.len();
-
-                for hunk in &hunks {
-                    *stats
-                        .matches_by_variant
-                        .entry(hunk.variant.clone())
-                        .or_insert(0) += 1;
-                }
-
-                matches.extend(hunks);
+            if file_matches.is_empty() {
+                return outcome;
             }
+
+            file_matches.sort_by_key(|m| (m.line, m.column));
+
+            let hunks = generate_hunks(
+                &file_matches,
+                &content,
+                &variant_map,
+                path,
+                options,
+                replace,
+            );
+
+            let mut matches_by_variant = HashMap::new();
+            for hunk in &hunks {
+                *matches_by_variant.entry(hunk.variant.clone()).or_insert(0) += 1;
+            }
+
+            outcome.matches_by_variant = matches_by_variant;
+            outcome.hunks = hunks;
+            outcome
+        })
+        .collect();
+
+    stats.files_scanned = outcomes.iter().filter(|o| o.scanned).count();
+    stats.files_with_matches = outcomes.iter().filter(|o| !o.hunks.is_empty()).count();
+
+    for outcome in outcomes {
+        stats.total_matches += outcome.hunks.len();
+        for (variant, count) in outcome.matches_by_variant {
+            *stats.matches_by_variant.entry(variant).or_insert(0) += count;
         }
+        matches.extend(outcome.hunks);
     }
+
+    matches.sort_by(|a, b| {
+        a.file
+            .cmp(&b.file)
+            .then_with(|| a.line.cmp(&b.line))
+            .then_with(|| a.byte_offset.cmp(&b.byte_offset))
+    });
 
     let paths = if options.rename_files || options.rename_dirs {
         let mut all_renames = Vec::new();

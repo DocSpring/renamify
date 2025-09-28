@@ -150,6 +150,8 @@ Exit codes:
 6. For file and directory names, detect and schedule renames with depth ordering
 7. Emit `plan.json` and fast summary stats
 
+- Implementation note: `scan_repository_multi` pre-filters candidate files with an `AhoCorasick` automaton, processes them in parallel via `rayon`, and only runs the expensive compound identifier scan on lines discovered by direct variant hits or token heuristics. When adjusting matching logic, keep the `token_line_hits` bookkeeping in sync with the `additional_lines` fed into `find_enhanced_matches`.
+
 Boundary rules
 
 - Avoid partial token matches inside larger identifiers unless intended

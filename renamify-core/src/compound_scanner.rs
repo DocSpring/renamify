@@ -4,7 +4,78 @@ use crate::pattern::{build_pattern, is_boundary, Match};
 use crate::scanner::{CoercionMode, MatchHunk, VariantMap};
 use bstr::ByteSlice;
 use regex::bytes::Regex;
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
+
+/// Precompiled identifier extractor reused across files to avoid recompiling
+/// regex patterns on every scan iteration.
+pub struct IdentifierExtractor {
+    regex: Regex,
+    split_on_dots: bool,
+}
+
+impl IdentifierExtractor {
+    /// Construct an extractor tuned for the provided style set.
+    pub fn new(styles: &[Style]) -> Self {
+        let title_pattern = "[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*";
+        let identifier_pattern = "[a-zA-Z_][a-zA-Z0-9_\\-\\.]*";
+        let pattern = if styles.contains(&Style::Title) {
+            format!(r"\b(?:{}|{})\b", title_pattern, identifier_pattern)
+        } else {
+            format!(r"\b{}\b", identifier_pattern)
+        };
+
+        let regex = Regex::new(&pattern).expect("identifier regex must compile");
+        let split_on_dots = !styles.contains(&Style::Dot);
+
+        Self {
+            regex,
+            split_on_dots,
+        }
+    }
+
+    /// Find all potential identifiers in the content using the precompiled pattern.
+    pub fn find_all(&self, content: &[u8]) -> Vec<(usize, usize, String)> {
+        let mut identifiers = Vec::new();
+
+        for m in self.regex.find_iter(content) {
+            let identifier = String::from_utf8_lossy(m.as_bytes()).to_string();
+
+            if std::env::var("RENAMIFY_DEBUG_IDENTIFIERS").is_ok() {
+                println!(
+                    "Found identifier: '{}' at {}-{}",
+                    identifier,
+                    m.start(),
+                    m.end()
+                );
+            }
+
+            if identifier.contains('.') && self.split_on_dots {
+                let parts: Vec<&str> = identifier.split('.').collect();
+                let mut current_pos = m.start();
+
+                for (i, part) in parts.iter().enumerate() {
+                    if !part.is_empty() {
+                        identifiers.push((
+                            current_pos,
+                            current_pos + part.len(),
+                            (*part).to_string(),
+                        ));
+                    }
+                    current_pos += part.len() + 1; // Account for the dot separator
+
+                    if i < parts.len() - 1 && current_pos <= m.end() {
+                        // Dot already handled by position increment above.
+                    }
+                }
+            } else {
+                identifiers.push((m.start(), m.end(), identifier));
+            }
+        }
+
+        identifiers
+    }
+}
 
 /// Normalize a path by removing Windows long path prefix if present
 fn normalize_path(path: &Path) -> PathBuf {
@@ -39,66 +110,6 @@ fn byte_offset_to_char_offset(text: &str, byte_offset: usize) -> usize {
     char_offset
 }
 
-/// Find all potential identifiers in the content using a broad regex pattern
-fn find_all_identifiers(content: &[u8], styles: &[Style]) -> Vec<(usize, usize, String)> {
-    let mut identifiers = Vec::new();
-
-    // Pattern to match identifier-like strings, including dots in some contexts
-    // This is tricky: we want to split on dots for things like obj.prop but keep
-    // dots for mixed-style identifiers like config.max_value
-    // For Title style, we need to include spaces to capture "Title Case" patterns
-    let pattern = if styles.len() == 1 && styles[0] == Style::Title {
-        // Special pattern for Title style that includes spaces
-        r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b"
-    } else {
-        r"\b[a-zA-Z_][a-zA-Z0-9_\-\.]*\b"
-    };
-    let regex = Regex::new(pattern).unwrap();
-
-    for m in regex.find_iter(content) {
-        let identifier = String::from_utf8_lossy(m.as_bytes()).to_string();
-
-        // Debug: print what identifiers are being found
-        if std::env::var("RENAMIFY_DEBUG_IDENTIFIERS").is_ok() {
-            println!(
-                "Found identifier: '{}' at {}-{}",
-                identifier,
-                m.start(),
-                m.end()
-            );
-        }
-
-        // Only split on dots if dot style is NOT in the selected styles
-        // When dot style is selected, keep dot-separated identifiers intact
-        let should_split_on_dots = !styles.contains(&Style::Dot);
-
-        if identifier.contains('.') && should_split_on_dots {
-            // Split on dots for things like obj.method or this.property
-            // But NOT when we're specifically looking for dot.case style
-            let parts: Vec<&str> = identifier.split('.').collect();
-            let mut current_pos = m.start();
-
-            for (i, part) in parts.iter().enumerate() {
-                if !part.is_empty() {
-                    identifiers.push((current_pos, current_pos + part.len(), (*part).to_string()));
-                }
-                current_pos += part.len() + 1; // +1 for the dot
-
-                // If there are more parts, we've consumed a dot
-                if i < parts.len() - 1 && current_pos <= m.end() {
-                    // The dot is at current_pos - 1, move past it
-                    // current_pos is already at the right position for the next part
-                }
-            }
-        } else {
-            // Keep as single identifier (including dots)
-            identifiers.push((m.start(), m.end(), identifier));
-        }
-    }
-
-    identifiers
-}
-
 /// Enhanced matching that finds both exact and compound matches
 pub fn find_enhanced_matches(
     content: &[u8],
@@ -107,6 +118,8 @@ pub fn find_enhanced_matches(
     replace: &str,
     variant_map: &VariantMap,
     styles: &[Style],
+    identifier_extractor: &IdentifierExtractor,
+    additional_lines: Option<&BTreeSet<usize>>,
 ) -> Vec<Match> {
     let mut all_matches = Vec::new();
     let mut processed_ranges = Vec::new(); // Track (start, end) ranges that were exactly matched
@@ -163,7 +176,60 @@ pub fn find_enhanced_matches(
 
     // Third, find all identifiers and check for compound matches
     {
-        let identifiers = find_all_identifiers(content, styles);
+        let identifiers = if processed_ranges.is_empty() {
+            identifier_extractor.find_all(content)
+        } else {
+            let mut candidate_lines = BTreeSet::new();
+            for m in &all_matches {
+                candidate_lines.insert(m.line);
+                if m.line > 1 {
+                    candidate_lines.insert(m.line - 1);
+                }
+                candidate_lines.insert(m.line + 1);
+            }
+
+            if let Some(extra_lines) = additional_lines {
+                candidate_lines.extend(extra_lines.iter().copied());
+            }
+
+            if candidate_lines.is_empty() {
+                identifier_extractor.find_all(content)
+            } else {
+                let mut line_offsets = Vec::new();
+                let mut pos = 0;
+                for line in content.lines_with_terminator() {
+                    line_offsets.push(pos);
+                    pos += line.len();
+                }
+
+                let mut scoped_identifiers = Vec::new();
+                for line_idx in candidate_lines {
+                    let idx = line_idx.saturating_sub(1);
+                    if idx >= line_offsets.len() {
+                        continue;
+                    }
+
+                    let start = line_offsets[idx];
+                    let end = if idx + 1 < line_offsets.len() {
+                        line_offsets[idx + 1]
+                    } else {
+                        content.len()
+                    };
+                    let slice = &content[start..end];
+
+                    for (local_start, local_end, identifier) in identifier_extractor.find_all(slice)
+                    {
+                        scoped_identifiers.push((
+                            start + local_start,
+                            start + local_end,
+                            identifier,
+                        ));
+                    }
+                }
+
+                scoped_identifiers
+            }
+        };
 
         for (start, end, identifier) in identifiers {
             // Skip if this identifier was already matched exactly or if it's completely contained within a processed range
@@ -381,7 +447,8 @@ mod tests {
         let content = b"let preview_format_arg = PreviewFormatArg::new();";
         // Use default styles for test
         let styles = vec![Style::Snake, Style::Pascal];
-        let identifiers = find_all_identifiers(content, &styles);
+        let extractor = IdentifierExtractor::new(&styles);
+        let identifiers = extractor.find_all(content);
 
         // Should find: let, preview_format_arg, PreviewFormatArg, new
         assert!(identifiers.len() >= 4);
@@ -397,7 +464,8 @@ mod tests {
 
         // When looking for dot style only, keep dot-separated identifiers intact
         let dot_styles = vec![Style::Dot];
-        let identifiers = find_all_identifiers(content, &dot_styles);
+        let extractor = IdentifierExtractor::new(&dot_styles);
+        let identifiers = extractor.find_all(content);
         let names: Vec<String> = identifiers.iter().map(|(_, _, id)| id.clone()).collect();
         assert!(names.contains(&"test.case".to_string()));
         assert!(names.contains(&"use.case".to_string()));
@@ -406,7 +474,8 @@ mod tests {
 
         // When using other styles, split on dots
         let other_styles = vec![Style::Snake, Style::Camel];
-        let identifiers = find_all_identifiers(content, &other_styles);
+        let extractor = IdentifierExtractor::new(&other_styles);
+        let identifiers = extractor.find_all(content);
         let names: Vec<String> = identifiers.iter().map(|(_, _, id)| id.clone()).collect();
         // Should split into individual parts
         assert!(names.contains(&"test".to_string()));
@@ -439,9 +508,18 @@ mod tests {
         );
 
         let styles = vec![Style::Snake, Style::Pascal];
+        let extractor = IdentifierExtractor::new(&styles);
 
-        let matches =
-            find_enhanced_matches(content, "test.rs", search, replace, &variant_map, &styles);
+        let matches = find_enhanced_matches(
+            content,
+            "test.rs",
+            search,
+            replace,
+            &variant_map,
+            &styles,
+            &extractor,
+            None,
+        );
 
         // Should find both preview_format_arg and PreviewFormatArg
         assert_eq!(matches.len(), 2);
