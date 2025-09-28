@@ -2,7 +2,7 @@ version: "3"
 run: once
 
 vars:
-  RUST_TARGET_DIR: "{{.RUST_TARGET_DIR | default \"target\"}}"
+  RUST_TARGET_DIR: '{{.RUST_TARGET_DIR | default "target"}}'
 
 includes:
   rust: ./Taskfile.rust.yml
@@ -50,6 +50,7 @@ tasks:
       - mcp:lint
       - vscode:lint
       - docs:lint
+      - lint:typos
 
   lint:fix:
     desc: Auto-fix lint issues across all projects (safe operations only)
@@ -58,6 +59,17 @@ tasks:
       - mcp:lint:fix
       - vscode:lint:fix
       - docs:lint:fix
+      - lint:typos:fix
+
+  lint:typos:
+    desc: Run typos
+    cmds:
+      - typos
+
+  lint:typos:fix:
+    desc: Auto-fix typos
+    cmds:
+      - typos --write
 
   test:
     desc: Run unit and integration test suites
