@@ -205,11 +205,7 @@ describe('RenamifyService', () => {
       const result = await service.apply({ planId: 'abc123' });
 
       expect(result).toBe(mockOutput);
-      expect(mockedExeca).toHaveBeenCalledWith('renamify', [
-        'apply',
-        '--id',
-        'abc123',
-      ]);
+      expect(mockedExeca).toHaveBeenCalledWith('renamify', ['apply', 'abc123']);
     });
 
     it('should apply with plan path', async () => {

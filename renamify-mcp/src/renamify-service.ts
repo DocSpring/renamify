@@ -315,7 +315,7 @@ export class RenamifyService {
     if (options.planPath) {
       args.push('--plan', options.planPath);
     } else if (options.planId) {
-      args.push('--id', options.planId);
+      args.push(options.planId);
     }
 
     if (options.commit) {
