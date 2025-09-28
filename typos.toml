@@ -12,6 +12,7 @@ extend-exclude = [
   # Test files that intentionally contain typos
   "**/test_*",
   "**/*_test*",
+  "docs/src/content/docs/rename-vs-replace.mdx",
 ]
 
 [type.rust]

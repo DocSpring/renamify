@@ -370,7 +370,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         ? `Renamify: ${data.search} → ${data.replace}`
         : `Renamify: Search for "${data.search}"`;
 
-      // Create a new untitled document with the preview contens
+      // Create a new untitled document with the preview contents
       const doc = await vscode.workspace.openTextDocument({
         content: `# ${title}\n\n${result}`,
         language: 'diff', // Use diff language for syntax highlighting
