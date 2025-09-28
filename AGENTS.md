@@ -97,6 +97,7 @@ They should be mentioned in any package files, copyright notices, etc.
 - Snapshot tests for plans and diffs
 - Fuzz tests for regex generation to prevent backtracking issues
 - Cross platform tests including Windows path edge cases
+- Lock signal integration tests rely on the `wait_for_lock_state` polling helper (see `renamify-cli/src/test_lock_signals.rs`); avoid reintroducing fixed sleeps that cause macOS flakes
 
 ## CLI contract
 

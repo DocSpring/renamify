@@ -4,7 +4,7 @@
 mod signal_tests {
     use assert_cmd::Command as AssertCommand;
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::process::{Command, Stdio};
     use std::thread;
     use std::time::{Duration, Instant};
@@ -24,6 +24,28 @@ mod signal_tests {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let lock_file = temp_dir.path().join(".renamify").join("renamify.lock");
         (temp_dir, lock_file)
+    }
+
+    fn wait_for_condition<F>(mut condition: F, timeout: Duration) -> bool
+    where
+        F: FnMut() -> bool,
+    {
+        let start = Instant::now();
+        loop {
+            if condition() {
+                return true;
+            }
+
+            if start.elapsed() >= timeout {
+                return false;
+            }
+
+            thread::sleep(Duration::from_millis(25));
+        }
+    }
+
+    fn wait_for_lock_state(lock_file: &Path, should_exist: bool, timeout: Duration) -> bool {
+        wait_for_condition(|| lock_file.exists() == should_exist, timeout)
     }
 
     #[test]
@@ -60,10 +82,9 @@ mod signal_tests {
             .spawn()
             .expect("Failed to spawn first command");
 
-        // Wait a bit for first command to acquire lock
-        thread::sleep(Duration::from_millis(200));
+        // Wait for first command to acquire lock
         assert!(
-            lock_file.exists(),
+            wait_for_lock_state(&lock_file, true, Duration::from_secs(2)),
             "Lock file should exist while first command runs"
         );
 
@@ -99,8 +120,10 @@ mod signal_tests {
             .expect("Failed to spawn command");
 
         // Wait for lock to be acquired
-        thread::sleep(Duration::from_millis(200));
-        assert!(lock_file.exists(), "Lock file should exist");
+        assert!(
+            wait_for_lock_state(&lock_file, true, Duration::from_secs(2)),
+            "Lock file should exist"
+        );
 
         // Send SIGINT (Ctrl-C)
         unsafe {
@@ -118,11 +141,8 @@ mod signal_tests {
         );
 
         // Give it a moment for cleanup
-        thread::sleep(Duration::from_millis(100));
-
-        // Lock file should be cleaned up
         assert!(
-            !lock_file.exists(),
+            wait_for_lock_state(&lock_file, false, Duration::from_secs(2)),
             "Lock file should be removed after SIGINT"
         );
 
@@ -142,8 +162,10 @@ mod signal_tests {
             .expect("Failed to spawn command");
 
         // Wait for lock to be acquired
-        thread::sleep(Duration::from_millis(200));
-        assert!(lock_file.exists(), "Lock file should exist");
+        assert!(
+            wait_for_lock_state(&lock_file, true, Duration::from_secs(2)),
+            "Lock file should exist"
+        );
 
         // Send SIGTERM
         unsafe {
@@ -161,11 +183,8 @@ mod signal_tests {
         );
 
         // Give it a moment for cleanup
-        thread::sleep(Duration::from_millis(100));
-
-        // Lock file should be cleaned up
         assert!(
-            !lock_file.exists(),
+            wait_for_lock_state(&lock_file, false, Duration::from_secs(2)),
             "Lock file should be removed after SIGTERM"
         );
 
@@ -185,8 +204,10 @@ mod signal_tests {
             .expect("Failed to spawn command");
 
         // Wait for lock to be acquired
-        thread::sleep(Duration::from_millis(200));
-        assert!(lock_file.exists(), "Lock file should exist");
+        assert!(
+            wait_for_lock_state(&lock_file, true, Duration::from_secs(2)),
+            "Lock file should exist"
+        );
 
         // Send SIGKILL (kill -9) - no cleanup possible
         unsafe {
@@ -200,11 +221,8 @@ mod signal_tests {
         assert!(output.status.code().is_none(), "Should be killed by signal");
 
         // Give it a moment, but lock file should still exist since no cleanup
-        thread::sleep(Duration::from_millis(100));
-
-        // Lock file should still exist since SIGKILL prevents cleanup
         assert!(
-            lock_file.exists(),
+            wait_for_lock_state(&lock_file, true, Duration::from_secs(2)),
             "Lock file should still exist after SIGKILL"
         );
 
