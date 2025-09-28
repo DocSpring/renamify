@@ -43,9 +43,10 @@ DocSpring → docSpring (camelCase)
         false,           // fixed_table_width
         false,           // use_color
         false,           // no_acronyms
-        vec![],          // custom_acronyms
-        vec![],          // atomic_search
-        vec![],          // atomic_replace
+        vec![],          // include_acronyms
+        vec![],          // exclude_acronyms
+        vec![],          // only_acronyms
+        false,           // ignore_ambiguous
         Some(temp_path), // cwd
         None,            // atomic_config
     )
@@ -168,9 +169,10 @@ Mixed 🎉 oldname 🎉 content
         false,           // fixed_table_width
         false,           // use_color
         false,           // no_acronyms
-        vec![],          // custom_acronyms
-        vec![],          // atomic_search
-        vec![],          // atomic_replace
+        vec![],          // include_acronyms
+        vec![],          // exclude_acronyms
+        vec![],          // only_acronyms
+        false,           // ignore_ambiguous
         Some(temp_path), // cwd
         None,            // atomic_config
     )

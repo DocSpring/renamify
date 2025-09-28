@@ -31,6 +31,7 @@ pub fn plan_operation(
     include_acronyms: Vec<String>,
     exclude_acronyms: Vec<String>,
     only_acronyms: Vec<String>,
+    ignore_ambiguous: bool,
     working_dir: Option<&std::path::Path>,
     atomic_config: Option<&crate::atomic::AtomicConfig>,
 ) -> Result<(PlanResult, Option<String>)> {
@@ -83,7 +84,7 @@ pub fn plan_operation(
         include_acronyms,
         exclude_acronyms,
         only_acronyms,
-        ignore_ambiguous: false, // TODO: Get from args
+        ignore_ambiguous,
         atomic_config: atomic_config.cloned(),
     };
 

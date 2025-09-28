@@ -33,6 +33,7 @@ pub fn handle_plan(
     atomic: AtomicArgs,
     output: OutputFormat,
     quiet: bool,
+    ignore_ambiguous: bool,
     _regex: bool, // TODO: Implement regex mode
 ) -> Result<()> {
     // Error if both preview and JSON output are specified
@@ -109,6 +110,7 @@ pub fn handle_plan(
         include_acronyms,
         exclude_acronyms,
         only_acronyms,
+        ignore_ambiguous,
         None, // working_dir
         Some(&atomic_config),
     )?;

@@ -134,6 +134,7 @@ fn main() {
                 atomic,
                 output,
                 quiet,
+                styles.ignore_ambiguous,
                 false, // regex flag - not used in Plan command
             )
         },
@@ -204,6 +205,7 @@ fn main() {
                 },
                 output,
                 quiet,
+                styles.ignore_ambiguous,
                 false, // regex flag - not used in Search command
             )
         },
@@ -276,6 +278,7 @@ fn main() {
                 styles.exclude_styles,
                 styles.include_styles,
                 styles.only_styles,
+                styles.ignore_ambiguous,
                 exclude_match,
                 exclude_matching_lines,
                 format,

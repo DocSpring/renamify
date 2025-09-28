@@ -95,6 +95,7 @@ fn test_plan_command_basic() {
         vec![],                     // include_acronyms
         vec![],                     // exclude_acronyms
         vec![],                     // only_acronyms
+        false,                      // ignore_ambiguous
         Some(temp_dir.path()),      // working_dir
         None,                       // atomic_config
     )
@@ -142,6 +143,7 @@ fn test_plan_command_with_styles() {
         vec![],                // include_acronyms
         vec![],                // exclude_acronyms
         vec![],                // only_acronyms
+        false,                 // ignore_ambiguous
         Some(temp_dir.path()), // working_dir
         None,                  // atomic_config
     )
@@ -185,6 +187,7 @@ fn test_plan_command_with_styles() {
         vec![],                        // include_acronyms
         vec![],                        // exclude_acronyms
         vec![],                        // only_acronyms
+        false,                         // ignore_ambiguous
         Some(temp_dir.path()),         // working_dir
         None,                          // atomic_config
     )

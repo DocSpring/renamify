@@ -249,13 +249,16 @@ pub fn scan_repository_multi(
 
     // Build acronym set from options
     let acronym_set = build_acronym_set(options);
-    let variant_map = generate_variant_map_with_acronyms(
+    let mut variant_map = generate_variant_map_with_acronyms(
         search,
         replace,
         options.styles.as_deref(),
         &acronym_set,
         options.atomic_config.as_ref(),
     );
+    if options.ignore_ambiguous {
+        variant_map.retain_unambiguous();
+    }
     let variants: Vec<String> = variant_map.keys().cloned().collect();
     let _pattern = build_pattern(&variants)?;
 
@@ -482,6 +485,10 @@ pub fn scan_repository_multi(
                 )
             };
 
+            if options.ignore_ambiguous {
+                file_matches.retain(|m| !is_ambiguous(&m.variant));
+            }
+
             if file_matches.is_empty() {
                 return outcome;
             }
@@ -646,6 +653,10 @@ fn generate_hunks(
     };
 
     for m in matches {
+        if options.ignore_ambiguous && is_ambiguous(&m.variant) {
+            continue;
+        }
+
         // Check if this match should be excluded
         if options.exclude_match.contains(&m.variant) || options.exclude_match.contains(&m.text) {
             continue;
@@ -1015,6 +1026,12 @@ impl VariantMap {
     /// Get all keys in the variant map
     pub fn keys(&self) -> impl Iterator<Item = &String> {
         self.map.keys()
+    }
+
+    /// Remove entries whose keys are considered ambiguous identifiers.
+    pub fn retain_unambiguous(&mut self) {
+        self.map
+            .retain(|key, _| !crate::ambiguity::is_ambiguous(key));
     }
 }
 
