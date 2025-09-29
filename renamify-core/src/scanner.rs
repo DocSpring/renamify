@@ -981,6 +981,9 @@ fn detect_compound_coercion(
         {
             Some(context_style)
         },
+        crate::coercion::Style::Title if after_style == crate::coercion::Style::Title => {
+            Some(context_style)
+        },
         _ => None,
     }
 }
@@ -993,6 +996,7 @@ fn style_name(style: crate::coercion::Style) -> &'static str {
         crate::coercion::Style::Pascal => "Pascal",
         crate::coercion::Style::Camel => "Camel",
         crate::coercion::Style::ScreamingSnake => "ScreamingSnake",
+        crate::coercion::Style::Title => "Title",
         crate::coercion::Style::Mixed => "Mixed",
         crate::coercion::Style::Dot => "Dot",
     }

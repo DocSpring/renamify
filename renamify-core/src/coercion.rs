@@ -15,6 +15,8 @@ pub enum Style {
     Pascal,
     /// `SCREAMING_SNAKE_CASE`
     ScreamingSnake,
+    /// `Title Case`
+    Title,
     /// dot.separated
     Dot,
     /// Mixed or unknown style
@@ -89,6 +91,7 @@ pub fn detect_style(s: &str) -> Style {
     let mut hyphen_count = 0;
     let mut underscore_count = 0;
     let mut dot_count = 0;
+    let mut space_count = 0;
     let mut has_uppercase = false;
     let mut has_lowercase = false;
     let mut case_transitions = 0;
@@ -100,6 +103,7 @@ pub fn detect_style(s: &str) -> Style {
             '-' => hyphen_count += 1,
             '_' => underscore_count += 1,
             '.' => dot_count += 1,
+            ' ' => space_count += 1,
             _ if ch.is_uppercase() => {
                 has_uppercase = true;
                 if prev_was_lower {
@@ -124,21 +128,27 @@ pub fn detect_style(s: &str) -> Style {
     }
 
     // Determine style based on patterns
-    if hyphen_count > 0 && underscore_count == 0 && dot_count == 0 {
+    if hyphen_count > 0 && underscore_count == 0 && dot_count == 0 && space_count == 0 {
         if has_uppercase && !has_lowercase {
             Style::Mixed // KEBAB-SCREAMING not a standard style
         } else {
             Style::Kebab
         }
-    } else if underscore_count > 0 && hyphen_count == 0 && dot_count == 0 {
+    } else if underscore_count > 0 && hyphen_count == 0 && dot_count == 0 && space_count == 0 {
         if has_uppercase && !has_lowercase {
             Style::ScreamingSnake
         } else {
             Style::Snake
         }
-    } else if dot_count > 0 && hyphen_count == 0 && underscore_count == 0 {
+    } else if dot_count > 0 && hyphen_count == 0 && underscore_count == 0 && space_count == 0 {
         Style::Dot
-    } else if hyphen_count == 0 && underscore_count == 0 && dot_count == 0 {
+    } else if space_count > 0 && hyphen_count == 0 && underscore_count == 0 && dot_count == 0 {
+        if is_title_case(basename) {
+            Style::Title
+        } else {
+            Style::Mixed
+        }
+    } else if hyphen_count == 0 && underscore_count == 0 && dot_count == 0 && space_count == 0 {
         // No separators, check case pattern
         if case_transitions > 0 {
             // Check if it starts with uppercase
@@ -155,6 +165,50 @@ pub fn detect_style(s: &str) -> Style {
     } else {
         Style::Mixed
     }
+}
+
+fn is_title_case(s: &str) -> bool {
+    let mut has_word = false;
+
+    for raw_word in s.split(' ') {
+        if raw_word.is_empty() {
+            continue;
+        }
+
+        // Allow punctuation adjacent to words (e.g., "Foo, Bar")
+        let word = raw_word.trim_matches(|c: char| !c.is_alphanumeric());
+        if word.is_empty() {
+            continue;
+        }
+
+        has_word = true;
+
+        let mut chars = word.chars();
+        let Some(first) = chars.next() else {
+            continue;
+        };
+
+        if !first.is_uppercase() {
+            return false;
+        }
+
+        let rest: String = chars.collect();
+
+        if rest.is_empty() {
+            continue;
+        }
+
+        // Allow all-uppercase acronyms like "API"
+        if rest.chars().all(char::is_uppercase) {
+            continue;
+        }
+
+        if !rest.chars().all(char::is_lowercase) {
+            return false;
+        }
+    }
+
+    has_word
 }
 
 /// Tokenize a string into words
@@ -296,6 +350,11 @@ pub fn render_tokens(tokens: &[Token], style: Style) -> String {
             .map(|t| t.word.to_uppercase())
             .collect::<Vec<_>>()
             .join("_"),
+        Style::Title => tokens
+            .iter()
+            .map(|t| capitalize(&t.word))
+            .collect::<Vec<_>>()
+            .join(" "),
         Style::Dot => tokens
             .iter()
             .map(|t| t.word.clone())
@@ -458,6 +517,7 @@ mod tests {
         assert_eq!(detect_style("PascalCase"), Style::Pascal);
         assert_eq!(detect_style("SCREAMING_SNAKE"), Style::ScreamingSnake);
         assert_eq!(detect_style("dot.separated"), Style::Dot);
+        assert_eq!(detect_style("Title Case"), Style::Title);
         assert_eq!(detect_style("mixed-style_here"), Style::Mixed);
     }
 
@@ -511,6 +571,10 @@ mod tests {
         assert_eq!(
             render_tokens(&tokens, Style::ScreamingSnake),
             "RENAMED_RENAMING_TOOL"
+        );
+        assert_eq!(
+            render_tokens(&tokens, Style::Title),
+            "Renamed Renaming Tool"
         );
         assert_eq!(render_tokens(&tokens, Style::Dot), "renamed.renaming.tool");
     }

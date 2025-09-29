@@ -23,11 +23,13 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
     let has_underscore = text.contains('_');
     let has_hyphen = text.contains('-');
     let has_dot = text.contains('.');
+    let has_space = text.contains(' ');
 
     match style {
         Style::Snake => {
             // snake_case: all lowercase, may have underscores
             !has_uppercase
+                && !has_space
                 && (has_underscore
                     || text
                         .chars()
@@ -36,6 +38,7 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
         Style::Kebab => {
             // kebab-case: all lowercase, may have hyphens
             !has_uppercase
+                && !has_space
                 && (has_hyphen
                     || text
                         .chars()
@@ -43,15 +46,16 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
         },
         Style::Camel => {
             // camelCase: starts lowercase, no separators
-            first_char.is_lowercase() && !has_underscore && !has_hyphen && !has_dot
+            first_char.is_lowercase() && !has_underscore && !has_hyphen && !has_dot && !has_space
         },
         Style::Pascal => {
             // PascalCase: starts uppercase, has mixed case, no separators
-            first_char.is_uppercase() && !has_underscore && !has_hyphen && !has_dot
+            first_char.is_uppercase() && !has_underscore && !has_hyphen && !has_dot && !has_space
         },
         Style::ScreamingSnake => {
             // SCREAMING_SNAKE: all uppercase, may have underscores
             !has_lowercase
+                && !has_space
                 && (has_underscore
                     || text
                         .chars()
@@ -60,7 +64,9 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
         Style::Train => {
             // Train-Case: Each segment is Title case (First-Second) or all caps acronym (API-Service)
             // Must have hyphens for multi-segment, single segment must be Title or all caps
-            if has_hyphen {
+            if has_space {
+                false
+            } else if has_hyphen {
                 // Check if all segments follow Train-Case pattern
                 text.split('-').all(|segment| {
                     !segment.is_empty()
@@ -85,7 +91,7 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
         },
         Style::ScreamingTrain => {
             // SCREAMING-TRAIN: all uppercase, MUST have hyphens
-            !has_lowercase && has_hyphen
+            !has_lowercase && has_hyphen && !has_space
         },
         Style::Title => {
             // Title Case: MUST have spaces and capital letters
@@ -94,6 +100,7 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
         Style::Dot => {
             // dot.case: all lowercase with dots
             !has_uppercase
+                && !has_space
                 && (has_dot
                     || text
                         .chars()
@@ -101,11 +108,11 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
         },
         Style::Lower => {
             // lower: all lowercase, no separators
-            !has_uppercase && !has_underscore && !has_hyphen && !has_dot
+            !has_uppercase && !has_underscore && !has_hyphen && !has_dot && !has_space
         },
         Style::Upper => {
             // UPPER: all uppercase, no separators
-            !has_lowercase && !has_underscore && !has_hyphen && !has_dot
+            !has_lowercase && !has_underscore && !has_hyphen && !has_dot && !has_space
         },
     }
 }

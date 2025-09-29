@@ -2,6 +2,7 @@ use renamify_core::{
     coercion::{apply_coercion, detect_style, Style},
     scan_repository,
     scanner::{CoercionMode, PlanOptions, RenameKind},
+    Style as VariantStyle,
 };
 use std::fs;
 use tempfile::TempDir;
@@ -182,6 +183,50 @@ fn test_pascal_singular_content_replacement() {
         }),
         "expected Promise<DeployApprovalRequest> replacement"
     );
+}
+
+#[test]
+fn test_title_case_replacement_preserves_spaces() {
+    let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("docs.md");
+
+    fs::write(&file_path, "**Deploy Requests**\n").unwrap();
+
+    let mut options = PlanOptions {
+        plan_out: temp_dir.path().join("plan.json"),
+        respect_gitignore: false,
+        ..Default::default()
+    };
+    options.coerce_separators = CoercionMode::Auto;
+
+    let mut styles = VariantStyle::default_styles();
+    if !styles.contains(&VariantStyle::Title) {
+        styles.push(VariantStyle::Title);
+    }
+
+    options.styles = Some(styles);
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "deploy_requests",
+        "deploy_approval_requests",
+        &options,
+    )
+    .unwrap();
+
+    let title_match = plan
+        .matches
+        .iter()
+        .find(|m| m.file.ends_with("docs.md"))
+        .expect("expected title case replacement");
+
+    assert_eq!(title_match.variant, "Deploy Requests");
+    assert_eq!(title_match.replace, "Deploy Approval Requests");
+    assert!(title_match
+        .line_after
+        .as_deref()
+        .is_some_and(|line| line.contains("**Deploy Approval Requests**")));
+    assert!(title_match.coercion_applied.is_none());
 }
 
 #[test]
