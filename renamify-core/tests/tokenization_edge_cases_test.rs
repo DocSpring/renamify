@@ -40,6 +40,7 @@ URL="https://github.com/DocSpring/renamed_renaming_tool"
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
     let plan = scan_repository(&root, "renamed_renaming_tool", "mytool", &options).unwrap();
 
@@ -133,6 +134,7 @@ curl -L "https://raw.githubusercontent.com/DocSpring/oldproject/main/install.sh"
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     // First rename: oldproject -> newproject
@@ -239,6 +241,7 @@ let oldtool_debug_identifiers = true;
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
     let plan = scan_repository(&root, "oldtool", "newtool", &options).unwrap();
 
@@ -297,6 +300,7 @@ let normal_backup = "oldtool_backup";
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
     let plan = scan_repository(&root, "oldtool", "newtool", &options).unwrap();
 
@@ -361,6 +365,7 @@ import: @mycompany/oldtool
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
     let plan = scan_repository(&root, "oldtool", "newtool", &options).unwrap();
 
@@ -424,6 +429,7 @@ let tool_ide_support = true;
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
     let plan = scan_repository(&root, "tool", "app", &options).unwrap();
 
@@ -499,6 +505,7 @@ fn test() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
     let plan = scan_repository(&root, "tool", "app", &options).unwrap();
 
@@ -573,6 +580,7 @@ if std::env::var("TOOL_IDENTIFIER_DEBUG").is_ok() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
     let plan = scan_repository(&root, "tool", "application", &options).unwrap();
 

@@ -62,6 +62,7 @@ APIClass = API
         vec![],          // include_acronyms
         vec![],          // exclude_acronyms
         vec![],          // only_acronyms
+        true,            // enable_plural_variants
         false,           // ignore_ambiguous
         Some(temp_path), // working_dir
         None,            // atomic_config
@@ -181,6 +182,7 @@ const API_TIMEOUT = 5000;
         vec![],
         vec![],
         vec![],
+        true,
         false,
         Some(temp_path),
         None,
@@ -258,6 +260,7 @@ def get_api():
         vec![],
         vec![],
         vec![],
+        true,
         false,
         Some(temp_path),
         None,

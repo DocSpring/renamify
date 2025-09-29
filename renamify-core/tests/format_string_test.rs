@@ -52,6 +52,7 @@ fn main() {
         vec![], // include_acronyms
         vec![], // exclude_acronyms
         vec![], // only_acronyms
+        true,   // enable_plural_variants
         false,  // ignore_ambiguous
         None,   // cwd
         None,   // atomic_config
@@ -141,6 +142,7 @@ template = "mytool_{}.tmp"
         vec![],          // include_acronyms
         vec![],          // exclude_acronyms
         vec![],          // only_acronyms
+        true,            // enable_plural_variants
         false,           // ignore_ambiguous
         Some(temp_path), // cwd - set to temp dir (expects &Path)
         None,            // atomic_config

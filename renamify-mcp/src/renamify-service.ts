@@ -27,6 +27,7 @@ export type SearchOptions = {
   renameDirs?: boolean;
   ignoreAmbiguous?: boolean;
   atomicSearch?: boolean;
+  enablePluralVariants?: boolean;
 };
 
 export type PlanOptions = {
@@ -43,6 +44,7 @@ export type PlanOptions = {
   ignoreAmbiguous?: boolean;
   atomicSearch?: boolean;
   atomicReplace?: boolean;
+  enablePluralVariants?: boolean;
 };
 
 export type ApplyOptions = {
@@ -169,6 +171,7 @@ export class RenamifyService {
     this.addRenameArgs(args, options.renameFiles, options.renameDirs);
     this.addIgnoreAmbiguousArg(args, options.ignoreAmbiguous);
     this.addAtomicSearchArg(args, options.atomicSearch);
+    this.addPluralArg(args, options.enablePluralVariants);
 
     return args;
   }
@@ -190,6 +193,7 @@ export class RenamifyService {
     this.addIgnoreAmbiguousArg(args, options.ignoreAmbiguous);
     this.addAtomicSearchArg(args, options.atomicSearch);
     this.addAtomicReplaceArg(args, options.atomicReplace);
+    this.addPluralArg(args, options.enablePluralVariants);
 
     return args;
   }
@@ -259,6 +263,12 @@ export class RenamifyService {
   private addAtomicReplaceArg(args: string[], atomicReplace?: boolean): void {
     if (atomicReplace) {
       args.push('--atomic-replace');
+    }
+  }
+
+  private addPluralArg(args: string[], enablePluralVariants?: boolean): void {
+    if (enablePluralVariants === false) {
+      args.push('--no-plural-variants');
     }
   }
 

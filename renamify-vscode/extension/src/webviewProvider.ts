@@ -137,6 +137,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
             caseStyles: data.caseStyles,
             renamePaths: data.renamePaths,
             ignoreAmbiguous: data.ignoreAmbiguous,
+            enablePluralVariants: data.enablePluralVariants,
             dryRun: true,
           }
         );
@@ -173,6 +174,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           caseStyles: data.caseStyles,
           renamePaths: data.renamePaths,
           ignoreAmbiguous: data.ignoreAmbiguous,
+          enablePluralVariants: data.enablePluralVariants,
         });
 
         // Check if request was cancelled
@@ -234,6 +236,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
           exclude: data.exclude,
           excludeMatchingLines: data.excludeMatchingLines,
           caseStyles: data.caseStyles,
+          enablePluralVariants: data.enablePluralVariants,
         }
       );
 
@@ -295,6 +298,7 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
         caseStyles: data.caseStyles,
         renamePaths: data.renamePaths,
         ignoreAmbiguous: data.ignoreAmbiguous,
+        enablePluralVariants: data.enablePluralVariants,
       });
 
       // Check if request was cancelled
@@ -355,6 +359,10 @@ export class RenamifyViewProvider implements vscode.WebviewViewProvider {
 
       if (data.caseStyles && data.caseStyles.length > 0) {
         args.push('--only-styles', data.caseStyles.join(','));
+      }
+
+      if (data.enablePluralVariants === false) {
+        args.push('--no-plural-variants');
       }
 
       const config = vscode.workspace.getConfiguration('renamify');

@@ -219,6 +219,10 @@ export class RenamifyCliService {
       args.push('--atomic-search');
     }
 
+    if (options.enablePluralVariants === false) {
+      args.push('--no-plural-variants');
+    }
+
     const config = vscode.workspace.getConfiguration('renamify');
     if (!config.get('respectGitignore')) {
       args.push('-u');
@@ -280,6 +284,10 @@ export class RenamifyCliService {
       args.push('--atomic-replace');
     }
 
+    if (options.enablePluralVariants === false) {
+      args.push('--no-plural-variants');
+    }
+
     const config = vscode.workspace.getConfiguration('renamify');
     if (!config.get('respectGitignore')) {
       args.push('-u');
@@ -335,6 +343,10 @@ export class RenamifyCliService {
 
     if (options.atomicReplace) {
       args.push('--atomic-replace');
+    }
+
+    if (options.enablePluralVariants === false) {
+      args.push('--no-plural-variants');
     }
 
     const config = vscode.workspace.getConfiguration('renamify');

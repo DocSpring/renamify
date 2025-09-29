@@ -22,6 +22,7 @@ pub fn handle_replace(
     commit: bool,
     large: bool,
     force_with_conflicts: bool,
+    enable_plural_variants: bool,
     dry_run: bool,
     yes: bool,
     use_color: bool,
@@ -48,6 +49,7 @@ pub fn handle_replace(
         plan_out: PathBuf::from(".renamify/plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Off,
         atomic_config: None, // Replace doesn't use atomic mode
+        enable_plural_variants,
     };
 
     // Create the plan using simple regex/literal replacement

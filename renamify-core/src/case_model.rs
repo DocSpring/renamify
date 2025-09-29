@@ -587,7 +587,7 @@ pub fn generate_variant_map(
     replace: &str,
     styles: Option<&[Style]>,
 ) -> BTreeMap<String, String> {
-    generate_variant_map_with_atomic(search, replace, styles, None)
+    generate_variant_map_with_atomic_and_plurals(search, replace, styles, None, true)
 }
 
 pub fn generate_variant_map_with_atomic(
@@ -595,6 +595,32 @@ pub fn generate_variant_map_with_atomic(
     replace: &str,
     styles: Option<&[Style]>,
     atomic_config: Option<&crate::atomic::AtomicConfig>,
+) -> BTreeMap<String, String> {
+    generate_variant_map_with_atomic_and_plurals(search, replace, styles, atomic_config, true)
+}
+
+pub fn generate_variant_map_with_atomic_and_plurals(
+    search: &str,
+    replace: &str,
+    styles: Option<&[Style]>,
+    atomic_config: Option<&crate::atomic::AtomicConfig>,
+    enable_plural_variants: bool,
+) -> BTreeMap<String, String> {
+    generate_variant_map_internal(
+        search,
+        replace,
+        styles,
+        atomic_config,
+        enable_plural_variants,
+    )
+}
+
+fn generate_variant_map_internal(
+    search: &str,
+    replace: &str,
+    styles: Option<&[Style]>,
+    atomic_config: Option<&crate::atomic::AtomicConfig>,
+    enable_plural_variants: bool,
 ) -> BTreeMap<String, String> {
     let using_default_styles = styles.is_none();
     let default_styles = [
@@ -624,6 +650,23 @@ pub fn generate_variant_map_with_atomic(
         parse_to_tokens(replace)
     };
 
+    let mut variant_models: Vec<(TokenModel, TokenModel)> =
+        vec![(search_tokens.clone(), replace_tokens.clone())];
+
+    if enable_plural_variants && !search_is_atomic && !replace_is_atomic {
+        if let Some(singular_search) = singularize_token_model(&search_tokens) {
+            let singular_replace =
+                singularize_token_model(&replace_tokens).unwrap_or_else(|| replace_tokens.clone());
+            variant_models.push((singular_search, singular_replace));
+        }
+
+        if let Some(plural_search) = pluralize_token_model(&search_tokens) {
+            let plural_replace =
+                pluralize_token_model(&replace_tokens).unwrap_or_else(|| replace_tokens.clone());
+            variant_models.push((plural_search, plural_replace));
+        }
+    }
+
     let mut map = BTreeMap::new();
 
     if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
@@ -636,27 +679,28 @@ pub fn generate_variant_map_with_atomic(
 
     // Generate variants for each requested style
     for style in styles {
-        let search_variant = if search_is_atomic {
-            crate::atomic::to_atomic_style(search, *style)
-        } else {
-            to_style(&search_tokens, *style)
-        };
+        for (search_model, replace_model) in &variant_models {
+            let search_variant = if search_is_atomic {
+                crate::atomic::to_atomic_style(search, *style)
+            } else {
+                to_style(search_model, *style)
+            };
 
-        let replace_variant = if replace_is_atomic {
-            crate::atomic::to_atomic_style(replace, *style)
-        } else {
-            to_style(&replace_tokens, *style)
-        };
+            let replace_variant = if replace_is_atomic {
+                crate::atomic::to_atomic_style(replace, *style)
+            } else {
+                to_style(replace_model, *style)
+            };
 
-        if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
-            eprintln!(
-                "DEBUG VARIANTS: Style {:?} -> '{}' => '{}'",
-                style, search_variant, replace_variant
-            );
+            if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
+                eprintln!(
+                    "DEBUG VARIANTS: Style {:?} -> '{}' => '{}'",
+                    style, search_variant, replace_variant
+                );
+            }
+
+            map.entry(search_variant).or_insert(replace_variant);
         }
-
-        // Add the variant to the map
-        map.insert(search_variant, replace_variant);
     }
 
     // CRITICAL: Add an exact match entry to preserve user's exact casing
@@ -667,23 +711,6 @@ pub fn generate_variant_map_with_atomic(
     if using_default_styles && !crate::ambiguity::is_ambiguous(search) {
         // Using default styles and search is not ambiguous - add exact match preservation
         map.insert(search.to_string(), replace.to_string());
-    }
-
-    // If this rename inserts additional tokens (e.g., requests -> approval_requests) and the
-    // original identifier was multi-word, also generate singular variants so that singular
-    // forms like DeployRequest convert to DeployApprovalRequest.
-    if search_tokens.tokens.len() > 1 && replace_tokens.tokens.len() > search_tokens.tokens.len() {
-        if let (Some(singular_search), Some(singular_replace)) = (
-            singularize_token_model(&search_tokens),
-            singularize_token_model(&replace_tokens),
-        ) {
-            for style in styles {
-                let search_variant = to_style(&singular_search, *style);
-                let replace_variant = to_style(&singular_replace, *style);
-
-                map.entry(search_variant).or_insert(replace_variant);
-            }
-        }
     }
 
     // Removed automatic case variants - they were causing incorrect matches
@@ -703,54 +730,49 @@ pub fn generate_variant_map_with_atomic(
 }
 
 pub(crate) fn singularize_token_model(model: &TokenModel) -> Option<TokenModel> {
-    if model.tokens.len() <= 1 {
+    transform_last_token(model, singularize_token_case)
+}
+
+pub(crate) fn pluralize_token_model(model: &TokenModel) -> Option<TokenModel> {
+    transform_last_token(model, pluralize_token_case)
+}
+
+fn transform_last_token<F>(model: &TokenModel, transform: F) -> Option<TokenModel>
+where
+    F: Fn(&str) -> Option<String>,
+{
+    if model.tokens.is_empty() {
         return None;
     }
 
     let mut tokens: Vec<Token> = model.tokens.clone();
     let last_index = tokens.len() - 1;
-    let singular_text = singularize_token_case(&tokens[last_index].text)?;
-    tokens[last_index] = Token::new(singular_text);
+    let original = &tokens[last_index].text;
+    let transformed = transform(original)?;
 
+    if transformed == *original {
+        return None;
+    }
+
+    tokens[last_index] = Token::new(transformed);
     Some(TokenModel::new(tokens))
 }
 
 pub(crate) fn singularize_token_case(token: &str) -> Option<String> {
-    let lower = token.to_lowercase();
-
-    if lower.len() <= 1 {
-        return None;
-    }
-
-    let singular_lower = if lower.ends_with("ies") && lower.len() > 3 {
-        format!("{}y", &lower[..lower.len() - 3])
-    } else if lower.ends_with('s')
-        && !lower.ends_with("ss")
-        && !lower.ends_with("us")
-        && !lower.ends_with("is")
-    {
-        lower[..lower.len() - 1].to_string()
+    let singular = pluralizer::pluralize(token, 1, false);
+    if singular == token {
+        None
     } else {
-        return None;
-    };
-
-    Some(apply_case_pattern(token, &singular_lower))
+        Some(singular)
+    }
 }
 
-pub(crate) fn apply_case_pattern(original: &str, lower: &str) -> String {
-    if original.chars().all(|c| c.is_ascii_uppercase()) {
-        lower.to_uppercase()
-    } else if original.chars().all(|c| c.is_ascii_lowercase()) {
-        lower.to_string()
-    } else if original
-        .chars()
-        .next()
-        .is_some_and(|c| c.is_ascii_uppercase())
-        && original.chars().skip(1).all(|c| c.is_ascii_lowercase())
-    {
-        capitalize_first(lower)
+pub(crate) fn pluralize_token_case(token: &str) -> Option<String> {
+    let plural = pluralizer::pluralize(token, 2, false);
+    if plural == token {
+        None
     } else {
-        lower.to_string()
+        Some(plural)
     }
 }
 
@@ -1292,6 +1314,101 @@ mod tests {
         assert!(!is_title_case(""));
         assert!(!is_title_case(" "));
         assert!(!is_title_case("hello"));
+    }
+
+    #[test]
+    fn test_pluralizer_case_preservation() {
+        assert_eq!(
+            singularize_token_case("Requests").as_deref(),
+            Some("Request")
+        );
+        assert_eq!(
+            singularize_token_case("requests").as_deref(),
+            Some("request")
+        );
+        assert_eq!(
+            singularize_token_case("REQUESTS").as_deref(),
+            Some("REQUEST")
+        );
+        assert_eq!(singularize_token_case("People").as_deref(), Some("Person"));
+        assert!(singularize_token_case("sheep").is_none());
+
+        assert_eq!(pluralize_token_case("Request").as_deref(), Some("Requests"));
+        assert_eq!(pluralize_token_case("request").as_deref(), Some("requests"));
+        assert_eq!(pluralize_token_case("REQUEST").as_deref(), Some("REQUESTS"));
+        assert_eq!(pluralize_token_case("Person").as_deref(), Some("People"));
+        assert!(pluralize_token_case("sheep").is_none());
+    }
+
+    #[test]
+    fn test_token_model_plural_transformations() {
+        let pascal_model = TokenModel::new(vec![Token::new("Deploy"), Token::new("Requests")]);
+        let singular = singularize_token_model(&pascal_model).expect("singular model");
+        assert_eq!(singular.tokens[0].text, "Deploy");
+        assert_eq!(singular.tokens[1].text, "Request");
+
+        let camel_model = TokenModel::new(vec![Token::new("deploy"), Token::new("Requests")]);
+        let singular_camel = singularize_token_model(&camel_model).expect("singular camel");
+        assert_eq!(singular_camel.tokens[0].text, "deploy");
+        assert_eq!(singular_camel.tokens[1].text, "Request");
+
+        let plural_from_singular = pluralize_token_model(&singular).expect("plural model");
+        assert_eq!(plural_from_singular.tokens[0].text, "Deploy");
+        assert_eq!(plural_from_singular.tokens[1].text, "Requests");
+
+        let uncountable_model = TokenModel::new(vec![Token::new("Deploy"), Token::new("Sheep")]);
+        assert!(singularize_token_model(&uncountable_model).is_none());
+        assert!(pluralize_token_model(&uncountable_model).is_none());
+    }
+
+    #[test]
+    fn test_generate_variant_map_plural_support() {
+        let map = generate_variant_map("DeployRequests", "DeployApprovalRequests", None);
+
+        assert_eq!(
+            map.get("DeployRequests"),
+            Some(&"DeployApprovalRequests".to_string())
+        );
+        assert_eq!(
+            map.get("DeployRequest"),
+            Some(&"DeployApprovalRequest".to_string())
+        );
+        assert_eq!(
+            map.get("deployRequest"),
+            Some(&"deployApprovalRequest".to_string())
+        );
+        assert_eq!(
+            map.get("deployRequests"),
+            Some(&"deployApprovalRequests".to_string())
+        );
+    }
+
+    #[test]
+    fn test_generate_variant_map_plural_toggle() {
+        let map_with_plurals = generate_variant_map_with_atomic_and_plurals(
+            "DeployRequest",
+            "DeployApprovalRequest",
+            None,
+            None,
+            true,
+        );
+        let map_without_plurals = generate_variant_map_with_atomic_and_plurals(
+            "DeployRequest",
+            "DeployApprovalRequest",
+            None,
+            None,
+            false,
+        );
+
+        assert_eq!(
+            map_with_plurals.get("DeployRequests"),
+            Some(&"DeployApprovalRequests".to_string())
+        );
+        assert!(!map_without_plurals.contains_key("DeployRequests"));
+        assert_eq!(
+            map_without_plurals.get("DeployRequest"),
+            Some(&"DeployApprovalRequest".to_string())
+        );
     }
 
     #[test]

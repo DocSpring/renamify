@@ -34,6 +34,7 @@ fn test_multiple_matches_per_line() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "old_name", "new_name", &options).unwrap();
@@ -95,6 +96,7 @@ fn test_module_path_replacement() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify_core", "smart_search_core", &options).unwrap();
@@ -147,6 +149,7 @@ fn test_dot_path_replacement() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "awesometool", "smart_search", &options).unwrap();
@@ -201,6 +204,7 @@ fn test_consecutive_occurrences() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "old_name", "new_name", &options).unwrap();
@@ -259,6 +263,7 @@ fn test_camel_case_variant_multiple_per_line() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "user_name", "customer_name", &options).unwrap();
@@ -308,6 +313,7 @@ fn test_mixed_separators_on_same_line() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "user_name", "customer_name", &options).unwrap();
@@ -366,6 +372,7 @@ fn test_markdown_code_blocks() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify", "smart_search", &options).unwrap();

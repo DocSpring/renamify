@@ -31,6 +31,7 @@ pub fn plan_operation(
     include_acronyms: Vec<String>,
     exclude_acronyms: Vec<String>,
     only_acronyms: Vec<String>,
+    enable_plural_variants: bool,
     ignore_ambiguous: bool,
     working_dir: Option<&std::path::Path>,
     atomic_config: Option<&crate::atomic::AtomicConfig>,
@@ -86,6 +87,7 @@ pub fn plan_operation(
         only_acronyms,
         ignore_ambiguous,
         atomic_config: atomic_config.cloned(),
+        enable_plural_variants,
     };
 
     // Resolve all search paths to absolute paths and canonicalize them

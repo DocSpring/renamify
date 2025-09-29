@@ -39,6 +39,9 @@ type SearchResult = {
   const ignoreAmbiguousCheckbox = document.getElementById(
     'ignoreAmbiguousCheckbox'
   ) as HTMLInputElement;
+  const pluralVariantsCheckbox = document.getElementById(
+    'pluralVariantsCheckbox'
+  ) as HTMLInputElement;
   const atomicSearchCheckbox = document.getElementById(
     'atomicSearchCheckbox'
   ) as HTMLInputElement;
@@ -188,6 +191,10 @@ type SearchResult = {
     performSearch();
     saveState();
   });
+  pluralVariantsCheckbox.addEventListener('change', () => {
+    performSearch();
+    saveState();
+  });
   atomicSearchCheckbox.addEventListener('change', () => {
     performSearch();
     saveState();
@@ -263,6 +270,7 @@ type SearchResult = {
       caseStyles: selectedStyles,
       renamePaths: renamePathsCheckbox.checked,
       ignoreAmbiguous: ignoreAmbiguousCheckbox.checked,
+      enablePluralVariants: pluralVariantsCheckbox.checked,
       atomicSearch: atomicSearchCheckbox.checked,
       atomicReplace: atomicReplaceCheckbox.checked,
       searchId, // Include search ID to match responses
@@ -294,6 +302,7 @@ type SearchResult = {
       caseStyles: selectedStyles,
       renamePaths: renamePathsCheckbox.checked,
       ignoreAmbiguous: ignoreAmbiguousCheckbox.checked,
+      enablePluralVariants: pluralVariantsCheckbox.checked,
       atomicSearch: atomicSearchCheckbox.checked,
       atomicReplace: atomicReplaceCheckbox.checked,
     });
@@ -355,6 +364,7 @@ type SearchResult = {
       exclude: excludeInput.value,
       excludeMatchingLines: excludeLinesInput.value,
       caseStyles: selectedStyles,
+      enablePluralVariants: pluralVariantsCheckbox.checked,
     });
   }
 
@@ -795,6 +805,7 @@ type SearchResult = {
     excludeLines?: string;
     renamePaths?: boolean;
     ignoreAmbiguous?: boolean;
+    enablePluralVariants?: boolean;
     atomicSearch?: boolean;
     atomicReplace?: boolean;
     results?: SearchResult[];
@@ -812,6 +823,9 @@ type SearchResult = {
     }
     if (state.ignoreAmbiguous !== undefined) {
       ignoreAmbiguousCheckbox.checked = state.ignoreAmbiguous;
+    }
+    if (state.enablePluralVariants !== undefined) {
+      pluralVariantsCheckbox.checked = state.enablePluralVariants;
     }
     if (state.atomicSearch !== undefined) {
       atomicSearchCheckbox.checked = state.atomicSearch;
@@ -838,6 +852,7 @@ type SearchResult = {
       excludeLines: excludeLinesInput.value,
       renamePaths: renamePathsCheckbox.checked,
       ignoreAmbiguous: ignoreAmbiguousCheckbox.checked,
+      enablePluralVariants: pluralVariantsCheckbox.checked,
       atomicSearch: atomicSearchCheckbox.checked,
       atomicReplace: atomicReplaceCheckbox.checked,
       results: currentResults,

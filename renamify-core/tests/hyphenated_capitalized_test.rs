@@ -44,6 +44,7 @@ fn test_hyphenated_capitalized_replacement() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "tool", "new_tool_name", &options).unwrap();
@@ -153,6 +154,7 @@ fn test_train_case_replacement() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "tool", "new_tool_name", &options).unwrap();
@@ -235,6 +237,7 @@ fn test_mixed_hyphenated_patterns() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "tool", "new_tool_name", &options).unwrap();
@@ -311,6 +314,7 @@ use foo_bar_baz_qux_utils;
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "FooBarBazQux", "AlphaBetaGammaDelta", &options).unwrap();
@@ -389,6 +393,7 @@ fn test_pascal_case_with_hyphen_suffix() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     // Debug: Let's see what variants are generated

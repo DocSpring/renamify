@@ -48,6 +48,7 @@ type FooBarOption = i32;",
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
@@ -138,6 +139,7 @@ type GetFooBarOption = i32;",
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
@@ -228,6 +230,7 @@ type LoadFooBar = i32;",
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
@@ -310,6 +313,7 @@ let fooBar = getFooBar();",
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();

@@ -36,6 +36,7 @@ github.com/DocSpring/oldproject
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -86,6 +87,7 @@ MACRO(oldproject)
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -136,6 +138,7 @@ SETTINGS[oldproject]
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -186,6 +189,7 @@ Module:oldproject
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -238,6 +242,7 @@ fn test_coercion_preserves_case_after_at_sign() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -288,6 +293,7 @@ System.oldproject.init();
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -338,6 +344,7 @@ project=oldproject
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -388,6 +395,7 @@ fn test_coercion_preserves_case_after_space() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -441,6 +449,7 @@ fn test_coercion_preserves_case_with_quotes() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -492,6 +501,7 @@ MyClass{oldproject}
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();
@@ -542,6 +552,7 @@ const OLDPROJECT_VERSION = "1.0";
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "oldproject", "newproject", &options).unwrap();

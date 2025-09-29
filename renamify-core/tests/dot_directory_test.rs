@@ -42,6 +42,7 @@ temp_dir.child(".renamify").create_dir_all().unwrap();
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
@@ -117,6 +118,7 @@ fn test_import_statement_replacement() {
 };
 let preview_output = renamify_core::preview::render_plan(&plan, preview_format.into(), Some(use_color))?;
 coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
 "
     ).unwrap();
 
@@ -139,6 +141,7 @@ coerce_separators: renamify_core::scanner::CoercionMode::Auto,
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(
@@ -214,6 +217,7 @@ Commands:
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
@@ -267,6 +271,7 @@ impl From<PreviewFormatArg> for PreviewFormat {",
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "preview_format", "preview", &options).unwrap();

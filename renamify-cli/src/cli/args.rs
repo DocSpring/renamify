@@ -67,6 +67,10 @@ pub struct StyleArgs {
     /// Ignore mixed-case/ambiguous identifiers that don't match standard patterns
     #[arg(long)]
     pub ignore_ambiguous: bool,
+
+    /// Disable automatic singular/plural variants for matching identifiers
+    #[arg(long = "no-plural-variants")]
+    pub no_plural_variants: bool,
 }
 
 /// Common path filtering arguments
@@ -343,6 +347,10 @@ pub enum Commands {
         /// Show preview only, don't apply changes
         #[arg(long)]
         dry_run: bool,
+
+        /// Disable automatic singular/plural variants
+        #[arg(long = "no-plural-variants")]
+        no_plural_variants: bool,
 
         /// Skip confirmation prompt and apply immediately
         #[arg(short = 'y', long = "yes")]

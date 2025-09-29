@@ -33,6 +33,7 @@ fn test_replace_command_column_positions() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Off,
+        enable_plural_variants: true,
     };
 
     // Test literal replacement (no regex)
@@ -100,6 +101,7 @@ fn test_replace_command_regex_column_positions() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Off,
+        enable_plural_variants: true,
     };
 
     // Test regex replacement
@@ -166,6 +168,7 @@ fn test_replace_highlighting_compatibility() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Off,
+        enable_plural_variants: true,
     };
 
     let plan = create_simple_plan("old_name", "new_name", vec![root], &options, false).unwrap();

@@ -29,6 +29,7 @@ pub fn handle_search(
     output: OutputFormat,
     quiet: bool,
     ignore_ambiguous: bool,
+    enable_plural_variants: bool,
 ) -> Result<()> {
     // Convert CLI style args to core Style enum
     let exclude_styles: Vec<Style> = exclude_styles.into_iter().map(Into::into).collect();
@@ -80,6 +81,7 @@ pub fn handle_search(
         include_acronyms,
         exclude_acronyms,
         only_acronyms,
+        enable_plural_variants,
         ignore_ambiguous,
         None, // working_dir
         None, // atomic_config

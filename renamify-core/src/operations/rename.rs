@@ -22,6 +22,7 @@ pub fn rename_operation(
     exclude_styles: &[Style],
     include_styles: &[Style],
     only_styles: &[Style],
+    enable_plural_variants: bool,
     ignore_ambiguous: bool,
     exclude_match: &[String],
     exclude_matching_lines: Option<&String>,
@@ -77,6 +78,7 @@ pub fn rename_operation(
         only_acronyms: only_acronyms.to_owned(),
         ignore_ambiguous,
         atomic_config: atomic_config.cloned(),
+        enable_plural_variants,
     };
 
     // Resolve all search paths to absolute paths and canonicalize them

@@ -42,6 +42,7 @@ let simple = renamify;
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
@@ -142,6 +143,7 @@ fn test_format_string_placeholders_are_replaced() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
@@ -203,6 +205,7 @@ In format string: renamify_{}.tmp
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();

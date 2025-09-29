@@ -46,6 +46,7 @@ fn test_train_case_patterns_are_replaced_in_apply() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     // Create the plan

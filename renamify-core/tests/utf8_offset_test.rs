@@ -46,6 +46,7 @@ DocSpring → docSpring (camelCase)
         vec![],          // include_acronyms
         vec![],          // exclude_acronyms
         vec![],          // only_acronyms
+        true,            // enable_plural_variants
         false,           // ignore_ambiguous
         Some(temp_path), // cwd
         None,            // atomic_config
@@ -172,6 +173,7 @@ Mixed 🎉 oldname 🎉 content
         vec![],          // include_acronyms
         vec![],          // exclude_acronyms
         vec![],          // only_acronyms
+        true,            // enable_plural_variants
         false,           // ignore_ambiguous
         Some(temp_path), // cwd
         None,            // atomic_config

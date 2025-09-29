@@ -95,6 +95,7 @@ fn test_plan_command_basic() {
         vec![],                     // include_acronyms
         vec![],                     // exclude_acronyms
         vec![],                     // only_acronyms
+        true,                       // enable_plural_variants
         false,                      // ignore_ambiguous
         Some(temp_dir.path()),      // working_dir
         None,                       // atomic_config
@@ -143,6 +144,7 @@ fn test_plan_command_with_styles() {
         vec![],                // include_acronyms
         vec![],                // exclude_acronyms
         vec![],                // only_acronyms
+        true,                  // enable_plural_variants
         false,                 // ignore_ambiguous
         Some(temp_dir.path()), // working_dir
         None,                  // atomic_config
@@ -187,6 +189,7 @@ fn test_plan_command_with_styles() {
         vec![],                        // include_acronyms
         vec![],                        // exclude_acronyms
         vec![],                        // only_acronyms
+        true,                          // enable_plural_variants
         false,                         // ignore_ambiguous
         Some(temp_dir.path()),         // working_dir
         None,                          // atomic_config
@@ -199,6 +202,97 @@ fn test_plan_command_with_styles() {
         "Preview2 doesn't contain 'test.rs'. Preview content:\n{}",
         preview2_content
     );
+}
+
+#[test]
+fn test_plan_command_plural_variant_toggle() {
+    let temp_dir = TempDir::new().unwrap();
+    let test_file = temp_dir.child("sample.ts");
+    test_file
+        .write_str(
+            "type DeployRequest = {}\n\
+type DeployRequestList = DeployRequest[];\n\
+export const load = (): Promise<DeployRequestList> => Promise.resolve([]);\n",
+        )
+        .unwrap();
+
+    let (enabled_result, _) = plan_operation(
+        "DeployRequests",
+        "DeployApprovalRequests",
+        vec![PathBuf::from(".")], // paths
+        vec![],                   // include
+        vec![],                   // exclude
+        true,                     // respect_gitignore
+        0,                        // unrestricted_level
+        true,                     // rename_files
+        true,                     // rename_dirs
+        &[],                      // exclude_styles
+        &[],                      // include_styles
+        &[],                      // only_styles
+        vec![],                   // exclude_match
+        None,                     // exclude_matching_lines
+        None,                     // plan_out
+        None,                     // preview_format
+        true,                     // dry_run
+        true,                     // fixed_table_width
+        false,                    // use_color
+        false,                    // no_acronyms
+        vec![],                   // include_acronyms
+        vec![],                   // exclude_acronyms
+        vec![],                   // only_acronyms
+        true,                     // enable_plural_variants
+        false,                    // ignore_ambiguous
+        Some(temp_dir.path()),    // working_dir
+        None,                     // atomic_config
+    )
+    .unwrap();
+
+    let plan_enabled = enabled_result
+        .plan
+        .expect("plan result should include plan");
+    assert!(plan_enabled.matches.iter().any(|m| m
+        .line_after
+        .as_deref()
+        .is_some_and(|line| line.contains("DeployApprovalRequestList"))));
+
+    let (disabled_result, _) = plan_operation(
+        "DeployRequests",
+        "DeployApprovalRequests",
+        vec![PathBuf::from(".")],
+        vec![],
+        vec![],
+        true,
+        0,
+        true,
+        true,
+        &[],
+        &[],
+        &[],
+        vec![],
+        None,
+        None,
+        None,
+        true,
+        true,
+        false,
+        false,
+        vec![],
+        vec![],
+        vec![],
+        false, // enable_plural_variants
+        false,
+        Some(temp_dir.path()),
+        None,
+    )
+    .unwrap();
+
+    let plan_disabled = disabled_result
+        .plan
+        .expect("plan result should include plan");
+    assert!(plan_disabled.matches.iter().all(|m| m
+        .line_after
+        .as_deref()
+        .is_none_or(|line| !line.contains("DeployApprovalRequestList"))));
 }
 
 #[test]

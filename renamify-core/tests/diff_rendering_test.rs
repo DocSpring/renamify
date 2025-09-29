@@ -37,6 +37,7 @@ fn test_diff_merging_same_line() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "preview_format", "foo_bar", &options).unwrap();
@@ -106,6 +107,7 @@ fn test_diff_highlighting() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "core_ext", "ruby_extras", &options).unwrap();

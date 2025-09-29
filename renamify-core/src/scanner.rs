@@ -1,6 +1,6 @@
 use crate::acronym::AcronymSet;
 use crate::ambiguity::{get_possible_styles, is_ambiguous, AmbiguityContext, AmbiguityResolver};
-use crate::case_model::{parse_to_tokens, singularize_token_case, to_style, Style};
+use crate::case_model::{parse_to_tokens, singularize_token_case, to_style, Style, TokenModel};
 use crate::pattern::{build_pattern, Match};
 use crate::rename::plan_renames;
 use aho_corasick::{AhoCorasick, MatchKind};
@@ -66,6 +66,10 @@ fn normalize_path(path: &Path) -> PathBuf {
     }
 }
 
+fn default_enable_plural_variants() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct PlanOptions {
@@ -92,6 +96,8 @@ pub struct PlanOptions {
     pub ignore_ambiguous: bool,     // Ignore mixed-case/ambiguous identifiers
     #[ts(optional)]
     pub atomic_config: Option<crate::atomic::AtomicConfig>, // Atomic identifier configuration
+    #[serde(default = "default_enable_plural_variants")]
+    pub enable_plural_variants: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -130,6 +136,7 @@ impl Default for PlanOptions {
             only_acronyms: vec![],
             ignore_ambiguous: false, // Default: process ambiguous identifiers
             atomic_config: None,     // Default: no atomic configuration
+            enable_plural_variants: true,
         }
     }
 }
@@ -268,6 +275,7 @@ pub fn scan_repository_multi(
         options.styles.as_deref(),
         &acronym_set,
         options.atomic_config.as_ref(),
+        options.enable_plural_variants,
     );
     if options.ignore_ambiguous {
         variant_map.retain_unambiguous();
@@ -288,7 +296,8 @@ pub fn scan_repository_multi(
 
     let mut matcher_patterns = variants;
     let mut token_variant_groups: Vec<Vec<String>> = Vec::new();
-    let enable_singular_variants = !search_is_atomic
+    let enable_singular_variants = options.enable_plural_variants
+        && !search_is_atomic
         && !replace_is_atomic
         && search_tokens.tokens.len() > 1
         && replace_tokens.tokens.len() > search_tokens.tokens.len();
@@ -1117,15 +1126,17 @@ fn generate_variant_map_with_acronyms(
     styles: Option<&[Style]>,
     acronym_set: &AcronymSet,
     atomic_config: Option<&crate::atomic::AtomicConfig>,
+    enable_plural_variants: bool,
 ) -> VariantMap {
     // If we have atomic config, use atomic-aware variant generation
     if let Some(atomic_cfg) = atomic_config {
         // Convert to BTreeMap first
-        let btree_map = crate::case_model::generate_variant_map_with_atomic(
+        let btree_map = crate::case_model::generate_variant_map_with_atomic_and_plurals(
             search,
             replace,
             styles,
             Some(atomic_cfg),
+            enable_plural_variants,
         );
 
         // Convert BTreeMap to VariantMap
@@ -1170,42 +1181,37 @@ fn generate_variant_map_with_acronyms(
         map.insert(search.to_string(), None, replace.to_string());
     }
 
-    // Generate variants for each requested style
-    for style in styles {
-        let search_variant = crate::case_model::to_style(&old_tokens, *style);
-        let replace_variant = crate::case_model::to_style(&new_tokens, *style);
+    let mut variant_models: Vec<(TokenModel, TokenModel)> =
+        vec![(old_tokens.clone(), new_tokens.clone())];
 
-        if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
-            eprintln!(
-                "DEBUG VARIANTS (with acronyms): Style {:?} -> '{}' => '{}'",
-                style, search_variant, replace_variant
-            );
+    if enable_plural_variants {
+        if let Some(singular_old) = crate::case_model::singularize_token_model(&old_tokens) {
+            let singular_new = crate::case_model::singularize_token_model(&new_tokens)
+                .unwrap_or_else(|| new_tokens.clone());
+            variant_models.push((singular_old, singular_new));
         }
 
-        // Add the variant to the map (now preserves all variants)
-        map.insert(search_variant, Some(*style), replace_variant);
+        if let Some(plural_old) = crate::case_model::pluralize_token_model(&old_tokens) {
+            let plural_new = crate::case_model::pluralize_token_model(&new_tokens)
+                .unwrap_or_else(|| new_tokens.clone());
+            variant_models.push((plural_old, plural_new));
+        }
     }
 
-    // Add singular variants when the replacement introduces additional tokens and the
-    // original identifier is multi-word (e.g., deploy_requests -> deploy_approval_requests).
-    if old_tokens.tokens.len() > 1 && new_tokens.tokens.len() > old_tokens.tokens.len() {
-        if let (Some(singular_old), Some(singular_new)) = (
-            crate::case_model::singularize_token_model(&old_tokens),
-            crate::case_model::singularize_token_model(&new_tokens),
-        ) {
-            for style in styles {
-                let search_variant = crate::case_model::to_style(&singular_old, *style);
-                let replace_variant = crate::case_model::to_style(&singular_new, *style);
+    // Generate variants for each requested style
+    for style in styles {
+        for (search_model, replace_model) in &variant_models {
+            let search_variant = crate::case_model::to_style(search_model, *style);
+            let replace_variant = crate::case_model::to_style(replace_model, *style);
 
-                if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
-                    eprintln!(
-                        "DEBUG VARIANTS (with acronyms): Singular {:?} -> '{}' => '{}'",
-                        style, search_variant, replace_variant
-                    );
-                }
-
-                map.insert(search_variant, Some(*style), replace_variant);
+            if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
+                eprintln!(
+                    "DEBUG VARIANTS (with acronyms): Style {:?} -> '{}' => '{}'",
+                    style, search_variant, replace_variant
+                );
             }
+
+            map.insert(search_variant, Some(*style), replace_variant);
         }
     }
 

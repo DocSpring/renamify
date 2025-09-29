@@ -36,6 +36,7 @@ fn test_no_acronyms_flag() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "XMLHttpRequest", "NewRequest", &options).unwrap();
@@ -93,6 +94,7 @@ fn test_include_acronyms_flag() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "K8SCluster", "KubeCluster", &options).unwrap();
@@ -142,6 +144,7 @@ fn test_exclude_acronyms_flag() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "getUserID", "getUserIdentifier", &options).unwrap();
@@ -191,6 +194,7 @@ fn test_only_acronyms_flag() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     // AWSProvider should match
@@ -247,6 +251,7 @@ fn test_acronym_case_insensitive() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     // Should still work with ApiClient (Api is matched as API)

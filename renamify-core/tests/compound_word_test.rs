@@ -48,6 +48,7 @@ fn getFooBarOption() -> FooBarOption { }",
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
@@ -138,6 +139,7 @@ match foo_bar_type {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
@@ -218,6 +220,7 @@ function setFooBarType(fooBarType) {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
@@ -308,6 +311,7 @@ fn getFooBarOption() -> FooBarOption { }",
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
@@ -380,6 +384,7 @@ fn test_multiple_compounds_same_line() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "foo_bar", "foo", &options).unwrap();
@@ -440,6 +445,7 @@ fn test_compound_case_preservation_bug() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "foo_bar", "bazaar_quxicle", &options).unwrap();
@@ -522,6 +528,7 @@ fn test_repeated_word_compound_bug() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan =
@@ -699,6 +706,7 @@ class TestwordTestwordTestword {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "testword", "renamed", &options).unwrap();
@@ -799,6 +807,7 @@ const TESTWORD_TESTWORD_CONFIG = {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "testword", "config", &options).unwrap();
@@ -902,6 +911,7 @@ fn test_kebab_case_triple_repeated() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "testword", "element", &options).unwrap();
@@ -1027,6 +1037,7 @@ For advanced Testword-Testword-Advanced usage...
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "testword", "module", &options).unwrap();
@@ -1151,6 +1162,7 @@ Mixed separators:
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan1 = scan_repository(&root, "tool", "newtool", &options).unwrap();
@@ -1278,6 +1290,7 @@ Cases where compound should take priority:
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: false,
     };
 
     let plan = scan_repository(&root, "testword", "replacement", &options).unwrap();

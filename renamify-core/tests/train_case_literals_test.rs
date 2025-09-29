@@ -64,6 +64,7 @@ pub fn process() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();
@@ -183,6 +184,7 @@ fn test_train_case_exact_patterns() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "renamify", "renamed_renaming_tool", &options).unwrap();

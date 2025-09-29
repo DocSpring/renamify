@@ -135,6 +135,7 @@ fn main() {
                 output,
                 quiet,
                 styles.ignore_ambiguous,
+                !styles.no_plural_variants,
                 false, // regex flag - not used in Plan command
             )
         },
@@ -206,6 +207,7 @@ fn main() {
                 output,
                 quiet,
                 styles.ignore_ambiguous,
+                !styles.no_plural_variants,
                 false, // regex flag - not used in Search command
             )
         },
@@ -278,6 +280,7 @@ fn main() {
                 styles.exclude_styles,
                 styles.include_styles,
                 styles.only_styles,
+                !styles.no_plural_variants,
                 styles.ignore_ambiguous,
                 exclude_match,
                 exclude_matching_lines,
@@ -313,6 +316,7 @@ fn main() {
             commit,
             large,
             force_with_conflicts,
+            no_plural_variants,
             dry_run,
             yes,
             output,
@@ -336,6 +340,7 @@ fn main() {
                 commit,
                 large,
                 force_with_conflicts,
+                !no_plural_variants,
                 dry_run,
                 yes || cli.yes,
                 use_color,

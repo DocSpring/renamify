@@ -230,6 +230,7 @@ fn test_end_to_end_coercion_with_files() {
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto, // Enable coercion
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
@@ -330,6 +331,7 @@ fn test_coercion_disabled() {
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Off, // Disable coercion
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
@@ -396,6 +398,7 @@ let config = oldtool.config.load();
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
@@ -495,6 +498,7 @@ let regex_pattern = r"oldtool[_-](\w+)";
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
@@ -596,6 +600,7 @@ let nested = oldtool::core::pattern::Match;
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
@@ -657,6 +662,7 @@ let snake_case_var = oldtool_core; let camelVar = oldtoolService;
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();
@@ -733,6 +739,7 @@ oldtool = { path = "../oldtool" }
         rename_root: false,
         plan_out: temp_dir.path().join("plan.json"),
         coerce_separators: CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(temp_dir.path(), "oldtool", "newtool", &options).unwrap();

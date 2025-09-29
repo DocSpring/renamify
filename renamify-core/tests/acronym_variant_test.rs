@@ -41,6 +41,7 @@ fn test_acronym_affects_case_variants() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan_with = scan_repository(&root, "b2b_sales", "business_sales", &options_with).unwrap();
@@ -79,6 +80,7 @@ fn test_acronym_affects_case_variants() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan_without =
@@ -140,6 +142,7 @@ fn test_custom_acronym_generation() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "k8s_cluster", "kube_cluster", &options).unwrap();
@@ -206,6 +209,7 @@ fn test_excluded_acronym_variants() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     let plan = scan_repository(&root, "user_id", "user_identifier", &options).unwrap();
@@ -263,6 +267,7 @@ fn test_only_acronyms_list() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Auto,
+        enable_plural_variants: true,
     };
 
     // Search for XML patterns - should work

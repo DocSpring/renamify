@@ -59,6 +59,7 @@ fn test_replace_include_flag_respects_pattern() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Off,
+        enable_plural_variants: true,
     };
 
     let plan = create_simple_plan(
@@ -183,6 +184,7 @@ fn test_replace_include_flag_with_specific_file() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Off,
+        enable_plural_variants: true,
     };
 
     let plan = create_simple_plan(
@@ -247,6 +249,7 @@ fn test_replace_include_with_directory_pattern() {
         rename_root: false,
         plan_out: PathBuf::from("plan.json"),
         coerce_separators: renamify_core::scanner::CoercionMode::Off,
+        enable_plural_variants: true,
     };
 
     let plan = create_simple_plan(

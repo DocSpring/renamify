@@ -9,6 +9,7 @@ export type SearchOptions = {
   ignoreAmbiguous?: boolean;
   atomicSearch?: boolean;
   atomicReplace?: boolean;
+  enablePluralVariants?: boolean;
 };
 
 // Match type is now imported from Rust bindings above
@@ -38,6 +39,7 @@ export type SearchMessage = {
   ignoreAmbiguous?: boolean;
   atomicSearch?: boolean;
   atomicReplace?: boolean;
+  enablePluralVariants?: boolean;
   searchId?: number;
 };
 
@@ -53,6 +55,7 @@ export type PlanMessage = {
   ignoreAmbiguous?: boolean;
   atomicSearch?: boolean;
   atomicReplace?: boolean;
+  enablePluralVariants?: boolean;
 };
 
 export type ApplyMessage = {
@@ -67,6 +70,7 @@ export type ApplyMessage = {
   ignoreAmbiguous?: boolean;
   atomicSearch?: boolean;
   atomicReplace?: boolean;
+  enablePluralVariants?: boolean;
   planId?: string;
 };
 
@@ -85,6 +89,7 @@ export type OpenPreviewMessage = {
   exclude?: string;
   excludeMatchingLines?: string;
   caseStyles?: string[];
+  enablePluralVariants?: boolean;
 };
 
 export type OpenSettingsMessage = {

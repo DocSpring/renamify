@@ -1,4 +1,4 @@
-use aho_corasick::AhoCorasick;
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use regex::bytes::{Regex, RegexBuilder};
 use serde::{Deserialize, Serialize};
 
@@ -38,7 +38,10 @@ pub fn build_pattern(variants: &[String]) -> Result<MatchPattern, regex::Error> 
 
     let regex = RegexBuilder::new(&pattern).unicode(false).build()?;
 
-    let matcher = AhoCorasick::new(variants).unwrap();
+    let matcher = AhoCorasickBuilder::new()
+        .match_kind(MatchKind::LeftmostLongest)
+        .build(variants)
+        .unwrap();
 
     Ok(MatchPattern {
         regex,
