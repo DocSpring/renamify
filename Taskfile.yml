@@ -115,8 +115,3 @@ tasks:
       - mcp:clean
       - vscode:clean
       - docs:clean
-
-  run-all-tests:
-    desc: Run the legacy all-tests script (kept for parity)
-    cmds:
-      - ./scripts/run-all-tests.sh
