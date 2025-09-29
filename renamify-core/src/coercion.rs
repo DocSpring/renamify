@@ -329,6 +329,7 @@ pub fn apply_coercion(
 
     // Detect the container style first
     let container_style = detect_style(container);
+    let pattern_style = detect_style(old_pattern);
 
     // Special case: If container has a hyphen suffix after the pattern (e.g., FooBar-specific)
     // and the container has mixed/unknown style, treat this as a partial replacement
@@ -385,18 +386,29 @@ pub fn apply_coercion(
         return None;
     }
 
+    // Prefer the style of the exact matched segment when it is well-defined.
+    // This preserves embedded PascalCase segments inside larger camelCase identifiers
+    // like getAdminDeployRequestsParams.
+    let target_style = if pattern_style == Style::Pascal
+        && matches!(container_style, Style::Camel | Style::Pascal)
+    {
+        Style::Pascal
+    } else {
+        container_style
+    };
+
     // Tokenize the patterns
     let _old_tokens = tokenize(old_pattern);
     let new_tokens = tokenize(new_pattern);
 
-    // Render the new pattern in the container style
-    let coerced_new = render_tokens(&new_tokens, container_style);
+    // Render the new pattern in the chosen style
+    let coerced_new = render_tokens(&new_tokens, target_style);
 
     // Replace all occurrences (case-insensitive)
     let result = replace_case_insensitive(container, old_pattern, &coerced_new);
 
     // Return the coercion details
-    Some((result, format!("coerced to {:?} style", container_style)))
+    Some((result, format!("coerced to {:?} style", target_style)))
 }
 
 /// Replace all occurrences of pattern with replacement (case-insensitive)

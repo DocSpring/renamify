@@ -82,6 +82,62 @@ fn test_coercion_no_container_style() {
 }
 
 #[test]
+fn test_pascal_segment_inside_camel_container() {
+    // Regression: ensure DeployRequests segment keeps Pascal casing inside camel container
+    let result = apply_coercion(
+        "getAdminDeployRequestsParams.ts",
+        "DeployRequests",
+        "DeployApprovalRequests",
+    );
+    assert!(result.is_some());
+    let (coerced, reason) = result.unwrap();
+    assert_eq!(coerced, "getAdminDeployApprovalRequestsParams.ts");
+    assert_eq!(reason, "coerced to Pascal style");
+
+    let temp_dir = TempDir::new().unwrap();
+    fs::write(
+        temp_dir.path().join("getAdminDeployRequestsParams.ts"),
+        "export type Test = string;",
+    )
+    .unwrap();
+
+    let mut options = PlanOptions {
+        plan_out: temp_dir.path().join("plan.json"),
+        respect_gitignore: false,
+        ..Default::default()
+    };
+    options.coerce_separators = CoercionMode::Auto;
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "deploy_requests",
+        "deploy_approval_requests",
+        &options,
+    )
+    .unwrap();
+
+    let rename = plan
+        .paths
+        .iter()
+        .find(|r| {
+            r.path
+                .file_name()
+                .map(|f| f == "getAdminDeployRequestsParams.ts")
+                .unwrap_or(false)
+        })
+        .expect("expected rename for DeployRequests params file");
+
+    assert_eq!(
+        rename.new_path.file_name().unwrap().to_str().unwrap(),
+        "getAdminDeployApprovalRequestsParams.ts"
+    );
+    assert_eq!(
+        rename.coercion_applied.as_deref(),
+        Some("coerced to Pascal style")
+    );
+}
+
+#[test]
 fn test_end_to_end_coercion_with_files() {
     let temp_dir = TempDir::new().unwrap();
 
