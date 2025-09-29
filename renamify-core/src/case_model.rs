@@ -669,6 +669,23 @@ pub fn generate_variant_map_with_atomic(
         map.insert(search.to_string(), replace.to_string());
     }
 
+    // If this rename inserts additional tokens (e.g., requests -> approval_requests) and the
+    // original identifier was multi-word, also generate singular variants so that singular
+    // forms like DeployRequest convert to DeployApprovalRequest.
+    if search_tokens.tokens.len() > 1 && replace_tokens.tokens.len() > search_tokens.tokens.len() {
+        if let (Some(singular_search), Some(singular_replace)) = (
+            singularize_token_model(&search_tokens),
+            singularize_token_model(&replace_tokens),
+        ) {
+            for style in styles {
+                let search_variant = to_style(&singular_search, *style);
+                let replace_variant = to_style(&singular_replace, *style);
+
+                map.entry(search_variant).or_insert(replace_variant);
+            }
+        }
+    }
+
     // Removed automatic case variants - they were causing incorrect matches
     // All variants should come from the explicit style system only
 
@@ -683,6 +700,58 @@ pub fn generate_variant_map_with_atomic(
     }
 
     map
+}
+
+pub(crate) fn singularize_token_model(model: &TokenModel) -> Option<TokenModel> {
+    if model.tokens.len() <= 1 {
+        return None;
+    }
+
+    let mut tokens: Vec<Token> = model.tokens.clone();
+    let last_index = tokens.len() - 1;
+    let singular_text = singularize_token_case(&tokens[last_index].text)?;
+    tokens[last_index] = Token::new(singular_text);
+
+    Some(TokenModel::new(tokens))
+}
+
+pub(crate) fn singularize_token_case(token: &str) -> Option<String> {
+    let lower = token.to_lowercase();
+
+    if lower.len() <= 1 {
+        return None;
+    }
+
+    let singular_lower = if lower.ends_with("ies") && lower.len() > 3 {
+        format!("{}y", &lower[..lower.len() - 3])
+    } else if lower.ends_with('s')
+        && !lower.ends_with("ss")
+        && !lower.ends_with("us")
+        && !lower.ends_with("is")
+    {
+        lower[..lower.len() - 1].to_string()
+    } else {
+        return None;
+    };
+
+    Some(apply_case_pattern(token, &singular_lower))
+}
+
+pub(crate) fn apply_case_pattern(original: &str, lower: &str) -> String {
+    if original.chars().all(|c| c.is_ascii_uppercase()) {
+        lower.to_uppercase()
+    } else if original.chars().all(|c| c.is_ascii_lowercase()) {
+        lower.to_string()
+    } else if original
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_uppercase())
+        && original.chars().skip(1).all(|c| c.is_ascii_lowercase())
+    {
+        capitalize_first(lower)
+    } else {
+        lower.to_string()
+    }
 }
 
 #[cfg(test)]

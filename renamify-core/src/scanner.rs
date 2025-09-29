@@ -1,6 +1,6 @@
 use crate::acronym::AcronymSet;
 use crate::ambiguity::{get_possible_styles, is_ambiguous, AmbiguityContext, AmbiguityResolver};
-use crate::case_model::{parse_to_tokens, to_style, Style};
+use crate::case_model::{parse_to_tokens, singularize_token_case, to_style, Style};
 use crate::pattern::{build_pattern, Match};
 use crate::rename::plan_renames;
 use aho_corasick::{AhoCorasick, MatchKind};
@@ -34,6 +34,19 @@ fn byte_offset_to_char_offset(text: &str, byte_offset: usize) -> usize {
     }
 
     char_offset
+}
+
+fn capitalize_token(text: &str) -> String {
+    if text.is_empty() {
+        return String::new();
+    }
+
+    let mut chars = text.chars();
+    let first = chars.next().unwrap();
+    let mut result = String::new();
+    result.extend(first.to_uppercase());
+    result.push_str(&chars.as_str().to_lowercase());
+    result
 }
 
 /// Normalize a path by removing Windows long path prefix if present
@@ -263,9 +276,24 @@ pub fn scan_repository_multi(
     let _pattern = build_pattern(&variants)?;
 
     let search_tokens = crate::case_model::parse_to_tokens_with_acronyms(search, &acronym_set);
+    let replace_tokens = crate::case_model::parse_to_tokens_with_acronyms(replace, &acronym_set);
+    let search_is_atomic = options
+        .atomic_config
+        .as_ref()
+        .is_some_and(|c| c.should_treat_search_atomic(search));
+    let replace_is_atomic = options
+        .atomic_config
+        .as_ref()
+        .is_some_and(|c| c.should_treat_replace_atomic(replace));
+
     let mut matcher_patterns = variants;
     let mut token_variant_groups: Vec<Vec<String>> = Vec::new();
-    for token in &search_tokens.tokens {
+    let enable_singular_variants = !search_is_atomic
+        && !replace_is_atomic
+        && search_tokens.tokens.len() > 1
+        && replace_tokens.tokens.len() > search_tokens.tokens.len();
+
+    for (idx, token) in search_tokens.tokens.iter().enumerate() {
         let text = token.text.trim();
         if text.len() < 3 {
             continue;
@@ -296,6 +324,35 @@ pub fn scan_repository_multi(
             if !variants_for_token.iter().any(|v| v == &title) {
                 matcher_patterns.push(title.clone());
                 variants_for_token.push(title);
+            }
+        }
+
+        if enable_singular_variants && idx == search_tokens.tokens.len() - 1 {
+            if let Some(singular_base) = singularize_token_case(&token.text) {
+                let mut singular_forms = Vec::new();
+                for form in [
+                    singular_base.clone(),
+                    singular_base.to_lowercase(),
+                    singular_base.to_uppercase(),
+                    capitalize_token(&singular_base),
+                ] {
+                    if form.is_empty() {
+                        continue;
+                    }
+                    if !singular_forms
+                        .iter()
+                        .any(|existing: &String| existing == &form)
+                    {
+                        singular_forms.push(form);
+                    }
+                }
+
+                for form in singular_forms {
+                    matcher_patterns.push(form.clone());
+                    if !variants_for_token.iter().any(|v| v == &form) {
+                        variants_for_token.push(form);
+                    }
+                }
             }
         }
 
@@ -751,6 +808,24 @@ fn generate_hunks(
             }
         }
 
+        if content
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_uppercase())
+            && replace
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_ascii_lowercase())
+        {
+            let mut chars = replace.chars();
+            if let Some(first) = chars.next() {
+                let mut adjusted = String::new();
+                adjusted.extend(first.to_uppercase());
+                adjusted.push_str(chars.as_str());
+                replace = adjusted;
+            }
+        }
+
         // For diff mode, we need the full line context
         let line_before = line_string.clone();
 
@@ -1109,6 +1184,29 @@ fn generate_variant_map_with_acronyms(
 
         // Add the variant to the map (now preserves all variants)
         map.insert(search_variant, Some(*style), replace_variant);
+    }
+
+    // Add singular variants when the replacement introduces additional tokens and the
+    // original identifier is multi-word (e.g., deploy_requests -> deploy_approval_requests).
+    if old_tokens.tokens.len() > 1 && new_tokens.tokens.len() > old_tokens.tokens.len() {
+        if let (Some(singular_old), Some(singular_new)) = (
+            crate::case_model::singularize_token_model(&old_tokens),
+            crate::case_model::singularize_token_model(&new_tokens),
+        ) {
+            for style in styles {
+                let search_variant = crate::case_model::to_style(&singular_old, *style);
+                let replace_variant = crate::case_model::to_style(&singular_new, *style);
+
+                if std::env::var("RENAMIFY_DEBUG_VARIANTS").is_ok() {
+                    eprintln!(
+                        "DEBUG VARIANTS (with acronyms): Singular {:?} -> '{}' => '{}'",
+                        style, search_variant, replace_variant
+                    );
+                }
+
+                map.insert(search_variant, Some(*style), replace_variant);
+            }
+        }
     }
 
     // Removed automatic case variants - they were causing incorrect matches

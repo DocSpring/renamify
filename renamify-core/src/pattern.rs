@@ -55,12 +55,9 @@ pub fn is_boundary(bytes: &[u8], start: usize, end: usize) -> bool {
         !bytes[start - 1].is_ascii_alphanumeric()
     };
 
-    let right_boundary = if end >= bytes.len() {
-        true
-    } else {
-        // Treat underscores as separators, not part of the identifier
-        !bytes[end].is_ascii_alphanumeric()
-    };
+    let right_boundary = end >= bytes.len()
+        || !bytes[end].is_ascii_alphanumeric()
+        || (bytes[end].is_ascii_uppercase() && end > 0 && bytes[end - 1].is_ascii_lowercase());
 
     left_boundary && right_boundary
 }
@@ -200,6 +197,13 @@ mod tests {
 
         // "hello" before underscore - now valid since underscore is a separator
         assert!(is_boundary(text, 5, 10));
+    }
+
+    #[test]
+    fn test_is_boundary_pascal_transition() {
+        let text = b"Promise<DeployRequestList>";
+        // DeployRequest should be treated as a boundary before the trailing "List"
+        assert!(is_boundary(text, 8, 21));
     }
 
     #[test]

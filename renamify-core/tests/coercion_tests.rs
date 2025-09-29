@@ -138,6 +138,53 @@ fn test_pascal_segment_inside_camel_container() {
 }
 
 #[test]
+fn test_pascal_singular_content_replacement() {
+    let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("api.ts");
+
+    fs::write(
+        &file_path,
+        "export const listDeployRequests = (): Promise<DeployRequestList> => unwrap(gateway.getAdminDeployRequests(params));\nexport const approveDeployRequest = (): Promise<DeployRequest> => unwrap(gateway.postAdminDeployRequestsIdApprove(id, payload ?? {}));\n",
+    )
+    .unwrap();
+
+    let mut options = PlanOptions {
+        plan_out: temp_dir.path().join("plan.json"),
+        respect_gitignore: false,
+        ..Default::default()
+    };
+    options.coerce_separators = CoercionMode::Auto;
+
+    let plan = scan_repository(
+        temp_dir.path(),
+        "deploy_requests",
+        "deploy_approval_requests",
+        &options,
+    )
+    .unwrap();
+
+    assert!(
+        plan.matches.iter().any(|m| {
+            m.file.ends_with("api.ts")
+                && m.line_after
+                    .as_deref()
+                    .is_some_and(|line| line.contains("Promise<DeployApprovalRequestList>"))
+        }),
+        "expected Promise<DeployApprovalRequestList> replacement"
+    );
+
+    assert!(
+        plan.matches.iter().any(|m| {
+            m.file.ends_with("api.ts")
+                && m.line_after
+                    .as_deref()
+                    .is_some_and(|line| line.contains("Promise<DeployApprovalRequest>"))
+        }),
+        "expected Promise<DeployApprovalRequest> replacement"
+    );
+}
+
+#[test]
 fn test_end_to_end_coercion_with_files() {
     let temp_dir = TempDir::new().unwrap();
 
