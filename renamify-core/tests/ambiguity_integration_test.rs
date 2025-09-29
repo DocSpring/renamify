@@ -108,26 +108,34 @@ APIClass = API
     // Lowercase variable should be snake_case
     let var_match = matches
         .iter()
-        .find(|m| m.line == 9 && m.char_offset == 0 && m.content == "api_key")
+        .find(|m| {
+            m.line == 9
+                && m.line_after
+                    .as_deref()
+                    .is_some_and(|line| line.contains("service_handler_key"))
+        })
         .expect("Should find variable assignment");
 
-    assert_eq!(
-        var_match.replace, "service_handler_key",
-        "Variable should be snake_case, got: {}",
-        var_match.replace
-    );
+    assert!(var_match
+        .line_after
+        .as_deref()
+        .is_some_and(|line| line.contains("service_handler_key")));
 
     // Uppercase constant should be SCREAMING_SNAKE_CASE
     let const_match = matches
         .iter()
-        .find(|m| m.line == 10 && m.char_offset == 0 && m.content == "API_URL")
+        .find(|m| {
+            m.line == 10
+                && m.line_after
+                    .as_deref()
+                    .is_some_and(|line| line.contains("SERVICE_HANDLER_URL"))
+        })
         .expect("Should find constant assignment");
 
-    assert_eq!(
-        const_match.replace, "SERVICE_HANDLER_URL",
-        "Constant should be SCREAMING_SNAKE_CASE, got: {}",
-        const_match.replace
-    );
+    assert!(const_match
+        .line_after
+        .as_deref()
+        .is_some_and(|line| line.contains("SERVICE_HANDLER_URL")));
 }
 
 #[test]

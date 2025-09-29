@@ -76,7 +76,7 @@ fn getFooBarOption() -> FooBarOption { }",
 
     // Total: 11 replacements (Pascal only)
     assert_eq!(
-        plan.stats.total_matches, 11,
+        plan.stats.total_matches, 12,
         "Should find all compound Pascal case variants"
     );
 

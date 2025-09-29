@@ -56,6 +56,7 @@ pub fn is_boundary(bytes: &[u8], start: usize, end: usize) -> bool {
     } else {
         // Treat underscores as separators, not part of the identifier
         !bytes[start - 1].is_ascii_alphanumeric()
+            || (bytes[start].is_ascii_uppercase() && bytes[start - 1].is_ascii_lowercase())
     };
 
     let right_boundary = end >= bytes.len()

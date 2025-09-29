@@ -25,7 +25,24 @@ export const approveAdminDeployRequest = (
 
     let go_path = root.join("internal/gateway/db/deploy_requests.go");
     fs::create_dir_all(go_path.parent().unwrap()).unwrap();
-    fs::write(&go_path, "package db\n\n// deploy_requests placeholder\n").unwrap();
+    fs::write(
+        &go_path,
+        r#"package db
+
+func postDeployRequest() {}
+
+func postDeployRequestWithPayload() {
+    _ = postDeployRequest()
+}
+
+func ApproveDeployRequest() {}
+
+func deployRequestRoute() string {
+    return "/deploy-requests"
+}
+"#,
+    )
+    .unwrap();
 }
 
 #[test]
@@ -76,6 +93,14 @@ fn test_plural_variants_enabled_updates_singular_forms() {
             .any(|m| m.content == "DeployRequest" && m.replace == "DeployApprovalRequest"),
         "should rewrite DeployRequest singular form when plural support enabled",
     );
+    assert!(plan.matches.iter().any(|m| m
+        .line_after
+        .as_deref()
+        .is_some_and(|line| line.contains("postDeployApprovalRequest"))));
+    assert!(plan.matches.iter().any(|m| m
+        .line_after
+        .as_deref()
+        .is_some_and(|line| line.contains("ApproveDeployApprovalRequest"))));
 }
 
 #[test]
@@ -112,4 +137,8 @@ fn test_plural_variants_can_be_disabled() {
         !plan.matches.iter().any(|m| m.content == "DeployRequest"),
         "DeployRequest singular forms should remain untouched when plural variants disabled",
     );
+    assert!(plan.matches.iter().all(|m| m
+        .line_after
+        .as_deref()
+        .is_none_or(|line| !line.contains("postDeployApprovalRequest"))));
 }
