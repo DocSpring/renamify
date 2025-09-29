@@ -240,10 +240,10 @@ MIT License - Copyright (c) 2025 DocSpring
 
 ## Created By
 
-<a href="https://docspring.com">
+<a href="https://docspring.com?utm_source=renamify">
   <img src="https://docspring.com/assets/logo-text-1e09b5522ee8602e08f1e3c4851e1657b14bd49e2e633618c344b4dc23fcbf79.svg" alt="DocSpring Logo" width="200">
 </a>
 
-Renamify was created by [DocSpring](https://docspring.com)
+Renamify was created by [DocSpring](https://docspring.com?utm_source=renamify)
 
 Fill, sign, and generate PDFs at scale
