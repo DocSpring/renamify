@@ -31,8 +31,14 @@ fn main() {
     // Handle SIGINT (Ctrl-C)
     let interrupted_clone = Arc::clone(&interrupted);
     ctrlc::set_handler(move || {
-        eprintln!("\nReceived SIGINT. Cleaning up...");
-        interrupted_clone.store(true, Ordering::SeqCst);
+        if renamify_core::interrupt::confirmation_prompt_active() {
+            eprintln!("\nOperation cancelled by user.");
+            process::exit(130);
+        }
+
+        if !interrupted_clone.swap(true, Ordering::SeqCst) {
+            eprintln!("\nReceived SIGINT. Cleaning up...");
+        }
     })
     .expect("Error setting SIGINT handler");
 

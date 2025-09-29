@@ -20,6 +20,7 @@ pub mod compound_scanner;
 pub mod config;
 pub mod history;
 pub mod id_resolver;
+pub mod interrupt;
 pub mod lock;
 pub mod operations;
 pub mod output;

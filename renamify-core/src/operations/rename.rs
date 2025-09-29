@@ -356,6 +356,7 @@ fn generate_preview_output(plan: &Plan, format: &str, use_color: bool) -> Result
 }
 
 fn get_user_confirmation() -> Result<bool> {
+    let _guard = crate::interrupt::ConfirmationPromptGuard::activate();
     print!("Apply? [y/N]: ");
     IoWrite::flush(&mut io::stdout()).context("Failed to flush stdout")?;
 
