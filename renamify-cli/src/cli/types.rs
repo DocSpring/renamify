@@ -12,8 +12,33 @@ pub enum StyleArg {
     Train,
     ScreamingTrain,
     Dot,
-    Lower,
-    Upper,
+    LowerJoined,
+    UpperJoined,
+    Sentence,
+    LowerSentence,
+    UpperSentence,
+    /// Shorthand for title, sentence, lower-sentence, upper-sentence
+    SpaceSeparated,
+}
+
+impl StyleArg {
+    /// Returns true if this is a shorthand that expands to multiple styles
+    pub fn is_shorthand(&self) -> bool {
+        matches!(self, StyleArg::SpaceSeparated)
+    }
+
+    /// Expands shorthand to multiple styles, or returns self if not a shorthand
+    pub fn expand(&self) -> Vec<StyleArg> {
+        match self {
+            StyleArg::SpaceSeparated => vec![
+                StyleArg::Title,
+                StyleArg::Sentence,
+                StyleArg::LowerSentence,
+                StyleArg::UpperSentence,
+            ],
+            _ => vec![*self],
+        }
+    }
 }
 
 impl From<StyleArg> for Style {
@@ -28,8 +53,14 @@ impl From<StyleArg> for Style {
             StyleArg::Train => Self::Train,
             StyleArg::ScreamingTrain => Self::ScreamingTrain,
             StyleArg::Dot => Self::Dot,
-            StyleArg::Lower => Self::Lower,
-            StyleArg::Upper => Self::Upper,
+            StyleArg::LowerJoined => Self::LowerJoined,
+            StyleArg::UpperJoined => Self::UpperJoined,
+            StyleArg::Sentence => Self::Sentence,
+            StyleArg::LowerSentence => Self::LowerSentence,
+            StyleArg::UpperSentence => Self::UpperSentence,
+            StyleArg::SpaceSeparated => {
+                panic!("SpaceSeparated is a shorthand and should be expanded before conversion")
+            },
         }
     }
 }

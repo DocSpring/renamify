@@ -51,7 +51,7 @@ pub struct StyleArgs {
     )]
     pub exclude_styles: Vec<StyleArg>,
 
-    /// Additional case styles to include (title, dot, lower, upper)
+    /// Additional case styles to include (title, dot, lower-joined, upper-joined, sentence, lower-sentence, upper-sentence, space-separated)
     #[arg(
         long,
         value_enum,

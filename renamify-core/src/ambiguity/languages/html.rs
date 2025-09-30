@@ -14,16 +14,16 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         }
     } else if context.ends_with('<') || context.ends_with("</") {
         // HTML tags are lowercase
-        if possible_styles.contains(&Style::Lower) {
-            return Some(Style::Lower);
+        if possible_styles.contains(&Style::LowerJoined) {
+            return Some(Style::LowerJoined);
         } else if possible_styles.contains(&Style::Kebab) {
             // Custom elements use kebab-case
             return Some(Style::Kebab);
         }
     } else if context.contains("xmlns:") || context.contains("xml:") {
         // XML namespaces often lowercase or camelCase
-        if possible_styles.contains(&Style::Lower) {
-            return Some(Style::Lower);
+        if possible_styles.contains(&Style::LowerJoined) {
+            return Some(Style::LowerJoined);
         } else if possible_styles.contains(&Style::Camel) {
             return Some(Style::Camel);
         }
@@ -63,9 +63,9 @@ mod tests {
 
     #[test]
     fn test_html_tag_heuristic() {
-        let possible_styles = vec![Style::Lower, Style::Kebab];
+        let possible_styles = vec![Style::LowerJoined, Style::Kebab];
         let result = suggest_style("<", &possible_styles);
-        assert_eq!(result, Some(Style::Lower));
+        assert_eq!(result, Some(Style::LowerJoined));
     }
 
     #[test]
@@ -96,9 +96,9 @@ mod tests {
 
     #[test]
     fn test_html_closing_tag() {
-        let possible_styles = vec![Style::Lower, Style::Kebab];
+        let possible_styles = vec![Style::LowerJoined, Style::Kebab];
         let result = suggest_style("</", &possible_styles);
-        assert_eq!(result, Some(Style::Lower));
+        assert_eq!(result, Some(Style::LowerJoined));
 
         // Kebab fallback for custom elements
         let possible_styles = vec![Style::Kebab, Style::Camel];
@@ -108,12 +108,12 @@ mod tests {
 
     #[test]
     fn test_xml_namespace() {
-        let possible_styles = vec![Style::Lower, Style::Camel];
+        let possible_styles = vec![Style::LowerJoined, Style::Camel];
         let result = suggest_style("xmlns:", &possible_styles);
-        assert_eq!(result, Some(Style::Lower));
+        assert_eq!(result, Some(Style::LowerJoined));
 
         let result = suggest_style("xml:", &possible_styles);
-        assert_eq!(result, Some(Style::Lower));
+        assert_eq!(result, Some(Style::LowerJoined));
 
         // Camel fallback
         let possible_styles = vec![Style::Camel, Style::Pascal];

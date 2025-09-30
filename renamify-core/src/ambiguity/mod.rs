@@ -106,13 +106,25 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
                         .chars()
                         .all(|c| c.is_lowercase() || c.is_numeric() || c == '.'))
         },
-        Style::Lower => {
+        Style::LowerJoined => {
             // lower: all lowercase, no separators
             !has_uppercase && !has_underscore && !has_hyphen && !has_dot && !has_space
         },
-        Style::Upper => {
+        Style::UpperJoined => {
             // UPPER: all uppercase, no separators
             !has_lowercase && !has_underscore && !has_hyphen && !has_dot && !has_space
+        },
+        Style::Sentence => {
+            // Sentence case: First word capitalized, rest lowercase, spaces
+            has_space && !has_underscore && !has_hyphen && !has_dot
+        },
+        Style::LowerSentence => {
+            // lower sentence: all lowercase with spaces
+            has_space && !has_uppercase && !has_underscore && !has_hyphen && !has_dot
+        },
+        Style::UpperSentence => {
+            // UPPER SENTENCE: all uppercase with spaces
+            has_space && !has_lowercase && !has_underscore && !has_hyphen && !has_dot
         },
     }
 }
@@ -158,14 +170,14 @@ mod tests {
         assert!(could_be_style("api", Style::Kebab));
         assert!(could_be_style("api", Style::Camel));
         assert!(!could_be_style("api", Style::Pascal)); // Starts lowercase
-        assert!(could_be_style("api", Style::Lower));
-        assert!(!could_be_style("api", Style::Upper));
+        assert!(could_be_style("api", Style::LowerJoined));
+        assert!(!could_be_style("api", Style::UpperJoined));
 
         // Uppercase text
         assert!(!could_be_style("API", Style::Snake)); // Has uppercase
         assert!(!could_be_style("API", Style::Camel)); // Starts uppercase
         assert!(could_be_style("API", Style::Pascal));
-        assert!(could_be_style("API", Style::Upper));
+        assert!(could_be_style("API", Style::UpperJoined));
 
         // Mixed case
         assert!(!could_be_style("userId", Style::Snake));

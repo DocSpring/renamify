@@ -199,8 +199,8 @@ mixed_caseCASE
         String::from_utf8_lossy(&output.stdout).to_string()
     }
 
-    // Test 1: Lower style - should match lowercase "case"
-    let output = run_search(temp_dir.path(), "lower");
+    // Test 1: LowerJoined style - should match lowercase "case"
+    let output = run_search(temp_dir.path(), "lower-joined");
     let json: serde_json::Value = serde_json::from_str(&output).unwrap();
     let matches = json["plan"]["matches"].as_array().unwrap();
 
@@ -210,7 +210,10 @@ mixed_caseCASE
         .iter()
         .filter(|m| m["content"].as_str().unwrap() == "case")
         .count();
-    assert!(case_count > 0, "Lower style should match lowercase 'case'");
+    assert!(
+        case_count > 0,
+        "LowerJoined style should match lowercase 'case'"
+    );
 
     // Test 2: Dot case only - when searching for single word "case",
     // it should only match the exact word "case" (not compound forms)
@@ -449,13 +452,13 @@ let unrelated_variable = 6; // should not match any "case" search
         env!("CARGO_BIN_EXE_renamify").to_string()
     }
 
-    // Test that lower+snake doesn't find camel/pascal matches
+    // Test that lower-joined+snake doesn't find camel/pascal matches
     let output = std::process::Command::new(get_cli_path())
         .args([
             "search",
             "case",
             "--only-styles",
-            "lower,snake",
+            "lower-joined,snake",
             "--output",
             "json",
         ])
@@ -468,10 +471,13 @@ let unrelated_variable = 6; // should not match any "case" search
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
     let matches = json["plan"]["matches"].as_array().unwrap();
 
-    // When searching for single word "case" with lower+snake styles,
+    // When searching for single word "case" with lower-joined+snake styles,
     // both styles generate "case" as the pattern, so it matches all instances of "case"
     // This includes "case" standalone and "case" within compound words
-    assert!(!matches.is_empty(), "Should find matches for lower+snake");
+    assert!(
+        !matches.is_empty(),
+        "Should find matches for lower-joined+snake"
+    );
 
     // Verify that all matches are for the "case" pattern
     let all_case_matches = matches

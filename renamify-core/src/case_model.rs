@@ -15,8 +15,11 @@ pub enum Style {
     Train,
     ScreamingTrain, // ALL-CAPS-WITH-HYPHENS
     Dot,
-    Lower, // all lowercase
-    Upper, // ALL UPPERCASE
+    LowerJoined,   // all lowercase, no separators
+    UpperJoined,   // ALL UPPERCASE, no separators
+    Sentence,      // First word capitalized, rest lowercase, spaces
+    LowerSentence, // all words lowercase with spaces
+    UpperSentence, // ALL WORDS UPPERCASE WITH SPACES
 }
 
 impl Style {
@@ -136,10 +139,14 @@ pub fn detect_style(s: &str) -> Option<Style> {
         (false, false, false, true, true, true) => {
             if is_title_case(s) {
                 Some(Style::Title)
+            } else if is_sentence_case(s) {
+                Some(Style::Sentence)
             } else {
                 None
             }
         },
+        (false, false, false, true, false, true) => Some(Style::LowerSentence),
+        (false, false, false, true, true, false) => Some(Style::UpperSentence),
         (false, false, false, false, true, true) => {
             if s.bytes().next().is_some_and(|b| b.is_ascii_uppercase()) {
                 Some(Style::Pascal)
@@ -181,6 +188,30 @@ fn is_title_case(s: &str) -> bool {
             && word.bytes().next().is_some_and(|b| b.is_ascii_uppercase())
             && word.bytes().skip(1).all(|b| b.is_ascii_lowercase())
     })
+}
+
+fn is_sentence_case(s: &str) -> bool {
+    let words: Vec<&str> = s.split(' ').collect();
+    if words.is_empty() {
+        return false;
+    }
+
+    // First word must be capitalized
+    let first_word_valid = words[0]
+        .bytes()
+        .next()
+        .is_some_and(|b| b.is_ascii_uppercase())
+        && words[0].bytes().skip(1).all(|b| b.is_ascii_lowercase());
+
+    if !first_word_valid {
+        return false;
+    }
+
+    // All remaining words must be lowercase
+    words
+        .iter()
+        .skip(1)
+        .all(|word| !word.is_empty() && word.bytes().all(|b| !b.is_ascii_uppercase()))
 }
 
 pub fn parse_to_tokens(s: &str) -> TokenModel {
@@ -552,17 +583,46 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
             .collect::<Vec<_>>()
             .join("."),
 
-        Style::Lower => model
+        Style::LowerJoined => model
             .tokens
             .iter()
             .map(|t| t.text.to_lowercase())
             .collect::<String>(),
 
-        Style::Upper => model
+        Style::UpperJoined => model
             .tokens
             .iter()
             .map(|t| t.text.to_uppercase())
             .collect::<String>(),
+
+        Style::Sentence => {
+            if model.tokens.is_empty() {
+                return String::new();
+            }
+            let mut result = Vec::new();
+            for (i, token) in model.tokens.iter().enumerate() {
+                if i == 0 {
+                    result.push(capitalize_first(&token.text));
+                } else {
+                    result.push(token.text.to_lowercase());
+                }
+            }
+            result.join(" ")
+        },
+
+        Style::LowerSentence => model
+            .tokens
+            .iter()
+            .map(|t| t.text.to_lowercase())
+            .collect::<Vec<_>>()
+            .join(" "),
+
+        Style::UpperSentence => model
+            .tokens
+            .iter()
+            .map(|t| t.text.to_uppercase())
+            .collect::<Vec<_>>()
+            .join(" "),
     }
 }
 
@@ -977,7 +1037,7 @@ mod tests {
     #[test]
     fn test_mixed_case_detection() {
         assert_eq!(detect_style("123"), None);
-        assert_eq!(detect_style("hello world test"), None);
+        assert_eq!(detect_style("hello world test"), Some(Style::LowerSentence)); // Now matches LowerSentence
         assert_eq!(detect_style("hello-World"), None);
         assert_eq!(detect_style("HELLO"), None);
         assert_eq!(detect_style("hello"), None);
@@ -1314,6 +1374,90 @@ mod tests {
         assert!(!is_title_case(""));
         assert!(!is_title_case(" "));
         assert!(!is_title_case("hello"));
+    }
+
+    #[test]
+    fn test_sentence_case() {
+        assert_eq!(detect_style("The quick brown fox"), Some(Style::Sentence));
+        assert_eq!(detect_style("Deploy request"), Some(Style::Sentence));
+        let tokens = parse_to_tokens("deploy_requests");
+        assert_eq!(to_style(&tokens, Style::Sentence), "Deploy requests");
+    }
+
+    #[test]
+    fn test_lower_sentence_case() {
+        assert_eq!(
+            detect_style("the quick brown fox"),
+            Some(Style::LowerSentence)
+        );
+        assert_eq!(detect_style("deploy request"), Some(Style::LowerSentence));
+        let tokens = parse_to_tokens("DeployRequests");
+        assert_eq!(to_style(&tokens, Style::LowerSentence), "deploy requests");
+    }
+
+    #[test]
+    fn test_upper_sentence_case() {
+        assert_eq!(
+            detect_style("THE QUICK BROWN FOX"),
+            Some(Style::UpperSentence)
+        );
+        assert_eq!(detect_style("DEPLOY REQUEST"), Some(Style::UpperSentence));
+        let tokens = parse_to_tokens("DeployRequests");
+        assert_eq!(to_style(&tokens, Style::UpperSentence), "DEPLOY REQUESTS");
+    }
+
+    #[test]
+    fn test_sentence_style_detection_vs_title() {
+        // Title Case: all words capitalized
+        assert_eq!(detect_style("The Quick Brown Fox"), Some(Style::Title));
+
+        // Sentence case: only first word capitalized
+        assert_eq!(detect_style("The quick brown fox"), Some(Style::Sentence));
+
+        // LowerSentence: all lowercase
+        assert_eq!(
+            detect_style("the quick brown fox"),
+            Some(Style::LowerSentence)
+        );
+
+        // UpperSentence: all uppercase
+        assert_eq!(
+            detect_style("THE QUICK BROWN FOX"),
+            Some(Style::UpperSentence)
+        );
+
+        // Not sentence case (multiple capitals)
+        assert_eq!(detect_style("The Quick brown fox"), None);
+    }
+
+    #[test]
+    fn test_space_separated_variants() {
+        let map = generate_variant_map(
+            "deploy_requests",
+            "approval_requests",
+            Some(&[
+                Style::Title,
+                Style::Sentence,
+                Style::LowerSentence,
+                Style::UpperSentence,
+            ]),
+        );
+        assert_eq!(
+            map.get("Deploy Requests"),
+            Some(&"Approval Requests".to_string())
+        );
+        assert_eq!(
+            map.get("Deploy requests"),
+            Some(&"Approval requests".to_string())
+        );
+        assert_eq!(
+            map.get("deploy requests"),
+            Some(&"approval requests".to_string())
+        );
+        assert_eq!(
+            map.get("DEPLOY REQUESTS"),
+            Some(&"APPROVAL REQUESTS".to_string())
+        );
     }
 
     #[test]

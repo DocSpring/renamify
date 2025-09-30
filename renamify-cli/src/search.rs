@@ -31,10 +31,22 @@ pub fn handle_search(
     ignore_ambiguous: bool,
     enable_plural_variants: bool,
 ) -> Result<()> {
-    // Convert CLI style args to core Style enum
-    let exclude_styles: Vec<Style> = exclude_styles.into_iter().map(Into::into).collect();
-    let include_styles: Vec<Style> = include_styles.into_iter().map(Into::into).collect();
-    let only_styles: Vec<Style> = only_styles.into_iter().map(Into::into).collect();
+    // Expand any shorthand styles (e.g., space-separated) before conversion
+    let exclude_styles: Vec<Style> = exclude_styles
+        .into_iter()
+        .flat_map(|s| s.expand())
+        .map(Into::into)
+        .collect();
+    let include_styles: Vec<Style> = include_styles
+        .into_iter()
+        .flat_map(|s| s.expand())
+        .map(Into::into)
+        .collect();
+    let only_styles: Vec<Style> = only_styles
+        .into_iter()
+        .flat_map(|s| s.expand())
+        .map(Into::into)
+        .collect();
 
     // Handle quiet mode - overrides preview to none unless output is json
     let effective_preview = if quiet && output != OutputFormat::Json {

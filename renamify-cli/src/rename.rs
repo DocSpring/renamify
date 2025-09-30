@@ -39,10 +39,22 @@ pub fn handle_rename(
     output: OutputFormat,
     quiet: bool,
 ) -> Result<()> {
-    // Convert CLI style args to core Style enum
-    let exclude_styles: Vec<Style> = exclude_styles.into_iter().map(Into::into).collect();
-    let include_styles: Vec<Style> = include_styles.into_iter().map(Into::into).collect();
-    let only_styles: Vec<Style> = only_styles.into_iter().map(Into::into).collect();
+    // Expand any shorthand styles (e.g., space-separated) before conversion
+    let exclude_styles: Vec<Style> = exclude_styles
+        .into_iter()
+        .flat_map(|s| s.expand())
+        .map(Into::into)
+        .collect();
+    let include_styles: Vec<Style> = include_styles
+        .into_iter()
+        .flat_map(|s| s.expand())
+        .map(Into::into)
+        .collect();
+    let only_styles: Vec<Style> = only_styles
+        .into_iter()
+        .flat_map(|s| s.expand())
+        .map(Into::into)
+        .collect();
 
     // Load config to get atomic identifiers
     let config = renamify_core::Config::load().unwrap_or_default();
