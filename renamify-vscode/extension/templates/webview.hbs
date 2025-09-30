@@ -30,18 +30,26 @@
       </div>
 
       <div class="input-group">
-        <label for="include">Files to include</label>
-        <input type="text" id="include" placeholder="e.g., **/*.ts, src/**/*" />
-      </div>
+        <div class="section-header" id="filtersHeader">
+          <span class="expand-icon codicon codicon-chevron-down collapsed"></span>
+          <label>Filters</label>
+        </div>
+        <div class="section-content collapsed" id="filtersContent">
+          <div class="input-group">
+            <label for="include">Files to include</label>
+            <input type="text" id="include" placeholder="e.g., **/*.ts, src/**/*" />
+          </div>
 
-      <div class="input-group">
-        <label for="exclude">Files to exclude</label>
-        <input type="text" id="exclude" placeholder="e.g., node_modules/**, *.min.js" />
-      </div>
+          <div class="input-group">
+            <label for="exclude">Files to exclude</label>
+            <input type="text" id="exclude" placeholder="e.g., node_modules/**, *.min.js" />
+          </div>
 
-      <div class="input-group">
-        <label for="excludeLines">Exclude matching lines (regex)</label>
-        <input type="text" id="excludeLines" placeholder="e.g., ^\\s*//.*" />
+          <div class="input-group">
+            <label for="excludeLines">Exclude matching lines (regex)</label>
+            <input type="text" id="excludeLines" placeholder="e.g., ^\\s*//.*" />
+          </div>
+        </div>
       </div>
 
       <div class="input-group case-styles-section">
@@ -93,15 +101,45 @@
       </div>
 
       <div class="input-group">
-        <div class="options-grid">
-          <label class="checkbox-label">
-            <input type="checkbox" id="renamePathsCheckbox" checked />
-            <span>Rename files and directories</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="pluralVariantsCheckbox" checked />
-            <span>Enable singular/plural variants</span>
-          </label>
+        <div class="section-header" id="optionsHeader">
+          <span class="expand-icon codicon codicon-chevron-down"></span>
+          <label>Options</label>
+        </div>
+        <div class="section-content" id="optionsContent">
+          <div class="options-grid">
+            <label class="checkbox-label">
+              <input type="checkbox" id="renamePathsCheckbox" checked />
+              <span>Rename files and directories</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="pluralVariantsCheckbox" checked />
+              <span>Enable singular/plural variants</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="atomicSearchCheckbox" />
+              <span>Atomic search</span>
+              <span class="tooltip-wrapper tooltip-left">
+                <span class="codicon codicon-info tooltip-icon"></span>
+                <span class="tooltip-text">
+                  Treats compound words in PascalCase as single units in other cases.<br />
+                  <strong>Example:</strong> GitHub → github<br />
+                  <strong>Not:</strong> GitHub → git_hub
+                </span>
+              </span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="atomicReplaceCheckbox" />
+              <span>Atomic replace</span>
+              <span class="tooltip-wrapper tooltip-right">
+                <span class="codicon codicon-info tooltip-icon"></span>
+                <span class="tooltip-text">
+                  Treats compound words in PascalCase as single units in other cases.<br />
+                  <strong>Example:</strong> GitHub → github<br />
+                  <strong>Not:</strong> GitHub → git_hub
+                </span>
+              </span>
+            </label>
+          </div>
           <label class="checkbox-label">
             <input type="checkbox" id="ignoreAmbiguousCheckbox" />
             <span>Ignore ambiguous identifiers</span>
@@ -111,30 +149,6 @@
               target="_blank"
               >more info</a
             >
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="atomicSearchCheckbox" />
-            <span>Atomic search</span>
-            <span class="tooltip-wrapper tooltip-left">
-              <span class="codicon codicon-info tooltip-icon"></span>
-              <span class="tooltip-text">
-                Treats compound words in PascalCase as single units in other cases.<br />
-                <strong>Example:</strong> GitHub → github<br />
-                <strong>Not:</strong> GitHub → git_hub
-              </span>
-            </span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="atomicReplaceCheckbox" />
-            <span>Atomic replace</span>
-            <span class="tooltip-wrapper tooltip-right">
-              <span class="codicon codicon-info tooltip-icon"></span>
-              <span class="tooltip-text">
-                Treats compound words in PascalCase as single units in other cases.<br />
-                <strong>Example:</strong> GitHub → github<br />
-                <strong>Not:</strong> GitHub → git_hub
-              </span>
-            </span>
           </label>
         </div>
       </div>

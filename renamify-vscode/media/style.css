@@ -48,12 +48,25 @@ body {
   outline: 1px solid var(--vscode-focusBorder);
 }
 
+/* Section headers for collapsible sections */
+.section-header,
 .case-styles-header {
   display: flex;
   align-items: center;
   cursor: pointer;
   margin-bottom: 10px;
   gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+#filtersHeader {
+  border-top: none;
+  padding-top: 0;
+}
+
+.section-content.collapsed {
+  display: none;
 }
 
 .case-styles-links {
@@ -100,6 +113,7 @@ body {
   transform: rotate(-90deg);
 }
 
+.section-header label,
 .case-styles-header label {
   cursor: pointer;
   margin: 0;
@@ -108,16 +122,11 @@ body {
 .case-styles-container {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
-  padding-bottom: 9px;
   margin-top: 4px;
-  margin-bottom: 14px;
 }
 
 .case-styles-container.collapsed {
   display: none;
-  border-bottom: none;
-  padding-bottom: 0;
 }
 
 label.checkbox-label {
@@ -148,7 +157,6 @@ label.checkbox-label {
 .options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
 }
 
 /* More info link */

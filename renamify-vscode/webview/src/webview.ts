@@ -62,12 +62,6 @@ type SearchResult = {
   const openInEditorLink = document.getElementById(
     'openInEditor'
   ) as HTMLAnchorElement;
-  const caseStylesHeader = document.getElementById(
-    'caseStylesHeader'
-  ) as HTMLDivElement;
-  const caseStylesContainer = document.getElementById(
-    'caseStylesContainer'
-  ) as HTMLDivElement;
   const checkedCount = document.getElementById(
     'checkedCount'
   ) as HTMLSpanElement;
@@ -85,28 +79,45 @@ type SearchResult = {
     openPreviewInEditor();
   });
 
-  // Case styles collapsible section
-  caseStylesHeader.addEventListener('click', (e) => {
-    // Don't toggle if clicking on a link
-    if ((e.target as HTMLElement).tagName === 'A') {
+  // Generic collapsible section handler
+  function setupCollapsibleSection(
+    headerId: string,
+    contentId: string,
+    skipLinks = false
+  ) {
+    const header = document.getElementById(headerId);
+    const content = document.getElementById(contentId);
+    if (!(header && content)) {
       return;
     }
 
-    const isCollapsed = caseStylesContainer.classList.contains('collapsed');
-    const expandIcon = caseStylesHeader.querySelector('.expand-icon');
+    header.addEventListener('click', (e) => {
+      // Don't toggle if clicking on a link
+      if (skipLinks && (e.target as HTMLElement).tagName === 'A') {
+        return;
+      }
 
-    if (isCollapsed) {
-      caseStylesContainer.classList.remove('collapsed');
-      if (expandIcon) {
-        expandIcon.classList.remove('collapsed');
+      const isCollapsed = content.classList.contains('collapsed');
+      const expandIcon = header.querySelector('.expand-icon');
+
+      if (isCollapsed) {
+        content.classList.remove('collapsed');
+        if (expandIcon) {
+          expandIcon.classList.remove('collapsed');
+        }
+      } else {
+        content.classList.add('collapsed');
+        if (expandIcon) {
+          expandIcon.classList.add('collapsed');
+        }
       }
-    } else {
-      caseStylesContainer.classList.add('collapsed');
-      if (expandIcon) {
-        expandIcon.classList.add('collapsed');
-      }
-    }
-  });
+    });
+  }
+
+  // Setup collapsible sections
+  setupCollapsibleSection('filtersHeader', 'filtersContent');
+  setupCollapsibleSection('caseStylesHeader', 'caseStylesContainer', true);
+  setupCollapsibleSection('optionsHeader', 'optionsContent');
 
   // Quick selection links
   const selectOnlyOriginal = document.getElementById(
