@@ -19,6 +19,16 @@ export default defineConfig({
         src: './src/assets/logo.svg',
       },
       customCss: ['./src/styles/custom.css'],
+      head: [
+        {
+          tag: 'script',
+          attrs: {
+            defer: true,
+            'data-domain': 'docspring.github.io/renamify',
+            src: 'https://pa.docspring.com/js/script.js',
+          },
+        },
+      ],
       editLink: {
         baseUrl: 'https://github.com/DocSpring/renamify/edit/main/docs',
       },
