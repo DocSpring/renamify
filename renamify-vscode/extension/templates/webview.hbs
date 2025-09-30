@@ -93,28 +93,28 @@
       </div>
 
       <div class="input-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="renamePathsCheckbox" checked />
-          Rename files and directories
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="pluralVariantsCheckbox" checked />
-          Enable singular/plural variants
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="ignoreAmbiguousCheckbox" />
-          Ignore ambiguous identifiers
-          <a
-            href="https://docspring.github.io/renamify/features/ambiguity-resolution/"
-            class="more-info-link"
-            target="_blank"
-            >more info</a
-          >
-        </label>
-        <div class="atomic-checkboxes">
+        <div class="options-grid">
+          <label class="checkbox-label">
+            <input type="checkbox" id="renamePathsCheckbox" checked />
+            <span>Rename files and directories</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="pluralVariantsCheckbox" checked />
+            <span>Enable singular/plural variants</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="ignoreAmbiguousCheckbox" />
+            <span>Ignore ambiguous identifiers</span>
+            <a
+              href="https://docspring.github.io/renamify/features/ambiguity-resolution/"
+              class="more-info-link"
+              target="_blank"
+              >more info</a
+            >
+          </label>
           <label class="checkbox-label">
             <input type="checkbox" id="atomicSearchCheckbox" />
-            Atomic search
+            <span>Atomic search</span>
             <span class="tooltip-wrapper tooltip-left">
               <span class="codicon codicon-info tooltip-icon"></span>
               <span class="tooltip-text">
@@ -126,7 +126,7 @@
           </label>
           <label class="checkbox-label">
             <input type="checkbox" id="atomicReplaceCheckbox" />
-            Atomic replace
+            <span>Atomic replace</span>
             <span class="tooltip-wrapper tooltip-right">
               <span class="codicon codicon-info tooltip-icon"></span>
               <span class="tooltip-text">

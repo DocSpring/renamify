@@ -144,6 +144,13 @@ label.checkbox-label {
   font-style: italic;
 }
 
+/* Options grid for 2-column layout */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
 /* More info link */
 .more-info-link {
   margin-left: 8px;
@@ -156,13 +163,6 @@ label.checkbox-label {
 .more-info-link:hover {
   text-decoration: underline;
   opacity: 1;
-}
-
-/* Atomic checkboxes on same line */
-.atomic-checkboxes {
-  display: flex;
-  gap: 16px;
-  align-items: center;
 }
 
 /* Tooltip wrapper and icon */
