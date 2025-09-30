@@ -6,7 +6,9 @@ description: 'How Claude renamed LowerJoined to LowerFlat using the Renamify MCP
 import { Code } from '@astrojs/starlight/components';
 import screenshot from '../../../assets/case-studies/ai-powered-self-hosting.png';
 
-One of the most powerful features of Renamify is its ability to rename itself - a true test of any renaming tool. This case study shows how we used the Renamify MCP server with Claude to rename our case style identifiers from `LowerJoined` to `LowerFlat` and `UpperJoined` to `UpperFlat`.
+One of the most powerful features of Renamify is its ability to rename parts of itself, or [even the entire project](/renamify/case-studies/renaming-to-renamify/).
+
+This case study shows how we used the Renamify MCP server with Claude to rename our case style identifiers from `LowerJoined` to `LowerFlat` and `UpperJoined` to `UpperFlat`.
 
 <img
   src={screenshot.src}
@@ -15,7 +17,7 @@ One of the most powerful features of Renamify is its ability to rename itself - 
 
 ## The Challenge
 
-We had named our case styles `LowerJoined` and `UpperJoined` to describe identifiers with no separators (like `flatcase` and `UPPERFLATCASE`). We realized these should be called `LowerFlat` and `UpperFlat` to match the standard naming convention.
+We had named our case styles `LowerJoined` and `UpperJoined` to describe identifiers with no separators (like `flatcase` and `UPPERFLATCASE`). We realized these should be called `LowerFlat` and `UpperFlat` to match the [standard naming convention](https://stringcase.org/cases/flat/).
 
 This meant renaming:
 
@@ -115,4 +117,4 @@ All with two simple MCP tool calls from an AI agent.
 
 ## Try It Yourself
 
-To use Renamify with Claude Code via MCP, see our [MCP Server documentation](/mcp/overview).
+To use Renamify with Claude Code via MCP, see our [MCP Server documentation](/renamify/mcp/overview).
