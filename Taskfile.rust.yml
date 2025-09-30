@@ -47,6 +47,12 @@ tasks:
     cmds:
       - cargo build --all --release
 
+  install:
+    desc: Build and install the renamify CLI to ~/.cargo/bin
+    aliases: [":install"]
+    cmds:
+      - cargo install --path renamify-cli
+
   doc:
     desc: Build Rust documentation
     cmds:

@@ -44,7 +44,7 @@
         <input type="text" id="excludeLines" placeholder="e.g., ^\\s*//.*" />
       </div>
 
-      <div class="input-group">
+      <div class="input-group case-styles-section">
         <div class="case-styles-header" id="caseStylesHeader">
           <span class="expand-icon codicon codicon-chevron-down"></span>
           <label for="caseStyles">Case styles (<span id="checkedCount">7</span>)</label>
@@ -52,26 +52,43 @@
             <a href="#" id="selectDefault">Default</a>
             <span class="separator">|</span>
             <a href="#" id="selectAll">All</a>
+            <span class="separator">|</span>
+            <a href="#" id="selectNone">None</a>
           </div>
         </div>
         <div class="case-styles-container" id="caseStylesContainer">
-          <label class="checkbox-label"> <input type="checkbox" value="snake" checked /> snake_case </label>
-          <label class="checkbox-label"> <input type="checkbox" value="kebab" checked /> kebab-case </label>
-          <label class="checkbox-label"> <input type="checkbox" value="camel" checked /> camelCase </label>
-          <label class="checkbox-label"> <input type="checkbox" value="pascal" checked /> PascalCase </label>
-          <label class="checkbox-label">
-            <input type="checkbox" value="screaming-snake" checked />
-            SCREAMING_SNAKE_CASE
+          <label class="checkbox-label"><input type="checkbox" value="snake" checked /><span>snake_case</span></label>
+          <label class="checkbox-label"><input type="checkbox" value="kebab" checked /><span>kebab-case</span></label>
+          <label class="checkbox-label"><input type="checkbox" value="camel" checked /><span>camelCase</span></label>
+          <label class="checkbox-label"><input type="checkbox" value="pascal" checked /><span>PascalCase</span></label>
+          <label class="checkbox-label"
+            ><input type="checkbox" value="screaming-snake" checked /><span>SCREAMING_SNAKE</span></label
+          >
+          <label class="checkbox-label"><input type="checkbox" value="train" checked /><span>Train-Case</span></label>
+          <label class="checkbox-label"
+            ><input type="checkbox" value="screaming-train" checked /><span>SCREAMING-TRAIN</span></label
+          >
+          <label class="checkbox-label"><input type="checkbox" value="lower-flat" /><span>flatcase</span></label>
+          <label class="checkbox-label"><input type="checkbox" value="upper-flat" /><span>UPPERFLATCASE</span></label>
+          <label class="checkbox-label"><input type="checkbox" value="dot" /><span>dot.case</span></label>
+
+          <label class="checkbox-label space-separated-item"
+            ><input type="checkbox" value="title" /><span>Title Case</span></label
+          >
+          <label class="checkbox-label space-separated-item"
+            ><input type="checkbox" value="sentence" /><span>Sentence case</span></label
+          >
+          <label class="checkbox-label space-separated-item"
+            ><input type="checkbox" value="lower-sentence" /><span>lower sentence</span></label
+          >
+          <label class="checkbox-label space-separated-item"
+            ><input type="checkbox" value="upper-sentence" /><span>UPPER SENTENCE</span></label
+          >
+
+          <label class="checkbox-label all-space-separated-checkbox">
+            <input type="checkbox" id="spaceSeparatedCheckbox" />
+            <span class="group-label">All space-separated</span>
           </label>
-          <label class="checkbox-label"> <input type="checkbox" value="train" checked /> Train-Case </label>
-          <label class="checkbox-label">
-            <input type="checkbox" value="screaming-train" checked />
-            SCREAMING-TRAIN-CASE
-          </label>
-          <label class="checkbox-label"> <input type="checkbox" value="title" /> Title Case </label>
-          <label class="checkbox-label"> <input type="checkbox" value="dot" /> dot.case </label>
-          <label class="checkbox-label"> <input type="checkbox" value="lower" /> lowercase </label>
-          <label class="checkbox-label"> <input type="checkbox" value="upper" /> UPPERCASE </label>
         </div>
       </div>
 

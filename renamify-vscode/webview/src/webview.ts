@@ -98,12 +98,12 @@ type SearchResult = {
     if (isCollapsed) {
       caseStylesContainer.classList.remove('collapsed');
       if (expandIcon) {
-        expandIcon.className = 'expand-icon codicon codicon-chevron-down';
+        expandIcon.classList.remove('collapsed');
       }
     } else {
       caseStylesContainer.classList.add('collapsed');
       if (expandIcon) {
-        expandIcon.className = 'expand-icon codicon codicon-chevron-right';
+        expandIcon.classList.add('collapsed');
       }
     }
   });
@@ -116,6 +116,7 @@ type SearchResult = {
     'selectDefault'
   ) as HTMLAnchorElement;
   const selectAll = document.getElementById('selectAll') as HTMLAnchorElement;
+  const selectNone = document.getElementById('selectNone') as HTMLAnchorElement;
 
   selectOnlyOriginal?.addEventListener('click', (e) => {
     e.preventDefault();
@@ -149,6 +150,13 @@ type SearchResult = {
     for (const checkbox of Array.from(checkboxes)) {
       checkbox.checked = defaultStyles.includes(checkbox.value);
     }
+
+    // Trigger change event on first space-separated item to update group checkbox
+    const firstSpaceSeparated = document.querySelector(
+      '.space-separated-item input[type="checkbox"]'
+    ) as HTMLInputElement;
+    firstSpaceSeparated?.dispatchEvent(new Event('change'));
+
     updateCheckedCount();
     debouncedSearch();
   });
@@ -161,6 +169,19 @@ type SearchResult = {
 
     for (const checkbox of Array.from(checkboxes)) {
       checkbox.checked = true;
+    }
+    updateCheckedCount();
+    debouncedSearch();
+  });
+
+  selectNone?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const checkboxes = document.querySelectorAll(
+      '.case-styles-container input[type="checkbox"]'
+    ) as NodeListOf<HTMLInputElement>;
+
+    for (const checkbox of Array.from(checkboxes)) {
+      checkbox.checked = false;
     }
     updateCheckedCount();
     debouncedSearch();
@@ -207,7 +228,7 @@ type SearchResult = {
   // Update checked count and trigger search when checkboxes change
   function updateCheckedCount() {
     const checked = document.querySelectorAll(
-      '.case-styles-container input[type="checkbox"]:checked'
+      '.case-styles-container input[type="checkbox"]:checked:not(#spaceSeparatedCheckbox)'
     ).length;
     checkedCount.textContent = checked.toString();
   }
@@ -216,21 +237,87 @@ type SearchResult = {
     '.case-styles-container input[type="checkbox"]'
   ) as NodeListOf<HTMLInputElement>;
 
+  const spaceSeparatedCheckbox = document.getElementById(
+    'spaceSeparatedCheckbox'
+  ) as HTMLInputElement;
+  const spaceSeparatedItems = document.querySelectorAll(
+    '.space-separated-item input[type="checkbox"]'
+  ) as NodeListOf<HTMLInputElement>;
+
+  // Handle space-separated group checkbox
+  spaceSeparatedCheckbox.addEventListener('change', () => {
+    const isChecked = spaceSeparatedCheckbox.checked;
+    for (const item of Array.from(spaceSeparatedItems)) {
+      item.checked = isChecked;
+    }
+    updateCheckedCount();
+    debouncedSearch();
+  });
+
+  // Update space-separated group checkbox when individual items change
+  for (const item of Array.from(spaceSeparatedItems)) {
+    item.addEventListener('change', () => {
+      const allChecked = Array.from(spaceSeparatedItems).every(
+        (cb) => cb.checked
+      );
+      const noneChecked = Array.from(spaceSeparatedItems).every(
+        (cb) => !cb.checked
+      );
+
+      if (allChecked) {
+        spaceSeparatedCheckbox.checked = true;
+        spaceSeparatedCheckbox.indeterminate = false;
+      } else if (noneChecked) {
+        spaceSeparatedCheckbox.checked = false;
+        spaceSeparatedCheckbox.indeterminate = false;
+      } else {
+        spaceSeparatedCheckbox.checked = false;
+        spaceSeparatedCheckbox.indeterminate = true;
+      }
+
+      updateCheckedCount();
+      debouncedSearch();
+    });
+  }
+
   for (const checkbox of Array.from(checkboxes)) {
+    // Skip space-separated group checkbox and items (already handled)
+    if (
+      checkbox.id === 'spaceSeparatedCheckbox' ||
+      checkbox.closest('.space-separated-item')
+    ) {
+      continue;
+    }
+
     checkbox.addEventListener('change', () => {
       updateCheckedCount();
       debouncedSearch();
     });
   }
 
-  // Initial count update
+  // Initial count update and group state
   updateCheckedCount();
+
+  // Set initial state of space-separated group checkbox
+  const allSpaceSepChecked = Array.from(spaceSeparatedItems).every(
+    (cb) => cb.checked
+  );
+  const noneSpaceSepChecked = Array.from(spaceSeparatedItems).every(
+    (cb) => !cb.checked
+  );
+  if (allSpaceSepChecked) {
+    spaceSeparatedCheckbox.checked = true;
+  } else if (!noneSpaceSepChecked) {
+    spaceSeparatedCheckbox.indeterminate = true;
+  }
 
   function getSelectedCaseStyles(): string[] {
     const checkedBoxes = document.querySelectorAll(
-      '.case-styles-container input[type="checkbox"]:checked'
+      '.case-styles-container input[type="checkbox"]:checked:not(#spaceSeparatedCheckbox)'
     ) as NodeListOf<HTMLInputElement>;
-    return Array.from(checkedBoxes).map((cb) => cb.value);
+    return Array.from(checkedBoxes)
+      .map((cb) => cb.value)
+      .filter((v) => v); // Filter out empty values
   }
 
   function performSearch() {

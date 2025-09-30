@@ -23,6 +23,22 @@ tasks:
     cmds:
       - pnpm package
 
+  install:cursor:
+    desc: Build and install the extension locally into Cursor
+    aliases: [install]
+    dir: renamify-vscode
+    deps: [build:package]
+    cmds:
+      - |
+        VSIX_FILE=$(ls -t *.vsix 2>/dev/null | head -1)
+        if [ -z "$VSIX_FILE" ]; then
+          echo "Error: No .vsix file found. Build failed?"
+          exit 1
+        fi
+        echo "Installing $VSIX_FILE into Cursor..."
+        cursor --install-extension "$VSIX_FILE" --force
+        echo "✓ Extension installed in Cursor. Reload Cursor to activate."
+
   check:
     desc: Run VS Code extension type checking and linting
     dir: renamify-vscode
