@@ -3,6 +3,7 @@
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import starlightImageZoom from 'starlight-image-zoom';
+import starlightLinksValidator from 'starlight-links-validator';
 
 // https://astro.build/config
 export default defineConfig({
@@ -21,7 +22,12 @@ export default defineConfig({
       editLink: {
         baseUrl: 'https://github.com/DocSpring/renamify/edit/main/docs',
       },
-      plugins: [starlightImageZoom()],
+      plugins: [
+        starlightImageZoom(),
+        starlightLinksValidator({
+          errorOnRelativeLinks: true,
+        }),
+      ],
       components: {
         Footer: './src/components/Footer.astro',
       },
