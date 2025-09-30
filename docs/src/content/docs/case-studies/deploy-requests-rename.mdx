@@ -1,0 +1,170 @@
+---
+title: 'Renaming deploy_requests to deploy_approval_requests'
+description: 'How Renamify handled 607 replacements across 14 case styles and 12 file renames in a single atomic operation'
+---
+
+import deployRequestsTable from '../../../assets/case-studies/deploy-requests-table-preview.png';
+
+During development of another one of our projects, we needed to rename `deploy_requests` to `deploy_approval_requests`
+to better reflect the feature's purpose. This refactoring spanned:
+
+- 31 files across multiple languages (Go, TypeScript, SQL, JSON, Markdown)
+- 607 content matches across 14 different case styles
+- 12 file renames
+- Database migrations, API schemas, handlers, and frontend components
+
+A manual find-and-replace would take a lot of work, requiring careful attention to:
+
+- PascalCase types like `DeployRequest` → `DeployApprovalRequest`
+- camelCase functions like `getAdminDeployRequests` → `getAdminDeployApprovalRequests`
+- kebab-case routes like `deploy-requests` → `deploy-approval-requests`
+- Database table names and indexes
+- Singular and plural variants
+
+## The Solution
+
+With Renamify, this complex refactoring became a single command:
+
+```bash
+renamify rename --include-styles space-separated \
+  deploy_requests deploy_approval_requests \
+  --dry-run --preview summary
+```
+
+### What Renamify Found
+
+The preview showed exactly what would change:
+
+```
+[PLAN SUMMARY]
+Search: deploy_requests
+Replace: deploy_approval_requests
+Matches: 607
+Files: 31
+Paths: 12
+```
+
+### Case Style Coverage
+
+Renamify automatically detected and transformed variants across multiple case styles:
+
+| Case Style     | Example           | Transformed To             |
+| -------------- | ----------------- | -------------------------- |
+| snake_case     | `deploy_requests` | `deploy_approval_requests` |
+| kebab-case     | `deploy-requests` | `deploy-approval-requests` |
+| camelCase      | `deployRequest`   | `deployApprovalRequest`    |
+| PascalCase     | `DeployRequest`   | `DeployApprovalRequest`    |
+| Title Case     | `Deploy Request`  | `Deploy Approval Request`  |
+| Sentence case  | `deploy request`  | `deploy approval request`  |
+| Train-Case     | `Deploy-Requests` | `Deploy-Approval-Requests` |
+| lower sentence | `deploy request`  | `deploy approval request`  |
+
+#### Smart Context Detection
+
+Beyond simple standalone matches, Renamify intelligently found and renamed identifiers **embedded within larger compound names**:
+
+**In TypeScript filenames and types:**
+
+- `handlersCreateDeployRequestRequest.ts` → `handlersCreateDeployApprovalRequestRequest.ts`
+- `GetAdminDeployRequestsParams` → `GetAdminDeployApprovalRequestsParams`
+- `PostAdminDeployRequestsIdApproveResult` → `PostAdminDeployApprovalRequestsIdApproveResult`
+
+**In function and method names:**
+
+- `ListDeployRequests` → `ListDeployApprovalRequests`
+- `getAdminDeployRequests` → `getAdminDeployApprovalRequests`
+- `postAdminDeployRequestsIdApprove` → `postAdminDeployApprovalRequestsIdApprove`
+- `postDeployRequests` → `postDeployApprovalRequests`
+
+**In SQL index names:**
+
+- `idx_deploy_requests_active` → `idx_deploy_approval_requests_active`
+- `idx_deploy_requests_message_active` → `idx_deploy_approval_requests_message_active`
+
+This context-aware matching means Renamify detects the identifier pattern regardless of where it appears, even
+when it's part of a much larger compound word. It automatically adjusts the case transformation to fit the
+surrounding context, preserving the structure of complex identifiers like `postAdminDeployRequestsIdApprove`
+while correctly inserting "Approval" in the right place.
+
+### Highlights from the Refactoring
+
+**API Handler (Go):**
+
+```go
+// internal/gateway/handlers/deploy_requests.go
+// 116 matches across multiple case styles:
+// - Deploy request: 5
+// - DeployRequest: 66
+// - DeployRequests: 7
+// - ListDeployRequests: 3
+// - deploy request: 13
+// - deploy-request: 15
+// - deploy-requests: 6
+```
+
+**Database Migration (SQL):**
+
+```sql
+-- 20251101090000_add_deploy_requests.sql
+-- Handles table names, indexes, and comments:
+-- - deploy_requests (table name)
+-- - idx_deploy_requests_active
+-- - idx_deploy_requests_token
+-- - "Deploy requests" (in comments)
+```
+
+**Frontend Components (TypeScript):**
+
+```typescript
+// web/src/api/generated.ts
+// 47 matches including complex generated types:
+// - GetAdminDeployRequestsParams
+// - PostAdminDeployRequestsIdApproveResult
+// - getAdminDeployRequests()
+// - postAdminDeployRequestsIdReject()
+```
+
+**File Renames:**
+
+```
+internal/gateway/db/deploy_requests.go
+  → internal/gateway/db/deploy_approval_requests.go
+
+web/src/api/schemas/getAdminDeployRequestsParams.ts
+  → web/src/api/schemas/getAdminDeployApprovalRequestsParams.ts
+
+web/src/pages/deploy-requests-page.tsx
+  → web/src/pages/deploy-approval-requests-page.tsx
+```
+
+## The Result
+
+After reviewing the dry-run output, we performed the rename:
+
+```bash
+renamify rename --include-styles space-separated \
+  deploy_requests deploy_approval_requests
+```
+
+```
+✓ Applied 607 replacements across 31 files
+✓ Renamed 12 items
+Undo with: renamify undo b52d614ba6a0a9a2
+```
+
+The entire refactoring was:
+
+- **Atomic**: All changes applied together or rolled back if any failed
+- **Accurate**: Every variant correctly transformed across all case styles
+- **Reversible**: Complete undo capability with a single command
+- **Fast**: Completed in under a second
+
+This type of refactoring is exactly where Renamify shines, touching database schemas, API handlers, frontend components, and documentation.
+Instead of manually hunting through dozens of files and worrying about missing edge cases, we had confidence that every variant was caught and correctly transformed.
+
+Here's a screenshot of the complete preview in the terminal:
+
+<img
+  src={deployRequestsTable.src}
+  alt="Renamify table preview showing 607 replacements across 31 files with 35 variants"
+/>
