@@ -295,6 +295,16 @@ If the user insists after your pushback, then proceed, but always voice concerns
 - If you use `cd` in one command, subsequent commands will run from that directory
 - Always use absolute paths or reset to the project root when needed
 
+### Finding Files
+
+- **IMPORTANT**: Always use `git ls-files` instead of `find` to locate tracked files in the repository
+- Examples:
+  - `git ls-files "*.rs"` - Find all Rust files
+  - `git ls-files "*.md" "*.mdx"` - Find all markdown files
+  - `git ls-files | grep pattern` - Filter results
+- This avoids searching through `node_modules/`, `target/`, `.git/` and other ignored directories
+- Much faster and more accurate for repository files
+
 ## UPDATE THIS FILE!
 
 Remember to update your own AGENTS.md file with corrections and improvements while you are working.

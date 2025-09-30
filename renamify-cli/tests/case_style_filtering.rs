@@ -199,8 +199,8 @@ mixed_caseCASE
         String::from_utf8_lossy(&output.stdout).to_string()
     }
 
-    // Test 1: LowerJoined style - should match lowercase "case"
-    let output = run_search(temp_dir.path(), "lower-joined");
+    // Test 1: LowerFlat style - should match lowercase "case"
+    let output = run_search(temp_dir.path(), "lower-flat");
     let json: serde_json::Value = serde_json::from_str(&output).unwrap();
     let matches = json["plan"]["matches"].as_array().unwrap();
 
@@ -212,7 +212,7 @@ mixed_caseCASE
         .count();
     assert!(
         case_count > 0,
-        "LowerJoined style should match lowercase 'case'"
+        "LowerFlat style should match lowercase 'case'"
     );
 
     // Test 2: Dot case only - when searching for single word "case",
@@ -452,13 +452,13 @@ let unrelated_variable = 6; // should not match any "case" search
         env!("CARGO_BIN_EXE_renamify").to_string()
     }
 
-    // Test that lower-joined+snake doesn't find camel/pascal matches
+    // Test that lower-flat+snake doesn't find camel/pascal matches
     let output = std::process::Command::new(get_cli_path())
         .args([
             "search",
             "case",
             "--only-styles",
-            "lower-joined,snake",
+            "lower-flat,snake",
             "--output",
             "json",
         ])
@@ -471,12 +471,12 @@ let unrelated_variable = 6; // should not match any "case" search
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
     let matches = json["plan"]["matches"].as_array().unwrap();
 
-    // When searching for single word "case" with lower-joined+snake styles,
+    // When searching for single word "case" with lower-flat+snake styles,
     // both styles generate "case" as the pattern, so it matches all instances of "case"
     // This includes "case" standalone and "case" within compound words
     assert!(
         !matches.is_empty(),
-        "Should find matches for lower-joined+snake"
+        "Should find matches for lower-flat+snake"
     );
 
     // Verify that all matches are for the "case" pattern

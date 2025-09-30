@@ -1,0 +1,118 @@
+---
+title: AI-Powered Self-Hosting
+description: How Renamify used itself via MCP to rename case style identifiers
+---
+
+import { Code } from '@astrojs/starlight/components';
+import screenshot from '../../../assets/case-studies/ai-powered-self-hosting.png';
+
+One of the most powerful features of Renamify is its ability to rename itself - a true test of any renaming tool. This case study shows how we used the Renamify MCP server with Claude to rename our case style identifiers from `LowerJoined` to `LowerFlat` and `UpperJoined` to `UpperFlat`.
+
+<img
+  src={screenshot.src}
+  alt="Claude Code using Renamify MCP to rename LowerJoined to LowerFlat"
+/>
+
+## The Challenge
+
+We had named our case styles `LowerJoined` and `UpperJoined` to describe identifiers with no separators (like `flatcase` and `UPPERFLATCASE`). We realized these should be called `LowerFlat` and `UpperFlat` to match the standard naming convention.
+
+This meant renaming:
+
+- Rust enum variants in the core library
+- CLI argument names (kebab-case versions: `lower-joined` → `lower-flat`)
+- Documentation across multiple `.mdx` files
+- Test files with both PascalCase and kebab-case variants
+
+## The Solution: AI + MCP
+
+Instead of manually searching and replacing across all these contexts, we used Claude Code with the Renamify MCP server. The AI agent simply called the `renamify_rename` tool twice:
+
+### First Rename: LowerJoined → LowerFlat
+
+```
+renamify_rename(old: "LowerJoined", new: "LowerFlat", preview: "summary")
+
+[PLAN SUMMARY]
+Search: LowerJoined
+Replace: LowerFlat
+Matches: 16
+Files: 7
+Paths: 0
+
+[CONTENT]
+docs/src/content/docs/commands/search.mdx: 2 matches [lower-joined: 2]
+docs/src/content/docs/features/case-transformations.mdx: 1 matches [lower-joined: 1]
+docs/src/content/docs/mcp/tools.mdx: 1 matches [lower-joined: 1]
+renamify-cli/src/cli/args.rs: 1 matches [lower-joined: 1]
+renamify-cli/src/cli/types.rs: 3 matches [LowerJoined: 3]
+renamify-cli/tests/case_style_filtering.rs: 7 matches [LowerJoined: 2, lower-joined: 5]
+renamify-core/src/case_model.rs: 1 matches [LowerJoined: 1]
+
+✓ Applied 16 replacements across 7 files
+Undo with: renamify undo 3d6fffa278df81c5
+```
+
+### Second Rename: UpperJoined → UpperFlat
+
+```
+renamify_rename(old: "UpperJoined", new: "UpperFlat", preview: "summary")
+
+[PLAN SUMMARY]
+Search: UpperJoined
+Replace: UpperFlat
+Matches: 9
+Files: 6
+Paths: 0
+
+[CONTENT]
+docs/src/content/docs/commands/search.mdx: 2 matches [upper-joined: 2]
+docs/src/content/docs/features/case-transformations.mdx: 1 matches [upper-joined: 1]
+docs/src/content/docs/mcp/tools.mdx: 1 matches [upper-joined: 1]
+renamify-cli/src/cli/args.rs: 1 matches [upper-joined: 1]
+renamify-cli/src/cli/types.rs: 3 matches [UpperJoined: 3]
+renamify-core/src/case_model.rs: 1 matches [UpperJoined: 1]
+
+✓ Applied 9 replacements across 6 files
+Undo with: renamify undo 190723b349dc27a4
+```
+
+## What Got Renamed
+
+In a single operation, Renamify automatically handled:
+
+1. **Rust code**: `LowerJoined` → `LowerFlat` (PascalCase enum variants)
+2. **CLI arguments**: `lower-joined` → `lower-flat` (kebab-case)
+3. **Documentation**: Updated all references in `.mdx` files
+4. **Test files**: Both PascalCase identifiers and kebab-case strings
+
+The tool understood the context and applied the appropriate case transformation:
+
+- PascalCase in Rust enums
+- kebab-case in CLI help text and arguments
+- Both forms in test files
+
+## Why This Matters
+
+This demonstrates several key advantages of using Renamify with AI:
+
+1. **Context awareness**: The tool correctly identified and transformed all case variants
+2. **Safety**: Changes were atomic - all or nothing
+3. **Undo support**: Each operation provided an undo ID for instant rollback
+4. **AI integration**: Claude understood the tool's output and executed both renames sequentially
+5. **Self-hosting**: A renaming tool that can safely rename itself is a strong validation
+
+## The Result
+
+25 replacements across 13 files in seconds, with perfect case transformation throughout:
+
+- Documentation stayed consistent
+- CLI arguments updated correctly
+- Rust code compiled without errors
+- Tests passed without modification
+
+All with two simple MCP tool calls from an AI agent.
+
+## Try It Yourself
+
+To use Renamify with Claude Code via MCP, see our [MCP Server documentation](/mcp/overview).

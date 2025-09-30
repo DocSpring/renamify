@@ -56,8 +56,8 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         }
     } else if context.ends_with('\'') {
         // Lifetime parameters are lowercase
-        if possible_styles.contains(&Style::LowerJoined) {
-            return Some(Style::LowerJoined);
+        if possible_styles.contains(&Style::LowerFlat) {
+            return Some(Style::LowerFlat);
         }
     } else if context.ends_with("#[") || context.ends_with("#![") {
         // Attributes are typically snake_case
@@ -227,9 +227,9 @@ mod tests {
 
     #[test]
     fn test_rust_lifetime() {
-        let possible_styles = vec![Style::LowerJoined, Style::Camel];
+        let possible_styles = vec![Style::LowerFlat, Style::Camel];
         let result = suggest_style("'", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
     }
 
     #[test]

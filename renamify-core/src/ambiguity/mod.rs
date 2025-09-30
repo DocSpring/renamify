@@ -106,11 +106,11 @@ pub fn could_be_style(text: &str, style: Style) -> bool {
                         .chars()
                         .all(|c| c.is_lowercase() || c.is_numeric() || c == '.'))
         },
-        Style::LowerJoined => {
+        Style::LowerFlat => {
             // lower: all lowercase, no separators
             !has_uppercase && !has_underscore && !has_hyphen && !has_dot && !has_space
         },
-        Style::UpperJoined => {
+        Style::UpperFlat => {
             // UPPER: all uppercase, no separators
             !has_lowercase && !has_underscore && !has_hyphen && !has_dot && !has_space
         },
@@ -170,14 +170,14 @@ mod tests {
         assert!(could_be_style("api", Style::Kebab));
         assert!(could_be_style("api", Style::Camel));
         assert!(!could_be_style("api", Style::Pascal)); // Starts lowercase
-        assert!(could_be_style("api", Style::LowerJoined));
-        assert!(!could_be_style("api", Style::UpperJoined));
+        assert!(could_be_style("api", Style::LowerFlat));
+        assert!(!could_be_style("api", Style::UpperFlat));
 
         // Uppercase text
         assert!(!could_be_style("API", Style::Snake)); // Has uppercase
         assert!(!could_be_style("API", Style::Camel)); // Starts uppercase
         assert!(could_be_style("API", Style::Pascal));
-        assert!(could_be_style("API", Style::UpperJoined));
+        assert!(could_be_style("API", Style::UpperFlat));
 
         // Mixed case
         assert!(!could_be_style("userId", Style::Snake));

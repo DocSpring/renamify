@@ -35,8 +35,8 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         }
     } else if context.ends_with("namespace") {
         // Namespaces (C++) typically lowercase or PascalCase
-        if possible_styles.contains(&Style::LowerJoined) {
-            return Some(Style::LowerJoined);
+        if possible_styles.contains(&Style::LowerFlat) {
+            return Some(Style::LowerFlat);
         } else if possible_styles.contains(&Style::Pascal) {
             return Some(Style::Pascal);
         }
@@ -78,8 +78,8 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         // Include files often snake_case or lowercase
         if possible_styles.contains(&Style::Snake) {
             return Some(Style::Snake);
-        } else if possible_styles.contains(&Style::LowerJoined) {
-            return Some(Style::LowerJoined);
+        } else if possible_styles.contains(&Style::LowerFlat) {
+            return Some(Style::LowerFlat);
         }
     }
     None
@@ -113,9 +113,9 @@ mod tests {
 
     #[test]
     fn test_cpp_namespace_heuristic() {
-        let possible_styles = vec![Style::LowerJoined, Style::Pascal];
+        let possible_styles = vec![Style::LowerFlat, Style::Pascal];
         let result = suggest_style("namespace", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
     }
 
     #[test]
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_c_include_heuristic() {
-        let possible_styles = vec![Style::Snake, Style::LowerJoined];
+        let possible_styles = vec![Style::Snake, Style::LowerFlat];
         let result = suggest_style("#include", &possible_styles);
         assert_eq!(result, Some(Style::Snake));
 
@@ -184,9 +184,9 @@ mod tests {
         assert_eq!(result, Some(Style::Snake));
 
         // Test with only Lower available
-        let possible_styles = vec![Style::LowerJoined];
+        let possible_styles = vec![Style::LowerFlat];
         let result = suggest_style("#include", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
     }
 
     #[test]

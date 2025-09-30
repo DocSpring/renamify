@@ -36,8 +36,8 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         }
     } else if context.ends_with("package") || context.ends_with("import") {
         // Package names are lowercase with dots
-        if possible_styles.contains(&Style::LowerJoined) {
-            return Some(Style::LowerJoined);
+        if possible_styles.contains(&Style::LowerFlat) {
+            return Some(Style::LowerFlat);
         }
     } else if context.ends_with('@') {
         // Annotations typically PascalCase
@@ -98,9 +98,9 @@ mod tests {
 
     #[test]
     fn test_java_package_heuristic() {
-        let possible_styles = vec![Style::LowerJoined, Style::Snake];
+        let possible_styles = vec![Style::LowerFlat, Style::Snake];
         let result = suggest_style("package", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
     }
 
     #[test]
@@ -143,9 +143,9 @@ mod tests {
 
     #[test]
     fn test_java_import_heuristic() {
-        let possible_styles = vec![Style::LowerJoined, Style::Camel];
+        let possible_styles = vec![Style::LowerFlat, Style::Camel];
         let result = suggest_style("import", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
     }
 
     #[test]

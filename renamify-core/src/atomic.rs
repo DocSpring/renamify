@@ -81,12 +81,12 @@ pub fn to_atomic_style(identifier: &str, style: crate::case_model::Style) -> Str
         crate::case_model::Style::Snake
         | crate::case_model::Style::Kebab
         | crate::case_model::Style::Dot
-        | crate::case_model::Style::LowerJoined
+        | crate::case_model::Style::LowerFlat
         | crate::case_model::Style::LowerSentence => identifier.to_lowercase(),
 
         crate::case_model::Style::ScreamingSnake
         | crate::case_model::Style::ScreamingTrain
-        | crate::case_model::Style::UpperJoined
+        | crate::case_model::Style::UpperFlat
         | crate::case_model::Style::UpperSentence => identifier.to_uppercase(),
 
         crate::case_model::Style::Pascal

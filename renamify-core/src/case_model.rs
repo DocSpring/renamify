@@ -15,8 +15,8 @@ pub enum Style {
     Train,
     ScreamingTrain, // ALL-CAPS-WITH-HYPHENS
     Dot,
-    LowerJoined,   // all lowercase, no separators
-    UpperJoined,   // ALL UPPERCASE, no separators
+    LowerFlat,     // all lowercase, no separators
+    UpperFlat,     // ALL UPPERCASE, no separators
     Sentence,      // First word capitalized, rest lowercase, spaces
     LowerSentence, // all words lowercase with spaces
     UpperSentence, // ALL WORDS UPPERCASE WITH SPACES
@@ -583,13 +583,13 @@ pub fn to_style(model: &TokenModel, style: Style) -> String {
             .collect::<Vec<_>>()
             .join("."),
 
-        Style::LowerJoined => model
+        Style::LowerFlat => model
             .tokens
             .iter()
             .map(|t| t.text.to_lowercase())
             .collect::<String>(),
 
-        Style::UpperJoined => model
+        Style::UpperFlat => model
             .tokens
             .iter()
             .map(|t| t.text.to_uppercase())

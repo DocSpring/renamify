@@ -368,7 +368,7 @@ impl AmbiguityResolver {
 
         // Ultra last resort (shouldn't happen)
         ResolvedStyle {
-            style: Style::LowerJoined,
+            style: Style::LowerFlat,
             confidence: ResolutionConfidence::Low,
             method: ResolutionMethod::DefaultFallback,
         }

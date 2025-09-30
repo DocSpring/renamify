@@ -22,8 +22,14 @@ the transformation to all detected case variants:
 ### Additional Case Styles
 
 - **Title Case** → `Old Name` → `New Name`
+- **Sentence case** → `Old name` → `New name`
+- **lower sentence** → `old name` → `new name`
+- **UPPER SENTENCE** → `OLD NAME` → `NEW NAME`
 - **Train-Case** → `Old-Name` → `New-Name`
+- **SCREAMING-TRAIN-CASE** → `OLD-NAME` → `NEW-NAME`
 - **dot.case** → `old.name` → `new.name`
+- **lowerjoined** → `oldname` → `newname` (no separators)
+- **UPPERJOINED** → `OLDNAME` → `NEWNAME` (no separators)
 
 ## Contextual Separator Coercion
 
@@ -68,16 +74,23 @@ renamify plan old_name new_name --include-styles title,dot
 
 ## Style Names Reference
 
-| Style Name        | Example                |
-| ----------------- | ---------------------- |
-| `snake`           | `snake_case`           |
-| `kebab`           | `kebab-case`           |
-| `camel`           | `camelCase`            |
-| `pascal`          | `PascalCase`           |
-| `screaming-snake` | `SCREAMING_SNAKE_CASE` |
-| `title`           | `Title Case`           |
-| `train`           | `Train-Case`           |
-| `dot`             | `dot.case`             |
+| Style Name        | Example                | Description                            |
+| ----------------- | ---------------------- | -------------------------------------- |
+| `snake`           | `snake_case`           | Lowercase with underscores             |
+| `kebab`           | `kebab-case`           | Lowercase with hyphens                 |
+| `camel`           | `camelCase`            | First word lowercase, rest capitalized |
+| `pascal`          | `PascalCase`           | All words capitalized                  |
+| `screaming-snake` | `SCREAMING_SNAKE_CASE` | Uppercase with underscores             |
+| `title`           | `Title Case`           | All words capitalized with spaces      |
+| `train`           | `Train-Case`           | Capitalized words with hyphens         |
+| `screaming-train` | `SCREAMING-TRAIN-CASE` | Uppercase with hyphens                 |
+| `dot`             | `dot.case`             | Lowercase with dots                    |
+| `lower-flat`      | `lowerjoined`          | All lowercase, no separators           |
+| `upper-flat`      | `UPPERJOINED`          | All uppercase, no separators           |
+| `sentence`        | `Sentence case`        | First word capitalized with spaces     |
+| `lower-sentence`  | `lower sentence`       | All lowercase with spaces              |
+| `upper-sentence`  | `UPPER SENTENCE`       | All uppercase with spaces              |
+| `space-separated` | _(shorthand)_          | Expands to all space-separated styles  |
 
 ## Examples
 
@@ -110,11 +123,21 @@ renamify plan apiKey secretKey --exclude-styles screaming-snake
 ```bash
 # Include title case for documentation or UI text
 renamify plan user_profile account_settings --include-styles title
+
+# Include all space-separated styles (Title, Sentence, lower sentence, UPPER SENTENCE)
+renamify plan deploy_requests approval_requests --include-styles space-separated
 ```
 
-This would also transform:
+With `--include-styles title`, this transforms:
 
 - `User Profile` → `Account Settings`
+
+With `--include-styles space-separated`, this transforms:
+
+- `Deploy Requests` → `Approval Requests`
+- `Deploy requests` → `Approval requests`
+- `deploy requests` → `approval requests`
+- `DEPLOY REQUESTS` → `APPROVAL REQUESTS`
 
 ## Boundary Detection
 

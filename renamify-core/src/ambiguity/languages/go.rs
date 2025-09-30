@@ -33,13 +33,13 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         }
     } else if context.ends_with("package") {
         // Package names are lowercase
-        if possible_styles.contains(&Style::LowerJoined) {
-            return Some(Style::LowerJoined);
+        if possible_styles.contains(&Style::LowerFlat) {
+            return Some(Style::LowerFlat);
         }
     } else if context.ends_with("import") || context.contains("import (") {
         // Import paths often use lowercase or snake_case
-        if possible_styles.contains(&Style::LowerJoined) {
-            return Some(Style::LowerJoined);
+        if possible_styles.contains(&Style::LowerFlat) {
+            return Some(Style::LowerFlat);
         } else if possible_styles.contains(&Style::Snake) {
             return Some(Style::Snake);
         }
@@ -52,8 +52,8 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         }
     } else if context.contains("//go:") || context.contains("// +build") {
         // Go directives and build tags often use lowercase
-        if possible_styles.contains(&Style::LowerJoined) {
-            return Some(Style::LowerJoined);
+        if possible_styles.contains(&Style::LowerFlat) {
+            return Some(Style::LowerFlat);
         }
     }
     None
@@ -81,9 +81,9 @@ mod tests {
 
     #[test]
     fn test_go_package_heuristic() {
-        let possible_styles = vec![Style::LowerJoined, Style::Snake];
+        let possible_styles = vec![Style::LowerFlat, Style::Snake];
         let result = suggest_style("package", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
     }
 
     #[test]
@@ -121,12 +121,12 @@ mod tests {
 
     #[test]
     fn test_go_import_heuristic() {
-        let possible_styles = vec![Style::LowerJoined, Style::Snake];
+        let possible_styles = vec![Style::LowerFlat, Style::Snake];
         let result = suggest_style("import", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
 
         let result = suggest_style("import (", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
 
         // Test with only Snake available
         let possible_styles = vec![Style::Snake];
@@ -151,12 +151,12 @@ mod tests {
 
     #[test]
     fn test_go_build_directive_heuristic() {
-        let possible_styles = vec![Style::LowerJoined, Style::Camel];
+        let possible_styles = vec![Style::LowerFlat, Style::Camel];
         let result = suggest_style("//go:", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
 
         let result = suggest_style("// +build", &possible_styles);
-        assert_eq!(result, Some(Style::LowerJoined));
+        assert_eq!(result, Some(Style::LowerFlat));
     }
 
     #[test]
