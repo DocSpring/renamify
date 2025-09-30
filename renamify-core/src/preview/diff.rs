@@ -2,6 +2,7 @@ use crate::scanner::{MatchHunk, Plan, RenameKind};
 use nu_ansi_term::{Color as AnsiColor, Style};
 use similar::{ChangeTag, TextDiff};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::fmt::Write;
 use std::path::Path;
 
@@ -19,9 +20,10 @@ fn highlight_line_with_hunks(
     let mut result = String::new();
     let mut last_end = 0;
 
-    // Sort hunks by column position
+    // Sort hunks by column position and keep track of how much prior replacements shift offsets
     let mut sorted_hunks = hunks.to_vec();
     sorted_hunks.sort_by_key(|h| h.byte_offset);
+    let mut insertion_shift: isize = 0;
 
     // Base style for the whole line (Claude Code custom colors)
     let base_style = if is_delete {
@@ -37,11 +39,23 @@ fn highlight_line_with_hunks(
     };
 
     for hunk in sorted_hunks {
-        let col = hunk.byte_offset as usize;
-        let term = if is_delete {
-            &hunk.content
+        let (col, term, original_len) = if is_delete {
+            (
+                usize::try_from(hunk.byte_offset).unwrap(),
+                hunk.content.as_str(),
+                hunk.content.len(),
+            )
         } else {
-            &hunk.replace
+            let original_len = hunk.content.len();
+            let new_len = hunk.replace.len();
+            let base_col = usize::try_from(hunk.byte_offset).unwrap();
+            let base_col_isize = isize::try_from(base_col).unwrap();
+            let max_col = isize::try_from(line.len()).unwrap();
+            let adjusted_isize = (base_col_isize + insertion_shift).clamp(0, max_col);
+            let adjusted = usize::try_from(adjusted_isize).unwrap();
+            insertion_shift +=
+                isize::try_from(new_len).unwrap() - isize::try_from(original_len).unwrap();
+            (adjusted, hunk.replace.as_str(), original_len)
         };
 
         // Add the part before the match with base style
@@ -50,7 +64,11 @@ fn highlight_line_with_hunks(
         }
 
         // Add the highlighted match with brighter background (word-level highlight)
-        let end = (col + term.len()).min(line.len());
+        let end = if is_delete {
+            (col + original_len).min(line.len())
+        } else {
+            (col + term.len()).min(line.len())
+        };
         if col < line.len() {
             let highlight_style = if is_delete {
                 // Deleted match highlight: #c0526a
@@ -335,5 +353,129 @@ mod tests {
             highlighted, expected,
             "Highlighting should cover exactly 'core_ext', not 'ore_ext/'"
         );
+    }
+
+    fn build_hunk(
+        line_before: &str,
+        line_after: &str,
+        content: &str,
+        replace: &str,
+        search_start: &mut usize,
+    ) -> MatchHunk {
+        let relative = line_before[*search_start..]
+            .find(content)
+            .unwrap_or_else(|| panic!("expected '{}' in line", content));
+        let absolute = *search_start + relative;
+        *search_start = absolute + content.len();
+
+        MatchHunk {
+            file: PathBuf::from("test.rs"),
+            line: 1,
+            byte_offset: u32::try_from(absolute).unwrap(),
+            char_offset: u32::try_from(absolute).unwrap(),
+            variant: content.to_string(),
+            content: content.to_string(),
+            replace: replace.to_string(),
+            start: absolute,
+            end: absolute + content.len(),
+            line_before: Some(line_before.to_string()),
+            line_after: Some(line_after.to_string()),
+            coercion_applied: None,
+            original_file: None,
+            renamed_file: None,
+            patch_hash: None,
+        }
+    }
+
+    fn highlight_style_for_insert() -> Style {
+        Style::new()
+            .on(AnsiColor::Rgb(0x00, 0xA9, 0x58))
+            .fg(AnsiColor::Rgb(0xFF, 0xFF, 0xFF))
+    }
+
+    #[test]
+    fn test_highlight_line_with_multiple_insertions_two_matches() {
+        let line_before = "sendDeployRequest -> deploy-requests";
+        let line_after = "sendDeployApprovalRequest -> deploy-approval-requests";
+
+        let mut search_start = 0;
+        let h1 = build_hunk(
+            line_before,
+            line_after,
+            "DeployRequest",
+            "DeployApprovalRequest",
+            &mut search_start,
+        );
+        let h2 = build_hunk(
+            line_before,
+            line_after,
+            "deploy-requests",
+            "deploy-approval-requests",
+            &mut search_start,
+        );
+
+        let hunks = vec![h1, h2];
+        let hunk_refs: Vec<&MatchHunk> = hunks.iter().collect();
+        let highlighted = highlight_line_with_hunks(line_after, &hunk_refs, false, true);
+
+        let highlight_style = highlight_style_for_insert();
+        for replace in ["DeployApprovalRequest", "deploy-approval-requests"] {
+            let painted = highlight_style.paint(replace).to_string();
+            assert!(
+                highlighted.contains(&painted),
+                "Expected highlight for '{}' in {}",
+                replace,
+                highlighted
+            );
+        }
+    }
+
+    #[test]
+    fn test_highlight_line_with_multiple_insertions_three_matches() {
+        let line_before = "sendDeployRequest -> deploy-requests -> deploy_requests";
+        let line_after =
+            "sendDeployApprovalRequest -> deploy-approval-requests -> deploy_approval_requests";
+
+        let mut search_start = 0;
+        let h1 = build_hunk(
+            line_before,
+            line_after,
+            "DeployRequest",
+            "DeployApprovalRequest",
+            &mut search_start,
+        );
+        let h2 = build_hunk(
+            line_before,
+            line_after,
+            "deploy-requests",
+            "deploy-approval-requests",
+            &mut search_start,
+        );
+        let h3 = build_hunk(
+            line_before,
+            line_after,
+            "deploy_requests",
+            "deploy_approval_requests",
+            &mut search_start,
+        );
+
+        let hunks = vec![h1, h2, h3];
+        let hunk_refs: Vec<&MatchHunk> = hunks.iter().collect();
+        let highlighted = highlight_line_with_hunks(line_after, &hunk_refs, false, true);
+
+        let highlight_style = highlight_style_for_insert();
+        for replace in [
+            "DeployApprovalRequest",
+            "deploy-approval-requests",
+            "deploy_approval_requests",
+        ] {
+            let painted = highlight_style.paint(replace).to_string();
+            assert!(
+                highlighted.contains(&painted),
+                "Expected highlight for '{}' in {}",
+                replace,
+                highlighted
+            );
+        }
     }
 }
