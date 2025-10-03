@@ -684,13 +684,17 @@ fn generate_variant_map_internal(
 ) -> BTreeMap<String, String> {
     let using_default_styles = styles.is_none();
     let default_styles = [
-        Style::Snake,
-        Style::Kebab,
-        Style::Camel,
-        Style::Pascal,
-        Style::ScreamingSnake,
-        Style::Train, // Include Train-Case for patterns like Renamify-Core-Engine
-        Style::ScreamingTrain, // Include ScreamingTrain for patterns like RENAMIFY-DEBUG
+        Style::Snake,          // renamify_core_engine
+        Style::Kebab,          // renamify-core-engine
+        Style::Camel,          // renamifyCoreEngine
+        Style::Pascal,         // RenamifyCoreEngine
+        Style::ScreamingSnake, // RENAMIFY_CORE_ENGINE
+        Style::Train,          // Renamify-Core-Engine
+        Style::ScreamingTrain, // RENAMIFY-DEBUG
+        Style::Title,          // Renamify Core Engine
+        Style::Sentence,       // Renamify core engine
+        Style::LowerSentence,  // renamify core engine
+        Style::UpperSentence,  // RENAMIFY CORE ENGINE
     ];
     let styles = styles.unwrap_or(&default_styles);
 

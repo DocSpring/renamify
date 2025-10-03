@@ -236,17 +236,17 @@ safety.
 <details>
 <summary>What files does Renamify ignore by default?</summary>
 
-Renamify respects the same ignore rules as ripgrep:
+Renamify respects standard ignore files:
 
 - `.gitignore` - Git's ignore patterns
-- `.ignore` - Generic ignore file
-- `.rgignore` - Ripgrep-specific patterns
+- `.ignore` - Generic ignore file (used by ripgrep, fd, etc.)
 - `.rnignore` - Renamify-specific patterns
 
-It also ignores:
+It also:
 
-- Binary files (unless using `-uuu` flag)
-- Hidden files and directories (unless using `-u` flag)
+- **Includes** hidden files like `.goreleaser.yaml` and `.github/` by default
+- Always excludes the `.git` directory (never scanned or renamed)
+- Skips binary files (unless using `-uuu` flag)
 - Common build artifacts (`node_modules/`, `target/`, `dist/`, etc.)
 
 Use `-u`, `-uu`, or `-uuu` flags to override ignore rules progressively.

@@ -170,12 +170,16 @@ pub fn find_compound_variants(
                     crate::case_model::detect_style(&matched_tokens[0].text)
                 } else {
                     // Multiple tokens - check if they form a known style pattern
-                    // Check for PascalCase pattern (each token starts with uppercase)
+                    // Check for Title Case pattern (each token starts with uppercase, identifier has spaces)
                     let all_title_case = matched_tokens.iter().all(|t| {
                         t.text.chars().next().is_some_and(char::is_uppercase)
                             && t.text.chars().skip(1).all(char::is_lowercase)
                     });
-                    if all_title_case {
+                    if all_title_case && identifier.contains(' ') {
+                        // Title Case: "Server Gateway" (with spaces)
+                        Some(Style::Title)
+                    } else if all_title_case {
+                        // Pascal Case: "ServerGateway" (no spaces)
                         Some(Style::Pascal)
                     } else if matched_tokens
                         .iter()
@@ -410,6 +414,14 @@ pub fn find_compound_variants(
                         .map(|t| t.text.as_str())
                         .collect::<Vec<_>>()
                         .join(".")
+                } else if identifier.contains(' ') {
+                    // Space-separated identifier - join with spaces
+                    // This handles Title Case, Sentence case, etc.
+                    replacement_tokens
+                        .iter()
+                        .map(|t| t.text.as_str())
+                        .collect::<Vec<_>>()
+                        .join(" ")
                 } else {
                     // No separator - for PascalCase/CamelCase, just concatenate
                     // For other styles, use to_style

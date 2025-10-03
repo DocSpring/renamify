@@ -65,10 +65,10 @@ use std::path::PathBuf;
 
 /// Configure a `WalkBuilder` based on the unrestricted level in `PlanOptions`.
 ///
-/// This matches ripgrep's behavior:
-/// - Level 0 (default): Respect all ignore files, skip hidden files
-/// - Level 1 (-u): Don't respect .gitignore, but respect other ignore files, skip hidden
-/// - Level 2 (-uu): Don't respect any ignore files, include hidden files
+/// This matches ripgrep's behavior with renamify-specific adjustments:
+/// - Level 0 (default): Respect .gitignore, .ignore, .rnignore; include hidden files; exclude .git
+/// - Level 1 (-u): Don't respect .gitignore, but respect .ignore and .rnignore; include hidden; exclude .git
+/// - Level 2 (-uu): Don't respect any ignore files; include hidden files; exclude .git
 /// - Level 3 (-uuu): Same as level 2, plus treat binary files as text (handled by caller)
 pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> WalkBuilder {
     let mut builder = if roots.is_empty() {
@@ -91,32 +91,38 @@ pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> Wa
 
     match level {
         0 => {
-            // Default: respect all ignore files, skip hidden
+            // Default: respect .gitignore, .ignore, and .rnignore, include hidden files, exclude .git
             builder
                 .git_ignore(true)
                 .git_global(true)
                 .git_exclude(true)
-                .ignore(true)
+                .ignore(true)       // Respects .ignore files (generic convention used by fd, ripgrep, etc.)
                 .parents(true)
-                .hidden(true)  // true = skip hidden files
-                .add_custom_ignore_filename(".gitignore")  // Also treat .gitignore as custom ignore file
-                .add_custom_ignore_filename(".rgignore")
-                .add_custom_ignore_filename(".rnignore");
+                .hidden(false)      // false = include hidden files like .goreleaser.yaml, .github/, etc.
+                .add_custom_ignore_filename(".gitignore")  // Treat .gitignore as custom ignore file for non-git directories
+                .add_custom_ignore_filename(".rnignore")  // Renamify-specific ignore file
+                .filter_entry(|e| {
+                    // Exclude .git directories from being scanned
+                    e.file_name() != ".git"
+                })
         },
         1 => {
-            // -u: Don't respect .gitignore, but respect others, skip hidden
+            // -u: Don't respect .gitignore, but respect .ignore and .rnignore, include hidden, exclude .git
             builder
                 .git_ignore(false)  // Don't respect .gitignore
                 .git_global(true)   // Still respect global gitignore
                 .git_exclude(true)  // Still respect .git/info/exclude
-                .ignore(true)       // Still respect .ignore/.rgignore/.rnignore
+                .ignore(true)       // Still respect .ignore files
                 .parents(true)      // Still check parent dirs
-                .hidden(true)       // Still skip hidden files
-                .add_custom_ignore_filename(".rgignore")
-                .add_custom_ignore_filename(".rnignore");
+                .hidden(false)      // false = include hidden files
+                .add_custom_ignore_filename(".rnignore")  // Renamify-specific ignore file
+                .filter_entry(|e| {
+                    // Exclude .git directories from being scanned
+                    e.file_name() != ".git"
+                })
         },
         2 | 3 => {
-            // -uu/-uuu: Don't respect any ignore files, show hidden
+            // -uu/-uuu: Don't respect any ignore files, show hidden, but still exclude .git
             // Level 3 also treats binary as text, but that's handled by scanner
             builder
                 .git_ignore(false)
@@ -124,19 +130,27 @@ pub fn configure_walker(roots: &[PathBuf], options: &scanner::PlanOptions) -> Wa
                 .git_exclude(false)
                 .ignore(false)
                 .parents(false)
-                .hidden(false); // false = include hidden files
+                .hidden(false) // false = include hidden files
+                .filter_entry(|e| {
+                    // Always exclude .git directories - they should never be renamed
+                    e.file_name() != ".git"
+                })
         },
         _ => {
-            // Treat any higher level as maximum unrestricted
+            // Treat any higher level as maximum unrestricted, but still exclude .git
             builder
                 .git_ignore(false)
                 .git_global(false)
                 .git_exclude(false)
                 .ignore(false)
                 .parents(false)
-                .hidden(false);
+                .hidden(false)
+                .filter_entry(|e| {
+                    // Always exclude .git directories - they should never be renamed
+                    e.file_name() != ".git"
+                })
         },
-    }
+    };
 
     builder
 }

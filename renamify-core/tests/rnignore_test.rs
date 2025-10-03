@@ -16,9 +16,9 @@ fn test_rnignore_respected_by_default() {
     let opts = PlanOptions::default();
     let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
-    // Should only find matches in test.txt, not in ignored.txt
-    assert_eq!(plan.stats.files_scanned, 1);
-    assert_eq!(plan.matches.len(), 1);
+    // Should find matches in test.txt and .rnignore (hidden file), but not in ignored.txt (excluded by .rnignore)
+    assert_eq!(plan.stats.files_scanned, 2);
+    assert_eq!(plan.matches.len(), 1); // Only test.txt contains "old_name", not .rnignore
     assert!(plan.matches[0].file.to_str().unwrap().contains("test.txt"));
     assert!(!plan
         .matches
@@ -48,9 +48,9 @@ fn test_rnignore_with_patterns() {
     let opts = PlanOptions::default();
     let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
-    // Should find matches in src/main.rs and test.txt but not in build/
-    assert_eq!(plan.stats.files_scanned, 2);
-    assert_eq!(plan.matches.len(), 2);
+    // Should find matches in src/main.rs, test.txt, and .rnignore (hidden file), but not in build/
+    assert_eq!(plan.stats.files_scanned, 3);
+    assert_eq!(plan.matches.len(), 2); // Only src/main.rs and test.txt contain "old_name"
 
     let file_paths: Vec<String> = plan
         .matches
@@ -82,21 +82,21 @@ fn test_rnignore_with_unrestricted_level() {
     // Create .rnignore file
     fs::write(temp_dir.path().join(".rnignore"), "ignored.txt").unwrap();
 
-    // Test with unrestricted level 0 (default - respects .rnignore)
+    // Test with unrestricted level 0 (default - respects .rnignore, includes hidden files)
     let opts = PlanOptions {
         unrestricted_level: 0,
         ..Default::default()
     };
     let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
-    assert_eq!(plan.stats.files_scanned, 1);
+    assert_eq!(plan.stats.files_scanned, 2); // test.txt and .rnignore (hidden), not ignored.txt
 
-    // Test with unrestricted level 1 (still respects .rnignore)
+    // Test with unrestricted level 1 (still respects .rnignore, includes hidden files)
     let opts = PlanOptions {
         unrestricted_level: 1,
         ..Default::default()
     };
     let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
-    assert_eq!(plan.stats.files_scanned, 1);
+    assert_eq!(plan.stats.files_scanned, 2); // test.txt and .rnignore (hidden), not ignored.txt
 
     // Test with unrestricted level 2 (ignores all ignore files including .rnignore)
     let opts = PlanOptions {
@@ -134,9 +134,9 @@ fn test_rnignore_in_subdirectory() {
     let opts = PlanOptions::default();
     let plan = scan_repository(temp_dir.path(), "old_name", "new_name", &opts).unwrap();
 
-    // Should find matches in root.txt and subdir/test.txt but not subdir/ignored.txt
-    assert_eq!(plan.stats.files_scanned, 2);
-    assert_eq!(plan.matches.len(), 2);
+    // Should find matches in root.txt, subdir/test.txt, and subdir/.rnignore (hidden), but not subdir/ignored.txt
+    assert_eq!(plan.stats.files_scanned, 3);
+    assert_eq!(plan.matches.len(), 2); // Only root.txt and subdir/test.txt contain "old_name"
 
     let file_paths: Vec<String> = plan
         .matches
@@ -194,10 +194,10 @@ fn test_rnignore_combined_with_gitignore() {
 
     // Now .gitignore works even outside git repositories (we treat it as a custom ignore file)
     // So both .gitignore and .rnignore should be respected
-    // Only test.txt should be scanned (git_ignored.txt is in .gitignore,
-    // rnignored.txt is in .rnignore, both_ignored.txt is in .rnignore)
-    assert_eq!(plan.stats.files_scanned, 1);
-    assert_eq!(plan.matches.len(), 1);
+    // Should scan: test.txt, .gitignore (hidden), .rnignore (hidden)
+    // Should NOT scan: git_ignored.txt (in .gitignore), rnignored.txt (in .rnignore), both_ignored.txt (in .rnignore)
+    assert_eq!(plan.stats.files_scanned, 3);
+    assert_eq!(plan.matches.len(), 1); // Only test.txt contains "old_name"
 
     let file_paths: Vec<String> = plan
         .matches

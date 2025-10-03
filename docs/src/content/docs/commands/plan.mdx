@@ -80,9 +80,9 @@ not splitting it into separate components. E.g. GitHub → github, not git_hub
 
 ### Unrestricted Mode
 
-- `-u` - Disable .gitignore files
-- `-uu` - Disable all ignore files, include hidden files
-- `-uuu` - Disable all ignore files, include hidden files, process binary files
+- `-u` - Disable .gitignore files (still respects .ignore and .rnignore)
+- `-uu` - Disable all ignore files (.gitignore, .ignore, .rnignore)
+- `-uuu` - Disable all ignore files and process binary files (dangerous!)
 
 ## Output Formats
 
@@ -253,7 +253,7 @@ renamify plan oldName newName --exclude-styles screaming-snake
 # Include gitignored files (like vendor directories)
 renamify plan old_name new_name -u
 
-# Plan for everything (including hidden files)
+# Plan ignoring all ignore files
 renamify plan old_name new_name -uu
 ```
 

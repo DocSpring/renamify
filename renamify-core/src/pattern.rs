@@ -51,17 +51,45 @@ pub fn build_pattern(variants: &[String]) -> Result<MatchPattern, regex::Error> 
 }
 
 pub fn is_boundary(bytes: &[u8], start: usize, end: usize) -> bool {
+    // Check if the matched text contains spaces (space-separated identifier)
+    let match_bytes = &bytes[start..end];
+    let is_space_separated = match_bytes.contains(&b' ');
+
     let left_boundary = if start == 0 {
         true
     } else {
-        // Treat underscores as separators, not part of the identifier
-        !bytes[start - 1].is_ascii_alphanumeric()
-            || (bytes[start].is_ascii_uppercase() && bytes[start - 1].is_ascii_lowercase())
+        let prev_byte = bytes[start - 1];
+
+        if is_space_separated {
+            // For space-separated patterns, hyphens are NOT valid boundaries
+            // Only whitespace, punctuation (except hyphen), or start of string
+            prev_byte.is_ascii_whitespace()
+                || (prev_byte.is_ascii_punctuation() && prev_byte != b'-' && prev_byte != b'_')
+                || (!prev_byte.is_ascii_alphanumeric() && prev_byte != b'-' && prev_byte != b'_')
+        } else {
+            // For regular patterns, underscores and hyphens are separators
+            !bytes[start - 1].is_ascii_alphanumeric()
+                || (bytes[start].is_ascii_uppercase() && bytes[start - 1].is_ascii_lowercase())
+        }
     };
 
-    let right_boundary = end >= bytes.len()
-        || !bytes[end].is_ascii_alphanumeric()
-        || (bytes[end].is_ascii_uppercase() && end > 0 && bytes[end - 1].is_ascii_lowercase());
+    let right_boundary = if end >= bytes.len() {
+        true
+    } else {
+        let next_byte = bytes[end];
+
+        if is_space_separated {
+            // For space-separated patterns, hyphens are NOT valid boundaries
+            next_byte.is_ascii_whitespace()
+                || (next_byte.is_ascii_punctuation() && next_byte != b'-' && next_byte != b'_')
+                || (!next_byte.is_ascii_alphanumeric() && next_byte != b'-' && next_byte != b'_')
+        } else {
+            !bytes[end].is_ascii_alphanumeric()
+                || (bytes[end].is_ascii_uppercase()
+                    && end > 0
+                    && bytes[end - 1].is_ascii_lowercase())
+        }
+    };
 
     left_boundary && right_boundary
 }

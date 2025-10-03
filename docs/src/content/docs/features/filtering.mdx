@@ -8,18 +8,54 @@ description:
 Renamify provides powerful filtering options to control exactly which files get
 processed during renaming operations.
 
-## Default Behavior (Respects .gitignore)
+## Default Behavior (Respects .gitignore and .ignore)
 
 By default, Renamify respects standard ignore mechanisms:
 
 - **`.gitignore` files** at all levels
 - **`.git/info/exclude`** (repository-specific ignores)
 - **Global git ignore rules** (`~/.gitignore_global`, etc.)
-- **`.rgignore` files** (ripgrep-specific ignore files)
-- **Hidden files and directories** are skipped (starting with `.`)
+- **`.ignore` files** (generic convention used by ripgrep, fd, and other modern tools)
+- **`.rnignore` files** (Renamify-specific ignore files)
+- **Hidden files and directories** are **included** (like `.goreleaser.yaml`, `.github/`)
+- **`.git` directory** is **always excluded** (never scanned or renamed)
 
-This means Renamify won't process files in `node_modules/`, `target/`, `.git/`,
-etc. by default.
+This means Renamify won't process files in `node_modules/`, `target/`, etc. by
+default, but **will** process hidden files like `.goreleaser.yaml` and `.github/workflows/`
+that are tracked in your repository.
+
+## Using .rnignore Files
+
+Create a `.rnignore` file to exclude files from renaming without affecting your
+`.gitignore` or `.ignore` files. This is useful for files that always need to preserve a specific term
+even if it's being renamed everywhere else.
+
+### Example .rnignore
+
+```gitignore
+# Exclude generated files from renaming
+*.generated.ts
+*_pb.go
+
+# Exclude specific directories
+vendor/
+third_party/
+
+# Exclude lock files
+package-lock.json
+Cargo.lock
+```
+
+### Precedence
+
+`.rnignore` files work alongside other ignore files:
+
+1. `.rnignore` - Renamify-specific exclusions
+2. `.ignore` - Generic tool exclusions (ripgrep, fd, etc.)
+3. `.gitignore` - Git version control exclusions
+4. Global git ignore rules
+
+Files matched by any of these will be excluded from renaming operations.
 
 ## Unrestricted Mode
 
@@ -34,20 +70,22 @@ renamify plan old_name new_name -u
 ```
 
 - ✅ Processes files ignored by `.gitignore`
-- ❌ Still respects `.git/info/exclude` and global git ignore
-- ❌ Still skips hidden files
+- ✅ Includes hidden files and directories
+- ❌ Still respects `.git/info/exclude`, global git ignore, `.ignore`, and `.rnignore`
+- ❌ Still excludes `.git` directory
 - ❌ Still skips binary files
 
 ### `-uu` (Unrestricted Level 2)
 
-Disables all ignore files and shows hidden files:
+Disables all ignore files:
 
 ```bash
 renamify plan old_name new_name -uu
 ```
 
-- ✅ Processes all ignore files
-- ✅ Shows hidden files and directories
+- ✅ Processes all ignore files (`.gitignore`, `.ignore`, `.rnignore`)
+- ✅ Includes hidden files and directories
+- ❌ Still excludes `.git` directory
 - ❌ Still skips binary files
 
 ### `-uuu` (Unrestricted Level 3)
@@ -59,8 +97,9 @@ renamify plan old_name new_name -uuu
 ```
 
 - ✅ Processes all files
-- ✅ Shows hidden files and directories
+- ✅ Includes hidden files and directories
 - ✅ Treats binary files as text (dangerous!)
+- ❌ Still excludes `.git` directory (always excluded for safety)
 
 **⚠️ Warning**: Level 3 can corrupt binary files. Use with extreme caution.
 

@@ -283,6 +283,11 @@ pub fn find_enhanced_matches(
     let mut final_matches = Vec::new();
 
     for candidate in all_matches {
+        // Check if candidate is an exact match
+        let candidate_is_exact = processed_ranges
+            .iter()
+            .any(|(s, e)| *s == candidate.start && *e == candidate.end);
+
         // Check if this candidate overlaps with any already selected match
         let overlaps_with_selected = final_matches.iter().any(|selected: &Match| {
             candidate.start < selected.end && candidate.end > selected.start
@@ -295,23 +300,73 @@ pub fn find_enhanced_matches(
 
             for (idx, selected) in final_matches.iter().enumerate() {
                 if candidate.start < selected.end && candidate.end > selected.start {
-                    // They overlap - choose the longer one
+                    let selected_is_exact = processed_ranges
+                        .iter()
+                        .any(|(s, e)| *s == selected.start && *e == selected.end);
+
+                    // Check if one completely contains the other
                     let candidate_len = candidate.end - candidate.start;
                     let selected_len = selected.end - selected.start;
+                    let same_start = candidate.start == selected.start;
+                    let candidate_fully_contains_selected = candidate.start <= selected.start
+                        && candidate.end >= selected.end
+                        && candidate_len > selected_len;
+                    let selected_fully_contains_candidate = selected.start <= candidate.start
+                        && selected.end >= candidate.end
+                        && selected_len > candidate_len;
 
-                    if candidate_len > selected_len {
-                        should_replace = true;
-                        replace_idx = Some(idx);
-                        break;
+                    // Prioritize based on containment and match type
+                    if selected_is_exact && !candidate_is_exact {
+                        let selected_is_space_separated = selected.variant.contains(' ');
+                        let candidate_is_space_separated = candidate.variant.contains(' ');
+
+                        if candidate_fully_contains_selected {
+                            if selected_is_space_separated {
+                                if !candidate_is_space_separated && same_start {
+                                    // Exact is space-separated, compound is not, same start - prefer compound
+                                    should_replace = true;
+                                    replace_idx = Some(idx);
+                                }
+                                // Otherwise (both space-separated OR different starts): prefer exact match
+                            } else {
+                                // Non-space-separated: prefer compound
+                                // (e.g., "preview_format_arg" contains "preview_format", or "should_foo_bar_please" contains "foo_bar")
+                                should_replace = true;
+                                replace_idx = Some(idx);
+                            }
+                        }
+                    } else if !selected_is_exact && candidate_is_exact {
+                        let candidate_is_space_separated = candidate.variant.contains(' ');
+
+                        if selected_fully_contains_candidate {
+                            if candidate_is_space_separated && !same_start {
+                                // Space-separated exact replacing larger compound - prefer exact
+                                should_replace = true;
+                                replace_idx = Some(idx);
+                            }
+                            // Otherwise: keep compound
+                        } else {
+                            // Overlap without full containment - prefer exact
+                            should_replace = true;
+                            replace_idx = Some(idx);
+                        }
+                    } else {
+                        // Both are exact or both are compound - choose the longer one
+                        if candidate_len > selected_len {
+                            should_replace = true;
+                            replace_idx = Some(idx);
+                        }
                     }
+                    // All branches lead here
+                    break;
                 }
             }
 
             if should_replace {
-                // Replace the shorter match with this longer one
+                // Replace the selected match with this candidate
                 final_matches[replace_idx.unwrap()] = candidate;
             } else {
-                // Skip this candidate (it's shorter than the overlapping match)
+                // Skip this candidate
             }
         } else {
             // No overlap, add it
@@ -385,14 +440,6 @@ pub fn enhanced_matches_to_hunks(
         let (content, replace) = if variant_map.contains_key(&m.variant) {
             // Exact match - use the variant map
             let new_variant = variant_map.get(&m.variant).unwrap_or(&m.variant);
-
-            if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-                eprintln!(
-                    "DEBUG COMPOUND: Exact match '{}' -> '{}' (from variant map)",
-                    m.variant, new_variant
-                );
-            }
-
             (m.variant.clone(), new_variant.clone())
         } else {
             // Compound match - the text field contains the replacement
