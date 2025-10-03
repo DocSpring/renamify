@@ -17,8 +17,22 @@ pub enum Style {
     ScreamingSnake,
     /// `Title Case`
     Title,
+    /// Train-Case
+    Train,
+    /// SCREAMING-TRAIN-CASE
+    ScreamingTrain,
     /// dot.separated
     Dot,
+    /// lowerflatcase
+    LowerFlat,
+    /// UPPERFLATCASE
+    UpperFlat,
+    /// Sentence case
+    Sentence,
+    /// lower sentence case
+    LowerSentence,
+    /// UPPER SENTENCE CASE
+    UpperSentence,
     /// Mixed or unknown style
     Mixed,
 }
@@ -130,7 +144,9 @@ pub fn detect_style(s: &str) -> Style {
     // Determine style based on patterns
     if hyphen_count > 0 && underscore_count == 0 && dot_count == 0 && space_count == 0 {
         if has_uppercase && !has_lowercase {
-            Style::Mixed // KEBAB-SCREAMING not a standard style
+            Style::ScreamingTrain
+        } else if is_train_case(basename) {
+            Style::Train
         } else {
             Style::Kebab
         }
@@ -143,8 +159,15 @@ pub fn detect_style(s: &str) -> Style {
     } else if dot_count > 0 && hyphen_count == 0 && underscore_count == 0 && space_count == 0 {
         Style::Dot
     } else if space_count > 0 && hyphen_count == 0 && underscore_count == 0 && dot_count == 0 {
-        if is_title_case(basename) {
+        // Space-separated styles
+        if has_uppercase && !has_lowercase {
+            Style::UpperSentence
+        } else if !has_uppercase && has_lowercase {
+            Style::LowerSentence
+        } else if is_title_case(basename) {
             Style::Title
+        } else if is_sentence_case(basename) {
+            Style::Sentence
         } else {
             Style::Mixed
         }
@@ -158,9 +181,11 @@ pub fn detect_style(s: &str) -> Style {
                 Style::Camel
             }
         } else if has_uppercase && !has_lowercase {
-            Style::ScreamingSnake // All caps, treat as screaming snake without underscores
+            Style::UpperFlat
+        } else if !has_uppercase && has_lowercase {
+            Style::LowerFlat
         } else {
-            Style::Snake // All lowercase, treat as snake without underscores
+            Style::Mixed
         }
     } else {
         Style::Mixed
@@ -209,6 +234,63 @@ fn is_title_case(s: &str) -> bool {
     }
 
     has_word
+}
+
+fn is_train_case(s: &str) -> bool {
+    // Train-Case: First letter of each hyphen-separated word is capitalized
+    let parts: Vec<&str> = s.split('-').collect();
+    if parts.len() < 2 {
+        return false;
+    }
+
+    for part in parts {
+        if part.is_empty() {
+            return false;
+        }
+        let mut chars = part.chars();
+        let Some(first) = chars.next() else {
+            return false;
+        };
+        if !first.is_uppercase() {
+            return false;
+        }
+        let rest: String = chars.collect();
+        if !rest.is_empty() && !rest.chars().all(char::is_lowercase) {
+            return false;
+        }
+    }
+    true
+}
+
+fn is_sentence_case(s: &str) -> bool {
+    // Sentence case: First word capitalized, rest lowercase
+    let words: Vec<&str> = s.split(' ').filter(|w| !w.is_empty()).collect();
+    if words.is_empty() {
+        return false;
+    }
+
+    // First word should be capitalized
+    let first_word = words[0];
+    let mut chars = first_word.chars();
+    let Some(first_char) = chars.next() else {
+        return false;
+    };
+    if !first_char.is_uppercase() {
+        return false;
+    }
+    let rest: String = chars.collect();
+    if !rest.is_empty() && !rest.chars().all(char::is_lowercase) {
+        return false;
+    }
+
+    // Remaining words should be all lowercase
+    for word in &words[1..] {
+        if !word.chars().all(char::is_lowercase) {
+            return false;
+        }
+    }
+
+    true
 }
 
 /// Tokenize a string into words
@@ -355,11 +437,53 @@ pub fn render_tokens(tokens: &[Token], style: Style) -> String {
             .map(|t| capitalize(&t.word))
             .collect::<Vec<_>>()
             .join(" "),
+        Style::Train => tokens
+            .iter()
+            .map(|t| capitalize(&t.word))
+            .collect::<Vec<_>>()
+            .join("-"),
+        Style::ScreamingTrain => tokens
+            .iter()
+            .map(|t| t.word.to_uppercase())
+            .collect::<Vec<_>>()
+            .join("-"),
         Style::Dot => tokens
             .iter()
             .map(|t| t.word.clone())
             .collect::<Vec<_>>()
             .join("."),
+        Style::LowerFlat => tokens
+            .iter()
+            .map(|t| t.word.clone())
+            .collect::<String>(),
+        Style::UpperFlat => tokens
+            .iter()
+            .map(|t| t.word.to_uppercase())
+            .collect::<String>(),
+        Style::Sentence => {
+            let mut result = String::new();
+            for (i, token) in tokens.iter().enumerate() {
+                if i > 0 {
+                    result.push(' ');
+                }
+                if i == 0 {
+                    result.push_str(&capitalize(&token.word));
+                } else {
+                    result.push_str(&token.word);
+                }
+            }
+            result
+        },
+        Style::LowerSentence => tokens
+            .iter()
+            .map(|t| t.word.clone())
+            .collect::<Vec<_>>()
+            .join(" "),
+        Style::UpperSentence => tokens
+            .iter()
+            .map(|t| t.word.to_uppercase())
+            .collect::<Vec<_>>()
+            .join(" "),
         Style::Mixed => {
             // Default to snake case for mixed styles
             render_tokens(tokens, Style::Snake)

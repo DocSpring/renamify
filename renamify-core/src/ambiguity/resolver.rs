@@ -102,7 +102,16 @@ impl AmbiguityResolver {
 
         // Get possible styles for the matched text
         let possible_styles = get_possible_styles(matched_text);
-        if possible_styles.is_empty() {
+
+        // CRITICAL: Filter styles by case constraints
+        // All-uppercase text (e.g., "TESTWORD") can ONLY match uppercase styles
+        // (ScreamingSnake, ScreamingTrain, UpperFlat, UpperSentence), NEVER Title/Pascal/Camel
+        let constrained_styles = crate::case_constraints::filter_compatible_styles(
+            matched_text,
+            &possible_styles,
+        );
+
+        if constrained_styles.is_empty() {
             // Shouldn't happen, but handle gracefully
             return Self::default_fallback(
                 &possible_styles,
@@ -112,12 +121,13 @@ impl AmbiguityResolver {
         }
 
         if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
-            eprintln!("  Possible styles: {:?}", possible_styles);
+            eprintln!("  Possible styles (before constraints): {:?}", possible_styles);
+            eprintln!("  Constrained styles (after filtering): {:?}", constrained_styles);
         }
 
         // Level 1: Language-specific heuristics
         if let Some(resolved) =
-            Self::try_language_heuristics(matched_text, context, &possible_styles)
+            Self::try_language_heuristics(matched_text, context, &constrained_styles)
         {
             if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
                 eprintln!("  -> Resolved by language heuristics: {:?}", resolved.style);
@@ -126,7 +136,7 @@ impl AmbiguityResolver {
         }
 
         // Level 2: File context analysis
-        if let Some(resolved) = self.try_file_context(matched_text, context, &possible_styles) {
+        if let Some(resolved) = self.try_file_context(matched_text, context, &constrained_styles) {
             if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
                 eprintln!("  -> Resolved by file context: {:?}", resolved.style);
             }
@@ -134,14 +144,14 @@ impl AmbiguityResolver {
         }
 
         // Level 3: Cross-file context analysis
-        if let Some(resolved) = self.try_cross_file_context(matched_text, context, &possible_styles)
+        if let Some(resolved) = self.try_cross_file_context(matched_text, context, &constrained_styles)
         {
             return resolved;
         }
 
         // Level 4: Replacement string preference (ultimate fallback)
         Self::try_replacement_preference(
-            &possible_styles,
+            &constrained_styles,
             replacement_text,
             replacement_possible_styles,
         )
@@ -425,7 +435,9 @@ mod tests {
             ..Default::default()
         };
 
-        // "API" could be Pascal or SCREAMING_SNAKE
+        // "API" is a known acronym, so it CAN match PascalCase
+        // In Ruby, "class API" is valid - API is a PascalCase class name
+        // The language heuristic should recognize this and return Pascal
         let result = resolver.resolve("API", "Interface", &context);
         assert_eq!(result.style, Style::Pascal);
         assert_eq!(result.method, ResolutionMethod::LanguageHeuristic);
@@ -462,5 +474,108 @@ mod tests {
         // Should fall back to a possible style
         assert!(matches!(result.method, ResolutionMethod::DefaultFallback));
         assert!(result.style != Style::Pascal); // Can't be Pascal since "api" starts lowercase
+    }
+
+    #[test]
+    fn test_uppercase_must_stay_uppercase() {
+        let resolver = AmbiguityResolver::new();
+
+        // Context: Title Case comment
+        let context = AmbiguityContext {
+            file_path: Some(PathBuf::from("test.rs")),
+            line_content: Some("// Testword Core Engine".to_string()),
+            match_position: Some(3),
+            ..Default::default()
+        };
+
+        // "TESTWORD" is ambiguous (could be UpperFlat, UpperSentence, ScreamingSnake)
+        // But it's all uppercase, so resolution should ONLY pick uppercase styles
+        let result = resolver.resolve("TESTWORD", "module", &context);
+
+        // The resolved style must be an uppercase style
+        assert!(
+            matches!(
+                result.style,
+                Style::ScreamingSnake | Style::UpperFlat | Style::UpperSentence | Style::ScreamingTrain
+            ),
+            "All uppercase matched text must resolve to uppercase style, got: {:?}",
+            result.style
+        );
+    }
+
+    #[test]
+    fn test_uppercase_in_uppercase_context() {
+        let resolver = AmbiguityResolver::new();
+
+        // Context: All uppercase sentence
+        let context = AmbiguityContext {
+            file_path: Some(PathBuf::from("test.rs")),
+            line_content: Some("// TESTWORD CORE ENGINE".to_string()),
+            match_position: Some(3),
+            ..Default::default()
+        };
+
+        let result = resolver.resolve("TESTWORD", "module", &context);
+
+        // Should resolve to an uppercase style
+        assert!(
+            matches!(
+                result.style,
+                Style::ScreamingSnake | Style::UpperFlat | Style::UpperSentence | Style::ScreamingTrain
+            ),
+            "Uppercase in uppercase context should stay uppercase, got: {:?}",
+            result.style
+        );
+    }
+
+    #[test]
+    fn test_lowercase_must_stay_lowercase() {
+        let resolver = AmbiguityResolver::new();
+
+        // Context: PascalCase
+        let context = AmbiguityContext {
+            file_path: Some(PathBuf::from("test.rs")),
+            line_content: Some("TestwordCoreEngine".to_string()),
+            match_position: Some(0),
+            ..Default::default()
+        };
+
+        // "testword" is ambiguous but all lowercase
+        // Even though context is PascalCase, we can't make "testword" into "Testword"
+        // if it was matched as lowercase
+        let result = resolver.resolve("testword", "Module", &context);
+
+        // Should resolve to a lowercase style (snake, kebab, lower_flat, lower_sentence)
+        // NOT Pascal, Camel, or Title
+        assert!(
+            matches!(
+                result.style,
+                Style::Snake | Style::Kebab | Style::LowerFlat | Style::LowerSentence | Style::Dot
+            ),
+            "All lowercase matched text must resolve to lowercase style, got: {:?}",
+            result.style
+        );
+    }
+
+    #[test]
+    fn test_mixed_case_flexible() {
+        let resolver = AmbiguityResolver::new();
+
+        // Context: snake_case
+        let context = AmbiguityContext {
+            file_path: Some(PathBuf::from("test.rs")),
+            line_content: Some("testword_core_engine".to_string()),
+            match_position: Some(0),
+            ..Default::default()
+        };
+
+        // "Testword" starts with uppercase, so it can only match styles that allow
+        // first letter uppercase: Pascal, Train, Title, UpperFlat, etc.
+        // It CANNOT match Snake (requires all lowercase)
+        let result = resolver.resolve("Testword", "module", &context);
+
+        // Should resolve to Pascal (starts uppercase, no consecutive uppercase)
+        // NOT Snake because "Testword" has an uppercase letter
+        assert_eq!(result.style, Style::Pascal);
     }
 }

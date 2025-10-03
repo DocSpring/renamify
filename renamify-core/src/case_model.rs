@@ -6,20 +6,20 @@ use ts_rs::TS;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub enum Style {
-    Snake,
-    Kebab,
-    Camel,
-    Pascal,
-    ScreamingSnake,
-    Title,
-    Train,
-    ScreamingTrain, // ALL-CAPS-WITH-HYPHENS
-    Dot,
-    LowerFlat,     // all lowercase, no separators
-    UpperFlat,     // ALL UPPERCASE, no separators
-    Sentence,      // First word capitalized, rest lowercase, spaces
-    LowerSentence, // all words lowercase with spaces
-    UpperSentence, // ALL WORDS UPPERCASE WITH SPACES
+    Snake,          // renamify_style
+    Kebab,          // renamify-style
+    Camel,          // renamifyStyle
+    Pascal,         // RenamifyStyle
+    ScreamingSnake, // RENAMIFY_STYLE
+    Title,          // Renamify Style
+    Train,          // Renamify-Style
+    ScreamingTrain, // RENAMIFY-STYLE
+    Dot,            // renamify.style
+    LowerFlat,      // renamifystyle
+    UpperFlat,      // RENAMIFYSTYLE
+    Sentence,       // Renamify style
+    LowerSentence,  // renamify style
+    UpperSentence,  // RENAMIFY STYLE
 }
 
 impl Style {
@@ -684,17 +684,17 @@ fn generate_variant_map_internal(
 ) -> BTreeMap<String, String> {
     let using_default_styles = styles.is_none();
     let default_styles = [
-        Style::Snake,          // renamify_core_engine
-        Style::Kebab,          // renamify-core-engine
-        Style::Camel,          // renamifyCoreEngine
-        Style::Pascal,         // RenamifyCoreEngine
-        Style::ScreamingSnake, // RENAMIFY_CORE_ENGINE
-        Style::Train,          // Renamify-Core-Engine
-        Style::ScreamingTrain, // RENAMIFY-DEBUG
-        Style::Title,          // Renamify Core Engine
-        Style::Sentence,       // Renamify core engine
-        Style::LowerSentence,  // renamify core engine
-        Style::UpperSentence,  // RENAMIFY CORE ENGINE
+        Style::Snake,          // renamify_default_styles
+        Style::Kebab,          // renamify-default-styles
+        Style::Camel,          // renamifyDefaultStyles
+        Style::Pascal,         // RenamifyDefaultStyles
+        Style::ScreamingSnake, // RENAMIFY_DEFAULT_STYLES
+        Style::Train,          // Renamify-Default-Styles
+        Style::ScreamingTrain, // RENAMIFY-DEFAULT-STYLES
+        Style::Title,          // Renamify Default Styles
+        Style::Sentence,       // Renamify default styles
+        Style::LowerSentence,  // renamify default styles
+        Style::UpperSentence,  // RENAMIFY DEFAULT STYLES
     ];
     let styles = styles.unwrap_or(&default_styles);
 

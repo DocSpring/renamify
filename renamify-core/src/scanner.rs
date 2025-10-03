@@ -997,8 +997,15 @@ fn style_name(style: crate::coercion::Style) -> &'static str {
         crate::coercion::Style::Camel => "Camel",
         crate::coercion::Style::ScreamingSnake => "ScreamingSnake",
         crate::coercion::Style::Title => "Title",
-        crate::coercion::Style::Mixed => "Mixed",
+        crate::coercion::Style::Train => "Train",
+        crate::coercion::Style::ScreamingTrain => "ScreamingTrain",
         crate::coercion::Style::Dot => "Dot",
+        crate::coercion::Style::LowerFlat => "LowerFlat",
+        crate::coercion::Style::UpperFlat => "UpperFlat",
+        crate::coercion::Style::Sentence => "Sentence",
+        crate::coercion::Style::LowerSentence => "LowerSentence",
+        crate::coercion::Style::UpperSentence => "UpperSentence",
+        crate::coercion::Style::Mixed => "Mixed",
     }
 }
 
@@ -1961,5 +1968,271 @@ mod tests {
 
         let content = std::fs::read_to_string(&plan_path).unwrap();
         assert!(content.contains("\"id\": \"test123\""));
+    }
+
+    // ===================================================================
+    // Tests for apply_coercion_to_variant
+    // ===================================================================
+
+    #[test]
+    fn test_apply_coercion_uppercase_to_uppercase_only() {
+        // All uppercase replacement should ONLY be coerced to uppercase styles
+
+        // Container: all uppercase with spaces (UpperSentence)
+        let container = "// TESTWORD CORE ENGINE";
+        let result = apply_coercion_to_variant(container, "TESTWORD", "MODULE");
+
+        // Should return MODULE (all uppercase), NOT Module or module
+        assert_eq!(
+            result,
+            Some("MODULE".to_string()),
+            "All uppercase replacement in uppercase context should stay uppercase"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_uppercase_in_title_case_context() {
+        // When replacement is all uppercase but container is Title Case
+        // The replacement should be coerced to Title Case to match the context
+
+        // Container: Title Case comment
+        let container = "// Testword Core Engine";
+        let result = apply_coercion_to_variant(container, "TESTWORD", "MODULE");
+
+        // Should coerce to Title Case to match container
+        assert_eq!(
+            result,
+            Some("Module".to_string()),
+            "Uppercase replacement in Title Case context should become Title Case"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_lowercase_to_lowercase_only() {
+        // All lowercase replacement should ONLY be coerced to lowercase styles
+
+        // Container: snake_case
+        let container = "testword_core_engine";
+        let result = apply_coercion_to_variant(container, "testword", "module");
+
+        assert_eq!(
+            result,
+            Some("module".to_string()),
+            "Lowercase replacement in lowercase context should stay lowercase"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_lowercase_in_uppercase_context() {
+        // When replacement is lowercase but container is uppercase
+
+        // Container: SCREAMING_SNAKE
+        let container = "TESTWORD_CORE_ENGINE";
+        let result = apply_coercion_to_variant(container, "testword", "module");
+
+        // The container is all uppercase, replacement is lowercase
+        // Should uppercase the replacement to match
+        assert_eq!(
+            result,
+            Some("MODULE".to_string()),
+            "Lowercase replacement in uppercase context should be uppercased"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_mixed_case_flexible() {
+        // Mixed case (Title, Pascal, Camel) can be coerced to other mixed styles
+
+        // Container: camelCase
+        let container = "testwordCoreEngine";
+        let result = apply_coercion_to_variant(container, "Testword", "Module");
+
+        // Module is Title Case, container is camelCase
+        // Should convert to camelCase
+        assert_eq!(
+            result,
+            Some("module".to_string()),
+            "Title Case should be coerced to camelCase in camelCase context"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_screaming_snake_to_screaming_train() {
+        // SCREAMING_SNAKE replacement in SCREAMING-TRAIN context
+
+        let container = "TESTWORD-CORE-ENGINE";
+        let result = apply_coercion_to_variant(container, "TESTWORD", "MODULE");
+
+        // Both are all uppercase, just different separators
+        assert_eq!(
+            result,
+            Some("MODULE".to_string()),
+            "SCREAMING_SNAKE should become SCREAMING_TRAIN in that context"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_upper_flat_in_upper_sentence() {
+        // UPPERCASE (no separators) in UPPER SENTENCE (spaces) context
+
+        let container = "TESTWORD CORE ENGINE";
+        let result = apply_coercion_to_variant(container, "TESTWORD", "MODULE");
+
+        // Both all uppercase, should work
+        assert_eq!(
+            result,
+            Some("MODULE".to_string()),
+            "UpperFlat should work in UpperSentence context"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_no_change_when_exact_match() {
+        // When the replacement already matches the container style
+
+        let container = "testword_core_engine";
+        let result = apply_coercion_to_variant(container, "testword", "module");
+
+        // Both snake_case, should return the replacement as-is
+        assert_eq!(
+            result,
+            Some("module".to_string()),
+            "Same style should return unchanged"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_none_for_mixed_style_container() {
+        // When container has mixed/unknown style, should return None
+
+        let container = "Testword-specific_MIXED";
+        let result = apply_coercion_to_variant(container, "Testword", "Module");
+
+        // Mixed style container should return None (no coercion)
+        assert_eq!(
+            result,
+            None,
+            "Mixed style container should not apply coercion"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_none_for_dot_style_container() {
+        // Dot style is risky (file extensions), should return None
+
+        let container = "testword.core.engine";
+        let result = apply_coercion_to_variant(container, "testword", "module");
+
+        assert_eq!(
+            result,
+            None,
+            "Dot style container should not apply coercion"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_pascal_to_snake() {
+        // PascalCase replacement in snake_case context
+
+        let container = "testword_core_engine";
+        let result = apply_coercion_to_variant(container, "TestWord", "Module");
+
+        assert_eq!(
+            result,
+            Some("module".to_string()),
+            "PascalCase should be coerced to snake_case"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_snake_to_pascal() {
+        // snake_case replacement in PascalCase context
+
+        let container = "TestwordCoreEngine";
+        let result = apply_coercion_to_variant(container, "testword", "module");
+
+        assert_eq!(
+            result,
+            Some("Module".to_string()),
+            "snake_case should be coerced to PascalCase"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_train_case() {
+        // Train-Case context
+
+        let container = "Testword-Core-Engine";
+        let result = apply_coercion_to_variant(container, "testword", "module");
+
+        assert_eq!(
+            result,
+            Some("Module".to_string()),
+            "lowercase should be coerced to Train-Case"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_sentence_case() {
+        // Sentence case (first word capitalized)
+
+        let container = "Testword core engine";
+        let result = apply_coercion_to_variant(container, "testword", "module");
+
+        // Sentence case: first word capitalized, rest lowercase
+        // "module" in this position should be capitalized
+        assert_eq!(
+            result,
+            Some("Module".to_string()),
+            "Should coerce to Sentence case"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_lower_sentence() {
+        // LowerSentence (all lowercase with spaces)
+
+        let container = "testword core engine";
+        let result = apply_coercion_to_variant(container, "testword", "module");
+
+        assert_eq!(
+            result,
+            Some("module".to_string()),
+            "Should coerce to lower sentence"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_multi_word_replacement() {
+        // Multi-word replacement being coerced
+
+        let container = "old_test_word";
+        let result = apply_coercion_to_variant(container, "old_test_word", "new_replacement_text");
+
+        assert_eq!(
+            result,
+            Some("new_replacement_text".to_string()),
+            "Multi-word snake_case should stay snake_case"
+        );
+    }
+
+    #[test]
+    fn test_apply_coercion_preserves_uppercase_constraint() {
+        // When replacement is all uppercase, it must stay all uppercase
+
+        // Test various containers that should NOT force lowercase
+        let uppercase_replacement = "MODULE";
+
+        // Comment context (might be detected as mixed or something)
+        let comment = "        Style::UpperSentence,  // TESTWORD CORE ENGINE";
+        let result = apply_coercion_to_variant(comment, "TESTWORD", uppercase_replacement);
+
+        if let Some(coerced) = result {
+            assert!(
+                coerced.chars().all(|c| !c.is_lowercase() || !c.is_alphabetic()),
+                "All uppercase replacement must never be lowercased. Got: {}",
+                coerced
+            );
+        }
     }
 }

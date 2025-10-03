@@ -13,6 +13,7 @@ pub mod acronym;
 pub mod ambiguity;
 pub mod apply;
 pub mod atomic;
+pub mod case_constraints;
 pub mod case_model;
 pub mod coercion;
 pub mod compound_matcher;
