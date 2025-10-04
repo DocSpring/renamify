@@ -8,6 +8,19 @@ The ONLY reason you should stop is if you have a blocking question for the user.
 
 Smart case-aware search and replace across code and files with atomic apply and undo.
 
+## CRITICAL: Context-Specific CLAUDE.md Files
+
+This repository contains multiple CLAUDE.md files throughout the codebase, each providing context-specific instructions for different parts of the project:
+
+- **Root `/CLAUDE.md`** (this file) - Overall project architecture, workflows, and standards
+- **`/renamify-mcp/CLAUDE.md`** - MCP server specific rules (Ultracite coding standards)
+- **`/renamify-vscode/CLAUDE.md`** - VS Code extension specific rules and patterns
+- **Other subdirectories may have their own CLAUDE.md files**
+
+**You MUST read the context-specific CLAUDE.md file whenever working in that part of the codebase.** These files contain critical rules and patterns specific to that component. For example, the MCP server has strict TypeScript/accessibility rules enforced by Ultracite that don't apply to Rust code.
+
+**Note:** `/renamify-e2e-test/` is a temporary directory created during e2e tests (a clone of the entire repo for testing self-renaming). It's not part of the source tree and should be ignored.
+
 ## Project background
 
 - Greenfield, unreleased. No backwards compatibility. Delete and tidy old code immediately.
@@ -210,11 +223,16 @@ The unrestricted levels (`-u` flag) control ignore behavior:
 
 1. Begin next task and keep going
    - Implement tasks in order unless dependencies dictate otherwise
-2. After each task
-   - Run tests and linters
+2. After each task - BEFORE marking as complete:
+   - Run `task ci` - this runs all linters, formatters, and tests that run on CI
+   - Run `coderabbit --plain` - get third-party code review
+   - Implement ALL suggestions from CodeRabbit
+   - Repeat `task ci` and `coderabbit --plain` until BOTH pass with no issues or suggestions
    - Update docs if anything changed
    - Commit with a clear message
 3. Only pause for a blocking user question
+
+**CRITICAL**: Never claim a task is complete without running `task ci` and `coderabbit --plain` successfully. This is non-negotiable.
 
 ## User preferences
 
@@ -312,36 +330,38 @@ This file is not set in stone, it is a living document that you should update as
 
 ## CRITICAL: ALWAYS TEST BEFORE CLAIMING COMPLETION
 
-**NEVER claim something is done without running tests and linters for the language you're working in:**
+**NEVER claim something is done without completing the full workflow:**
+
+1. **Run `task ci`** - This single command runs ALL linters, formatters, and tests across all languages
+   - Rust: cargo fmt, clippy, test
+   - TypeScript/JavaScript: pnpm check, pnpm test (for all TS projects)
+   - Docs: prettier, biome
+   - Shell scripts: shellcheck
+   - TOML: taplo
+
+2. **Run `coderabbit --plain`** - Get third-party AI code review
+   - Implement ALL suggestions from CodeRabbit
+   - Re-run `task ci` after implementing suggestions
+   - Repeat until CodeRabbit returns no further suggestions
+
+3. **Only then** can you claim the task is complete
+
+**NO EXCEPTIONS.** This is the workflow. Follow it religiously.
+
+### Legacy Individual Commands (prefer `task ci` instead)
+
+For reference, here are the individual commands that `task ci` runs:
 
 For JavaScript/TypeScript projects:
-
-- `pnpm check` or `npm run lint` - Run linting and type checking
-- `pnpm test` or `npm test` - Run all tests
-- `pnpm build` or `npm run build` - Ensure the project builds
+- `pnpm check` - Run linting and type checking
+- `pnpm test` - Run all tests
+- `pnpm build` - Ensure the project builds
 
 For Rust projects:
-
 - `cargo build` - Ensure the project compiles
-- `cargo clippy` - Run linter (warnings should be treated as errors)
+- `cargo clippy` - Run linter (warnings are errors)
 - `cargo test` - Run all tests
 - `cargo fmt --check` - Check formatting
-
-For Python projects:
-
-- `pytest` or `python -m pytest` - Run tests
-- `mypy` or `pyright` - Run type checking
-- `ruff check` or `flake8` - Run linting
-- `black --check` - Check formatting
-
-For Go projects:
-
-- `go build` - Ensure the project compiles
-- `go test ./...` - Run all tests
-- `go vet ./...` - Run static analysis
-- `golangci-lint run` - Run comprehensive linting
-
-If you make changes to code, you MUST run these commands BEFORE saying it's complete, fixed, or working. NO EXCEPTIONS.
 
 ## CRITICAL: IMMEDIATE USER REQUEST EXECUTION
 
