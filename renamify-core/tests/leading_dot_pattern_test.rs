@@ -10,7 +10,9 @@ fn test_gitignore_with_leading_dot_gets_renamed() {
     // Create a .gitignore with a pattern that has a leading dot
     fs::write(
         repo_path.join(".gitignore"),
-        ".renamify/\nrenamify-core/bindings/\n",
+        r#".renamify/
+renamify-core/bindings/
+"#,
     )
     .unwrap();
 

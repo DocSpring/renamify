@@ -6,20 +6,20 @@ use ts_rs::TS;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub enum Style {
-    Snake,          // renamify_style
-    Kebab,          // renamify-style
-    Camel,          // renamifyStyle
-    Pascal,         // RenamifyStyle
-    ScreamingSnake, // RENAMIFY_STYLE
-    Title,          // Renamify Style
-    Train,          // Renamify-Style
-    ScreamingTrain, // RENAMIFY-STYLE
-    Dot,            // renamify.style
-    LowerFlat,      // renamifystyle
-    UpperFlat,      // RENAMIFYSTYLE
-    Sentence,       // Renamify style
-    LowerSentence,  // renamify style
-    UpperSentence,  // RENAMIFY STYLE
+    Snake,          // snake_case
+    Kebab,          // kebab-case
+    Camel,          // camelCase
+    Pascal,         // PascalCase
+    ScreamingSnake, // SCREAMING_SNAKE_CASE
+    Title,          // Title Case
+    Train,          // Train-Case
+    ScreamingTrain, // SCREAMING-TRAIN-CASE
+    Dot,            // dot.case
+    LowerFlat,      // lowerflatcase
+    UpperFlat,      // UPPERFLATCASE
+    Sentence,       // Sentence case
+    LowerSentence,  // lower sentence case
+    UpperSentence,  // UPPER SENTENCE CASE
 }
 
 impl Style {

@@ -210,7 +210,7 @@ impl OutputFormatter for ApplyResult {
             output.push_str("✓ Changes committed to git\n");
         }
 
-        write!(output, "Undo with: renamify undo {}", self.plan_id).unwrap();
+        writeln!(output, "Undo with: renamify undo {}", self.plan_id).unwrap();
 
         output
     }
@@ -420,7 +420,7 @@ impl OutputFormatter for RenameResult {
             output.push_str("✓ Changes committed to git\n");
         }
 
-        write!(output, "Undo with: renamify undo {}", self.plan_id).unwrap();
+        writeln!(output, "Undo with: renamify undo {}", self.plan_id).unwrap();
 
         output
     }
