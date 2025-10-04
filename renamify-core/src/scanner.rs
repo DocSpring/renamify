@@ -1,5 +1,6 @@
 use crate::acronym::AcronymSet;
-use crate::ambiguity::{get_possible_styles, is_ambiguous, AmbiguityContext, AmbiguityResolver};
+use crate::ambiguity::{AmbiguityContext, AmbiguityResolver};
+use crate::case_constraints::filter_compatible_styles;
 use crate::case_model::{parse_to_tokens, singularize_token_case, to_style, Style, TokenModel};
 use crate::pattern::{build_pattern, Match};
 use crate::rename::plan_renames;
@@ -552,7 +553,7 @@ pub fn scan_repository_multi(
             };
 
             if options.ignore_ambiguous {
-                file_matches.retain(|m| !is_ambiguous(&m.variant));
+                file_matches.retain(|m| !crate::ambiguity::is_ambiguous(&m.variant, styles_slice));
             }
 
             if file_matches.is_empty() {
@@ -709,7 +710,8 @@ fn generate_hunks(
     let ambiguity_resolver = AmbiguityResolver::new();
 
     // Calculate possible styles for the replacement text ONCE for all matches in this file
-    let replacement_possible_styles = get_possible_styles(original_replacement);
+    let replacement_possible_styles =
+        filter_compatible_styles(original_replacement, &Style::all_styles());
 
     // Compile the exclude pattern if provided
     let exclude_line_regex = if let Some(ref pattern) = options.exclude_matching_lines {
@@ -719,7 +721,9 @@ fn generate_hunks(
     };
 
     for m in matches {
-        if options.ignore_ambiguous && is_ambiguous(&m.variant) {
+        if options.ignore_ambiguous
+            && crate::ambiguity::is_ambiguous(&m.variant, &Style::all_styles())
+        {
             continue;
         }
 
@@ -749,7 +753,7 @@ fn generate_hunks(
         let (content, mut replace) = if is_compound_match {
             // Compound match - text field has the replacement
             (m.variant.clone(), m.text.clone())
-        } else if is_ambiguous(&m.variant) {
+        } else if crate::ambiguity::is_ambiguous(&m.variant, &Style::all_styles()) {
             // For ambiguous identifiers, use the ambiguity resolver to determine
             // the appropriate style based on context
             let file_content_str = String::from_utf8_lossy(content);
@@ -1126,7 +1130,7 @@ impl VariantMap {
     /// Remove entries whose keys are considered ambiguous identifiers.
     pub fn retain_unambiguous(&mut self) {
         self.map
-            .retain(|key, _| !crate::ambiguity::is_ambiguous(key));
+            .retain(|key, _| !crate::ambiguity::is_ambiguous(key, &Style::all_styles()));
     }
 }
 
@@ -2110,8 +2114,7 @@ mod tests {
 
         // Mixed style container should return None (no coercion)
         assert_eq!(
-            result,
-            None,
+            result, None,
             "Mixed style container should not apply coercion"
         );
     }
@@ -2124,8 +2127,7 @@ mod tests {
         let result = apply_coercion_to_variant(container, "testword", "module");
 
         assert_eq!(
-            result,
-            None,
+            result, None,
             "Dot style container should not apply coercion"
         );
     }
@@ -2229,7 +2231,9 @@ mod tests {
 
         if let Some(coerced) = result {
             assert!(
-                coerced.chars().all(|c| !c.is_lowercase() || !c.is_alphabetic()),
+                coerced
+                    .chars()
+                    .all(|c| !c.is_lowercase() || !c.is_alphabetic()),
                 "All uppercase replacement must never be lowercased. Got: {}",
                 coerced
             );

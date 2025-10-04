@@ -23,6 +23,26 @@ pub enum Style {
 }
 
 impl Style {
+    /// Returns all possible styles (complete list of 14 styles)
+    pub fn all_styles() -> Vec<Self> {
+        vec![
+            Self::Snake,
+            Self::Kebab,
+            Self::Camel,
+            Self::Pascal,
+            Self::ScreamingSnake,
+            Self::Train,
+            Self::ScreamingTrain,
+            Self::Title,
+            Self::Dot,
+            Self::LowerFlat,
+            Self::UpperFlat,
+            Self::Sentence,
+            Self::LowerSentence,
+            Self::UpperSentence,
+        ]
+    }
+
     /// Returns the default styles used by renamify
     pub fn default_styles() -> Vec<Self> {
         vec![
@@ -772,7 +792,7 @@ fn generate_variant_map_internal(
     // will be exactly as the user typed it (e.g., FormAPI not FormApi)
     // BUT: Only do this when using default styles AND the search term is NOT ambiguous
     // This must come AFTER generating style variants to override any that match the exact input
-    if using_default_styles && !crate::ambiguity::is_ambiguous(search) {
+    if using_default_styles && !crate::ambiguity::is_ambiguous(search, &Style::all_styles()) {
         // Using default styles and search is not ambiguous - add exact match preservation
         map.insert(search.to_string(), replace.to_string());
     }

@@ -69,7 +69,7 @@ tasks:
   lint:typos:fix:
     desc: Auto-fix typos
     cmds:
-      - typos --write
+      - typos --write-changes
 
   test:
     desc: Run unit and integration test suites

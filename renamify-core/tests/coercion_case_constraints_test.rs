@@ -34,10 +34,10 @@ fn test_uppercase_only_gets_uppercase_coercion() {
 
         // The style should be an uppercase style
         assert!(
-            reason.contains("UpperSentence") ||
-            reason.contains("UpperFlat") ||
-            reason.contains("ScreamingSnake") ||
-            reason.contains("ScreamingTrain"),
+            reason.contains("UpperSentence")
+                || reason.contains("UpperFlat")
+                || reason.contains("ScreamingSnake")
+                || reason.contains("ScreamingTrain"),
             "Expected uppercase style, got: {}",
             reason
         );

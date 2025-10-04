@@ -452,10 +452,7 @@ pub fn render_tokens(tokens: &[Token], style: Style) -> String {
             .map(|t| t.word.clone())
             .collect::<Vec<_>>()
             .join("."),
-        Style::LowerFlat => tokens
-            .iter()
-            .map(|t| t.word.clone())
-            .collect::<String>(),
+        Style::LowerFlat => tokens.iter().map(|t| t.word.clone()).collect::<String>(),
         Style::UpperFlat => tokens
             .iter()
             .map(|t| t.word.to_uppercase())

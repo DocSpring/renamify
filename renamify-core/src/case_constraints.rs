@@ -12,10 +12,10 @@
 //! **Case constraints are HARD CONSTRAINTS that can never be violated.**
 //!
 //! If text is all uppercase (like "TESTWORD"), it can ONLY match uppercase styles:
-//! - ScreamingSnake
-//! - ScreamingTrain
-//! - UpperFlat
-//! - UpperSentence
+//! - `ScreamingSnake`
+//! - `ScreamingTrain`
+//! - `UpperFlat`
+//! - `UpperSentence`
 //!
 //! It can NEVER match:
 //! - Camel (requires first lowercase)
@@ -55,8 +55,8 @@ pub enum CaseConstraint {
     /// Used for: camelCase
     CamelPattern,
 
-    /// First letter uppercase, NO consecutive uppercase (Hello, HelloWorld, TestWord)
-    /// Used for: PascalCase
+    /// First letter uppercase, NO consecutive uppercase (Hello, `HelloWorld`, `TestWord`)
+    /// Used for: `PascalCase`
     PascalPattern,
 }
 
@@ -65,69 +65,65 @@ impl Style {
     pub const fn constraints(self) -> StyleConstraints {
         match self {
             // Lowercase with separators
-            Style::Snake => StyleConstraints {
+            Self::Snake => StyleConstraints {
                 case: CaseConstraint::AllLowercase,
                 separator: Some('_'),
             },
-            Style::Kebab => StyleConstraints {
+            Self::Kebab => StyleConstraints {
                 case: CaseConstraint::AllLowercase,
                 separator: Some('-'),
             },
-            Style::Dot => StyleConstraints {
+            Self::Dot => StyleConstraints {
                 case: CaseConstraint::AllLowercase,
                 separator: Some('.'),
             },
-            Style::LowerSentence => StyleConstraints {
+            Self::LowerSentence => StyleConstraints {
                 case: CaseConstraint::AllLowercase,
                 separator: Some(' '),
             },
 
             // Uppercase with separators
-            Style::ScreamingSnake => StyleConstraints {
+            Self::ScreamingSnake => StyleConstraints {
                 case: CaseConstraint::AllUppercase,
                 separator: Some('_'),
             },
-            Style::ScreamingTrain => StyleConstraints {
+            Self::ScreamingTrain => StyleConstraints {
                 case: CaseConstraint::AllUppercase,
                 separator: Some('-'),
             },
-            Style::UpperSentence => StyleConstraints {
+            Self::UpperSentence => StyleConstraints {
                 case: CaseConstraint::AllUppercase,
                 separator: Some(' '),
             },
 
             // Title pattern with separators
-            Style::Train => StyleConstraints {
+            Self::Train => StyleConstraints {
                 case: CaseConstraint::TitlePattern,
                 separator: Some('-'),
             },
-            Style::Title => StyleConstraints {
+            // Title and Sentence both use TitlePattern with space separator
+            // (Sentence is title case first word, then lowercase - but constraint is same)
+            Self::Title | Self::Sentence => StyleConstraints {
                 case: CaseConstraint::TitlePattern,
-                separator: Some(' '),
-            },
-
-            // Sentence case (first word title, rest lower)
-            Style::Sentence => StyleConstraints {
-                case: CaseConstraint::TitlePattern, // At least first word follows this
                 separator: Some(' '),
             },
 
             // No separators - case transitions
-            Style::Camel => StyleConstraints {
+            Self::Camel => StyleConstraints {
                 case: CaseConstraint::CamelPattern,
                 separator: None,
             },
-            Style::Pascal => StyleConstraints {
+            Self::Pascal => StyleConstraints {
                 case: CaseConstraint::PascalPattern,
                 separator: None,
             },
 
             // No separators - flat case
-            Style::LowerFlat => StyleConstraints {
+            Self::LowerFlat => StyleConstraints {
                 case: CaseConstraint::AllLowercase,
                 separator: None,
             },
-            Style::UpperFlat => StyleConstraints {
+            Self::UpperFlat => StyleConstraints {
                 case: CaseConstraint::AllUppercase,
                 separator: None,
             },
@@ -181,34 +177,34 @@ fn check_case_constraint(text: &str, constraint: CaseConstraint) -> bool {
         CaseConstraint::AllUppercase => {
             // Every letter must be uppercase
             !has_lower
-        }
+        },
 
         CaseConstraint::AllLowercase => {
             // Every letter must be lowercase
             !has_upper
-        }
+        },
 
         CaseConstraint::TitlePattern => {
             // First letter uppercase, rest lowercase
             let mut chars = text.chars();
             let first = chars.next();
-            first.is_some_and(|c| c.is_uppercase())
+            first.is_some_and(char::is_uppercase)
                 && chars.all(|c| c.is_lowercase() || !c.is_alphabetic())
-        }
+        },
 
         CaseConstraint::CamelPattern => {
             // First letter lowercase, no consecutive uppercase
             let mut chars = text.chars();
             let first = chars.next();
-            first.is_some_and(|c| c.is_lowercase()) && !has_consecutive_uppercase(text)
-        }
+            first.is_some_and(char::is_lowercase) && !has_consecutive_uppercase(text)
+        },
 
         CaseConstraint::PascalPattern => {
             // First letter uppercase, no consecutive uppercase
             let mut chars = text.chars();
             let first = chars.next();
-            first.is_some_and(|c| c.is_uppercase()) && !has_consecutive_uppercase(text)
-        }
+            first.is_some_and(char::is_uppercase) && !has_consecutive_uppercase(text)
+        },
     }
 }
 
@@ -268,14 +264,13 @@ fn check_separator_constraints(text: &str, constraints: &StyleConstraints) -> bo
         match constraints.separator {
             Some(required) if sep == required => {
                 // This is the required separator - OK
-                continue;
-            }
+            },
             _ => {
                 // Any other separator is forbidden
                 if has_sep {
                     return false;
                 }
-            }
+            },
         }
     }
     true

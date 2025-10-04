@@ -38,8 +38,12 @@ fn test_gitignore_with_leading_dot_gets_renamed() {
     // Check that we found "renamify" in ".renamify/" by checking line_after
     let leading_dot_match = plan.matches.iter().find(|m| {
         m.file.ends_with(".gitignore")
-            && m.line_before.as_ref().map_or(false, |l| l.contains(".renamify"))
-            && m.line_after.as_ref().map_or(false, |l| l.contains(".testword"))
+            && m.line_before
+                .as_ref()
+                .is_some_and(|l| l.contains(".renamify"))
+            && m.line_after
+                .as_ref()
+                .is_some_and(|l| l.contains(".testword"))
     });
 
     assert!(

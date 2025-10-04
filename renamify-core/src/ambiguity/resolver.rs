@@ -1,7 +1,8 @@
 use super::{
     cross_file_context::CrossFileContextAnalyzer, file_context::FileContextAnalyzer,
-    get_possible_styles, is_ambiguous, language_heuristics::LanguageHeuristics,
+    language_heuristics::LanguageHeuristics,
 };
+use crate::case_constraints::filter_compatible_styles;
 use crate::case_model::{detect_style, parse_to_tokens, to_style, Style};
 
 /// Context for resolving ambiguity
@@ -87,7 +88,7 @@ impl AmbiguityResolver {
         }
 
         // First check if it's even ambiguous
-        if !is_ambiguous(matched_text) {
+        if !crate::ambiguity::is_ambiguous(matched_text, &Style::all_styles()) {
             if let Some(style) = detect_style(matched_text) {
                 if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
                     eprintln!("  -> Not ambiguous, detected style: {:?}", style);
@@ -101,15 +102,13 @@ impl AmbiguityResolver {
         }
 
         // Get possible styles for the matched text
-        let possible_styles = get_possible_styles(matched_text);
+        let possible_styles = filter_compatible_styles(matched_text, &Style::all_styles());
 
         // CRITICAL: Filter styles by case constraints
         // All-uppercase text (e.g., "TESTWORD") can ONLY match uppercase styles
         // (ScreamingSnake, ScreamingTrain, UpperFlat, UpperSentence), NEVER Title/Pascal/Camel
-        let constrained_styles = crate::case_constraints::filter_compatible_styles(
-            matched_text,
-            &possible_styles,
-        );
+        let constrained_styles =
+            crate::case_constraints::filter_compatible_styles(matched_text, &possible_styles);
 
         if constrained_styles.is_empty() {
             // Shouldn't happen, but handle gracefully
@@ -121,8 +120,14 @@ impl AmbiguityResolver {
         }
 
         if std::env::var("RENAMIFY_DEBUG_AMBIGUITY").is_ok() {
-            eprintln!("  Possible styles (before constraints): {:?}", possible_styles);
-            eprintln!("  Constrained styles (after filtering): {:?}", constrained_styles);
+            eprintln!(
+                "  Possible styles (before constraints): {:?}",
+                possible_styles
+            );
+            eprintln!(
+                "  Constrained styles (after filtering): {:?}",
+                constrained_styles
+            );
         }
 
         // Level 1: Language-specific heuristics
@@ -144,7 +149,8 @@ impl AmbiguityResolver {
         }
 
         // Level 3: Cross-file context analysis
-        if let Some(resolved) = self.try_cross_file_context(matched_text, context, &constrained_styles)
+        if let Some(resolved) =
+            self.try_cross_file_context(matched_text, context, &constrained_styles)
         {
             return resolved;
         }
@@ -294,16 +300,22 @@ impl AmbiguityResolver {
         replacement_possible_styles: Option<&[Style]>,
     ) -> ResolvedStyle {
         // Define default precedence order at the top
+        // Prioritize space-separated styles over their non-space equivalents
         const DEFAULT_PRECEDENCE: &[Style] = &[
             Style::Snake,
+            Style::LowerSentence, // Prefer over snake for comments/prose
             Style::Camel,
             Style::Pascal,
             Style::Kebab,
-            Style::ScreamingSnake,
+            Style::Title, // Prefer over Train
             Style::Train,
+            Style::Sentence,
+            Style::ScreamingSnake,
+            Style::UpperSentence, // Prefer over ScreamingSnake for comments/prose
             Style::ScreamingTrain,
-            Style::Title,
             Style::Dot,
+            Style::LowerFlat,
+            Style::UpperFlat,
         ];
 
         // Use pre-calculated styles if provided, otherwise calculate them
@@ -311,7 +323,7 @@ impl AmbiguityResolver {
         let replacement_styles = if let Some(styles) = replacement_possible_styles {
             styles
         } else {
-            calculated_styles = get_possible_styles(replacement_text);
+            calculated_styles = filter_compatible_styles(replacement_text, &Style::all_styles());
             &calculated_styles
         };
 
@@ -496,7 +508,10 @@ mod tests {
         assert!(
             matches!(
                 result.style,
-                Style::ScreamingSnake | Style::UpperFlat | Style::UpperSentence | Style::ScreamingTrain
+                Style::ScreamingSnake
+                    | Style::UpperFlat
+                    | Style::UpperSentence
+                    | Style::ScreamingTrain
             ),
             "All uppercase matched text must resolve to uppercase style, got: {:?}",
             result.style
@@ -521,7 +536,10 @@ mod tests {
         assert!(
             matches!(
                 result.style,
-                Style::ScreamingSnake | Style::UpperFlat | Style::UpperSentence | Style::ScreamingTrain
+                Style::ScreamingSnake
+                    | Style::UpperFlat
+                    | Style::UpperSentence
+                    | Style::ScreamingTrain
             ),
             "Uppercase in uppercase context should stay uppercase, got: {:?}",
             result.style

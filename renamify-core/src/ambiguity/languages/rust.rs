@@ -69,6 +69,18 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         if possible_styles.contains(&Style::Snake) {
             return Some(Style::Snake);
         }
+    } else if context.ends_with("//") || context.ends_with("///") || context.ends_with("/*") {
+        // Comments are natural language - prefer sentence styles
+        // Check case by seeing what uppercase styles are available
+        if possible_styles.contains(&Style::UpperSentence) {
+            return Some(Style::UpperSentence);
+        } else if possible_styles.contains(&Style::Sentence) {
+            return Some(Style::Sentence);
+        } else if possible_styles.contains(&Style::LowerSentence) {
+            return Some(Style::LowerSentence);
+        } else if possible_styles.contains(&Style::Title) {
+            return Some(Style::Title);
+        }
     }
     None
 }

@@ -47,7 +47,7 @@ impl FileContextAnalyzer {
 
         for identifier in &identifiers {
             // Skip ambiguous identifiers
-            if super::is_ambiguous(identifier) {
+            if crate::ambiguity::is_ambiguous(identifier, &Style::all_styles()) {
                 continue;
             }
 
