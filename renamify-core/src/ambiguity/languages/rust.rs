@@ -54,8 +54,15 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
         if possible_styles.contains(&Style::Pascal) {
             return Some(Style::Pascal);
         }
-    } else if context.ends_with('\'') {
-        // Lifetime parameters are lowercase
+    } else if (context.ends_with("<'")
+        || context.ends_with("&'")
+        || context.ends_with("('<")
+        || context.ends_with(", '"))
+        && !context.contains('"')
+        && !context.contains("r#")
+    {
+        // Lifetime parameters are lowercase (e.g., <'a>, &'static, fn foo<'a>)
+        // But NOT if context contains quotes - that's a string literal
         if possible_styles.contains(&Style::LowerFlat) {
             return Some(Style::LowerFlat);
         }
@@ -240,8 +247,23 @@ mod tests {
     #[test]
     fn test_rust_lifetime() {
         let possible_styles = vec![Style::LowerFlat, Style::Camel];
-        let result = suggest_style("'", &possible_styles);
+
+        // Test various lifetime contexts
+        let result = suggest_style("<'", &possible_styles);
         assert_eq!(result, Some(Style::LowerFlat));
+
+        let result = suggest_style("&'", &possible_styles);
+        assert_eq!(result, Some(Style::LowerFlat));
+
+        let result = suggest_style("('<", &possible_styles);
+        assert_eq!(result, Some(Style::LowerFlat));
+
+        let result = suggest_style("fn foo<T, '", &possible_styles);
+        assert_eq!(result, Some(Style::LowerFlat));
+
+        // Should NOT match string literals ending with '
+        let result = suggest_style("\"some string with '", &possible_styles);
+        assert_eq!(result, None);
     }
 
     #[test]
