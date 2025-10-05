@@ -283,6 +283,23 @@ impl AmbiguityResolver {
                     method: ResolutionMethod::ReplacementStringPreference,
                 };
             }
+
+            // Special case: if the possible styles only include flat cases (LowerFlat/UpperFlat)
+            // but the replacement has separators, prefer the replacement style anyway
+            // This handles filenames like "renamify.svg" where "renamify" has no separators
+            // but we want to use snake_case from "awesome_file_renaming_tool"
+            let only_flat_styles = possible_styles
+                .iter()
+                .all(|s| matches!(s, Style::LowerFlat | Style::UpperFlat));
+
+            if only_flat_styles && !matches!(replacement_style, Style::LowerFlat | Style::UpperFlat)
+            {
+                return ResolvedStyle {
+                    style: replacement_style,
+                    confidence: ResolutionConfidence::Low,
+                    method: ResolutionMethod::ReplacementStringPreference,
+                };
+            }
         }
 
         // Otherwise use default fallback
@@ -596,4 +613,18 @@ mod tests {
         // NOT Snake because "Testword" has an uppercase letter
         assert_eq!(result.style, Style::Pascal);
     }
+}
+
+#[test]
+fn test_filename_prefers_replacement_style_over_flat() {
+    let resolver = AmbiguityResolver::new();
+    let context = AmbiguityContext::default();
+
+    // "renamify" has no separators, so it matches LowerFlat
+    // But replacement is "awesome_file_renaming_tool" (Snake)
+    // Should prefer Snake over LowerFlat
+    let result = resolver.resolve("renamify", "awesome_file_renaming_tool", &context);
+
+    assert_eq!(result.style, Style::Snake);
+    assert_eq!(result.method, ResolutionMethod::ReplacementStringPreference);
 }

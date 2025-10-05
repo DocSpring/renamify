@@ -5,6 +5,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
+use crate::ambiguity::{AmbiguityContext, AmbiguityResolver};
+use crate::case_constraints::filter_compatible_styles;
+use crate::case_model::{parse_to_tokens, to_style, Style};
 use crate::scanner::{PlanOptions, Rename, RenameKind};
 
 /// Normalize a path by removing Windows long path prefix if present
@@ -29,6 +32,62 @@ const WINDOWS_RESERVED: &[&str] = &[
     "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
     "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
 ];
+
+/// Determine the best replacement for a filename using the ambiguity resolver
+fn determine_filename_replacement(
+    filename: &str,
+    _search: &str,
+    replace: &str,
+    mapping: &BTreeMap<String, String>,
+    ambiguity_resolver: &AmbiguityResolver,
+) -> Option<String> {
+    // Check if the filename contains the search pattern
+    // We need to find which variant from the mapping matches this filename
+    let mut matching_variant = None;
+    for old_variant in mapping.keys() {
+        if filename.contains(old_variant) {
+            matching_variant = Some(old_variant.clone());
+            break;
+        }
+    }
+
+    let matching_variant = matching_variant?;
+
+    // Check if this is an ambiguous identifier
+    if !crate::ambiguity::is_ambiguous(&matching_variant, &Style::all_styles()) {
+        // Not ambiguous - just use the variant map directly
+        let new_variant = mapping.get(&matching_variant)?;
+        return Some(filename.replace(&matching_variant, new_variant));
+    }
+
+    // For ambiguous identifiers, use the ambiguity resolver
+    let replacement_possible_styles = filter_compatible_styles(replace, &Style::all_styles());
+
+    // Create a minimal ambiguity context for the filename
+    // We don't have file content or line content for filenames
+    let ambiguity_context = AmbiguityContext {
+        file_path: None,
+        file_content: None,
+        line_content: None,
+        match_position: None,
+        project_root: None,
+    };
+
+    // Resolve what style should be used based on context
+    let resolved = ambiguity_resolver.resolve_with_styles(
+        &matching_variant,
+        replace,
+        &ambiguity_context,
+        Some(&replacement_possible_styles),
+    );
+
+    // Generate the replacement in the resolved style
+    let replacement_tokens = parse_to_tokens(replace);
+    let styled_replacement = to_style(&replacement_tokens, resolved.style);
+
+    // Replace the variant in the filename with the styled replacement
+    Some(filename.replace(&matching_variant, &styled_replacement))
+}
 
 #[derive(Debug, Clone)]
 pub struct RenameConflict {
@@ -99,8 +158,22 @@ pub fn plan_renames_with_conflicts(
     mapping: &BTreeMap<String, String>,
     options: &PlanOptions,
 ) -> Result<RenamePlan> {
+    plan_renames_with_conflicts_and_params(root, mapping, options, "", "")
+}
+
+/// Plan renames for files and directories based on variant mapping, with search/replace params
+fn plan_renames_with_conflicts_and_params(
+    root: &Path,
+    mapping: &BTreeMap<String, String>,
+    options: &PlanOptions,
+    search: &str,
+    replace: &str,
+) -> Result<RenamePlan> {
     let mut collected_renames = Vec::new();
     let case_insensitive_fs = detect_case_insensitive_fs(root);
+
+    // Create ambiguity resolver for intelligent style selection
+    let ambiguity_resolver = AmbiguityResolver::new();
 
     // Build globsets for include/exclude filtering using shared logic
     let include_globs = build_globset(&options.includes)?;
@@ -148,37 +221,70 @@ pub fn plan_renames_with_conflicts(
         if let Some(file_name) = path.file_name() {
             let file_name_str = file_name.to_string_lossy();
 
-            // Check each variant mapping
-            for (old, new) in mapping {
-                if file_name_str.contains(old) {
-                    let mut new_name = file_name_str.replace(old, new);
-                    let mut coercion_applied = None;
+            // Use the ambiguity resolver to determine the best replacement
+            // If search/replace are provided, use them; otherwise fall back to simple replacement
+            if !search.is_empty() && !replace.is_empty() {
+                if let Some(new_name) = determine_filename_replacement(
+                    &file_name_str,
+                    search,
+                    replace,
+                    mapping,
+                    &ambiguity_resolver,
+                ) {
+                    // Don't apply coercion - the ambiguity resolver already chose the correct style
+                    let coercion_applied = None;
 
-                    // Apply coercion if enabled
-                    if options.coerce_separators == crate::scanner::CoercionMode::Auto {
-                        if let Some((coerced, reason)) =
-                            crate::coercion::apply_coercion(&file_name_str, old, new)
-                        {
-                            new_name = coerced;
-                            coercion_applied = Some(reason);
-                        }
+                    if new_name != file_name_str {
+                        let new_path = path.with_file_name(&new_name);
+
+                        let kind = if file_type.is_dir() {
+                            RenameKind::Dir
+                        } else {
+                            RenameKind::File
+                        };
+
+                        collected_renames.push(Rename {
+                            path: normalize_path(path),
+                            new_path: normalize_path(&new_path),
+                            kind,
+                            coercion_applied,
+                        });
                     }
+                }
+            } else {
+                // Fallback to simple replacement for backward compatibility
+                // (when search/replace are not provided)
+                for (old, new) in mapping {
+                    if file_name_str.contains(old) {
+                        let mut new_name = file_name_str.replace(old, new);
+                        let mut coercion_applied = None;
 
-                    let new_path = path.with_file_name(&new_name);
+                        // Apply coercion if enabled
+                        if options.coerce_separators == crate::scanner::CoercionMode::Auto {
+                            if let Some((coerced, reason)) =
+                                crate::coercion::apply_coercion(&file_name_str, old, new)
+                            {
+                                new_name = coerced;
+                                coercion_applied = Some(reason);
+                            }
+                        }
 
-                    let kind = if file_type.is_dir() {
-                        RenameKind::Dir
-                    } else {
-                        RenameKind::File
-                    };
+                        let new_path = path.with_file_name(&new_name);
 
-                    collected_renames.push(Rename {
-                        path: normalize_path(path),
-                        new_path: normalize_path(&new_path),
-                        kind,
-                        coercion_applied,
-                    });
-                    break; // Only apply first matching variant
+                        let kind = if file_type.is_dir() {
+                            RenameKind::Dir
+                        } else {
+                            RenameKind::File
+                        };
+
+                        collected_renames.push(Rename {
+                            path: normalize_path(path),
+                            new_path: normalize_path(&new_path),
+                            kind,
+                            coercion_applied,
+                        });
+                        break; // Only apply first matching variant
+                    }
                 }
             }
         }
@@ -286,7 +392,36 @@ pub fn plan_renames_with_conflicts(
     })
 }
 
-/// Compatibility wrapper for existing API
+/// Plan renames with search and replace for ambiguity resolution
+pub fn plan_renames_with_search(
+    root: &Path,
+    mapping: &BTreeMap<String, String>,
+    options: &PlanOptions,
+    search: &str,
+    replace: &str,
+) -> Result<Vec<Rename>> {
+    let plan = plan_renames_with_conflicts_and_params(root, mapping, options, search, replace)?;
+
+    if !plan.conflicts.is_empty() {
+        let conflict_count = plan.conflicts.len();
+        let conflict_msg = plan
+            .conflicts
+            .iter()
+            .map(|c| format!("{:?}: {:?} -> {}", c.kind, c.sources, c.target.display()))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        return Err(anyhow!(
+            "Found {} rename conflicts:\n{}",
+            conflict_count,
+            conflict_msg
+        ));
+    }
+
+    Ok(plan.renames)
+}
+
+/// Compatibility wrapper for existing API (without search/replace)
 pub fn plan_renames(
     root: &Path,
     mapping: &BTreeMap<String, String>,

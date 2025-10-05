@@ -53,6 +53,10 @@ impl Style {
             Self::ScreamingSnake,
             Self::Train,
             Self::ScreamingTrain,
+            Self::Title,
+            Self::Sentence,
+            Self::LowerSentence,
+            Self::UpperSentence,
         ]
     }
 }

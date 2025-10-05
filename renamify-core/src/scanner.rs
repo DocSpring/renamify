@@ -3,7 +3,6 @@ use crate::ambiguity::{AmbiguityContext, AmbiguityResolver};
 use crate::case_constraints::filter_compatible_styles;
 use crate::case_model::{parse_to_tokens, singularize_token_case, to_style, Style, TokenModel};
 use crate::pattern::{build_pattern, Match};
-use crate::rename::plan_renames;
 use aho_corasick::{AhoCorasick, MatchKind};
 use anyhow::Result;
 use bstr::ByteSlice;
@@ -604,7 +603,9 @@ pub fn scan_repository_multi(
         let mut all_renames = Vec::new();
         let btree_map = variant_map.to_btree_map();
         for root in roots {
-            let mut root_renames = plan_renames(root, &btree_map, options)?;
+            let mut root_renames = crate::rename::plan_renames_with_search(
+                root, &btree_map, options, search, replace,
+            )?;
             // For search mode (when new is empty), clear the new_path to empty PathBuf
             if replace.is_empty() {
                 for rename in &mut root_renames {
