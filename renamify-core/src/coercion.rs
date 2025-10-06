@@ -1,3 +1,4 @@
+use crate::acronym::get_default_acronym_set;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -194,6 +195,7 @@ pub fn detect_style(s: &str) -> Style {
 
 fn is_title_case(s: &str) -> bool {
     let mut has_word = false;
+    let acronym_set = get_default_acronym_set();
 
     for raw_word in s.split(' ') {
         if raw_word.is_empty() {
@@ -223,8 +225,8 @@ fn is_title_case(s: &str) -> bool {
             continue;
         }
 
-        // Allow all-uppercase acronyms like "API"
-        if rest.chars().all(char::is_uppercase) {
+        // Allow known acronyms like "API", "CLI"
+        if rest.chars().all(char::is_uppercase) && acronym_set.is_acronym(word) {
             continue;
         }
 
@@ -243,6 +245,8 @@ fn is_train_case(s: &str) -> bool {
         return false;
     }
 
+    let acronym_set = get_default_acronym_set();
+
     for part in parts {
         if part.is_empty() {
             return false;
@@ -255,8 +259,15 @@ fn is_train_case(s: &str) -> bool {
             return false;
         }
         let rest: String = chars.collect();
-        if !rest.is_empty() && !rest.chars().all(char::is_lowercase) {
-            return false;
+        if !rest.is_empty() {
+            // Check if this is a known acronym (like "CLI", "API")
+            if rest.chars().all(char::is_uppercase) && acronym_set.is_acronym(part) {
+                continue;
+            }
+            // Otherwise require all lowercase
+            if !rest.chars().all(char::is_lowercase) {
+                return false;
+            }
         }
     }
     true
@@ -488,27 +499,42 @@ pub fn render_tokens(tokens: &[Token], style: Style) -> String {
     }
 }
 
+/// Extract special prefixes (like __, _) from an identifier
+/// Returns (prefix, `identifier_without_prefix`)
+fn extract_prefix(s: &str) -> (&str, &str) {
+    if let Some(stripped) = s.strip_prefix("__") {
+        ("__", stripped)
+    } else if let Some(stripped) = s.strip_prefix('_') {
+        ("_", stripped)
+    } else {
+        ("", s)
+    }
+}
+
 /// Apply contextual separator coercion
 pub fn apply_coercion(
     container: &str,
     old_pattern: &str,
     new_pattern: &str,
 ) -> Option<(String, String)> {
+    // Detect and preserve special prefixes (like __, _)
+    let (prefix, container_without_prefix) = extract_prefix(container);
+
     // If the container is exactly the same as the pattern, no meaningful coercion
-    if container.to_lowercase() == old_pattern.to_lowercase() {
+    if container_without_prefix.to_lowercase() == old_pattern.to_lowercase() {
         return None;
     }
 
     // Check if the container contains the old pattern
-    let container_lower = container.to_lowercase();
+    let container_lower = container_without_prefix.to_lowercase();
     let old_pattern_lower = old_pattern.to_lowercase();
 
     if !container_lower.contains(&old_pattern_lower) {
         return None;
     }
 
-    // Detect the container style first
-    let container_style = detect_style(container);
+    // Detect the container style first (without prefix)
+    let container_style = detect_style(container_without_prefix);
     let pattern_style = detect_style(old_pattern);
 
     // Special case: If container has a hyphen suffix after the pattern (e.g., FooBar-specific)
@@ -516,13 +542,14 @@ pub fn apply_coercion(
     // But only if the container doesn't have other separator types (underscore, dot)
     let is_partial_with_suffix = {
         if container_style == Style::Mixed
-            && container.contains('-')
-            && !container.contains('_')
-            && !container.contains('.')
+            && container_without_prefix.contains('-')
+            && !container_without_prefix.contains('_')
+            && !container_without_prefix.contains('.')
         {
             if let Some(pos) = container_lower.find(&old_pattern_lower) {
                 let end_pos = pos + old_pattern_lower.len();
-                end_pos < container.len() && container.chars().nth(end_pos) == Some('-')
+                end_pos < container_without_prefix.len()
+                    && container_without_prefix.chars().nth(end_pos) == Some('-')
             } else {
                 false
             }
@@ -539,7 +566,7 @@ pub fn apply_coercion(
 
         // Find the style of just the pattern part in the container
         if let Some(pos) = container_lower.find(&old_pattern_lower) {
-            let pattern_part = &container[pos..pos + old_pattern.len()];
+            let pattern_part = &container_without_prefix[pos..pos + old_pattern.len()];
             let pattern_style = detect_style(pattern_part);
 
             // Don't coerce if the pattern part has mixed/unknown style
@@ -550,11 +577,13 @@ pub fn apply_coercion(
             // Render the new pattern in the detected style
             let coerced_new = render_tokens(&new_tokens, pattern_style);
 
-            // Replace all occurrences (case-insensitive)
-            let result = replace_case_insensitive(container, old_pattern, &coerced_new);
+            // Replace all occurrences (case-insensitive) in container without prefix
+            let result =
+                replace_case_insensitive(container_without_prefix, old_pattern, &coerced_new);
 
+            // Re-add the prefix
             return Some((
-                result,
+                format!("{}{}", prefix, result),
                 format!("partial coercion to {:?} style", pattern_style),
             ));
         }
@@ -584,11 +613,14 @@ pub fn apply_coercion(
     // Render the new pattern in the chosen style
     let coerced_new = render_tokens(&new_tokens, target_style);
 
-    // Replace all occurrences (case-insensitive)
-    let result = replace_case_insensitive(container, old_pattern, &coerced_new);
+    // Replace all occurrences (case-insensitive) in container without prefix
+    let result = replace_case_insensitive(container_without_prefix, old_pattern, &coerced_new);
 
-    // Return the coercion details
-    Some((result, format!("coerced to {:?} style", target_style)))
+    // Re-add the prefix and return
+    Some((
+        format!("{}{}", prefix, result),
+        format!("coerced to {:?} style", target_style),
+    ))
 }
 
 /// Replace all occurrences of pattern with replacement (case-insensitive)

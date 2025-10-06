@@ -1,6 +1,18 @@
 use crate::case_model::{parse_to_tokens, to_style, Style, Token, TokenModel};
 use std::collections::BTreeMap;
 
+/// Extract special prefixes (like __, _) from an identifier
+/// Returns (prefix, `identifier_without_prefix`)
+fn extract_prefix(s: &str) -> (&str, &str) {
+    if let Some(stripped) = s.strip_prefix("__") {
+        ("__", stripped)
+    } else if let Some(stripped) = s.strip_prefix('_') {
+        ("_", stripped)
+    } else {
+        ("", s)
+    }
+}
+
 /// Represents a compound match where the pattern was found within a larger identifier
 #[derive(Debug, Clone)]
 pub struct CompoundMatch {
@@ -32,7 +44,7 @@ fn tokens_match(tokens: &[Token], pattern_tokens: &[Token]) -> bool {
 }
 
 /// Find compound words that contain the pattern and generate replacements
-#[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
 pub fn find_compound_variants(
     identifier: &str,
     old_pattern: &str,
@@ -41,13 +53,19 @@ pub fn find_compound_variants(
 ) -> Vec<CompoundMatch> {
     let mut matches = Vec::new();
 
+    // Extract and preserve special prefixes (like __, _)
+    let (prefix, identifier_without_prefix) = extract_prefix(identifier);
+
     // Debug: print styles array being passed
     if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
         println!("find_compound_variants called with styles: {:?}", styles);
+        if !prefix.is_empty() {
+            println!("  Extracted prefix: '{}' from '{}'", prefix, identifier);
+        }
     }
 
-    // Parse all three into tokens
-    let identifier_tokens = parse_to_tokens(identifier);
+    // Parse all three into tokens (use identifier without prefix)
+    let identifier_tokens = parse_to_tokens(identifier_without_prefix);
     let old_tokens = parse_to_tokens(old_pattern);
     let new_tokens = parse_to_tokens(new_pattern);
 
@@ -55,7 +73,7 @@ pub fn find_compound_variants(
     if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
         println!(
             "identifier_tokens for '{}': {:?}",
-            identifier, identifier_tokens
+            identifier_without_prefix, identifier_tokens
         );
         println!("old_tokens for '{}': {:?}", old_pattern, old_tokens);
         println!("new_tokens for '{}': {:?}", new_pattern, new_tokens);
@@ -72,21 +90,22 @@ pub fn find_compound_variants(
     // the exact search pattern followed by a separator, AND has mixed separators,
     // do a simple prefix replacement
     // This handles cases like "renamify_someCAMEL-case" -> "renamed_renaming_tool_someCAMEL-case"
-    let has_mixed_separators = (identifier.contains('_') && identifier.contains('-'))
-        || (identifier.contains('_') && identifier.contains('.'))
-        || (identifier.contains('-') && identifier.contains('.'));
+    let has_mixed_separators = (identifier_without_prefix.contains('_')
+        && identifier_without_prefix.contains('-'))
+        || (identifier_without_prefix.contains('_') && identifier_without_prefix.contains('.'))
+        || (identifier_without_prefix.contains('-') && identifier_without_prefix.contains('.'));
 
     if has_mixed_separators
-        && identifier.starts_with(old_pattern)
-        && old_pattern.len() < identifier.len()
+        && identifier_without_prefix.starts_with(old_pattern)
+        && old_pattern.len() < identifier_without_prefix.len()
     {
-        let char_after = identifier.chars().nth(old_pattern.len());
+        let char_after = identifier_without_prefix.chars().nth(old_pattern.len());
         if let Some(ch) = char_after {
             if ch == '_' || ch == '-' || ch == '.' {
                 // The identifier starts with our pattern followed by a separator
                 // Do a simple prefix replacement for mixed-style identifiers
-                let suffix = &identifier[old_pattern.len()..];
-                let replacement = format!("{}{}", new_pattern, suffix);
+                let suffix = &identifier_without_prefix[old_pattern.len()..];
+                let replacement = format!("{}{}{}", prefix, new_pattern, suffix);
 
                 matches.push(CompoundMatch {
                     full_identifier: identifier.to_string(),
@@ -187,7 +206,7 @@ pub fn find_compound_variants(
                     {
                         // All lowercase - could be snake, kebab, or other
                         // Check the identifier style for context
-                        crate::case_model::detect_style(identifier)
+                        crate::case_model::detect_style(identifier_without_prefix)
                     } else {
                         // Mixed case tokens - try to detect from the joined text
                         let joined = matched_tokens
@@ -202,7 +221,7 @@ pub fn find_compound_variants(
 
             // For Train case identifiers, always use Train case for replacements
             // Otherwise use the detected style of the matched portion
-            let identifier_style = crate::case_model::detect_style(identifier);
+            let identifier_style = crate::case_model::detect_style(identifier_without_prefix);
             let final_style = if matches!(identifier_style, Some(Style::Train)) {
                 // For Train case identifiers, keep Train case
                 Some(Style::Train)
@@ -333,13 +352,13 @@ pub fn find_compound_variants(
             );
         }
 
-        // Detect the style of the original identifier
-        let detected_style = crate::case_model::detect_style(identifier);
+        // Detect the style of the original identifier (without prefix)
+        let detected_style = crate::case_model::detect_style(identifier_without_prefix);
 
         if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
             println!(
                 "  detect_style('{}') returned: {:?}",
-                identifier, detected_style
+                identifier_without_prefix, detected_style
             );
         }
 
@@ -347,12 +366,15 @@ pub fn find_compound_variants(
         // If we can't detect a style but the identifier has consistent separators,
         // try to infer a style from the separators
         let inferred_style = if detected_style.is_none() {
-            if identifier.contains('-') && !identifier.contains('_') && !identifier.contains('.') {
+            if identifier_without_prefix.contains('-')
+                && !identifier_without_prefix.contains('_')
+                && !identifier_without_prefix.contains('.')
+            {
                 // Has hyphens only - treat as kebab for compound matching
                 Some(Style::Kebab)
-            } else if identifier.contains('_')
-                && !identifier.contains('-')
-                && !identifier.contains('.')
+            } else if identifier_without_prefix.contains('_')
+                && !identifier_without_prefix.contains('-')
+                && !identifier_without_prefix.contains('.')
             {
                 // Has underscores only - treat as snake
                 Some(Style::Snake)
@@ -366,7 +388,10 @@ pub fn find_compound_variants(
         if let Some(style) = inferred_style {
             // Debug: print style detection
             if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-                println!("  Detected style: {:?} for '{}'", style, identifier);
+                println!(
+                    "  Detected style: {:?} for '{}'",
+                    style, identifier_without_prefix
+                );
             }
 
             // Identifier detected with style and replacements made
@@ -375,11 +400,14 @@ pub fn find_compound_variants(
                 // Join tokens appropriately based on the original identifier's style
                 // For mixed separator identifiers like "foo_bar_baz_qux-specific",
                 // we need to preserve the original separator pattern
-                let mut replacement = if identifier.contains('_') && identifier.contains('-') {
+                let mut replacement = if identifier_without_prefix.contains('_')
+                    && identifier_without_prefix.contains('-')
+                {
                     // Mixed separators - for simplicity, use the dominant separator
                     // Determine which separator appears first (and thus is dominant)
-                    let first_underscore = identifier.find('_').unwrap_or(usize::MAX);
-                    let first_hyphen = identifier.find('-').unwrap_or(usize::MAX);
+                    let first_underscore =
+                        identifier_without_prefix.find('_').unwrap_or(usize::MAX);
+                    let first_hyphen = identifier_without_prefix.find('-').unwrap_or(usize::MAX);
 
                     let separator = if first_underscore < first_hyphen {
                         '_' // Underscore-dominant
@@ -393,28 +421,28 @@ pub fn find_compound_variants(
                         .map(|t| t.text.as_str())
                         .collect::<Vec<_>>()
                         .join(&separator.to_string())
-                } else if identifier.contains('-') {
+                } else if identifier_without_prefix.contains('-') {
                     // Hyphenated identifier - join with hyphens
                     replacement_tokens
                         .iter()
                         .map(|t| t.text.as_str())
                         .collect::<Vec<_>>()
                         .join("-")
-                } else if identifier.contains('_') {
+                } else if identifier_without_prefix.contains('_') {
                     // Underscore identifier - join with underscores
                     replacement_tokens
                         .iter()
                         .map(|t| t.text.as_str())
                         .collect::<Vec<_>>()
                         .join("_")
-                } else if identifier.contains('.') {
+                } else if identifier_without_prefix.contains('.') {
                     // Dot identifier - join with dots
                     replacement_tokens
                         .iter()
                         .map(|t| t.text.as_str())
                         .collect::<Vec<_>>()
                         .join(".")
-                } else if identifier.contains(' ') {
+                } else if identifier_without_prefix.contains(' ') {
                     // Space-separated identifier - join with spaces
                     // This handles Title Case, Sentence case, etc.
                     replacement_tokens
@@ -444,19 +472,22 @@ pub fn find_compound_variants(
 
                 // Preserve trailing delimiters from the original identifier
                 // This handles cases like "oldtool_backup_" in format strings
-                if identifier.ends_with('_') && !replacement.ends_with('_') {
+                if identifier_without_prefix.ends_with('_') && !replacement.ends_with('_') {
                     replacement.push('_');
-                } else if identifier.ends_with('-') && !replacement.ends_with('-') {
+                } else if identifier_without_prefix.ends_with('-') && !replacement.ends_with('-') {
                     replacement.push('-');
-                } else if identifier.ends_with('.') && !replacement.ends_with('.') {
+                } else if identifier_without_prefix.ends_with('.') && !replacement.ends_with('.') {
                     replacement.push('.');
                 }
+
+                // Add the prefix back
+                let final_replacement = format!("{}{}", prefix, replacement);
 
                 // Successfully created replacement in same style
 
                 matches.push(CompoundMatch {
                     full_identifier: identifier.to_string(),
-                    replacement,
+                    replacement: final_replacement,
                     style,
                     pattern_start: 0, // Not meaningful when we have multiple replacements
                     pattern_end: 0,   // Not meaningful when we have multiple replacements
@@ -466,7 +497,7 @@ pub fn find_compound_variants(
                 if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
                     println!(
                         "  Style {:?} not in target styles for '{}', skipping",
-                        style, identifier
+                        style, identifier_without_prefix
                     );
                 }
 
@@ -476,7 +507,10 @@ pub fn find_compound_variants(
         } else {
             // Debug: no style detected
             if std::env::var("RENAMIFY_DEBUG_COMPOUND").is_ok() {
-                println!("  No style detected for '{}', skipping", identifier);
+                println!(
+                    "  No style detected for '{}', skipping",
+                    identifier_without_prefix
+                );
             }
 
             // No style detected - skip this match

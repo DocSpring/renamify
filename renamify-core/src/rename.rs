@@ -224,31 +224,53 @@ fn plan_renames_with_conflicts_and_params(
             // Use the ambiguity resolver to determine the best replacement
             // If search/replace are provided, use them; otherwise fall back to simple replacement
             if !search.is_empty() && !replace.is_empty() {
-                if let Some(new_name) = determine_filename_replacement(
-                    &file_name_str,
-                    search,
-                    replace,
-                    mapping,
-                    &ambiguity_resolver,
-                ) {
-                    // Don't apply coercion - the ambiguity resolver already chose the correct style
-                    let coercion_applied = None;
+                // First, find which variant from the mapping matches this filename
+                let matching_variant = mapping
+                    .keys()
+                    .find(|old_variant| file_name_str.contains(*old_variant));
 
-                    if new_name != file_name_str {
-                        let new_path = path.with_file_name(&new_name);
+                if let Some(old_variant) = matching_variant {
+                    if let Some(new_variant) = mapping.get(old_variant) {
+                        if let Some(mut new_name) = determine_filename_replacement(
+                            &file_name_str,
+                            search,
+                            replace,
+                            mapping,
+                            &ambiguity_resolver,
+                        ) {
+                            let mut coercion_applied = None;
 
-                        let kind = if file_type.is_dir() {
-                            RenameKind::Dir
-                        } else {
-                            RenameKind::File
-                        };
+                            // Apply coercion if enabled for contextual separator coercion
+                            // (e.g., preserving Pascal case inside camel case containers)
+                            // Use the specific variant that matched, not the original search/replace
+                            if options.coerce_separators == crate::scanner::CoercionMode::Auto {
+                                if let Some((coerced, reason)) = crate::coercion::apply_coercion(
+                                    &file_name_str,
+                                    old_variant,
+                                    new_variant,
+                                ) {
+                                    new_name = coerced;
+                                    coercion_applied = Some(reason);
+                                }
+                            }
 
-                        collected_renames.push(Rename {
-                            path: normalize_path(path),
-                            new_path: normalize_path(&new_path),
-                            kind,
-                            coercion_applied,
-                        });
+                            if new_name != file_name_str {
+                                let new_path = path.with_file_name(&new_name);
+
+                                let kind = if file_type.is_dir() {
+                                    RenameKind::Dir
+                                } else {
+                                    RenameKind::File
+                                };
+
+                                collected_renames.push(Rename {
+                                    path: normalize_path(path),
+                                    new_path: normalize_path(&new_path),
+                                    kind,
+                                    coercion_applied,
+                                });
+                            }
+                        }
                     }
                 }
             } else {
