@@ -620,10 +620,10 @@ fn test_filename_prefers_replacement_style_over_flat() {
     let resolver = AmbiguityResolver::new();
     let context = AmbiguityContext::default();
 
-    // "renamify" has no separators, so it matches LowerFlat
-    // But replacement is "awesome_file_renaming_tool" (Snake)
+    // "oldtool" has no separators, so it matches LowerFlat
+    // But replacement is "new_cool_tool" (Snake)
     // Should prefer Snake over LowerFlat
-    let result = resolver.resolve("renamify", "awesome_file_renaming_tool", &context);
+    let result = resolver.resolve("oldtool", "new_cool_tool", &context);
 
     assert_eq!(result.style, Style::Snake);
     assert_eq!(result.method, ResolutionMethod::ReplacementStringPreference);
