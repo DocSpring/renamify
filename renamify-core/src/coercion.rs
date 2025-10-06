@@ -148,6 +148,20 @@ pub fn detect_style(s: &str) -> Style {
             Style::ScreamingTrain
         } else if is_train_case(basename) {
             Style::Train
+        } else if has_uppercase && has_lowercase && case_transitions > 0 {
+            // Check if this is a mixed-case pattern like "PascalCase-lowercase"
+            // If there are case transitions AND both upper/lowercase, check if all hyphen parts are consistently lowercase
+            let parts: Vec<&str> = basename.split('-').collect();
+            let all_lowercase = parts.iter().all(|part| {
+                !part.is_empty() && part.chars().all(|c| !c.is_alphabetic() || c.is_lowercase())
+            });
+
+            if all_lowercase {
+                Style::Kebab
+            } else {
+                // Mixed case pattern like "Renamify-specific" or "getFoo-bar"
+                Style::Mixed
+            }
         } else {
             Style::Kebab
         }
