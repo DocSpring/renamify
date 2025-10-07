@@ -286,8 +286,8 @@ impl AmbiguityResolver {
 
             // Special case: if the possible styles only include flat cases (LowerFlat/UpperFlat)
             // but the replacement has separators, prefer the replacement style anyway
-            // This handles filenames like "renamify.svg" where "renamify" has no separators
-            // but we want to use snake_case from "awesome_file_renaming_tool"
+            // This handles filenames like "testword.svg" where "testword" has no separators
+            // but we want to use the separator style from the replacement
             let only_flat_styles = possible_styles
                 .iter()
                 .all(|s| matches!(s, Style::LowerFlat | Style::UpperFlat));
@@ -317,20 +317,21 @@ impl AmbiguityResolver {
         replacement_possible_styles: Option<&[Style]>,
     ) -> ResolvedStyle {
         // Define default precedence order at the top
-        // Prioritize space-separated styles over their non-space equivalents
+        // Prefer code-style identifiers (snake, camel, pascal) over prose-style (sentence, title)
+        // since we're usually renaming brands/names, not sentences
         const DEFAULT_PRECEDENCE: &[Style] = &[
             Style::Snake,
-            Style::LowerSentence, // Prefer over snake for comments/prose
             Style::Camel,
-            Style::Pascal,
+            Style::Pascal, // Prefer Pascal over Title for brand names
             Style::Kebab,
-            Style::Title, // Prefer over Train
             Style::Train,
-            Style::Sentence,
             Style::ScreamingSnake,
-            Style::UpperSentence, // Prefer over ScreamingSnake for comments/prose
             Style::ScreamingTrain,
             Style::Dot,
+            Style::Title,
+            Style::Sentence,
+            Style::LowerSentence,
+            Style::UpperSentence,
             Style::LowerFlat,
             Style::UpperFlat,
         ];
