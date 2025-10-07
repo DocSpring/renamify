@@ -77,9 +77,13 @@ pub fn suggest_style(context: &str, possible_styles: &[Style]) -> Option<Style> 
             return Some(Style::Snake);
         }
     } else if context.ends_with("//") || context.ends_with("///") || context.ends_with("/*") {
-        // Comments are natural language - prefer sentence styles
-        // Check case by seeing what uppercase styles are available
-        if possible_styles.contains(&Style::UpperSentence) {
+        // Comments often contain brand names and identifiers - prefer code styles over prose
+        // Only use sentence case if no code-style alternatives exist
+        if possible_styles.contains(&Style::Pascal) {
+            return Some(Style::Pascal);
+        } else if possible_styles.contains(&Style::Camel) {
+            return Some(Style::Camel);
+        } else if possible_styles.contains(&Style::UpperSentence) {
             return Some(Style::UpperSentence);
         } else if possible_styles.contains(&Style::Sentence) {
             return Some(Style::Sentence);
