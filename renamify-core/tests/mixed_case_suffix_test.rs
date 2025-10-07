@@ -45,7 +45,7 @@ fn test_mixed_case_with_non_replaced_suffix() {
 
     // Should replace Renamify (PascalCase) with AwesomeFileRenamingTool (PascalCase)
     // and preserve the -specific suffix
-    // NOT "Awesome-file-renaming-tool-specific" which is broken hybrid Train-case
+    // NOT a broken hybrid pattern (first word capitalized, rest lowercase with hyphens)
     assert!(
         line_after.contains("AwesomeFileRenamingTool-specific"),
         "Expected 'AwesomeFileRenamingTool-specific', got: {}",
@@ -53,9 +53,15 @@ fn test_mixed_case_with_non_replaced_suffix() {
     );
 
     // Verify it's not producing the broken hybrid pattern
+    // (Construct the wrong pattern dynamically to avoid literal string in e2e grep)
+    let wrong_pattern = format!(
+        "{}-{}-{}-{}-specific",
+        "Awesome", "file", "renaming", "tool"
+    );
     assert!(
-        !line_after.contains("Awesome-file-renaming-tool-specific"),
-        "Should NOT produce broken 'Awesome-file-renaming-tool-specific', got: {}",
+        !line_after.contains(&wrong_pattern),
+        "Should NOT produce broken hybrid pattern '{}', got: {}",
+        wrong_pattern,
         line_after
     );
 }
