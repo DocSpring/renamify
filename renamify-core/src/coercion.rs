@@ -611,11 +611,13 @@ pub fn apply_coercion(
 
     // Special case: if container is flat (no separators) but replacement has separators,
     // prefer the replacement's style over the container's flat style
-    // This handles filenames like "renamify.svg" → "awesome_file_renaming_tool.svg"
+    // This handles filenames like "old_tool.svg" → "new_tool.svg"
     let replacement_style = detect_style(new_pattern);
     let target_style = if matches!(container_style, Style::LowerFlat | Style::UpperFlat)
-        && !matches!(replacement_style, Style::LowerFlat | Style::UpperFlat | Style::Mixed | Style::Dot)
-    {
+        && !matches!(
+            replacement_style,
+            Style::LowerFlat | Style::UpperFlat | Style::Mixed | Style::Dot
+        ) {
         replacement_style
     } else if pattern_style == Style::Pascal
         && matches!(container_style, Style::Camel | Style::Pascal)

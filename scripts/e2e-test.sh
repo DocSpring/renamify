@@ -112,26 +112,13 @@ DEBUG_AFRT="$CARGO_TARGET_DIR/debug/awesome_file_renaming_tool"
 echo "=== Running tests with new name ==="
 cargo test
 
-echo "=== Running $DEBUG_AFRT init to add .awesome_file_renaming_tool/ to .gitignore"
-"$DEBUG_AFRT" init
-
+# .renamify/ should have already been renamed in the .gitignore
 if ! rg .awesome_file_renaming_tool/ .gitignore; then
   echo "ERROR: Did not find .awesome_file_renaming_tool/ in .gitignore!"
   cat .gitignore
   exit 1
 fi
 echo "✓ Found .awesome_file_renaming_tool/ in .gitignore"
-
-echo "=== Committing change to .gitignore"
-# Set git user config if not already set
-if ! git config user.email > /dev/null 2>&1; then
-  git config --global user.email "e2e.test@example.com"
-fi
-if ! git config user.name > /dev/null 2>&1; then
-  git config --global user.name "renamify e2e test"
-fi
-git add .gitignore
-git commit -m "Added .awesome_file_renaming_tool/ to .gitignore"
 
 echo "=== Testing awesome_file_renaming_tool rename back to renamify ==="
 # Use awesome_file_renaming_tool to rename itself back
@@ -160,6 +147,9 @@ cargo build --release
 REL_RENAMIFY="$CARGO_TARGET_DIR/release/renamify"
 
 "$REL_RENAMIFY" --version
+
+# Remove left-over artifacts (history dirs for awesome_file_renaming_tool)
+rm -rf .awesome_file_renaming_tool renamify-core/.awesome_file_renaming_tool
 
 ensure_working_directory_is_clean "after round-trip"
 echo "✓ Working directory is clean - round-trip successful!"
